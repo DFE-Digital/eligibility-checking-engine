@@ -114,7 +114,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 {
                     var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
                     var namespacePrefix = doc.Root?.GetNamespaceOfPrefix("s");
-                    var elements = doc.Descendants($"{namespacePrefix?.ToString()}Body").First().Descendants().Elements();
+                    var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
                     var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
                     soapResponse.Status = xElement.Value;
                     xElement = elements.First(x => x.Name.LocalName == "ErrorCode");

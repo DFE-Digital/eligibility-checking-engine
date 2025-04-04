@@ -3,7 +3,7 @@
 public class DwpClaimsResponse
 {
     public Jsonapi jsonapi { get; set; } = new();
-    public List<Datum> data { get; set; } = [];
+    public List<Datum> data { get; set; } = new List<Datum>();
     public Links links { get; set; } = new();
 }
 
@@ -15,14 +15,14 @@ public class AssessmentAttributes
 public class Attributes
 {
     public string benefitType { get; set; } = string.Empty;
-    public List<Award> awards { get; set; } = [];
+    public List<Award> awards { get; set; } = new List<Award>();
     public string guid { get; set; } = string.Empty;
     public string startDate { get; set; } = string.Empty;
     public string decisionDate { get; set; } = string.Empty;
     public string status { get; set; } = string.Empty;
-    public List<PaymentStatus> paymentStatus { get; set; } = [];
+    public List<PaymentStatus> paymentStatus { get; set; } = new List<PaymentStatus>();
     public WarningDetails warningDetails { get; set; } = new();
-    public List<Child> children { get; set; } = [];
+    public List<Child> children { get; set; } = new List<Child>();
 }
 
 public class Award
@@ -32,7 +32,7 @@ public class Award
     public string endReason { get; set; } = string.Empty;
     public string startDate { get; set; } = string.Empty;
     public string status { get; set; } = string.Empty;
-    public List<AwardComponent> awardComponents { get; set; } = [];
+    public List<AwardComponent> awardComponents { get; set; } = new List<AwardComponent>();
     public AssessmentAttributes assessmentAttributes { get; set; } = new();
 }
 
@@ -84,5 +84,5 @@ public class Warning
 
 public class WarningDetails
 {
-    public List<Warning> warnings { get; set; } = [];
+    public List<Warning> warnings { get; set; } = new List<Warning>();
 }

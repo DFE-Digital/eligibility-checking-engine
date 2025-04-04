@@ -2,7 +2,7 @@ namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ErrorResponse
 {
-    public List<Error> Errors { get; set; } = [];
+    public List<Error> Errors { get; set; } = new List<Error>();
 }
 
 public class Error

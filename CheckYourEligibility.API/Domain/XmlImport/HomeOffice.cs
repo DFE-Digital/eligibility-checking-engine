@@ -45,7 +45,7 @@ public class HMRCEligiblePerson
 public class HMRCEligiblePersons
 {
     [XmlElement(ElementName = "EligiblePerson")]
-    public List<HMRCEligiblePerson> EligiblePerson { get; set; } = [];
+    public List<HMRCEligiblePerson> EligiblePerson { get; set; } = new List<HMRCEligiblePerson>();
 }
 
 [ExcludeFromCodeCoverage(Justification = "xml class")]

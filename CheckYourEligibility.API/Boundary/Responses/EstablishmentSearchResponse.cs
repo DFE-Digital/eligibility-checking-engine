@@ -2,5 +2,5 @@
 
 public class EstablishmentSearchResponse
 {
-    public IEnumerable<Establishment> Data { get; set; } = [];
+    public IEnumerable<Establishment> Data { get; set; } = new List<Establishment>();
 }

@@ -161,7 +161,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
             item.DateOfBirth = CheckData.DateOfBirth;
             item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber ?? string.Empty;
-            item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber ?? string.Empty;
+            item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
             item.LastName = CheckData.LastName;
 
             return (T)item;
@@ -191,7 +191,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         NationalInsuranceNumber = data.NationalInsuranceNumber ?? string.Empty,
                         LastName = data.LastName,
                         DateOfBirth = data.DateOfBirth,
-                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber ?? string.Empty
+                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber
                     });
                 }
 

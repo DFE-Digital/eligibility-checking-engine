@@ -40,7 +40,7 @@ public class Application
 
     public DateTime Updated { get; set; }
 
-    public virtual IEnumerable<ApplicationStatus> Statuses { get; set; } = [];
+    public virtual IEnumerable<ApplicationStatus> Statuses { get; set; } = new List<ApplicationStatus>();
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus? Status { get; set; }
 

@@ -2,5 +2,5 @@
 
 public class CheckEligibilityBulkResponse
 {
-    public IEnumerable<CheckEligibilityItem> Data { get; set; } = [];
+    public IEnumerable<CheckEligibilityItem> Data { get; set; } = new List<CheckEligibilityItem>();
 }

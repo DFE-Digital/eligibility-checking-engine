@@ -8,7 +8,7 @@ public class CheckEligibilityItem
 
     public string DateOfBirth { get; set; } = string.Empty;
 
-    public string NationalAsylumSeekerServiceNumber { get; set; } = string.Empty;
+    public string? NationalAsylumSeekerServiceNumber { get; set; }
 
     public string Status { get; set; } = string.Empty;
 
