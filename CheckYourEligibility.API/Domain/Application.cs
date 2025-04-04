@@ -9,20 +9,20 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class Application
 {
-    public string ApplicationID { get; set; }
+    public string ApplicationID { get; set; } = string.Empty;
 
     [Column(TypeName = "varchar(100)")] public CheckEligibilityType Type { get; set; }
 
-    [Column(TypeName = "varchar(8)")] public string Reference { get; set; }
+    [Column(TypeName = "varchar(8)")] public string Reference { get; set; } = string.Empty;
 
     public int LocalAuthorityId { get; set; }
 
-    public virtual Establishment Establishment { get; set; }
+    public virtual Establishment Establishment { get; set; } = new();
     public int EstablishmentId { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string ParentFirstName { get; set; }
+    [Column(TypeName = "varchar(100)")] public string ParentFirstName { get; set; } = string.Empty;
 
-    [Column(TypeName = "varchar(100)")] public string ParentLastName { get; set; }
+    [Column(TypeName = "varchar(100)")] public string ParentLastName { get; set; } = string.Empty;
 
     [Column(TypeName = "varchar(50)")] public string? ParentNationalInsuranceNumber { get; set; }
 
@@ -30,9 +30,9 @@ public class Application
 
     public DateTime ParentDateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(50)")] public string ChildFirstName { get; set; }
+    [Column(TypeName = "varchar(50)")] public string ChildFirstName { get; set; } = string.Empty;
 
-    [Column(TypeName = "varchar(50)")] public string ChildLastName { get; set; }
+    [Column(TypeName = "varchar(50)")] public string ChildLastName { get; set; } = string.Empty;
 
     public DateTime ChildDateOfBirth { get; set; }
 
@@ -40,14 +40,14 @@ public class Application
 
     public DateTime Updated { get; set; }
 
-    public virtual IEnumerable<ApplicationStatus> Statuses { get; set; }
+    public virtual IEnumerable<ApplicationStatus> Statuses { get; set; } = [];
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus? Status { get; set; }
 
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = new();
     public string? UserId { get; set; }
-    public virtual EligibilityCheckHash EligibilityCheckHash { get; set; }
+    public virtual EligibilityCheckHash EligibilityCheckHash { get; set; } = new();
     public string? EligibilityCheckHashID { get; set; }
 
-    [Column(TypeName = "varchar(1000)")] public string ParentEmail { get; set; }
+    [Column(TypeName = "varchar(1000)")] public string ParentEmail { get; set; } = string.Empty;
 }

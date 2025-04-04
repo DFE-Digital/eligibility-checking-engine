@@ -32,21 +32,20 @@ public class ApplicationGateway : BaseGateway, IApplication
         _hashCheckDays = configuration.GetValue<short>("HashCheckDays");
     }
 
-    public async Task<ApplicationResponse> PostApplication(ApplicationRequestData data)
+    public async Task<ApplicationResponse?> PostApplication(ApplicationRequestData data)
     {
         try
         {
             var item = _mapper.Map<Application>(data);
-            var hashCheck = GetHash(data.Type, item);
-            if (hashCheck == null) throw new Exception($"No Check found. Type:- {data.Type}");
+            var hashCheck = GetHash(data.Type, item) ?? throw new Exception($"No Check found. Type:- {data.Type}");
             item.ApplicationID = Guid.NewGuid().ToString();
             item.Type = hashCheck.Type;
             item.Reference = GetReference();
             item.EligibilityCheckHashID = hashCheck?.EligibilityCheckHashID;
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
-
-            if (hashCheck.Outcome == CheckEligibilityStatus.eligible)
+           
+            if (hashCheck!.Outcome == CheckEligibilityStatus.eligible)
                 item.Status = ApplicationStatus.Entitled;
             else
                 item.Status = ApplicationStatus.EvidenceNeeded;
@@ -108,8 +107,8 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         IQueryable<Application> query;
 
-        if (model.Data.Statuses != null && model.Data.Statuses.Any())
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+        if (model.Data?.Statuses != null && model.Data.Statuses.Any())
+            query = _db.Applications.Where(a => a.Status.HasValue && model.Data.Statuses.Contains(a.Status.Value));
         else
             query = _db.Applications;
 
@@ -141,7 +140,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         };
     }
 
-    public async Task<ApplicationStatusUpdateResponse> UpdateApplicationStatus(string guid, ApplicationStatusData data)
+    public async Task<ApplicationStatusUpdateResponse?> UpdateApplicationStatus(string guid, ApplicationStatusData data)
     {
         var result = await _db.Applications.FirstOrDefaultAsync(x => x.ApplicationID == guid);
         if (result != null)
@@ -164,7 +163,11 @@ public class ApplicationGateway : BaseGateway, IApplication
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,
         ApplicationRequestSearch model)
     {
-        query = query.Where(x => x.Type == model.Data.Type);
+        if (query == null)
+            throw new ArgumentNullException(nameof(query));
+
+        if (model.Data != null)
+            query = query.Where(x => x.Type == model.Data.Type);
 
         if (model.Data?.Establishment != null)
             query = query.Where(x => x.EstablishmentId == model.Data.Establishment);
@@ -204,8 +207,8 @@ public class ApplicationGateway : BaseGateway, IApplication
                         x.ChildLastName.Contains(keyword) ||
                         x.ParentFirstName.Contains(keyword) ||
                         x.ParentLastName.Contains(keyword) ||
-                        x.ParentNationalInsuranceNumber.Contains(keyword) ||
-                        x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword) ||
+                        (x.ParentNationalInsuranceNumber != null && x.ParentNationalInsuranceNumber.Contains(keyword)) ||
+                        (x.ParentNationalAsylumSeekerServiceNumber != null && x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword)) ||
                         x.ParentEmail.Contains(keyword)
                 );
         }

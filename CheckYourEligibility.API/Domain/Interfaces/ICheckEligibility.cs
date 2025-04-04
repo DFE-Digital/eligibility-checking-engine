@@ -9,7 +9,7 @@ public interface ICheckEligibility
     Task<PostCheckResult> PostCheck<T>(T data) where T : IEligibilityServiceType;
     Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>;
 
-    Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
+    Task<T?> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
     Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem;
 
     Task<CheckEligibilityStatus?> GetStatus(string guid);

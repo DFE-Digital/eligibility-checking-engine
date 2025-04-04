@@ -24,9 +24,9 @@ public class CheckEligibilityRequestData_Fsm : CheckEligibilityRequestDataBase
 
     public string? NationalInsuranceNumber { get; set; }
 
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
-    public string DateOfBirth { get; set; }
+    public string DateOfBirth { get; set; } = string.Empty;
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
@@ -38,7 +38,7 @@ public class CheckEligibilityRequest_Fsm
 
 public class CheckEligibilityRequestBulk_Fsm
 {
-    public IEnumerable<CheckEligibilityRequestData_Fsm> Data { get; set; }
+    public IEnumerable<CheckEligibilityRequestData_Fsm>? Data { get; set; }
 }
 
 #endregion

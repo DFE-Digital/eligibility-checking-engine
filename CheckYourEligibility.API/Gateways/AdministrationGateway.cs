@@ -126,6 +126,9 @@ public class AdministrationGateway : IAdministration
         "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetLaData(LocalAuthority? item)
     {
+        if (item == null)
+            return;
+
         _db.LocalAuthorities.AsNoTracking().Where(b => b.LocalAuthorityId == item.LocalAuthorityId)
             .ExecuteUpdate(setters => setters
                 .SetProperty(b => b.LaName, item.LaName));
@@ -135,6 +138,9 @@ public class AdministrationGateway : IAdministration
         "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetEstablishmentData(Establishment? item)
     {
+        if (item == null)
+            return;
+
         _db.Establishments.Where(b => b.EstablishmentId == item.EstablishmentId)
             .ExecuteUpdate(setters => setters
                 .SetProperty(b => b.LocalAuthorityId, item.LocalAuthorityId)

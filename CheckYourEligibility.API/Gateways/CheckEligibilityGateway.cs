@@ -32,14 +32,19 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
-    private string _groupId;
+    private string _groupId = string.Empty;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         QueueServiceClient queueClientGateway,
         IConfiguration configuration, IDwpGateway dwpGateway, IAudit audit, IHash hashGateway)
     {
+        if (configuration == null)
+            throw new ArgumentNullException(nameof(configuration));
+
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
@@ -48,8 +53,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _hashGateway = hashGateway;
         _configuration = configuration;
 
-        setQueueStandard(_configuration.GetValue<string>("QueueFsmCheckStandard"), queueClientGateway);
-        setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk"), queueClientGateway);
+        setQueueStandard(_configuration.GetValue<string>("QueueFsmCheckStandard") ?? string.Empty, queueClientGateway);
+        setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk") ?? string.Empty, queueClientGateway);
     }
 
     public async Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>
@@ -67,7 +72,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var baseType = data as CheckEligibilityRequestDataBase;
             item.CheckData = JsonConvert.SerializeObject(data);
 
-            item.Type = baseType.Type;
+            if (baseType != null) 
+                item.Type = baseType.Type;
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -76,13 +82,20 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.Status = CheckEligibilityStatus.queuedForProcessing;
 
-            var checkHashResult =
-                await _hashGateway.Exists(JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData));
-            if (checkHashResult != null)
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
+            EligibilityCheckHash? checkHashResult = null;
+
+            if (checkData != null)
             {
-                item.Status = checkHashResult.Outcome;
-                item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
-                item.EligibilityCheckHash = checkHashResult;
+                checkHashResult =
+                    await _hashGateway.Exists(checkData);
+
+                if (checkHashResult != null)
+                {
+                    item.Status = checkHashResult.Outcome;
+                    item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
+                    item.EligibilityCheckHash = checkHashResult;
+                }
             }
 
             await _db.CheckEligibilities.AddAsync(item);
@@ -108,8 +121,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
+    public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditDataTemplate)
     {
+        if (auditDataTemplate == null) { return null; }
+
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
 
         if (result != null)
@@ -145,8 +160,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var item = _mapper.Map<CheckEligibilityItem>(result);
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
             item.DateOfBirth = CheckData.DateOfBirth;
-            item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-            item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
+            item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber ?? string.Empty;
+            item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber ?? string.Empty;
             item.LastName = CheckData.LastName;
 
             return (T)item;
@@ -155,7 +170,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return default;
     }
 
-    public async Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>
+    public async Task<T?> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
@@ -173,10 +188,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     {
                         Status = result.Status.ToString(),
                         Created = result.Created,
-                        NationalInsuranceNumber = data.NationalInsuranceNumber,
+                        NationalInsuranceNumber = data.NationalInsuranceNumber ?? string.Empty,
                         LastName = data.LastName,
                         DateOfBirth = data.DateOfBirth,
-                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber
+                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber ?? string.Empty
                     });
                 }
 
@@ -222,7 +237,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public static string GetHash(CheckProcessData item)
     {
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
-            ? item.NationalAsylumSeekerServiceNumber.ToUpper()
+            ? item.NationalAsylumSeekerServiceNumber?.ToUpper()
             : item.NationalInsuranceNumber.ToUpper();
         var input = $"{item.LastName.ToUpper()}{key}{item.DateOfBirth}{item.Type}";
         var inputBytes = Encoding.UTF8.GetBytes(input);
@@ -341,8 +356,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private static CheckProcessData GetCheckProcessDataType<T>(CheckEligibilityType type, string data)
         where T : IEligibilityServiceType
     {
-        dynamic checkItem = JsonConvert.DeserializeObject(data, typeof(T));
+        dynamic? checkItem = JsonConvert.DeserializeObject(data, typeof(T));
         //CheckEligibilityRequestData_Fsm checkItem = JsonConvert.DeserializeObject<T>(data);
+        
+        if (checkItem == null) { return new CheckProcessData(); }
+
         return new CheckProcessData
         {
             DateOfBirth = checkItem.DateOfBirth,
@@ -442,7 +460,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
                 {
                     LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber,
+                    NinoFragment = data.NationalInsuranceNumber ?? string.Empty,
                     DateOfBirth = data.DateOfBirth
                 }
             }
@@ -503,13 +521,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             while (properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
-                foreach (var item in retrievedMessage)
+                foreach (QueueMessage item in retrievedMessage)
                 {
                     var checkData =
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
-                        var result = await ProcessCheck(checkData.Guid, new AuditData
+                        var result = await ProcessCheck(checkData!.Guid, new AuditData
                         {
                             Type = AuditType.Check,
                             typeId = checkData.Guid,

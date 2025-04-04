@@ -2,21 +2,21 @@
 
 public class CheckEligibilityItem
 {
-    public string NationalInsuranceNumber { get; set; }
+    public string NationalInsuranceNumber { get; set; } = string.Empty;
 
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
-    public string DateOfBirth { get; set; }
+    public string DateOfBirth { get; set; } = string.Empty;
 
-    public string NationalAsylumSeekerServiceNumber { get; set; }
+    public string NationalAsylumSeekerServiceNumber { get; set; } = string.Empty;
 
-    public string Status { get; set; }
+    public string Status { get; set; } = string.Empty;
 
     public DateTime Created { get; set; }
 }
 
 public class CheckEligibilityItemResponse
 {
-    public CheckEligibilityItem Data { get; set; }
-    public CheckEligibilityResponseLinks Links { get; set; }
+    public CheckEligibilityItem Data { get; set; } = new();
+    public CheckEligibilityResponseLinks Links { get; set; } = new();
 }

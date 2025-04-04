@@ -6,9 +6,9 @@ public class CheckProcessData
 {
     public string? NationalInsuranceNumber { get; set; }
 
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
-    public string DateOfBirth { get; set; }
+    public string DateOfBirth { get; set; } = string.Empty;
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 

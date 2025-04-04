@@ -153,7 +153,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -184,7 +184,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid, Status = "404" }] });
         }
@@ -214,7 +214,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -245,7 +245,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
         }
@@ -277,7 +277,7 @@ public class EligibilityCheckController : BaseController
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -290,7 +290,7 @@ public class EligibilityCheckController : BaseController
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
-        catch (ProcessCheckException ex)
+        catch (ProcessCheckException)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -315,7 +315,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }

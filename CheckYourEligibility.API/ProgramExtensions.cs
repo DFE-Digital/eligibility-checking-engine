@@ -51,7 +51,7 @@ public static class ProgramExtensions
     {
         services.AddHttpClient<IDwpGateway, DwpGateway>(client =>
         {
-            client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
+            client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"] ?? string.Empty);
         });
         return services;
     }
@@ -75,9 +75,9 @@ public static class ProgramExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
-                    ValidAudience = configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]))
+                    ValidIssuer = configuration["Jwt:Issuer"] ?? string.Empty,
+                    ValidAudience = configuration["Jwt:Issuer"] ?? string.Empty,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? string.Empty))
                 };
 
                 options.Events = new JwtBearerEvents

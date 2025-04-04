@@ -8,10 +8,10 @@ namespace CheckYourEligibility.API.Gateways.XmlImport;
 public class HMRCXml
 {
     [XmlElement(ElementName = "OriginatingSystemID")]
-    public string OriginatingSystemID { get; set; }
+    public string OriginatingSystemID { get; set; } = string.Empty;
 
     [XmlElement(ElementName = "ReceivingSystemID")]
-    public string ReceivingSystemID { get; set; }
+    public string ReceivingSystemID { get; set; } = string.Empty;
 
     [XmlElement(ElementName = "CreationDate")]
     public int CreationDate { get; set; }
@@ -32,12 +32,12 @@ public class HMRCEligiblePerson
 {
     [XmlElement(ElementName = "DataType")] public int DataType { get; set; }
 
-    [XmlElement(ElementName = "NINO")] public string NINO { get; set; }
+    [XmlElement(ElementName = "NINO")] public string NINO { get; set; } = string.Empty;
 
     [XmlElement(ElementName = "DateOfBirth")]
     public int DateOfBirth { get; set; }
 
-    [XmlElement(ElementName = "Surname")] public string Surname { get; set; }
+    [XmlElement(ElementName = "Surname")] public string Surname { get; set; } = string.Empty;
 }
 
 [ExcludeFromCodeCoverage(Justification = "xml class")]
@@ -45,27 +45,27 @@ public class HMRCEligiblePerson
 public class HMRCEligiblePersons
 {
     [XmlElement(ElementName = "EligiblePerson")]
-    public List<HMRCEligiblePerson> EligiblePerson { get; set; }
+    public List<HMRCEligiblePerson> EligiblePerson { get; set; } = [];
 }
 
 [ExcludeFromCodeCoverage(Justification = "xml class")]
 [XmlRoot(ElementName = "FreeSchoolMealsHMRC")]
 public class HMRCFreeSchoolMealsHMRC
 {
-    [XmlElement(ElementName = "Header")] public HMRCXml Header { get; set; }
+    [XmlElement(ElementName = "Header")] public HMRCXml Header { get; set; } = new();
 
     [XmlElement(ElementName = "EligiblePersons")]
-    public HMRCEligiblePersons EligiblePersons { get; set; }
+    public HMRCEligiblePersons EligiblePersons { get; set; } = new();
 
     [XmlAttribute(AttributeName = "schemaLocation")]
-    public string SchemaLocation { get; set; }
+    public string SchemaLocation { get; set; } = string.Empty;
 
-    [XmlAttribute(AttributeName = "n1")] public string N1 { get; set; }
+    [XmlAttribute(AttributeName = "n1")] public string N1 { get; set; } = string.Empty;
 
     [XmlAttribute(AttributeName = "xmlns")]
-    public string Xmlns { get; set; }
+    public string Xmlns { get; set; } = string.Empty;
 
-    [XmlAttribute(AttributeName = "xsi")] public string Xsi { get; set; }
+    [XmlAttribute(AttributeName = "xsi")] public string Xsi { get; set; } = string.Empty;
 
-    [XmlText] public string Text { get; set; }
+    [XmlText] public string Text { get; set; } = string.Empty;
 }

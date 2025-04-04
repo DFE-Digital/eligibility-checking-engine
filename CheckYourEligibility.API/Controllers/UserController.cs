@@ -35,7 +35,7 @@ public class UserController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/user")]
     [Authorize(Policy = PolicyNames.RequireUserScope)]
-    public async Task<ActionResult> User([FromBody] UserCreateRequest model)
+    public new async Task<ActionResult> User([FromBody] UserCreateRequest model)
     {
         if (model == null || model.Data == null)
             return BadRequest(new ErrorResponse

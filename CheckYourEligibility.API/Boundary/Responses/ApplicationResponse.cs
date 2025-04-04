@@ -2,20 +2,20 @@
 
 public class ApplicationResponse
 {
-    public string Id { get; set; }
-    public string Reference { get; set; }
-    public ApplicationEstablishment Establishment { get; set; }
-    public string ParentFirstName { get; set; }
-    public string ParentLastName { get; set; }
-    public string ParentEmail { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public ApplicationEstablishment Establishment { get; set; } = new();
+    public string ParentFirstName { get; set; } = string.Empty  ;
+    public string ParentLastName { get; set; } = string.Empty;
+    public string ParentEmail { get; set; } = string.Empty;
     public string? ParentNationalInsuranceNumber { get; set; }
     public string? ParentNationalAsylumSeekerServiceNumber { get; set; }
-    public string ParentDateOfBirth { get; set; }
-    public string ChildFirstName { get; set; }
-    public string ChildLastName { get; set; }
-    public string ChildDateOfBirth { get; set; }
-    public string Status { get; set; }
-    public ApplicationUser User { get; set; }
+    public string ParentDateOfBirth { get; set; } = string.Empty;
+    public string ChildFirstName { get; set; } = string.Empty;
+    public string ChildLastName { get; set; } = string.Empty;
+    public string ChildDateOfBirth { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public ApplicationUser User { get; set; } = new();
     public DateTime Created { get; set; }
 
     public ApplicationHash? CheckOutcome { get; set; }
@@ -23,25 +23,25 @@ public class ApplicationResponse
     public class ApplicationEstablishment
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public EstablishmentLocalAuthority LocalAuthority { get; set; }
+        public EstablishmentLocalAuthority LocalAuthority { get; set; } = new();
 
         public class EstablishmentLocalAuthority
         {
             public int Id { get; set; }
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
         }
     }
 
     public class ApplicationUser
     {
-        public string UserID { get; set; }
+        public string UserID { get; set; } = string.Empty;
 
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
-        public string Reference { get; set; }
-    }
+        public string Reference { get; set; } = string.Empty;
+    }   
 
     public class ApplicationHash
     {

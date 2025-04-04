@@ -6,9 +6,9 @@ namespace CheckYourEligibility.API.Gateways.CsvImport;
 [ExcludeFromCodeCoverage]
 public class HomeOfficeRow
 {
-    public string Nas { get; set; }
-    public string Dob { get; set; }
-    public string Surname { get; set; }
+    public string Nas { get; set; } = string.Empty;
+    public string Dob { get; set; } = string.Empty;
+    public string Surname { get; set; } = string.Empty;
 }
 
 [ExcludeFromCodeCoverage]

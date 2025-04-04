@@ -2,5 +2,5 @@
 
 public class UserSaveItemResponse
 {
-    public string Data { get; set; }
+    public string Data { get; set; } = string.Empty;
 }

@@ -8,9 +8,9 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class ApplicationStatus
 {
-    public string ApplicationStatusID { get; set; }
-    public string ApplicationID { get; set; }
-    public virtual Application Application { get; set; }
+    public string ApplicationStatusID { get; set; } = string.Empty;
+    public string ApplicationID { get; set; } = string.Empty;
+    public virtual Application Application { get; set; } = new();
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus Type { get; set; }
 

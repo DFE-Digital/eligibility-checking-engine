@@ -30,7 +30,7 @@ public class MatchCitizenUseCase : IMatchCitizenUseCase
         _gateway = gateway;
     }
 
-    public async Task<DwpMatchResponse> Execute(CitizenMatchRequest model)
+    public async Task<DwpMatchResponse?> Execute(CitizenMatchRequest model)
     {
         // Implement the logic for matching a citizen here
         if (model?.Data?.Attributes?.LastName.ToUpper() == MogDWPValues.validCitizenSurnameEligible.ToUpper()

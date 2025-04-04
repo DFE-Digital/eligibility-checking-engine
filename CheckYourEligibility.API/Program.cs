@@ -114,8 +114,8 @@ builder.Services.AddSwaggerGen(c =>
         if (!apiDesc.TryGetMethodInfo(out var methodInfo)) return false;
 
         if (docName == "v1-admin") return true;
-        if (apiDesc.RelativePath.StartsWith("check/")) return true;
-        if (apiDesc.RelativePath.StartsWith("bulk-check/")) return true;
+        if (apiDesc.RelativePath!.StartsWith("check/")) return true;
+        if (apiDesc.RelativePath!.StartsWith("bulk-check/")) return true;
 
         return false;
     });

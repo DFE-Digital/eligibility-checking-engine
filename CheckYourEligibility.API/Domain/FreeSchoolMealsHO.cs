@@ -10,11 +10,11 @@ public class FreeSchoolMealsHO
     ///     NASS
     /// </summary>
     [Column(TypeName = "varchar(100)")]
-    public string FreeSchoolMealsHOID { get; set; }
+    public string FreeSchoolMealsHOID { get; set; } = string.Empty;
 
-    [Column(TypeName = "varchar(50)")] public string NASS { get; set; }
+    [Column(TypeName = "varchar(50)")] public string NASS { get; set; } = string.Empty;
 
     public DateTime DateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string LastName { get; set; }
+    [Column(TypeName = "varchar(100)")] public string LastName { get; set; } = string.Empty;
 }

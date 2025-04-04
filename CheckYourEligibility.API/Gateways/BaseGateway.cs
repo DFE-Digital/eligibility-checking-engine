@@ -23,7 +23,7 @@ public class BaseGateway
         var st = new StackTrace();
         var sf = st.GetFrame(1);
 
-        return sf.GetMethod().Name;
+        return sf?.GetMethod()?.Name ?? string.Empty;
     }
 
     protected void TrackMetric(string name, double value)

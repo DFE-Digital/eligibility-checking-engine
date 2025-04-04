@@ -2,13 +2,13 @@
 
 public class CheckEligibilityBulkStatusResponse
 {
-    public BulkStatus Data { get; set; }
-    public BulkCheckResponseLinks Links { get; set; }
+    public BulkStatus Data { get; set; } = new();
+    public BulkCheckResponseLinks Links { get; set; } = new();
 }
 
 public class BulkCheckResponseLinks
 {
-    public string Get_BulkCheck_Results { get; set; }
+    public string Get_BulkCheck_Results { get; set; } = string.Empty;
 }
 
 public class BulkStatus

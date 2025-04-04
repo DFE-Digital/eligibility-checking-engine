@@ -9,15 +9,15 @@ public class EstablishmentRow
 {
     public int Urn { get; set; }
     public int LaCode { get; set; }
-    public string LaName { get; set; }
-    public string EstablishmentName { get; set; }
-    public string Postcode { get; set; }
-    public string Street { get; set; }
-    public string Locality { get; set; }
-    public string Town { get; set; }
-    public string County { get; set; }
-    public string Status { get; set; }
-    public string Type { get; set; }
+    public string LaName { get; set; } = string.Empty;
+    public string EstablishmentName { get; set; } = string.Empty;
+    public string Postcode { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string Locality { get; set; } = string.Empty;
+    public string Town { get; set; } = string.Empty;
+    public string County { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
 }
 
 [ExcludeFromCodeCoverage]

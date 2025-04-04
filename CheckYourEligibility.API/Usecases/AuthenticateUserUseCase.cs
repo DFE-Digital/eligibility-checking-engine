@@ -20,7 +20,6 @@ public interface IAuthenticateUserUseCase
     ///     Prepares the JWT configuration and authenticates the user.
     /// </summary>
     /// <param name="credentials">Client credentials</param>
-    /// <param name="configuration">Application configuration</param>
     /// <returns>JWT auth response with token</returns>
     Task<JwtAuthResponse> Execute(SystemUser credentials);
 }
@@ -37,8 +36,9 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <summary>
     ///     Constructor for the AuthenticateUserUseCase.
     /// </summary>
-    /// <param name="auditService">Audit service for logging authentication attempts</param>
+    /// <param name="auditGateway">Audit service for logging authentication attempts</param>
     /// <param name="logger">Logger service</param>
+    /// <param name="jwtSettings"></param>
     public AuthenticateUserUseCase(IAudit auditGateway, ILogger<AuthenticateUserUseCase> logger,
         JwtSettings jwtSettings)
     {
@@ -51,7 +51,6 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     ///     Prepares the JWT configuration and authenticates the user.
     /// </summary>
     /// <param name="credentials">Client credentials</param>
-    /// <param name="configuration">Application configuration</param>
     /// <returns>JWT auth response with token</returns>
     /// <exception cref="AuthenticationException">Thrown when authentication fails</exception>
     public async Task<JwtAuthResponse> Execute(SystemUser credentials)

@@ -9,17 +9,17 @@ public class Establishment
 {
     [Key] public int EstablishmentId { get; set; }
 
-    public string EstablishmentName { get; set; }
-    public string Postcode { get; set; }
-    public string Street { get; set; }
-    public string Locality { get; set; }
-    public string Town { get; set; }
-    public string County { get; set; }
+    public string EstablishmentName { get; set; } = string.Empty;
+    public string Postcode { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string Locality { get; set; } = string.Empty;
+    public string Town { get; set; } = string.Empty;
+    public string County { get; set; } = string.Empty;
     public bool StatusOpen { get; set; }
     public int LocalAuthorityId { get; set; }
-    public virtual LocalAuthority LocalAuthority { get; set; }
+    public virtual LocalAuthority LocalAuthority { get; set; } = new();
 
     [NotMapped] public double? LevenshteinDistance { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string Type { get; set; }
+    [Column(TypeName = "varchar(100)")] public string Type { get; set; } = string.Empty;
 }

@@ -4,28 +4,28 @@ namespace CheckYourEligibility.API.Boundary.Requests.DWP;
 
 public class CitizenMatchRequest
 {
-    [JsonPropertyName("jsonapi")] public CitizenMatchRequest_Jsonapi Jsonapi { get; set; }
+    [JsonPropertyName("jsonapi")] public CitizenMatchRequest_Jsonapi Jsonapi { get; set; } = new();
 
-    [JsonPropertyName("data")] public CitizenMatchRequest_Data Data { get; set; }
+    [JsonPropertyName("data")] public CitizenMatchRequest_Data Data { get; set; } = new();
 
     public class CitizenMatchRequest_Data
     {
-        [JsonPropertyName("type")] public string Type { get; set; }
+        [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
 
-        [JsonPropertyName("attributes")] public CitizenMatchRequest_Attributes Attributes { get; set; }
+        [JsonPropertyName("attributes")] public CitizenMatchRequest_Attributes Attributes { get; set; } = new();
     }
 
     public class CitizenMatchRequest_Jsonapi
     {
-        [JsonPropertyName("version")] public string Version { get; set; }
+        [JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
     }
 
     public class CitizenMatchRequest_Attributes
     {
-        [JsonPropertyName("dateOfBirth")] public string DateOfBirth { get; set; }
+        [JsonPropertyName("dateOfBirth")] public string DateOfBirth { get; set; } = string.Empty;
 
-        [JsonPropertyName("ninoFragment")] public string NinoFragment { get; set; }
+        [JsonPropertyName("ninoFragment")] public string NinoFragment { get; set; } = string.Empty;
 
-        [JsonPropertyName("lastName")] public string LastName { get; set; }
+        [JsonPropertyName("lastName")] public string LastName { get; set; } = string.Empty;
     }
 }

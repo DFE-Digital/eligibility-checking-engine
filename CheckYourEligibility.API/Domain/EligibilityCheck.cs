@@ -9,7 +9,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class EligibilityCheck
 {
-    public string EligibilityCheckID { get; set; }
+    public string EligibilityCheckID { get; set; } = string.Empty;
 
     [Column(TypeName = "varchar(100)")] public CheckEligibilityType Type { get; set; }
 
@@ -26,5 +26,5 @@ public class EligibilityCheck
     public string? Group { get; set; }
 
     public int? Sequence { get; set; }
-    public string CheckData { get; set; }
+    public string CheckData { get; set; } = string.Empty;
 }
