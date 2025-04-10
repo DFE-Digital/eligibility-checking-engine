@@ -2,7 +2,7 @@
 
 public class CheckEligibilityStatusResponse
 {
-    public StatusValue Data { get; set; } = new();
+    public StatusValue Data { get; set; }
 }
 
 public class StatusValue

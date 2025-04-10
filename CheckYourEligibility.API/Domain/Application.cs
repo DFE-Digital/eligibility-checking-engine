@@ -17,7 +17,7 @@ public class Application
 
     public int LocalAuthorityId { get; set; }
 
-    public virtual Establishment Establishment { get; set; } = new();
+    public virtual Establishment Establishment { get; set; }
     public int EstablishmentId { get; set; }
 
     [Column(TypeName = "varchar(100)")] public string ParentFirstName { get; set; } = string.Empty;
@@ -44,9 +44,9 @@ public class Application
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus? Status { get; set; }
 
-    public virtual User User { get; set; } = new();
+    public virtual User User { get; set; } 
     public string? UserId { get; set; }
-    public virtual EligibilityCheckHash EligibilityCheckHash { get; set; } = new();
+    public virtual EligibilityCheckHash EligibilityCheckHash { get; set; }
     public string? EligibilityCheckHashID { get; set; }
 
     [Column(TypeName = "varchar(1000)")] public string ParentEmail { get; set; } = string.Empty;

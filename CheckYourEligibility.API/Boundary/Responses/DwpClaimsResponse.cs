@@ -2,9 +2,9 @@
 
 public class DwpClaimsResponse
 {
-    public Jsonapi jsonapi { get; set; } = new();
+    public Jsonapi jsonapi { get; set; }
     public List<Datum> data { get; set; } = new List<Datum>();
-    public Links links { get; set; } = new();
+    public Links links { get; set; }
 }
 
 public class AssessmentAttributes
@@ -21,7 +21,7 @@ public class Attributes
     public string decisionDate { get; set; } = string.Empty;
     public string status { get; set; } = string.Empty;
     public List<PaymentStatus> paymentStatus { get; set; } = new List<PaymentStatus>();
-    public WarningDetails warningDetails { get; set; } = new();
+    public WarningDetails warningDetails { get; set; }
     public List<Child> children { get; set; } = new List<Child>();
 }
 
@@ -33,7 +33,7 @@ public class Award
     public string startDate { get; set; } = string.Empty;
     public string status { get; set; } = string.Empty;
     public List<AwardComponent> awardComponents { get; set; } = new List<AwardComponent>();
-    public AssessmentAttributes assessmentAttributes { get; set; } = new();
+    public AssessmentAttributes assessmentAttributes { get; set; } 
 }
 
 public class AwardComponent
@@ -54,7 +54,7 @@ public class Child
 
 public class Datum
 {
-    public Attributes attributes { get; set; } = new();
+    public Attributes attributes { get; set; }
     public string id { get; set; } = string.Empty;
     public string type { get; set; } = string.Empty;
 }

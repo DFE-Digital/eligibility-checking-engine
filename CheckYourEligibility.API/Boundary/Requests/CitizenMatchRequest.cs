@@ -4,15 +4,15 @@ namespace CheckYourEligibility.API.Boundary.Requests.DWP;
 
 public class CitizenMatchRequest
 {
-    [JsonPropertyName("jsonapi")] public CitizenMatchRequest_Jsonapi Jsonapi { get; set; } = new();
+    [JsonPropertyName("jsonapi")] public CitizenMatchRequest_Jsonapi Jsonapi { get; set; }
 
-    [JsonPropertyName("data")] public CitizenMatchRequest_Data Data { get; set; } = new();
+    [JsonPropertyName("data")] public CitizenMatchRequest_Data Data { get; set; } 
 
     public class CitizenMatchRequest_Data
     {
         [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
 
-        [JsonPropertyName("attributes")] public CitizenMatchRequest_Attributes Attributes { get; set; } = new();
+        [JsonPropertyName("attributes")] public CitizenMatchRequest_Attributes Attributes { get; set; }
     }
 
     public class CitizenMatchRequest_Jsonapi

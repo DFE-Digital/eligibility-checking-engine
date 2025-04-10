@@ -272,7 +272,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 var responseData =
                     JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
-                return responseData.Data.Id;
+                return responseData?.Data.Id;
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound) return CheckEligibilityStatus.parentNotFound.ToString();

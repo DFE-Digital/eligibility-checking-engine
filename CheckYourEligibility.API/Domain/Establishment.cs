@@ -17,7 +17,7 @@ public class Establishment
     public string County { get; set; } = string.Empty;
     public bool StatusOpen { get; set; }
     public int LocalAuthorityId { get; set; }
-    public virtual LocalAuthority LocalAuthority { get; set; } = new();
+    public virtual LocalAuthority LocalAuthority { get; set; } 
 
     [NotMapped] public double? LevenshteinDistance { get; set; }
 

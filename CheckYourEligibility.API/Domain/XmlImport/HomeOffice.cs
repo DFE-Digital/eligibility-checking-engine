@@ -52,10 +52,10 @@ public class HMRCEligiblePersons
 [XmlRoot(ElementName = "FreeSchoolMealsHMRC")]
 public class HMRCFreeSchoolMealsHMRC
 {
-    [XmlElement(ElementName = "Header")] public HMRCXml Header { get; set; } = new();
+    [XmlElement(ElementName = "Header")] public HMRCXml Header { get; set; } 
 
     [XmlElement(ElementName = "EligiblePersons")]
-    public HMRCEligiblePersons EligiblePersons { get; set; } = new();
+    public HMRCEligiblePersons EligiblePersons { get; set; }
 
     [XmlAttribute(AttributeName = "schemaLocation")]
     public string SchemaLocation { get; set; } = string.Empty;

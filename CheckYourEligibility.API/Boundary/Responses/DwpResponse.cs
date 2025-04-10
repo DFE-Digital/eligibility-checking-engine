@@ -2,14 +2,14 @@
 
 public class DwpMatchResponse
 {
-    public DwpResponse_Jsonapi Jsonapi { get; set; } = new();
-    public DwpResponse_Data Data { get; set; } = new();
+    public DwpResponse_Jsonapi Jsonapi { get; set; }
+    public DwpResponse_Data Data { get; set; }
 
     public class DwpResponse_Data
     {
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public DwpResponse_Attributes Attributes { get; set; } = new();
+        public DwpResponse_Attributes Attributes { get; set; }
     }
 
     public class DwpResponse_Attributes

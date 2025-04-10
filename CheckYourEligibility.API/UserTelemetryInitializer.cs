@@ -24,7 +24,7 @@ public class UserTelemetryInitializer : ITelemetryInitializer
 
         var user = httpContext.User;
 
-        if (user.Identity.IsAuthenticated)
+        if (user.Identity!.IsAuthenticated)
         {
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
             var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;

@@ -204,7 +204,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return default;
     }
 
-    public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,
+    public async Task<CheckEligibilityStatusResponse?> UpdateEligibilityCheckStatus(string guid,
         EligibilityCheckStatusData data)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
@@ -298,7 +298,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
 
-    private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
+    private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck result,
         CheckProcessData checkData)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
