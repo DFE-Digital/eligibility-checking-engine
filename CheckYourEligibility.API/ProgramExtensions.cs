@@ -58,9 +58,19 @@ public static class ProgramExtensions
 
     public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        var jwtSettings = new JwtSettings();
+        /* var jwtSettings = new JwtSettings();
         configuration.GetSection("Jwt").Bind(jwtSettings);
         services.AddSingleton(jwtSettings);
+        return services; */
+
+        services.AddTransient(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var jwtSettings = new JwtSettings();
+            config.GetSection("Jwt").Bind(jwtSettings);
+            return jwtSettings;
+        });
+
         return services;
     }
 
