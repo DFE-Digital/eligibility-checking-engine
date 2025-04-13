@@ -102,7 +102,6 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// </summary>
     private async Task<JwtAuthResponse> ExecuteAuthentication(SystemUser credentials, JwtConfig jwtConfig)
     {
-        var auditType = string.IsNullOrEmpty(credentials.client_id) ? AuditType.User : AuditType.Client;
         await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
 
         if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret)) throw new InvalidClientException();
