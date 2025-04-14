@@ -50,4 +50,5 @@ public class Application
     public string? EligibilityCheckHashID { get; set; }
 
     [Column(TypeName = "varchar(1000)")] public string ParentEmail { get; set; }
+    public virtual ICollection<ApplicationEvidence> Evidence { get; set; } = new List<ApplicationEvidence>();
 }

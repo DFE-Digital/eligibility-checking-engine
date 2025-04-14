@@ -63,6 +63,19 @@ public class ApplicationGateway : BaseGateway, IApplication
                 throw new Exception($"Unable to find school:- {data.Establishment}, {ex.Message}");
             }
 
+            if (data.Evidence != null && data.Evidence.Any())
+            {
+                foreach (var evidenceItem in data.Evidence)
+                {
+                    item.Evidence.Add(new ApplicationEvidence
+                    {
+                        FileName = evidenceItem.FileName,
+                        FileType = evidenceItem.FileType,
+                        StorageAccountReference = evidenceItem.StorageAccountReference
+                    });
+                }
+            }
+
 
             await _db.Applications.AddAsync(item);
             await AddStatusHistory(item, ApplicationStatus.Entitled);
@@ -92,12 +105,13 @@ public class ApplicationGateway : BaseGateway, IApplication
             .ThenInclude(x => x.LocalAuthority)
             .Include(x => x.User)
             .Include(x => x.EligibilityCheckHash)
+            .Include(x => x.Evidence)
             .FirstOrDefaultAsync(x => x.ApplicationID == guid);
         if (result != null)
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -128,6 +142,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)
             .Include(x => x.User)
+            .Include(x => x.Evidence)
             .ToListAsync();
 
 
@@ -155,7 +170,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;

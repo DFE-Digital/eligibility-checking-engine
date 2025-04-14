@@ -517,6 +517,130 @@ public class ApplicationServiceTests : TestBase.TestBase
         return request;
     }
 
+    [Test]
+    public async Task Given_Application_With_Evidence_PostApplication_Should_Return_ApplicationWithEvidence()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.eligible);
+
+        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        {
+            new Boundary.Shared.ApplicationEvidence
+            {
+                FileName = "test-document.pdf",
+                FileType = "application/pdf",
+                StorageAccountReference = "container/test-reference-123"
+            },
+            new Boundary.Shared.ApplicationEvidence
+            {
+                FileName = "proof-of-address.jpg",
+                FileType = "image/jpeg",
+                StorageAccountReference = "container/test-reference-456"
+            }
+        };
+
+        // Act
+        var response = await _sut.PostApplication(request);
+
+        // Assert
+        response.Should().BeOfType<ApplicationResponse>();
+        response.Evidence.Should().NotBeNull();
+        response.Evidence.Should().HaveCount(2);
+        response.Evidence.First().FileName.Should().Be("test-document.pdf");
+        response.Evidence.First().FileType.Should().Be("application/pdf");
+    }
+
+    [Test]
+    public async Task Given_Application_With_Evidence_GetApplication_Should_Return_EvidenceItems()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+
+        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        {
+            new Boundary.Shared.ApplicationEvidence
+            {
+                FileName = "test-evidence.pdf",
+                FileType = "application/pdf",
+                StorageAccountReference = "container/reference-789"
+            }
+        };
+
+        var createdApplication = await _sut.PostApplication(request);
+
+        // Act
+        var response = await _sut.GetApplication(createdApplication.Id);
+
+        // Assert
+        response.Should().NotBeNull();
+        response.Evidence.Should().NotBeNull();
+        response.Evidence.Should().HaveCount(1);
+        response.Evidence.First().FileName.Should().Be("test-evidence.pdf");
+        response.Evidence.First().StorageAccountReference.Should().Be("container/reference-789");
+    }
+
+    [Test]
+    public async Task Given_Applications_With_Evidence_GetApplications_Should_Include_Evidence()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+
+
+        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        {
+            new Boundary.Shared.ApplicationEvidence
+            {
+                FileName = "search-test-doc.pdf",
+                FileType = "application/pdf",
+                StorageAccountReference = "container/search-reference"
+            }
+        };
+
+        await _sut.PostApplication(request);
+
+        var requestSearch = new ApplicationRequestSearch
+        {
+            Data = new ApplicationRequestSearchData
+            {
+                Establishment = Establishment.EstablishmentId
+            }
+        };
+
+        // Act
+        var response = await _sut.GetApplications(requestSearch);
+
+        // Assert
+        response.Data.Should().NotBeEmpty();
+        response.Data.First().Evidence.Should().NotBeNull();
+        response.Data.First().Evidence.Should().HaveCount(1);
+        response.Data.First().Evidence.First().FileName.Should().Be("search-test-doc.pdf");
+    }
+
+    [Test]
+    public async Task Given_Application_Without_Evidence_PostApplication_Should_Return_ApplicationWithEmptyEvidence()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.eligible);
+
+        request.Evidence = null;
+
+        // Act
+        var response = await _sut.PostApplication(request);
+
+        // Assert
+        response.Should().BeOfType<ApplicationResponse>();
+        response.Evidence.Should().NotBeNull();
+        response.Evidence.Should().BeEmpty();
+    }
+
 
     private async Task ClearDownData()
     {
