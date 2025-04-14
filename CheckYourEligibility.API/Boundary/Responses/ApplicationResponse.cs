@@ -1,4 +1,6 @@
-﻿namespace CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Boundary.Shared;
+
+namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ApplicationResponse
 {
@@ -17,6 +19,7 @@ public class ApplicationResponse
     public string Status { get; set; }
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }
+    public List<ApplicationEvidence>? Evidence { get; set; }
 
     public ApplicationHash? CheckOutcome { get; set; }
 
