@@ -8,7 +8,7 @@ public static class DbInitializer
 {
     public static void Initialize(EligibilityCheckContext context)
     {
-        context.Database.EnsureCreated();
+        //context.Database.EnsureCreated();
 
         // Look for any FreeSchoolMealsHMRC.
         if (!context.FreeSchoolMealsHMRC.Any())

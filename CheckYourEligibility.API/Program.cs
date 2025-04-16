@@ -5,10 +5,12 @@ using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.API.Data.Mappings;
+using CheckYourEligibility.API.Infrastructure;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -173,6 +175,24 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSwaggerGen(c => { c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); });
 
 var app = builder.Build();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<IEligibilityCheckContext>() as EligibilityCheckContext;
+    
+    context.Database.Migrate();
+
+    var env = services.GetRequiredService<IWebHostEnvironment>();
+    if (env.IsDevelopment())
+    {
+        context.Database.Migrate();
+
+        DbInitializer.Initialize(context);
+    }
+}
 
 app.MapHealthChecks("/healthcheck");
 

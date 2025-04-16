@@ -1,0 +1,38 @@
+networks: 
+   check-your-eligibility-backend:
+
+services:
+  checkyoureligibilitydb:
+    container_name: eligibilitycheck-db
+    image: mcr.microsoft.com/mssql/server:latest
+    ports: 
+      - 1433:1433
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password_123
+    networks:
+      - check-your-eligibility-backend
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/1433"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  checkyoureligibility.api:
+    container_name: check-your-eligibility-api
+    image: ${DOCKER_REGISTRY-}checkyoureligibilityapi
+    build:
+      context: .
+      dockerfile: CheckYourEligibility.API/Dockerfile
+    ports:
+      - 8080:80
+      - 8081:8081
+      - 7117:8081 
+    depends_on: 
+      checkyoureligibilitydb:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - check-your-eligibility-backend
+ 

@@ -7,6 +7,9 @@
         <InvariantGlobalization>false</InvariantGlobalization>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <RootNamespace>CheckYourEligibility.API</RootNamespace>
+        <UserSecretsId>3fb6d49f-8d3f-47d0-a793-dd8d6d73c888</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -40,10 +43,11 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.6.2"/>
-        <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0"/>
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.6.2" />
+        <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
