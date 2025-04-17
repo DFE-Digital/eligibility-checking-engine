@@ -33,6 +33,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Server=checkyoureligibilitydb;Database=EligibilityCheck;User Id=sa;Password=Password_123;Trust Server Certificate=True 
     networks:
       - check-your-eligibility-backend
  
