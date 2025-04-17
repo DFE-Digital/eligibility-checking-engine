@@ -2,6 +2,6 @@
 
 public class ApplicationItemResponse
 {
-    public ApplicationResponse Data { get; set; } 
-    public ApplicationResponseLinks Links { get; set; } 
+    public ApplicationResponse Data { get; set; } = null!;
+    public ApplicationResponseLinks Links { get; set; } = null!;
 }

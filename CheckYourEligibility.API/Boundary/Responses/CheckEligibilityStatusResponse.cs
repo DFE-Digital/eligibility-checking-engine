@@ -2,7 +2,7 @@
 
 public class CheckEligibilityStatusResponse
 {
-    public StatusValue Data { get; set; }
+    public StatusValue Data { get; set; } = null!;
 }
 
 public class StatusValue

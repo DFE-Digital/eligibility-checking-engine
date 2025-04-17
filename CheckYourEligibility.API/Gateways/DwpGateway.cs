@@ -113,7 +113,9 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 if (response.IsSuccessStatusCode)
                 {
                     var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
-                    var namespacePrefix = doc.Root?.GetNamespaceOfPrefix("s");
+                    var root = doc.Root ?? throw new InvalidOperationException("XML document has no root element.");
+                    var namespacePrefix = root.GetNamespaceOfPrefix("s") ?? throw new InvalidOperationException("Namespace prefix 's' not found.");
+                    
                     var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
                     var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
                     soapResponse.Status = xElement.Value;
@@ -160,7 +162,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
+                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString)
+                     ?? throw new InvalidOperationException("Failed to deserialize DwpClaimsResponse.");
                 if (CheckBenefitEntitlement(guid, claims)) return new OkResult();
 
                 return new NotFoundResult();

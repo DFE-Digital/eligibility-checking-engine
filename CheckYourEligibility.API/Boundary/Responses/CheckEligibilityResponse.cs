@@ -2,14 +2,14 @@
 
 public class CheckEligibilityResponse
 {
-    public StatusValue Data { get; set; }
-    public CheckEligibilityResponseLinks Links { get; set; } 
+    public StatusValue Data { get; set; } = null!;
+    public CheckEligibilityResponseLinks Links { get; set; } = null!;
 }
 
 public class CheckEligibilityResponseBulk
 {
-    public StatusValue Data { get; set; }
-    public CheckEligibilityResponseBulkLinks Links { get; set; }
+    public StatusValue Data { get; set; } = null!;
+    public CheckEligibilityResponseBulkLinks Links { get; set; } = null!;
 }
 
 public class CheckEligibilityResponseBulkLinks

@@ -17,6 +17,6 @@ public class CheckEligibilityItem
 
 public class CheckEligibilityItemResponse
 {
-    public CheckEligibilityItem Data { get; set; } 
-    public CheckEligibilityResponseLinks Links { get; set; }
+    public CheckEligibilityItem Data { get; set; } = null!;
+    public CheckEligibilityResponseLinks Links { get; set; } = null!;
 }

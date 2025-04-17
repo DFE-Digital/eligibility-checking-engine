@@ -55,6 +55,12 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <exception cref="AuthenticationException">Thrown when authentication fails</exception>
     public async Task<JwtAuthResponse> Execute(SystemUser credentials)
     {
+        if (string.IsNullOrWhiteSpace(credentials.client_id))
+        {
+            _logger.LogError("Invalid client identifier: (null or empty)");
+            throw new InvalidClientException("Invalid client identifier");
+        }
+
         if (credentials.grant_type != null && credentials.grant_type != "client_credentials")
             _logger.LogWarning($"Unsupported grant_type: {credentials.grant_type}".Replace(Environment.NewLine, ""));
 
@@ -82,9 +88,11 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         };
 
         // Get and validate allowed scopes
-        if (!string.IsNullOrEmpty(credentials.client_id) && !string.IsNullOrEmpty(credentials.scope))
+        if (!string.IsNullOrEmpty(credentials.client_id) &&
+            !string.IsNullOrEmpty(credentials.scope) &&
+            _jwtSettings.Clients.TryGetValue(credentials.client_id, out var clientSettings))
         {
-            jwtConfig.AllowedScopes = _jwtSettings.Clients[credentials.client_id]?.Scope;
+            jwtConfig.AllowedScopes = clientSettings.Scope;
             if (string.IsNullOrEmpty(jwtConfig.AllowedScopes))
             {
                 _logger.LogError(
@@ -101,14 +109,20 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// </summary>
     private async Task<JwtAuthResponse> ExecuteAuthentication(SystemUser credentials, JwtConfig jwtConfig)
     {
+        if (string.IsNullOrWhiteSpace(credentials.client_id))
+        {
+            _logger.LogError("Invalid client identifier: (null or empty)");
+            throw new InvalidClientException("Invalid client identifier");
+        }
+
         var auditType = string.IsNullOrEmpty(credentials.client_id) ? AuditType.User : AuditType.Client;
         await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
 
         if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret)) throw new InvalidClientException();
 
-        if (!ValidateScopes(credentials.scope, jwtConfig.AllowedScopes)) throw new InvalidScopeException();
+        if (!ValidateScopes(credentials.scope!, jwtConfig.AllowedScopes)) throw new InvalidScopeException();
 
-        var tokenString = GenerateJSONWebToken(credentials.client_id, credentials.scope, jwtConfig, out var expires);
+        var tokenString = GenerateJSONWebToken(credentials.client_id, credentials.scope!, jwtConfig, out var expires);
         var expiresInSeconds = (int)(expires - DateTime.UtcNow).TotalSeconds;
 
         if (string.IsNullOrEmpty(tokenString)) throw new ServerErrorException();
@@ -168,7 +182,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         catch (Exception)
         {
             expires = DateTime.MinValue;
-            return null;
+            return string.Empty;
         }
     }
 }

@@ -51,9 +51,11 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
         _logger.LogInformation(
             $"Retrieved bulk upload results for group ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
 
+#pragma warning disable CS8601 // Possible null reference assignment.
         return new CheckEligibilityBulkResponse
         {
             Data = response as List<CheckEligibilityItem>
         };
+#pragma warning restore CS8601 // Possible null reference assignment.
     }
 }

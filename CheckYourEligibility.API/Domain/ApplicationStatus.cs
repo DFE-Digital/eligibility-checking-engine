@@ -10,7 +10,7 @@ public class ApplicationStatus
 {
     public string ApplicationStatusID { get; set; } = string.Empty;
     public string ApplicationID { get; set; } = string.Empty;
-    public virtual Application Application { get; set; }
+    public virtual Application Application { get; set; } = null!;
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus Type { get; set; }
 

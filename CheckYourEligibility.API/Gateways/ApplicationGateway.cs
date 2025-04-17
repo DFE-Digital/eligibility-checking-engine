@@ -15,7 +15,7 @@ namespace CheckYourEligibility.API.Gateways;
 public class ApplicationGateway : BaseGateway, IApplication
 {
     private const int referenceMaxValue = 99999999;
-    private static Random randomNumber;
+    private static Random randomNumber = null!;
     private readonly IEligibilityCheckContext _db;
     private readonly int _hashCheckDays;
     private readonly ILogger _logger;

@@ -468,6 +468,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
         var guid = await _dwpGateway.GetCitizen(citizenRequest);
+        
+        if (string.IsNullOrEmpty(guid))
+        {
+            return CheckEligibilityStatus.Error;
+        }
+
         if (!Guid.TryParse(guid, out _))
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
 

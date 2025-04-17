@@ -2,8 +2,8 @@
 
 public class CheckEligibilityBulkStatusResponse
 {
-    public BulkStatus Data { get; set; }
-    public BulkCheckResponseLinks Links { get; set; }
+    public BulkStatus Data { get; set; } = null!;
+    public BulkCheckResponseLinks Links { get; set; } = null!;
 }
 
 public class BulkCheckResponseLinks

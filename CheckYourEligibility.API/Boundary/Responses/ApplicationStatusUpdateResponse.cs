@@ -4,7 +4,7 @@ namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ApplicationStatusUpdateResponse
 {
-    public ApplicationStatusDataResponse Data { get; set; }
+    public ApplicationStatusDataResponse Data { get; set; } = null!;
 }
 
 public class ApplicationStatusDataResponse

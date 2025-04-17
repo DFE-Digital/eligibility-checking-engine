@@ -77,6 +77,9 @@ builder.Services.AddSwaggerGen(c =>
                 "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"
         });
 
+    var scopes = builder.Configuration.GetSection("Jwt").GetSection("Scopes").Get<List<string>>()
+        ?? throw new InvalidOperationException("Scopes configuration is missing.");
+
     c.AddSecurityDefinition(
         "oauth2",
         new OpenApiSecurityScheme
@@ -87,7 +90,7 @@ builder.Services.AddSwaggerGen(c =>
                 AuthorizationCode = new OpenApiOAuthFlow
                 {
                     TokenUrl = new Uri(builder.Configuration.GetValue<string>("Host") + "/oauth2/token"),
-                    Scopes = builder.Configuration.GetSection("Jwt").GetSection("Scopes").Get<List<string>>()
+                    Scopes = scopes
                         .ToDictionary(x => x, x => x)
                 }
             }

@@ -91,7 +91,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         var validator = new CheckEligibilityRequestDataValidator_Fsm();
         var sequence = 1;
 
-        foreach (var item in model.Data)
+        foreach (var item in model.Data ?? Enumerable.Empty<CheckEligibilityRequestData_Fsm>())
         {
             item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpper();
             item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpper();
