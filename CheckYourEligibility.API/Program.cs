@@ -10,6 +10,8 @@ using CheckYourEligibility.API.UseCases;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.OpenApi.Models;
+using Notify.Client;
+using Notify.Interfaces;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
@@ -157,6 +159,9 @@ builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityChec
 builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibilityCheckStatusUseCase>();
 builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCheckUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
+builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
+
+builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

@@ -12,5 +12,6 @@ public enum AuditType
     Client,
     Administration,
     BulkCheck,
-    CheckBulkResults
+    CheckBulkResults,
+    Notification
 }

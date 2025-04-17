@@ -40,6 +40,7 @@ public static class ProgramExtensions
         services.AddTransient<ICheckEligibility, CheckEligibilityGateway>();
         services.AddTransient<IApplication, ApplicationGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();
+        services.AddTransient<INotify, NotifyGateway>();
         services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
         services.AddTransient<IUsers, UsersGateway>();
         services.AddTransient<IAudit, AuditGateway>();
@@ -58,9 +59,19 @@ public static class ProgramExtensions
 
     public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        var jwtSettings = new JwtSettings();
+        /* var jwtSettings = new JwtSettings();
         configuration.GetSection("Jwt").Bind(jwtSettings);
         services.AddSingleton(jwtSettings);
+        return services; */
+
+        services.AddTransient(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var jwtSettings = new JwtSettings();
+            config.GetSection("Jwt").Bind(jwtSettings);
+            return jwtSettings;
+        });
+
         return services;
     }
 
@@ -124,6 +135,10 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireEngineScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:engine"] ?? "engine")));
+            
+            options.AddPolicy(PolicyNames.RequireNotificationScope, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasScope(configuration["Jwt:Scopes:notification"] ?? "notification")));
         });
         return services;
     }
