@@ -183,10 +183,8 @@ using (var scope = app.Services.CreateScope())
 
     var context = services.GetRequiredService<IEligibilityCheckContext>() as EligibilityCheckContext;
     
-    context.Database.Migrate();
-
     var env = services.GetRequiredService<IWebHostEnvironment>();
-    if (env.IsDevelopment())
+    if (env.IsDevelopment() && context != null)
     {
         context.Database.Migrate();
 
