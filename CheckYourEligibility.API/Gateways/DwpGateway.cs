@@ -275,17 +275,17 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 _logger.LogInformation("DWP Duplicate matches found");
                 TrackMetric("DWP Duplicate Matches Found", 1);
-                return CheckEligibilityStatus.Error.ToString();
+                return CheckEligibilityStatus.error.ToString();
             }
 
             _logger.LogInformation(
                 $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            return CheckEligibilityStatus.Error.ToString();
+            return CheckEligibilityStatus.error.ToString();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri}");
-            return CheckEligibilityStatus.Error.ToString();
+            return CheckEligibilityStatus.error.ToString();
         }
     }
 

@@ -9,6 +9,7 @@ using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Notify.Client;
 using Notify.Interfaces;
@@ -76,7 +77,10 @@ builder.Services.AddSwaggerGen(c =>
             Title = "ECE Local Authority API - V1",
             Version = "v1",
             Description =
-                "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"
+                "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"+(!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()?
+                    "<br />Test data can be downloaded from <a href='"+builder.Configuration.GetValue<string>("TestData:SampleData")+"'>here</a>.":
+                    ""
+                )
         });
 
     c.AddSecurityDefinition(

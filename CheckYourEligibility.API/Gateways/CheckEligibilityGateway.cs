@@ -288,6 +288,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
+
+        if (_configuration.GetValue<string>("TestData:LastName")==checkData.LastName)
+        {
+            checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
+        }
+        
         if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
         {
             checkResult = await HMRC_Check(checkData);
@@ -306,7 +312,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         result.Status = checkResult;
         result.Updated = DateTime.UtcNow;
 
-        if (checkResult == CheckEligibilityStatus.Error)
+        if (checkResult == CheckEligibilityStatus.error)
         {
             // Revert status back and do not save changes
             result.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -417,13 +423,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 _logger.LogError(
                     $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
-                checkResult = CheckEligibilityStatus.Error;
+                checkResult = CheckEligibilityStatus.error;
             }
         }
         else
         {
             _logger.LogError("Error ECS unknown Response of null");
-            checkResult = CheckEligibilityStatus.Error;
+            checkResult = CheckEligibilityStatus.error;
         }
 
         return checkResult;
@@ -469,7 +475,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             else
             {
                 _logger.LogError($"Error unknown Response status code:-{result.StatusCode}.");
-                checkResult = CheckEligibilityStatus.Error;
+                checkResult = CheckEligibilityStatus.error;
             }
         }
 
@@ -523,7 +529,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         {
                             if (result == null || item.DequeueCount > 1)
                                 await UpdateEligibilityCheckStatus(checkData.Guid,
-                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.Error });
+                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                         }
                     }
@@ -540,4 +546,25 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     #endregion
+
+    private CheckEligibilityStatus TestDataCheck(string? nino,  string? nass)
+    {
+        if (!nino.IsNullOrEmpty())
+        {
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible"))) return CheckEligibilityStatus.eligible;
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible"))) return CheckEligibilityStatus.notEligible;
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound"))) return CheckEligibilityStatus.parentNotFound;
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error"))) return CheckEligibilityStatus.error;
+        }
+        else
+        {
+            nass = nass.Substring(2, 2);
+            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")) return CheckEligibilityStatus.eligible;
+            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")) return CheckEligibilityStatus.notEligible;
+            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")) return CheckEligibilityStatus.parentNotFound;
+            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")) return CheckEligibilityStatus.error;
+        }
+        
+        return CheckEligibilityStatus.parentNotFound;
+    }
 }

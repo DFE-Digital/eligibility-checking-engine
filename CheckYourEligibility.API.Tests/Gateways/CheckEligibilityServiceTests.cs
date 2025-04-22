@@ -703,7 +703,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>()))
-            .ReturnsAsync(CheckEligibilityStatus.Error.ToString());
+            .ReturnsAsync(CheckEligibilityStatus.error.ToString());
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
 
         // Act

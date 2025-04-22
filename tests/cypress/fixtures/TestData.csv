@@ -1,0 +1,9 @@
+Parent National Insurance Number,Parent asylum seeker reference number,Parent Date of Birth,Parent Last Name,Outcome
+NN123456A,,01/01/2000,TESTER,eligible
+PN123456D,,01/01/2000,TESTER,notEligible
+RA123456C,,01/01/2000,TESTER,parentNotFound
+XX123456D,,01/01/2000,TESTER,error
+,119111111,01/01/2000,TESTER,eligible
+,119211111,01/01/2000,TESTER,notEligible
+,119811111,01/01/2000,TESTER,parentNotFound
+,119711111,01/01/2000,TESTER,error
