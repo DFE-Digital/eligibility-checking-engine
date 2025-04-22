@@ -78,7 +78,7 @@ builder.Services.AddSwaggerGen(c =>
             Version = "v1",
             Description =
                 "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"+(!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()?
-                    "<br />Test data can be downloaded from <a href='"+builder.Configuration.GetValue<string>("TestData:SampleData")+"'>here</a>.":
+                    "<br /><br />Test data can be downloaded <a href='"+builder.Configuration.GetValue<string>("TestData:SampleData")+"'>here</a>.":
                     ""
                 )
         });
