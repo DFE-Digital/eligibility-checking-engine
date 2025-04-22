@@ -166,6 +166,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var type = typeof(T);
             if (type == typeof(IList<CheckEligibilityItem>))
             {
+                var sequence = 1;
                 foreach (var result in resultList)
                 {
                     var data = GetCheckProcessData(result.Type, result.CheckData);
@@ -176,8 +177,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         NationalInsuranceNumber = data.NationalInsuranceNumber,
                         LastName = data.LastName,
                         DateOfBirth = data.DateOfBirth,
-                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber
+                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
+                        Sequence = sequence
                     });
+                    sequence++;
                 }
 
                 return (T)items;

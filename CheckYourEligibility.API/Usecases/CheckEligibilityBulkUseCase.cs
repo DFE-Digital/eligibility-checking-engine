@@ -95,7 +95,6 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         {
             item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpper();
             item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpper();
-            item.Sequence = sequence;
 
             var validationResults = validator.Validate(item);
             if (!validationResults.IsValid)
