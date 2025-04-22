@@ -115,7 +115,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
 
         return new JwtAuthResponse
-            { Token = tokenString, expires_in = expiresInSeconds, access_token = tokenString, token_type = "Bearer" };
+            { expires_in = expiresInSeconds, access_token = tokenString, token_type = "Bearer" };
     }
 
     private static bool ValidateSecret(string secret, string expectedSecret)
