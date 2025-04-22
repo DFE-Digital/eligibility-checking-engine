@@ -292,6 +292,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (_configuration.GetValue<string>("TestData:LastName")==checkData.LastName)
         {
             checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
+            source = ProcessEligibilityCheckSource.TEST;
         }
         
         if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
