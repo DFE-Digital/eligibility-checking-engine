@@ -295,19 +295,21 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             source = ProcessEligibilityCheckSource.TEST;
         }
         
-        if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
-        {
-            checkResult = await HMRC_Check(checkData);
-            if (checkResult == CheckEligibilityStatus.parentNotFound)
+        else {
+            if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
-                checkResult = await DWP_Check(checkData);
-                source = ProcessEligibilityCheckSource.DWP;
+                checkResult = await HMRC_Check(checkData);
+                if (checkResult == CheckEligibilityStatus.parentNotFound)
+                {
+                    checkResult = await DWP_Check(checkData);
+                    source = ProcessEligibilityCheckSource.DWP;
+                }
             }
-        }
-        else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
-        {
-            checkResult = await HO_Check(checkData);
-            source = ProcessEligibilityCheckSource.HO;
+            else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
+            {
+                checkResult = await HO_Check(checkData);
+                source = ProcessEligibilityCheckSource.HO;
+            }
         }
 
         result.Status = checkResult;
