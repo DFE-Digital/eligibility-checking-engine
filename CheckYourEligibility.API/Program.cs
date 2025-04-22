@@ -60,6 +60,7 @@ if (Environment.GetEnvironmentVariable("API_KEY_VAULT_NAME") != null)
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1-admin",
@@ -176,8 +177,6 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Add Authorization
 builder.Services.AddAuthorization(builder.Configuration);
-
-builder.Services.AddHealthChecks();
 
 builder.Services.AddSwaggerGen(c => { c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); });
 
