@@ -240,7 +240,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
     #region Private
 
-    private string GetReference()
+    /* private string GetReference()
     {
         var unique = false;
         var nextReference = string.Empty;
@@ -251,6 +251,40 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
 
         return nextReference;
+    } */
+
+    private string GetReference()
+    {
+        const int maxAttempts = 5;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            // timestamp ticks to genereate a reference
+            string timestamp = DateTime.UtcNow.Ticks.ToString();
+            string reference = timestamp.Substring(timestamp.Length - 8);
+
+            if (_db.Applications.FirstOrDefault(x => x.Reference == reference) == null)
+            {
+                return reference;
+            }
+
+            // Reference exists, wait a bit and try again
+            Task.Delay(5).Wait();
+        }
+
+        // Fallback: add a random suffix to virtually guarantee uniqueness
+        string finalTimestamp = DateTime.UtcNow.Ticks.ToString();
+        string randomSuffix = randomNumber.Next(10, 100).ToString();
+        string fallbackReference = finalTimestamp.Substring(finalTimestamp.Length - 6) + randomSuffix;
+
+        // safe check for uniqueness
+        if (_db.Applications.FirstOrDefault(x => x.Reference == fallbackReference) == null)
+        {
+            return fallbackReference;
+        }
+
+        // Final fallback
+        return Guid.NewGuid().ToString("N").Substring(0, 8);
     }
 
 
