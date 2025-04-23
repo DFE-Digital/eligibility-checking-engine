@@ -125,7 +125,19 @@ export function validApplicationRequestBody() {
             ChildLastName: "Crittenden",
             ChildDateOfBirth: "2007-08-14",
             UserId: "bc2b0328-9bf6-4a2f-901d-ea694c2b0838",
-            ParentEmail :"PostmanTest@test.com"
+            ParentEmail :"PostmanTest@test.com",
+            Evidence: [
+                {
+                    "fileName": "Proof_of_Income.pdf",
+                    "fileType": "application/pdf",
+                    "storageAccountReference": "container/user123/proof_of_income_20250414.pdf"
+                },
+                {
+                    "fileName": "Address_Verification.jpg",
+                    "fileType": "image/jpeg",
+                    "storageAccountReference": "container/user123/address_verification_20250414.jpg"
+                }
+            ]
         }
     }
 }
