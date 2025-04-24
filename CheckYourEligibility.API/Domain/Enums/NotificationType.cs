@@ -4,5 +4,7 @@ namespace CheckYourEligibility.API.Domain.Enums;
 
 public enum NotificationType
 {
-    ParentApplicationCreated
+    ParentApplicationCreated,
+    ParentApplicationEvidenceSent,
+    ParentApplicationSuccessful,
 }
