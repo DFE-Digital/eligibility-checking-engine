@@ -123,6 +123,7 @@ builder.Services.AddSwaggerGen(c =>
         if (docName == "v1-admin") return true;
         if (apiDesc.RelativePath.StartsWith("check/")) return true;
         if (apiDesc.RelativePath.StartsWith("bulk-check/")) return true;
+        if (apiDesc.RelativePath.StartsWith("oauth2/")) return true;
 
         return false;
     });
