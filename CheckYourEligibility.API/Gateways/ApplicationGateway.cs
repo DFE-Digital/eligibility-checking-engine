@@ -49,7 +49,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             if (hashCheck.Outcome == CheckEligibilityStatus.eligible)
                 item.Status = ApplicationStatus.Entitled;
             else
-                item.Status = ApplicationStatus.EvidenceNeeded;
+                item.Status = ApplicationStatus.SentForReview;
 
             try
             {

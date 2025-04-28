@@ -151,7 +151,7 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         // Assert
         response.Result.Should().BeOfType<ApplicationResponse>();
-        response.Result.Status.Should().BeEquivalentTo(ApplicationStatus.EvidenceNeeded.ToString());
+        response.Result.Status.Should().BeEquivalentTo(ApplicationStatus.SentForReview.ToString());
     }
 
     [Test]
