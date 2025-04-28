@@ -6,5 +6,6 @@ public enum ProcessEligibilityCheckSource
 {
     HMRC,
     DWP,
-    HO
+    HO,
+    TEST
 }

@@ -34,6 +34,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.LocalAuthorityId, opt => opt.Ignore())
             .ForMember(dest => dest.EstablishmentId, opt => opt.MapFrom(src => src.Establishment))
             .ForMember(dest => dest.Establishment, opt => opt.Ignore())
+            .ForMember(dest => dest.Evidence, opt => opt.Ignore())
+            .ReverseMap();
+        
+        CreateMap<Boundary.Shared.ApplicationEvidence, ApplicationEvidence>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Application, opt => opt.Ignore())
+            .ForMember(dest => dest.ApplicationID, opt => opt.Ignore())
             .ReverseMap();
 
         CreateMap<Application, ApplicationResponse>()
@@ -45,6 +52,7 @@ public class MappingProfile : Profile
             .ForMember(x => x.ParentDateOfBirth, y => y.MapFrom(z => z.ParentDateOfBirth.ToString("yyyy-MM-dd")))
             .ForMember(x => x.ChildDateOfBirth, y => y.MapFrom(z => z.ChildDateOfBirth.ToString("yyyy-MM-dd")))
             .ForMember(x => x.Status, y => y.MapFrom(z => z.Status.ToString()))
+            .ForMember(x => x.Evidence, y => y.MapFrom(z => z.Evidence))
             .ReverseMap();
 
         CreateMap<Establishment, ApplicationEstablishment>()

@@ -46,6 +46,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly double _DWP_UniversalCreditThreshhold_2;
     private readonly double _DWP_UniversalCreditThreshhold_3;
     private readonly HttpClient _httpClient;
+    private bool _ran = false;
 
     private readonly ILogger _logger;
     private readonly bool _UseEcsforChecks;
@@ -106,8 +107,12 @@ public class DwpGateway : BaseGateway, IDwpGateway
             var soapResponse = new SoapFsmCheckRespone();
             try
             {
-                _httpClient.DefaultRequestHeaders.Add("SOAPAction",
-                    "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
+                if (!_ran)
+                {
+                    _httpClient.DefaultRequestHeaders.Add("SOAPAction",
+                        "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
+                    _ran = true;
+                }
 
                 var response = await _httpClient.PostAsync(uri, content);
                 if (response.IsSuccessStatusCode)
@@ -284,17 +289,17 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 _logger.LogInformation("DWP Duplicate matches found");
                 TrackMetric("DWP Duplicate Matches Found", 1);
-                return CheckEligibilityStatus.Error.ToString();
+                return CheckEligibilityStatus.error.ToString();
             }
 
             _logger.LogInformation(
                 $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            return CheckEligibilityStatus.Error.ToString();
+            return CheckEligibilityStatus.error.ToString();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri}");
-            return CheckEligibilityStatus.Error.ToString();
+            return CheckEligibilityStatus.error.ToString();
         }
     }
 

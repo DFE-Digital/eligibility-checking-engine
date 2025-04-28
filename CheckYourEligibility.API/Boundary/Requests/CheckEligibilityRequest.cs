@@ -6,7 +6,6 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
     protected CheckEligibilityType baseType;
     public CheckEligibilityType Type => baseType;
-    public int? Sequence { get; set; }
 }
 
 public interface IEligibilityServiceType

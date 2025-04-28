@@ -35,6 +35,7 @@ describe('GET eligibility soft check by Guid', () => {
                                 // Assert the response 
                                 cy.verifyApiResponseCode(newResponse, 200)
                                 cy.log(JSON.stringify(validApplicationRequest))
+                                cy.log(JSON.stringify(newResponse))
                                 cy.verifyGetApplicationResponse(newResponse, validApplicationRequest)
                             })
                         });

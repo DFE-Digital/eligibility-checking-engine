@@ -1,6 +1,7 @@
 ﻿// Ignore Spelling: Fsm
 
 using System.Diagnostics.CodeAnalysis;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.Boundary.Requests;
@@ -24,4 +25,5 @@ public class ApplicationRequestData
     public string ChildLastName { get; set; } = string.Empty;
     public string ChildDateOfBirth { get; set; } = string.Empty;
     public string? UserId { get; set; }
+    public List<Shared.ApplicationEvidence>? Evidence { get; set; }
 }
