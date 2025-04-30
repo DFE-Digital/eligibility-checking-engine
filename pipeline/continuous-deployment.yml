@@ -108,7 +108,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203d.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-dev-as'
+                WebAppName: 'ece-dev-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
 
   - stage: RunCypressTestsDev
@@ -195,7 +195,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203t.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-test-as'
+                WebAppName: 'ece-test-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
               
   - stage: RunCypressTestsTest
@@ -282,7 +282,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203t.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-pp-as'
+                WebAppName: 'ece-pp-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
                 
   - stage: RunCypressTestsPp
@@ -369,5 +369,5 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203p.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-as'
+                WebAppName: 'ece-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'

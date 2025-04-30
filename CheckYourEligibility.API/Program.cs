@@ -43,9 +43,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Configure Azure Key Vault if environment variable is set
-if (Environment.GetEnvironmentVariable("API_KEY_VAULT_NAME") != null)
+if (Environment.GetEnvironmentVariable("ECE_KEY_VAULT_NAME") != null)
 {
-    var keyVaultName = Environment.GetEnvironmentVariable("API_KEY_VAULT_NAME");
+    var keyVaultName = Environment.GetEnvironmentVariable("ECE_KEY_VAULT_NAME");
     var kvUri = $"https://{keyVaultName}.vault.azure.net";
 
     builder.Configuration.AddAzureKeyVault(
