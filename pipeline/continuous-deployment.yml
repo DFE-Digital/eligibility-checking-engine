@@ -177,7 +177,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Run Migrations'
               env:
-                ECE_VAULT_NAME: ece-test-kv-api
+                ECE_KEY_VAULT_NAME: ece-test-kv-api
               inputs:
                 azureSubscription: 's203t.azdo.deployment'
                 scriptType: 'bash'
