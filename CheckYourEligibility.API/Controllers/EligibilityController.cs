@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -96,6 +97,25 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            // Ensure we have a Data object
+            if (model.Data == null)
+            {
+                model.Data = new CheckEligibilityRequestData_Fsm();
+            }
+
+            if (HttpContext.Request.Path.Value.EndsWith("/two-year-offer"))
+            {
+                model.Data.Type = CheckEligibilityType.TwoYearOffer;
+            }
+            else if (HttpContext.Request.Path.Value.EndsWith("/early-year-pupil-premium"))
+            {
+                model.Data.Type = CheckEligibilityType.EarlyYearPupilPremium;
+            }
+            else
+            {
+                model.Data.Type = CheckEligibilityType.FreeSchoolMeals;
+            }
+            
             var result = await _checkEligibilityForFsmUseCase.Execute(model);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
@@ -123,6 +143,34 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            CheckEligibilityType eligibilityType = CheckEligibilityType.FreeSchoolMeals;
+            
+            if (HttpContext.Request.Path.Value.EndsWith("/two-year-offer"))
+            {
+                eligibilityType = CheckEligibilityType.TwoYearOffer;
+            }
+            else if (HttpContext.Request.Path.Value.EndsWith("/early-year-pupil-premium"))
+            {
+                eligibilityType = CheckEligibilityType.EarlyYearPupilPremium;
+            }
+
+            if (model.Data == null)
+            {
+                model.Data = new List<CheckEligibilityRequestData_Fsm>();
+            }
+            else
+            {
+                // Set the type for each item in the collection
+                // This ensures each item uses the correct eligibility type based on the endpoint URL
+                foreach (var item in model.Data)
+                {
+                    if (item != null)
+                    {
+                        item.Type = eligibilityType;
+                    }
+                }
+            }
+            
             var result = await _checkEligibilityBulkUseCase.Execute(model, _bulkUploadRecordCountLimit);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };

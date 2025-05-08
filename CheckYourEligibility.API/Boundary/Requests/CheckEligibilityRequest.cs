@@ -4,12 +4,13 @@ namespace CheckYourEligibility.API.Boundary.Requests;
 
 public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
+    // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
     
     public CheckEligibilityType Type 
     { 
         get => baseType; 
-        set => baseType = value;
+        set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
     }
 }
 
