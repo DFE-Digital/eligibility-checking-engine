@@ -89,7 +89,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Run Migrations'
               env:
-                API_KEY_VAULT_NAME: ece-dev-kv-api
+                ECE_KEY_VAULT_NAME: ece-dev-kv-api
               inputs:
                 azureSubscription: 's203d.azdo.deployment'
                 scriptType: 'bash'
@@ -108,7 +108,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203d.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-dev-as'
+                WebAppName: 'ece-dev-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
 
   - stage: RunCypressTestsDev
@@ -177,7 +177,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Run Migrations'
               env:
-                API_KEY_VAULT_NAME: ece-test-kv-api
+                ECE_KEY_VAULT_NAME: ece-test-kv-api
               inputs:
                 azureSubscription: 's203t.azdo.deployment'
                 scriptType: 'bash'
@@ -195,7 +195,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203t.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-test-as'
+                WebAppName: 'ece-test-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
               
   - stage: RunCypressTestsTest
@@ -264,7 +264,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Run Migrations'
               env:
-                API_KEY_VAULT_NAME: ece-pp-kv-api
+                ECE_KEY_VAULT_NAME: ece-pp-kv-api
               inputs:
                 azureSubscription: 's203t.azdo.deployment'
                 scriptType: 'bash'
@@ -282,7 +282,7 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203t.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-pp-as'
+                WebAppName: 'ece-pp-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
                 
   - stage: RunCypressTestsPp
@@ -351,7 +351,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Run Migrations'
               env:
-                API_KEY_VAULT_NAME: ece-kv-api
+                ECE_KEY_VAULT_NAME: ece-kv-api
               inputs:
                 azureSubscription: 's203p.azdo.deployment'
                 scriptType: 'bash'
@@ -369,5 +369,5 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 's203p.azdo.deployment'
                 appType: 'webApp'
-                WebAppName: 'ece-as'
+                WebAppName: 'ece-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'

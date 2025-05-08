@@ -142,6 +142,7 @@ public class AdministrationGateway : IAdministration
                 .SetProperty(b => b.Street, item.Street)
                 .SetProperty(b => b.Postcode, item.Postcode)
                 .SetProperty(b => b.County, item.County)
+                .SetProperty(b => b.StatusOpen, item.StatusOpen)
                 .SetProperty(b => b.Locality, item.Locality)
                 .SetProperty(b => b.Town, item.Town)
                 .SetProperty(b => b.Type, item.Type)
