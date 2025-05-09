@@ -2,9 +2,9 @@
 
 public class QueueMessageCheck
 {
-    public string Type { get; set; }
-    public string Guid { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Guid { get; set; } = string.Empty;
 
-    public string ProcessUrl { get; set; }
-    public string SetStatusUrl { get; set; }
+    public string ProcessUrl { get; set; } = string.Empty;
+    public string SetStatusUrl { get; set; } = string.Empty;
 }

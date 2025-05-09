@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Xml.Linq;
@@ -51,25 +53,29 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     public DwpGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
+        if (configuration == null)
+            throw new ArgumentNullException(nameof(configuration));
+
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _httpClient = httpClient;
         _configuration = configuration;
-        _controllerUrl = _configuration["Dwp:ApiControllerUrl"];
-        _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"];
-        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];
-        _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"];
-        _DWP_ApiContext = _configuration["Dwp:ApiContext"];
-        _DWP_AccessLevel = _configuration["Dwp:AccessLevel"];
+
+        _controllerUrl = _configuration["Dwp:ApiControllerUrl"] ?? string.Empty;
+        _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"] ?? string.Empty;
+        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"] ?? string.Empty;
+        _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"] ?? string.Empty;
+        _DWP_ApiContext = _configuration["Dwp:ApiContext"] ?? string.Empty;
+        _DWP_AccessLevel = _configuration["Dwp:AccessLevel"] ?? string.Empty;
         double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-1"], out _DWP_UniversalCreditThreshhold_1);
         double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-2"], out _DWP_UniversalCreditThreshhold_2);
         double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-3"], out _DWP_UniversalCreditThreshhold_3);
 
         bool.TryParse(_configuration["Dwp:UseEcsforChecks"], out _UseEcsforChecks);
-        _DWP_EcsHost = _configuration["Dwp:EcsHost"];
-        _DWP_EcsServiceVersion = _configuration["Dwp:EcsServiceVersion"];
-        _DWP_EcsLAId = _configuration["Dwp:EcsLAId"];
-        _DWP_EcsSystemId = _configuration["Dwp:EcsSystemId"];
-        _DWP_EcsPassword = _configuration["Dwp:EcsPassword"];
+        _DWP_EcsHost = _configuration["Dwp:EcsHost"] ?? string.Empty;
+        _DWP_EcsServiceVersion = _configuration["Dwp:EcsServiceVersion"] ?? string.Empty;
+        _DWP_EcsLAId = _configuration["Dwp:EcsLAId"] ?? string.Empty;
+        _DWP_EcsSystemId = _configuration["Dwp:EcsSystemId"] ?? string.Empty;
+        _DWP_EcsPassword = _configuration["Dwp:EcsPassword"] ?? string.Empty;
     }
 
     bool IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
@@ -112,14 +118,16 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 if (response.IsSuccessStatusCode)
                 {
                     var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
-                    var namespacePrefix = doc.Root.GetNamespaceOfPrefix("s");
+                    var root = doc.Root ?? throw new InvalidOperationException("XML document has no root element.");
+                    var namespacePrefix = root.GetNamespaceOfPrefix("s") ?? throw new InvalidOperationException("Namespace prefix 's' not found.");
+                    
                     var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
                     var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
                     soapResponse.Status = xElement.Value;
                     xElement = elements.First(x => x.Name.LocalName == "ErrorCode");
                     soapResponse.ErrorCode = xElement.Value;
                     xElement = elements.FirstOrDefault(x => x.Name.LocalName == "Qualifier");
-                    soapResponse.Qualifier = xElement.Value;
+                    soapResponse.Qualifier = xElement?.Value ?? string.Empty;
                     return soapResponse;
                 }
 
@@ -159,7 +167,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
+                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString)
+                     ?? throw new InvalidOperationException("Failed to deserialize DwpClaimsResponse.");
                 if (CheckBenefitEntitlement(guid, claims)) return new OkResult();
 
                 return new NotFoundResult();
@@ -271,7 +280,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 var responseData =
                     JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
-                return responseData.Data.Id;
+                return responseData?.Data.Id;
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound) return CheckEligibilityStatus.parentNotFound.ToString();

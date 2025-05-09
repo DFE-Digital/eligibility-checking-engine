@@ -37,9 +37,7 @@ public class ImportEstablishmentsUseCase : IImportEstablishmentsUseCase
         {
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                HasHeaderRecord = true,
-                BadDataFound = null,
-                MissingFieldFound = null
+                HasHeaderRecord = true
             };
             using (var fileStream = file.OpenReadStream())
             using (var csv = new CsvReader(new StreamReader(fileStream), config))

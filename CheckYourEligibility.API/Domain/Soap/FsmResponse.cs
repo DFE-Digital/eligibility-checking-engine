@@ -1,6 +1,6 @@
 ﻿public class SoapFsmCheckRespone
 {
-    public string Status { get; set; }
-    public string ErrorCode { get; set; }
-    public string Qualifier { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string ErrorCode { get; set; } = string.Empty;
+    public string Qualifier { get; set; } = string.Empty;
 }

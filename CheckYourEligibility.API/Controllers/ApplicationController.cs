@@ -82,7 +82,7 @@ public class ApplicationController : BaseController
 
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }

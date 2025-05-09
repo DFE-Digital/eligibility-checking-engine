@@ -63,7 +63,7 @@ public class AuditGateway : BaseGateway, IAudit
                     typeId = id,
                     url = $"{host}{path}",
                     method = method,
-                    source = remoteIpAddress.ToString(),
+                    source = remoteIpAddress != null ? remoteIpAddress.ToString() : string.Empty,
                     authentication = auth,
                     scope = scope
                 };

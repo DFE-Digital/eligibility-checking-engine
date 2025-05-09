@@ -21,9 +21,9 @@ public class UpdateApplicationStatusUseCase : IUpdateApplicationStatusUseCase
         _auditGateway = auditGateway;
     }
 
-    public async Task<ApplicationStatusUpdateResponse> Execute(string guid, ApplicationStatusUpdateRequest model)
+    public async Task<ApplicationStatusUpdateResponse?> Execute(string guid, ApplicationStatusUpdateRequest model)
     {
-        var response = await _applicationGateway.UpdateApplicationStatus(guid, model.Data);
+        var response = await _applicationGateway.UpdateApplicationStatus(guid, model.Data!);
         if (response == null) return null;
 
         await _auditGateway.CreateAuditEntry(AuditType.Application, guid);

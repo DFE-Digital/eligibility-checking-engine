@@ -8,5 +8,5 @@ public class LocalAuthority
 {
     [Key] public int LocalAuthorityId { get; set; }
 
-    public string LaName { get; set; }
+    public string LaName { get; set; } = string.Empty;
 }

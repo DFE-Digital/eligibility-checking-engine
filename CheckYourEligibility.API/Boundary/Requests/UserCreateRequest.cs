@@ -9,6 +9,6 @@ public class UserCreateRequest
 
 public class UserData
 {
-    public string Email { get; set; }
-    public string Reference { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
 }

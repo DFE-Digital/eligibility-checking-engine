@@ -40,8 +40,11 @@ public class CreateApplicationUseCase : ICreateApplicationUseCase
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
 
         var response = await _applicationGateway.PostApplication(model.Data);
-        if (response != null) await _auditGateway.CreateAuditEntry(AuditType.Application, response.Id);
 
+        if (response == null)
+            throw new Exception("PostApplication returned null");
+        
+        await _auditGateway.CreateAuditEntry(AuditType.Application, response.Id);
 
         return new ApplicationSaveItemResponse
         {

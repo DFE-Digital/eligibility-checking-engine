@@ -44,11 +44,15 @@ public class BaseController : Controller
             var path = HttpContext.Request.Path;
             var method = HttpContext.Request.Method;
             var auth = HttpContext.User.Claims.FirstOrDefault(x =>
-                x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
+                x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
             return new AuditData
             {
-                Type = type, typeId = id, url = $"{host}{path}", method = method, source = remoteIpAddress.ToString(),
-                authentication = auth
+                Type = type, 
+                typeId = id, 
+                url = $"{host}{path}", 
+                method = method, 
+                source = remoteIpAddress != null ? remoteIpAddress.ToString() : string.Empty,
+                authentication = auth ?? string.Empty
             };
         }
 

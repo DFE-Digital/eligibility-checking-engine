@@ -10,11 +10,11 @@ public class FreeSchoolMealsHMRC
     ///     NINO
     /// </summary>
     [Column(TypeName = "varchar(50)")]
-    public string FreeSchoolMealsHMRCID { get; set; }
+    public string FreeSchoolMealsHMRCID { get; set; } = string.Empty;
 
     public int DataType { get; set; }
 
     public DateTime DateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string Surname { get; set; }
+    [Column(TypeName = "varchar(100)")] public string Surname { get; set; } = string.Empty;
 }

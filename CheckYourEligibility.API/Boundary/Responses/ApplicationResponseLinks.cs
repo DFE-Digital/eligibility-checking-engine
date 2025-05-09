@@ -2,5 +2,5 @@
 
 public class ApplicationResponseLinks
 {
-    public string get_Application { get; set; }
+    public string get_Application { get; set; } = string.Empty;
 }

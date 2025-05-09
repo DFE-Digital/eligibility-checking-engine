@@ -2,17 +2,25 @@
   "dependencies": {
     "@azure/identity": "^4.2.1",
     "@azure/keyvault-secrets": "^4.8.0",
-    "cypress": "^13.12.0",
     "cypress-plugin-api": "^2.11.1",
     "junit-report-merger": "^7.0.0",
-    "open": "^10.1.0",
-    "typescript": "^5.4.5"
+    "open": "^10.1.0"
   },
   "scripts": {
     "e2e:electron": "cypress run --browser electron",
     "combine:reports": "jrm results/combined-report.xml \"results/*.xml\""
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.2.0"
-  }
+    "@faker-js/faker": "^9.2.0",
+    "cypress": "^14.2.0",
+    "typescript": "^5.8.2"
+  },
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "Cypress Setup User Guide\r Introduction\r This guide will walk you through the steps required to install and run Cypress with TypeScript locally.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }

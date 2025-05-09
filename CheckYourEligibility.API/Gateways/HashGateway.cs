@@ -84,7 +84,7 @@ public class HashGateway : BaseGateway, IHash
     private string GetHash(CheckProcessData item)
     {
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
-            ? item.NationalAsylumSeekerServiceNumber.ToUpper()
+            ? item.NationalAsylumSeekerServiceNumber?.ToUpper()
             : item.NationalInsuranceNumber.ToUpper();
         var input = $"{item.LastName.ToUpper()}{key}{item.DateOfBirth}{item.Type}";
         var inputBytes = Encoding.UTF8.GetBytes(input);

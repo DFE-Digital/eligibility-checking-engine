@@ -9,9 +9,9 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class EligibilityCheckHash
 {
-    public string EligibilityCheckHashID { get; set; }
+    public string EligibilityCheckHashID { get; set; } = string.Empty;
 
-    [Column(TypeName = "varchar(5000)")] public string Hash { get; set; }
+    [Column(TypeName = "varchar(5000)")] public string Hash { get; set; } = string.Empty;
 
     [Column(TypeName = "varchar(100)")] public CheckEligibilityType Type { get; set; }
 

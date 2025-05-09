@@ -4,7 +4,7 @@ namespace CheckYourEligibility.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
-    public static string GetLocalAuthorityId(this ClaimsPrincipal user, string localAuthorityScopeName)
+    public static string? GetLocalAuthorityId(this ClaimsPrincipal user, string localAuthorityScopeName)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
 

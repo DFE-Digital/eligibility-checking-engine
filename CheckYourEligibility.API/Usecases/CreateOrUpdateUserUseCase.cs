@@ -31,6 +31,9 @@ public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
 
     public async Task<UserSaveItemResponse> Execute(UserCreateRequest model)
     {
+        if (model.Data == null)
+            throw new ArgumentNullException(nameof(model));
+
         var response = await _userGateway.Create(model.Data);
 
         await _auditGateway.CreateAuditEntry(AuditType.User, response);
