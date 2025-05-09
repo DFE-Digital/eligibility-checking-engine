@@ -69,6 +69,17 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockProcessEligibilityCheckUseCase.Object,
             _mockGetEligibilityCheckItemUseCase.Object
         );
+        
+        // Setup default HttpContext with a Mock HttpRequest
+        var httpContext = new DefaultHttpContext();
+        var request = new Mock<HttpRequest>();
+        var path = new PathString("/check/free-school-meals");
+        request.Setup(r => r.Path).Returns(path);
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext()
+        {
+            HttpContext = httpContext
+        };
     }
 
     [TearDown]
@@ -168,6 +179,15 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestBulk_Fsm>();
         var executionResult = new CheckEligibilityResponseBulk();
 
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/free-school-meals");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext()
+        {
+            HttpContext = httpContext
+        };
+
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
@@ -188,6 +208,15 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestBulk_Fsm>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
+
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/free-school-meals");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext()
+        {
+            HttpContext = httpContext
+        };
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
