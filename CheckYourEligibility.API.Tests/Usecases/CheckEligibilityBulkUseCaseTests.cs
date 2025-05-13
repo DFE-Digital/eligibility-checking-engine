@@ -57,7 +57,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var limit = 5;
-        var data = _fixture.CreateMany<CheckEligibilityRequestData_Fsm>(limit + 1).ToList();
+        var data = _fixture.CreateMany<CheckEligibilityRequestBulkData_Fsm>(limit + 1).ToList();
         var model = new CheckEligibilityRequestBulk_Fsm { Data = data };
 
         // Act
@@ -73,7 +73,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         // Create a request with invalid data that will fail validation
-        var data = new List<CheckEligibilityRequestData_Fsm>
+        var data = new List<CheckEligibilityRequestBulkData_Fsm>
         {
             new() // Empty properties will fail validation
             {
@@ -93,7 +93,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     public async Task Execute_calls_gateways_with_correct_parameters_when_valid()
     {
         // Arrange
-        var data = new List<CheckEligibilityRequestData_Fsm>
+        var data = new List<CheckEligibilityRequestBulkData_Fsm>
         {
             new()
             {
@@ -130,7 +130,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var nino = "ab123456c";
-        var data = new List<CheckEligibilityRequestData_Fsm>
+        var data = new List<CheckEligibilityRequestBulkData_Fsm>
         {
             new()
             {
@@ -160,7 +160,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         // Create a derived class to simulate wrong type
-        var data = new List<CheckEligibilityRequestData_Fsm>
+        var data = new List<CheckEligibilityRequestBulkData_Fsm>
         {
             new()
             {
