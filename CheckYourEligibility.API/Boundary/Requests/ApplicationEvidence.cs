@@ -1,6 +1,6 @@
 using System;
 
-namespace CheckYourEligibility.API.Boundary.Shared;
+namespace CheckYourEligibility.API.Boundary.Requests;
 
 public class ApplicationEvidence
 {

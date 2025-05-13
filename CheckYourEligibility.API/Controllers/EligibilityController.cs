@@ -156,7 +156,7 @@ public class EligibilityCheckController : BaseController
 
             if (model.Data == null)
             {
-                model.Data = new List<CheckEligibilityRequestData_Fsm>();
+                model.Data = new List<CheckEligibilityRequestBulkData_Fsm>();
             }
             else
             {

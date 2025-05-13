@@ -178,7 +178,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         LastName = data.LastName,
                         DateOfBirth = data.DateOfBirth,
                         NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
-                        Sequence = sequence
                     });
                     sequence++;
                 }

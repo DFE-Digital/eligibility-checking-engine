@@ -1,4 +1,4 @@
-﻿using CheckYourEligibility.API.Boundary.Shared;
+﻿using CheckYourEligibility.API.Boundary.Responses;
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 

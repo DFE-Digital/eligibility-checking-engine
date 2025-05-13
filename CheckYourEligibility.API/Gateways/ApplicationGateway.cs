@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 
 namespace CheckYourEligibility.API.Gateways;
