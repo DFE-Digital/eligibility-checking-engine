@@ -525,15 +525,15 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.eligible);
 
-        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
         {
-            new Boundary.Shared.ApplicationEvidence
+            new Boundary.Requests.ApplicationEvidence
             {
                 FileName = "test-document.pdf",
                 FileType = "application/pdf",
                 StorageAccountReference = "container/test-reference-123"
             },
-            new Boundary.Shared.ApplicationEvidence
+            new Boundary.Requests.ApplicationEvidence
             {
                 FileName = "proof-of-address.jpg",
                 FileType = "image/jpeg",
@@ -560,9 +560,9 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
-        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
         {
-            new Boundary.Shared.ApplicationEvidence
+            new Boundary.Requests.ApplicationEvidence
             {
                 FileName = "test-evidence.pdf",
                 FileType = "application/pdf",
@@ -592,9 +592,9 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
 
-        request.Evidence = new List<Boundary.Shared.ApplicationEvidence>
+        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
         {
-            new Boundary.Shared.ApplicationEvidence
+            new Boundary.Requests.ApplicationEvidence
             {
                 FileName = "search-test-doc.pdf",
                 FileType = "application/pdf",

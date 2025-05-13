@@ -31,6 +31,12 @@ public class CheckEligibilityRequestData_Fsm : CheckEligibilityRequestDataBase
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
+public class CheckEligibilityRequestBulkData_Fsm : CheckEligibilityRequestData_Fsm
+{
+    public string? ClientIdentifier { get; set; }
+}
+
+
 public class CheckEligibilityRequest_Fsm
 {
     public CheckEligibilityRequestData_Fsm? Data { get; set; }
@@ -38,7 +44,7 @@ public class CheckEligibilityRequest_Fsm
 
 public class CheckEligibilityRequestBulk_Fsm
 {
-    public IEnumerable<CheckEligibilityRequestData_Fsm> Data { get; set; }
+    public IEnumerable<CheckEligibilityRequestBulkData_Fsm> Data { get; set; }
 }
 
 #endregion

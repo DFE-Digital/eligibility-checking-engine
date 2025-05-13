@@ -67,7 +67,7 @@ builder.Services.AddSwaggerGen(c =>
         new OpenApiInfo
         {
             Title = "ECE API - V1",
-            Version = "v1-admin",
+            Version = "v1.4-admin",
             Description =
                 "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"
         }
@@ -76,7 +76,7 @@ builder.Services.AddSwaggerGen(c =>
         new OpenApiInfo
         {
             Title = "ECE Local Authority API - V1",
-            Version = "v1",
+            Version = "v1.4",
             Description =
                 "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"+(!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()?
                     "<br /><br />Test data can be downloaded <a href='"+builder.Configuration.GetValue<string>("TestData:SampleData")+"'>here</a>.":

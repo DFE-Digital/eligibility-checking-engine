@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using static CheckYourEligibility.API.Boundary.Responses.ApplicationResponse;
+using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
 using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Data.Mappings;
@@ -37,7 +38,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ReverseMap();
         
-        CreateMap<Boundary.Shared.ApplicationEvidence, ApplicationEvidence>()
+        CreateMap<Boundary.Responses.ApplicationEvidence, ApplicationEvidence>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.Application, opt => opt.Ignore())
             .ForMember(dest => dest.ApplicationID, opt => opt.Ignore())

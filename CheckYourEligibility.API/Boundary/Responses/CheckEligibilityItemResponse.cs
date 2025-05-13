@@ -10,7 +10,7 @@ public class CheckEligibilityItem
 
     public string NationalAsylumSeekerServiceNumber { get; set; }
     
-    public int Sequence { get; set; }
+    public string? ClientIdentifier { get; set; }
 
     public string Status { get; set; }
 
