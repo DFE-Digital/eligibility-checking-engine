@@ -159,8 +159,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.Group == guid)
-            .OrderBy(x => x.Sequence);
+            .Where(x => x.Group == guid);
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
