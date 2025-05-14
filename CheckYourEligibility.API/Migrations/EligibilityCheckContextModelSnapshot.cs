@@ -206,6 +206,9 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ClientIdentifier")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
@@ -214,9 +217,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("Group")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("Sequence")
-                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
