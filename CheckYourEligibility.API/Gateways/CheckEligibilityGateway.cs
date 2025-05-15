@@ -159,8 +159,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.Group == guid)
-            .OrderBy(x => x.Sequence);
+            .Where(x => x.Group == guid);
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -178,6 +177,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         LastName = data.LastName,
                         DateOfBirth = data.DateOfBirth,
                         NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
+                        ClientIdentifier = data.ClientIdentifier
                     });
                     sequence++;
                 }
@@ -343,7 +343,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.FreeSchoolMeals:
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestData_Fsm>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestBulkData_Fsm>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
@@ -360,7 +360,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             LastName = checkItem.LastName.ToUpper(),
             NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-            Type = type
+            Type = type,
+            ClientIdentifier = checkItem.ClientIdentifier
         };
     }
 
