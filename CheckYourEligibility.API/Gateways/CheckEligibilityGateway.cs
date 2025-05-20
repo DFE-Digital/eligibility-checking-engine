@@ -530,19 +530,30 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                             source = "queueProcess",
                             url = "."
                         });
-                        if (result == null || result != CheckEligibilityStatus.queuedForProcessing ||
-                            item.DequeueCount > 1)
+                        // When status is Queued For Processing, i.e. not error
+                        if (result == CheckEligibilityStatus.queuedForProcessing)
                         {
-                            if (result == null || item.DequeueCount > 1)
+                            //If item doesn't exist, or we've tried more than retry limit
+                            if (result == null || item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                            {
+                                //Delete message and update status to error
                                 await UpdateEligibilityCheckStatus(checkData.Guid,
                                     new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
+                                await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            }
+                        }
+
+                        // If status is not queued for Processing, we have a conclusive answer
+                        else {
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Queue processing");
-                        await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                        // If we've had exceptions on this item more than retry limit
+                        if(item.DequeueCount >= _configuration.GetValue<int>("QueueRetries")) 
+                            await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                     }
                 }
 
