@@ -26,7 +26,6 @@ internal static class DataValidation
 
     internal static bool BeAValidName(string value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return false;
         var regexString =
             @"^[a-zA-Z ,.'-]+$";
         var rg = new Regex(regexString);
