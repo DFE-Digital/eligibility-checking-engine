@@ -232,6 +232,37 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return Convert.ToHexString(inputHash);
     }
 
+    private CheckEligibilityStatus TestDataCheck(string? nino, string? nass)
+    {
+        if (!nino.IsNullOrEmpty())
+        {
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
+                return CheckEligibilityStatus.eligible;
+            if (nino.StartsWith(
+                    _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
+                return CheckEligibilityStatus.notEligible;
+            if (nino.StartsWith(
+                    _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")))
+                return CheckEligibilityStatus.parentNotFound;
+            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")))
+                return CheckEligibilityStatus.error;
+        }
+        else
+        {
+            nass = nass.Substring(2, 2);
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible"))
+                return CheckEligibilityStatus.eligible;
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible"))
+                return CheckEligibilityStatus.notEligible;
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound"))
+                return CheckEligibilityStatus.parentNotFound;
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error"))
+                return CheckEligibilityStatus.error;
+        }
+
+        return CheckEligibilityStatus.parentNotFound;
+    }
+
     #region Private
 
     [ExcludeFromCodeCoverage]
@@ -291,13 +322,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
 
-        if (_configuration.GetValue<string>("TestData:LastName")==checkData.LastName)
+        if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
             checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
             source = ProcessEligibilityCheckSource.TEST;
         }
-        
-        else {
+
+        else
+        {
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
                 checkResult = await HMRC_Check(checkData);
@@ -544,7 +576,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         }
 
                         // If status is not queued for Processing, we have a conclusive answer
-                        else {
+                        else
+                        {
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                         }
                     }
@@ -552,7 +585,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     {
                         _logger.LogError(ex, "Queue processing");
                         // If we've had exceptions on this item more than retry limit
-                        if(item.DequeueCount >= _configuration.GetValue<int>("QueueRetries")) 
+                        if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                     }
                 }
@@ -563,25 +596,4 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     #endregion
-
-    private CheckEligibilityStatus TestDataCheck(string? nino,  string? nass)
-    {
-        if (!nino.IsNullOrEmpty())
-        {
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible"))) return CheckEligibilityStatus.eligible;
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible"))) return CheckEligibilityStatus.notEligible;
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound"))) return CheckEligibilityStatus.parentNotFound;
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error"))) return CheckEligibilityStatus.error;
-        }
-        else
-        {
-            nass = nass.Substring(2, 2);
-            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")) return CheckEligibilityStatus.eligible;
-            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")) return CheckEligibilityStatus.notEligible;
-            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")) return CheckEligibilityStatus.parentNotFound;
-            if (nass==_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")) return CheckEligibilityStatus.error;
-        }
-        
-        return CheckEligibilityStatus.parentNotFound;
-    }
 }

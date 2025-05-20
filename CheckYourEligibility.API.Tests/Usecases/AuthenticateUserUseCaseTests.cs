@@ -496,7 +496,9 @@ public class AuthenticateUserUseCaseTests
 
         // Assert
         result.Should().BeFalse();
-    }    [Test]
+    }
+
+    [Test]
     public void ValidateScopes_Should_Return_True_When_All_RequestedScopes_In_AllowedScopes()
     {
         // Arrange
@@ -508,13 +510,15 @@ public class AuthenticateUserUseCaseTests
 
         // Assert
         result.Should().BeTrue();
-    }// Helper method for scope validation testing
+    } // Helper method for scope validation testing
+
     private static bool ValidateScopes(string requestedScopes, string allowedScopes)
     {
         var method = typeof(AuthenticateUserUseCase).GetMethod("ValidateScopes",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        return method != null && method.Invoke(null, new object[] { requestedScopes, allowedScopes }) is bool result && result;
+        return method != null && method.Invoke(null, new object[] { requestedScopes, allowedScopes }) is bool result &&
+               result;
     }
 
     // Helper method to test the IsScopeValid method directly
@@ -523,7 +527,8 @@ public class AuthenticateUserUseCaseTests
         var method = typeof(AuthenticateUserUseCase).GetMethod("IsScopeValid",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        return method != null && method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
+        return method != null &&
+               method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
     }
 
     // Helper method to test the IsLocalAuthoritySpecificScopeValid method directly
@@ -532,14 +537,16 @@ public class AuthenticateUserUseCaseTests
         var method = typeof(AuthenticateUserUseCase).GetMethod("IsLocalAuthoritySpecificScopeValid",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        return method != null && method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
+        return method != null &&
+               method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
     }
 
     [Test]
-    public void ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Is_LocalAuthority()
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Is_LocalAuthority()
     {
         // appsettings has "local_authority check" and user logs in with "local_authority:xx"
-        
+
         // Arrange
         var requestedScopes = "local_authority:99 check";
         var allowedScopes = "local_authority check";
@@ -552,10 +559,11 @@ public class AuthenticateUserUseCaseTests
     }
 
     [Test]
-    public void ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Has_SameId()
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Has_SameId()
     {
         // appsettings has "local_authority:xx check" and user logs in with "local_authority:xx"
-        
+
         // Arrange
         var requestedScopes = "local_authority:99";
         var allowedScopes = "local_authority:99 check";
@@ -568,10 +576,11 @@ public class AuthenticateUserUseCaseTests
     }
 
     [Test]
-    public void ValidateScopes_Should_Return_False_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Has_SpecificId()
+    public void
+        ValidateScopes_Should_Return_False_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Has_SpecificId()
     {
         // appsettings has "local_authority:xx check" and user logs in with "local_authority"
-        
+
         // Arrange
         var requestedScopes = "local_authority";
         var allowedScopes = "local_authority:99 check";
@@ -584,10 +593,11 @@ public class AuthenticateUserUseCaseTests
     }
 
     [Test]
-    public void ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Is_LocalAuthority()
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Is_LocalAuthority()
     {
         // appsettings has "local_authority check" and user logs in with "local_authority"
-        
+
         // Arrange
         var requestedScopes = "local_authority";
         var allowedScopes = "local_authority check";
@@ -603,7 +613,7 @@ public class AuthenticateUserUseCaseTests
     public void ValidateScopes_Should_Return_False_When_RequestedScope_Is_LocalAuthorityWithDifferentId()
     {
         // appsettings has "local_authority:99 check" but user logs in with "local_authority:88"
-        
+
         // Arrange
         var requestedScopes = "local_authority:88";
         var allowedScopes = "local_authority:99 check";
@@ -677,7 +687,7 @@ public class AuthenticateUserUseCaseTests
         // Arrange & Act
         var result1 = ValidateScopes("", "local_authority check");
         var result2 = ValidateScopes("local_authority", "");
-        
+
         // Assert
         result1.Should().BeTrue(); // Empty requested scope should be valid
         result2.Should().BeFalse(); // Valid requested scope but empty allowed scope should be invalid

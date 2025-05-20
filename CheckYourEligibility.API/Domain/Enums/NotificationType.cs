@@ -6,5 +6,5 @@ public enum NotificationType
 {
     ParentApplicationCreated,
     ParentApplicationEvidenceSent,
-    ParentApplicationSuccessful,
+    ParentApplicationSuccessful
 }

@@ -44,10 +44,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly double _DWP_UniversalCreditThreshhold_2;
     private readonly double _DWP_UniversalCreditThreshhold_3;
     private readonly HttpClient _httpClient;
-    private bool _ran = false;
 
     private readonly ILogger _logger;
     private readonly bool _UseEcsforChecks;
+    private bool _ran;
 
     public DwpGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {

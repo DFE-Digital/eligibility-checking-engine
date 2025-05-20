@@ -14,6 +14,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
     }
 
+    public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
+
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
@@ -21,7 +23,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<LocalAuthority> LocalAuthorities { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
-    public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
     public virtual DbSet<EligibilityCheckHash> EligibilityCheckHashes { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Audit> Audits { get; set; }
@@ -77,10 +78,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasIndex(b => b.Status, "idx_ApplicationStatus");
 
         modelBuilder.Entity<ApplicationEvidence>()
-        .HasOne(e => e.Application)
-        .WithMany(a => a.Evidence)
-        .HasForeignKey(e => e.ApplicationID)
-        .OnDelete(DeleteBehavior.Cascade);
+            .HasOne(e => e.Application)
+            .WithMany(a => a.Evidence)
+            .HasForeignKey(e => e.ApplicationID)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ApplicationEvidence>()
             .HasIndex(e => e.ApplicationID, "idx_ApplicationEvidence_ApplicationID");

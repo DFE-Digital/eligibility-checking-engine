@@ -1,5 +1,3 @@
-using System;
-
 namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ApplicationEvidence

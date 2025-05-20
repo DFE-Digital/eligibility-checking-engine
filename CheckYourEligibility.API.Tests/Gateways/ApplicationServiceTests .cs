@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using ApplicationEvidence = CheckYourEligibility.API.Boundary.Requests.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
@@ -525,15 +526,15 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.eligible);
 
-        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidence>
         {
-            new Boundary.Requests.ApplicationEvidence
+            new()
             {
                 FileName = "test-document.pdf",
                 FileType = "application/pdf",
                 StorageAccountReference = "container/test-reference-123"
             },
-            new Boundary.Requests.ApplicationEvidence
+            new()
             {
                 FileName = "proof-of-address.jpg",
                 FileType = "image/jpeg",
@@ -560,9 +561,9 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
-        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidence>
         {
-            new Boundary.Requests.ApplicationEvidence
+            new()
             {
                 FileName = "test-evidence.pdf",
                 FileType = "application/pdf",
@@ -592,9 +593,9 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
 
-        request.Evidence = new List<Boundary.Requests.ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidence>
         {
-            new Boundary.Requests.ApplicationEvidence
+            new()
             {
                 FileName = "search-test-doc.pdf",
                 FileType = "application/pdf",

@@ -6,10 +6,10 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
     // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
-    
-    public CheckEligibilityType Type 
-    { 
-        get => baseType; 
+
+    public CheckEligibilityType Type
+    {
+        get => baseType;
         set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
     }
 }
@@ -35,7 +35,6 @@ public class CheckEligibilityRequestBulkData_Fsm : CheckEligibilityRequestData_F
 {
     public string? ClientIdentifier { get; set; }
 }
-
 
 public class CheckEligibilityRequest_Fsm
 {

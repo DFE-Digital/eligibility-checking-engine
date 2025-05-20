@@ -37,7 +37,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Establishment, opt => opt.Ignore())
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ReverseMap();
-        
+
         CreateMap<Boundary.Responses.ApplicationEvidence, ApplicationEvidence>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.Application, opt => opt.Ignore())

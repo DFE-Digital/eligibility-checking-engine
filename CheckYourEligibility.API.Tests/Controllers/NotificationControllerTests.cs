@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,8 +17,8 @@ public class NotificationControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
-    private Mock<ISendNotificationUseCase> _mockSendNotificationUseCase;
     private ILogger<NotificationController> _mockLogger;
+    private Mock<ISendNotificationUseCase> _mockSendNotificationUseCase;
     private NotificationController _sut;
 
     [SetUp]
@@ -85,7 +86,7 @@ public class NotificationControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<NotificationRequest>();
         _mockSendNotificationUseCase.Setup(cs => cs.Execute(request))
-            .ThrowsAsync(new FluentValidation.ValidationException("Validation failed"));
+            .ThrowsAsync(new ValidationException("Validation failed"));
 
         // Act
         var response = await _sut.Notification(request);

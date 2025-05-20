@@ -56,7 +56,7 @@ public class SendNotificationUseCaseTests
         // Arrange
         var request = _fixture.Create<NotificationRequest>();
         var auditId = _fixture.Create<string>();
-        
+
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email))
             .ReturnsAsync(auditId);
@@ -67,13 +67,13 @@ public class SendNotificationUseCaseTests
         // Assert
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email), Times.Once);
     }
-    
+
     [Test]
     public async Task Execute_Should_Return_NotificationResponse()
     {
         // Arrange
         var request = _fixture.Create<NotificationRequest>();
-        
+
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email))
             .ReturnsAsync(_fixture.Create<string>());

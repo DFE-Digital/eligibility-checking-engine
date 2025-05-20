@@ -1,7 +1,6 @@
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.Api.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using FluentAssertions;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
