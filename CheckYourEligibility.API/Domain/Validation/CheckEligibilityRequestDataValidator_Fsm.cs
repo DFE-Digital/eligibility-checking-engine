@@ -12,7 +12,6 @@ public class CheckEligibilityRequestDataValidator_Fsm : AbstractValidator<CheckE
     public CheckEligibilityRequestDataValidator_Fsm()
     {
         RuleFor(x => x.LastName)
-            .NotEmpty()
             .Must(DataValidation.BeAValidName)
             .WithMessage(ValidationMessages.LastName);
 
