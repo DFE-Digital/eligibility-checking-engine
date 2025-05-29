@@ -4,25 +4,37 @@ namespace CheckYourEligibility.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
-    public static string GetLocalAuthorityId(this ClaimsPrincipal user, string localAuthorityScopeName)
+    /// <summary>
+    /// Gets all local authority ids from the user's claims.
+    /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
+    /// </summary>
+    public static List<int> GetLocalAuthorityIds(this ClaimsPrincipal user, string localAuthorityScopeName)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
-
+        var ids = new List<int>();
         foreach (var claim in scopeClaims)
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            // Check for local_authority:XXX format
-            var specificScope = scopes.FirstOrDefault(s => s.StartsWith($"{localAuthorityScopeName}:"));
-            if (specificScope != null) return specificScope.Substring($"{localAuthorityScopeName}:".Length);
-
-            // Check for local_authority scope
-            if (scopes.Contains(localAuthorityScopeName)) return "all";
+            // If 'all', return [0] immediately
+            if (scopes.Contains(localAuthorityScopeName))
+                return new List<int> { 0 };
+            // Add all valid local_authority:xx
+            foreach (var s in scopes)
+            {
+                if (s.StartsWith($"{localAuthorityScopeName}:"))
+                {
+                    var idPart = s.Substring($"{localAuthorityScopeName}:".Length);
+                    if (int.TryParse(idPart, out var id))
+                        ids.Add(id);
+                }
+            }
         }
-
-        return null;
+        return ids;
     }
 
+    /// <summary>
+    /// Checks if the user has a scope with a colon (e.g., 'scope:xx').
+    /// </summary>
     public static bool HasScopeWithColon(this ClaimsPrincipal user, string scopeValue)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope");
@@ -37,7 +49,9 @@ public static class ClaimsPrincipalExtensions
         return false;
     }
 
-    // Helper method to check for a specific scope value
+    /// <summary>
+    /// Checks if the user has a specific scope value.
+    /// </summary>
     public static bool HasScope(this ClaimsPrincipal user, string scopeValue)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope");

@@ -8,6 +8,7 @@ using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ValidationException = FluentValidation.ValidationException;
+using CheckYourEligibility.API.Extensions;
 
 namespace CheckYourEligibility.API.Controllers;
 
@@ -97,16 +98,29 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
-        /* string localAuthorityId = User.GetLocalAuthorityId(_localAuthorityScopeName);
-
-        if (localAuthorityId == null)
+        var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+        if (localAuthorityIds == null || localAuthorityIds.Count == 0)
         {
-            return Forbid("No local authority scope found");
-        } */
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = "No local authority scope found" }]
+            });
+        }
 
-        var response = await _searchApplicationsUseCase.Execute(model /* , localAuthorityId */);
+        int? requestedLocalAuthority = model.Data?.LocalAuthority;
+        // If not 'all', must match one of the allowed LocalAuthorities
+        if (!localAuthorityIds.Contains(0) && (requestedLocalAuthority == null || !localAuthorityIds.Contains(requestedLocalAuthority.Value)))
+        {
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = "Local authority scope does not match requested LocalAuthority" }]
+            });
+        }
+
+        var response = await _searchApplicationsUseCase.Execute(model);
         return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
     }
 
