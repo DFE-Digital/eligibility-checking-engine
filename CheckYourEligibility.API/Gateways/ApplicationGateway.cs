@@ -305,5 +305,27 @@ public class ApplicationGateway : BaseGateway, IApplication
         await _db.ApplicationStatuses.AddAsync(status);
     }
 
+    /// <summary>
+    /// Gets the local authority ID for an establishment
+    /// </summary>
+    /// <param name="establishmentId">The establishment ID</param>
+    /// <returns>The local authority ID</returns>
+    public async Task<int> GetLocalAuthorityIdForEstablishment(int establishmentId)
+    {
+        try
+        {
+            var establishment = await _db.Establishments
+                .Include(x => x.LocalAuthority)
+                .FirstAsync(x => x.EstablishmentId == establishmentId);
+            
+            return establishment.LocalAuthorityId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
+            throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
+        }
+    }
+
     #endregion
 }

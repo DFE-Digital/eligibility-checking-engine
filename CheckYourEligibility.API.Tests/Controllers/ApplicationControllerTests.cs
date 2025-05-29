@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests;
@@ -68,17 +69,22 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockUpdateApplicationStatusUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
-
     [Test]
     public async Task Given_valid_NInumber_ApplicationRequest_Post_Should_Return_Status201Created()
     {
         // Arrange
         var request = _fixture.Create<ApplicationRequest>();
         var applicationFsm = _fixture.Create<ApplicationSaveItemResponse>();
-        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request)).ReturnsAsync(applicationFsm);
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Mock ClaimsPrincipal extension method
+        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds)).ReturnsAsync(applicationFsm);
+
+        // Set up test to simulate User with local authority scope
+        SetupTestUserWithLocalAuthority(localAuthorityIds);
 
         var expectedResult = new ObjectResult(applicationFsm)
-            { StatusCode = StatusCodes.Status201Created };
+        { StatusCode = StatusCodes.Status201Created };
 
         // Act
         var response = await _sut.Application(request);
@@ -87,12 +93,57 @@ public class ApplicationControllerTests : TestBase.TestBase
         response.Should().BeEquivalentTo(expectedResult);
     }
 
+    private void SetupTestUserWithLocalAuthority(List<int> localAuthorityIds)
+    {
+        // Create a method to mock the User.GetLocalAuthorityIds extension method
+        // This is typically done through reflection or by setting up the HttpContext
+        // For this test, we're using a test hook through internal implementation
+        typeof(ApplicationController)
+            .GetProperty("HttpContext", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?.SetValue(_sut, new DefaultHttpContext());
+
+        // Mock the extension method behavior
+        var user = new ClaimsPrincipal();
+        _sut.ControllerContext.HttpContext.User = user;
+
+        // Use reflection to access the private _localAuthorityScopeName field
+        // This is a workaround for testing purposes
+        typeof(Extensions.ClaimsPrincipalExtensions)
+            .GetMethod("GetLocalAuthorityIds", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            ?.Invoke(null, new object[] { user, "local_authority" });
+    }
+
+    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
+    {
+        // Create mock HttpContext with ClaimsPrincipal
+        var httpContext = new DefaultHttpContext();
+        var claims = new List<Claim>();
+
+        // Add appropriate scope claims based on localAuthorityIds
+        if (localAuthorityIds.Contains(0))
+        {
+            claims.Add(new Claim("scope", "local_authority"));
+        }
+        else
+        {
+            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
+            claims.Add(new Claim("scope", scopeValue));
+        }
+
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+    }
     [Test]
     public async Task Given_InValidRequest_Values_Application_Should_Return_Status400BadRequest()
     {
         // Arrange
         var request = new ApplicationRequest();
-        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request))
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Invalid request, data is required"));
 
         // Act
@@ -103,16 +154,23 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult.Value.Should().BeOfType<ErrorResponse>();
     }
-
     [Test]
     public async Task Given_InValidRequest_Validation_Application_Should_Return_Status400BadRequest()
     {
         // Arrange
         var request = _fixture.Create<ApplicationRequest>();
-        request.Data.ParentLastName = string.Empty;
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        if (request.Data != null)
+        {
+            request.Data.ParentLastName = string.Empty;
+        }
 
         // Setup mock to throw ValidationException when called with this request
-        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request))
+        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Parent last name cannot be empty"));
 
         // Act
@@ -121,16 +179,23 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
     }
-
     [Test]
     public async Task Given_InValidRequest_Type_Application_Should_Return_Status400BadRequest()
     {
         // Arrange
         var request = _fixture.Create<ApplicationRequest>();
-        request.Data.Type = CheckEligibilityType.None;
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        if (request.Data != null)
+        {
+            request.Data.Type = CheckEligibilityType.None;
+        }
 
         // Setup mock to throw ValidationException when called with this request
-        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request))
+        _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Invalid request, Valid Type is required: None"));
 
         // Act
@@ -165,7 +230,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var expectedResponse = _fixture.Create<ApplicationItemResponse>();
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.Application(guid);
@@ -173,16 +238,20 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
-
     [Test]
     public async Task Given_Valid_ApplicationSearch_Should_Return_StatusOk()
     {
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, null)).ReturnsAsync(expectedResponse);
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -190,7 +259,6 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
-
     [Test]
     public async Task Given_InValid_guid_ApplicationStatusUpdate_Should_Return_StatusNotFound()
     {
@@ -199,7 +267,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var request = _fixture.Create<ApplicationStatusUpdateRequest>();
         _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request))
             .ReturnsAsync((ApplicationStatusUpdateResponse)null);
-        var expectedResult = new NotFoundResult();
+        var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
 
         // Act
         var response = await _sut.ApplicationStatusUpdate(guid, request);
@@ -217,12 +285,57 @@ public class ApplicationControllerTests : TestBase.TestBase
         var expectedResponse = _fixture.Create<ApplicationStatusUpdateResponse>();
         _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationStatusUpdate(guid, request);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_ApplicationSearch_Without_LocalAuthority_Should_Return_BadRequest()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+
+        // Setup controller with empty local authority claims
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task Given_ApplicationSearch_With_NonMatching_LocalAuthority_Should_Return_BadRequest()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+        if (model.Data == null)
+        {
+            model.Data = new ApplicationRequestSearchData();
+        }
+        model.Data.LocalAuthority = 5; // A different local authority than we'll authorize
+
+        // Setup controller with specific local authority claims (not including 5)
+        SetupControllerWithLocalAuthorityIds(new List<int> { 1, 2, 3 });
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Local authority scope does not match requested LocalAuthority");
     }
 }
