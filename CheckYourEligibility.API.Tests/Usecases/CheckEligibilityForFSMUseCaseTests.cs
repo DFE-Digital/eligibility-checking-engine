@@ -7,8 +7,10 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -18,11 +20,12 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
+        _mockValidator = new Mock<IValidator<CheckEligibilityRequestData_Fsm>>();
         _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<CheckEligibilityForFSMUseCase>>(MockBehavior.Loose);
         _sut = new CheckEligibilityForFSMUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
-            _mockLogger.Object);
+            _mockValidator.Object, _mockLogger.Object);
         _fixture = new Fixture();
     }
 
@@ -33,6 +36,7 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
         _mockAuditGateway.VerifyAll();
     }
 
+    private Mock<IValidator<CheckEligibilityRequestData_Fsm>> _mockValidator;
     private Mock<ICheckEligibility> _mockCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<CheckEligibilityForFSMUseCase>> _mockLogger;
@@ -99,6 +103,10 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
 
         // Setup with a callback to capture the actual argument
         CheckEligibilityRequestData_Fsm capturedArg = null;
+        
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData_Fsm>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
+
         _mockCheckGateway
             .Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestData_Fsm>()))
             .Callback<CheckEligibilityRequestData_Fsm>(arg => capturedArg = arg)
@@ -156,6 +164,8 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
             Status = CheckEligibilityStatus.queuedForProcessing
         };
 
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData_Fsm>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(model.Data))
             .ReturnsAsync(responseData);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
@@ -185,6 +195,9 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
             Status = CheckEligibilityStatus.queuedForProcessing
         };
 
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData_Fsm>()))
+    .       Returns(new FluentValidation.Results.ValidationResult());
+
         _mockCheckGateway.Setup(s => s.PostCheck(model.Data))
             .ReturnsAsync(responseData);
 
@@ -203,6 +216,9 @@ public class CheckEligibilityForFSMUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var model = CreateValidFsmRequest();
+        
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData_Fsm>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
 
         _mockCheckGateway.Setup(s => s.PostCheck(model.Data))
             .ReturnsAsync((PostCheckResult)null);
