@@ -1,12 +1,16 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json.Serialization;
+using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using CheckYourEligibility.API;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.UseCases;
+using FeatureManagement.Domain.Validation;
+using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
@@ -155,7 +159,8 @@ builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase
 builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationStatusUseCase>();
 builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
 builder.Services.AddScoped<ICheckEligibilityForFSMUseCase, CheckEligibilityForFSMUseCase>();
-builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
+builder.Services.AddScoped<ICheckEligibilityFor2yoUseCase, CheckEligibilityFor2yoUseCase>();
+builder.Services.AddScoped<ICheckEligibilityForEyppUseCase, CheckEligibilityForEyppUseCase>();
 builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
 builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
@@ -163,6 +168,20 @@ builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibili
 builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCheckUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
+
+builder.Services.AddScoped<ICheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Fsm, CheckEligibilityRequestBulkData_Fsm>,
+    CheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Fsm, CheckEligibilityRequestBulkData_Fsm>>();
+builder.Services.AddScoped<ICheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_2yo, CheckEligibilityRequestBulkData_2yo>,
+    CheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_2yo, CheckEligibilityRequestBulkData_2yo>>();
+builder.Services.AddScoped<ICheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Eypp, CheckEligibilityRequestBulkData_Eypp>,
+    CheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Eypp, CheckEligibilityRequestBulkData_Eypp>>();
+
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestData_Fsm>, CheckEligibilityRequestDataValidator_Fsm>();
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestData_2yo>, CheckEligibilityRequestDataValidator_2yo>();
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestData_Eypp>, CheckEligibilityRequestDataValidator_Eypp>();
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestBulkData_Fsm>, CheckEligibilityRequestDataValidator_Fsm>();
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestBulkData_2yo>, CheckEligibilityRequestDataValidator_2yo>();
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestBulkData_Eypp>, CheckEligibilityRequestDataValidator_Eypp>();
 
 builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 

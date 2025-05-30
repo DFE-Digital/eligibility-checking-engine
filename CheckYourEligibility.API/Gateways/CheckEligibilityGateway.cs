@@ -64,7 +64,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         try
         {
-            var baseType = data as CheckEligibilityRequestDataBase;
+            var baseType = data as IEligibilityServiceType;
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;

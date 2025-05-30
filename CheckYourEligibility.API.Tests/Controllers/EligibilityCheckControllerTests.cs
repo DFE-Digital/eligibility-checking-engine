@@ -19,7 +19,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private IConfigurationRoot _configuration;
 
     private Mock<IAudit> _mockAuditGateway;
-    private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;
+    private Mock<ICheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Fsm, CheckEligibilityRequestBulkData_Fsm>> _mockCheckEligibilityBulkUseCase;
     private Mock<ICheckEligibilityForFSMUseCase> _mockCheckEligibilityForFsmUseCase;
     private Mock<IGetBulkUploadProgressUseCase> _mockGetBulkUploadProgressUseCase;
     private Mock<IGetBulkUploadResultsUseCase> _mockGetBulkUploadResultsUseCase;
@@ -36,7 +36,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     {
         _mockProcessQueueMessagesUseCase = new Mock<IProcessQueueMessagesUseCase>(MockBehavior.Strict);
         _mockCheckEligibilityForFsmUseCase = new Mock<ICheckEligibilityForFSMUseCase>(MockBehavior.Strict);
-        _mockCheckEligibilityBulkUseCase = new Mock<ICheckEligibilityBulkUseCase>(MockBehavior.Strict);
+        _mockCheckEligibilityBulkUseCase = new Mock<ICheckEligibilityBulkUseCase<CheckEligibilityRequestBulk_Fsm, CheckEligibilityRequestBulkData_Fsm>>(MockBehavior.Strict);
         _mockGetBulkUploadProgressUseCase = new Mock<IGetBulkUploadProgressUseCase>(MockBehavior.Strict);
         _mockGetBulkUploadResultsUseCase = new Mock<IGetBulkUploadResultsUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckStatusUseCase = new Mock<IGetEligibilityCheckStatusUseCase>(MockBehavior.Strict);

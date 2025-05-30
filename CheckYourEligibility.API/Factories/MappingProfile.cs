@@ -17,6 +17,12 @@ public class MappingProfile : Profile
     {
         CreateMap<CheckEligibilityRequestData_Fsm, EligibilityCheck>()
             .ReverseMap();
+        
+        CreateMap<CheckEligibilityRequestData_2yo, EligibilityCheck>()
+            .ReverseMap();
+        
+        CreateMap<CheckEligibilityRequestData_Eypp, EligibilityCheck>()
+            .ReverseMap();
 
         CreateMap<EligibilityCheck, CheckEligibilityItem>()
             .ReverseMap();

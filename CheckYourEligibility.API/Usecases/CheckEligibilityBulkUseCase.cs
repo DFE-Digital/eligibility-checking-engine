@@ -6,43 +6,43 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FeatureManagement.Domain.Validation;
+using FluentValidation;
+using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
 
-/// <summary>
-///     Interface for processing bulk FSM eligibility checks
-/// </summary>
-public interface ICheckEligibilityBulkUseCase
+public interface ICheckEligibilityBulkUseCase<TRequest, TItem>
+    where TRequest : ICheckEligibilityBulkRequest<TItem>
+    where TItem : IEligibilityServiceType
 {
-    /// <summary>
-    ///     Execute the use case
-    /// </summary>
-    /// <param name="model">Bulk FSM eligibility check request</param>
-    /// <param name="recordCountLimit">Maximum allowed records in a bulk upload</param>
-    /// <returns>Check eligibility bulk response or validation errors</returns>
     Task<CheckEligibilityResponseBulk> Execute(
-        CheckEligibilityRequestBulk_Fsm model,
+        TRequest model,
         int recordCountLimit);
 }
 
-public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
+public class CheckEligibilityBulkUseCase<TRequest, TItem> : ICheckEligibilityBulkUseCase<TRequest, TItem>
+        where TRequest : ICheckEligibilityBulkRequest<TItem>
+        where TItem : IEligibilityServiceType
 {
+    private readonly IValidator<TItem> _validator;
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
-    private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
+    private readonly ILogger<CheckEligibilityBulkUseCase<TRequest, TItem>> _logger;
 
     public CheckEligibilityBulkUseCase(
+        IValidator<TItem> validator,
         ICheckEligibility checkGateway,
         IAudit auditGateway,
-        ILogger<CheckEligibilityBulkUseCase> logger)
+        ILogger<CheckEligibilityBulkUseCase<TRequest, TItem>> logger)
     {
+        _validator = validator;
         _checkGateway = checkGateway;
         _auditGateway = auditGateway;
         _logger = logger;
     }
 
     public async Task<CheckEligibilityResponseBulk> Execute(
-        CheckEligibilityRequestBulk_Fsm model,
+        TRequest model,
         int recordCountLimit)
     {
         if (model == null || model.Data == null)
@@ -56,18 +56,31 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             throw new ValidationException(null, errorMessage);
         }
 
-        if (model.GetType() != typeof(CheckEligibilityRequestBulk_Fsm))
-            throw new ValidationException(null, $"Unknown request type:-{model.GetType()}");
+        var errors = new StringBuilder();
+        int index = 1;
 
-        var validationErrors = ValidateBulkItems(model);
-        if (validationErrors.Length > 0)
+        foreach (var item in model.Data)
         {
-            _logger.LogWarning("Validation errors in bulk eligibility check");
-            throw new ValidationException(null, validationErrors.ToString());
+            if (item is IHasNationalInsurance ni)
+                ni.NationalInsuranceNumber = ni.NationalInsuranceNumber?.ToUpperInvariant();
+
+            if (item is IHasAsylumSeekerNumber asn)
+                asn.NationalAsylumSeekerServiceNumber = asn.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
+
+            var result = _validator.Validate(item);
+            if (!result.IsValid)
+            {
+                errors.AppendLine($"Item {index}: {result}");
+            }
+
+            index++;
         }
 
+        if (errors.Length > 0)
+            throw new ValidationException(null, errors.ToString());
+
         var groupId = Guid.NewGuid().ToString();
-        await _checkGateway.PostCheck(model.Data, groupId);
+        await _checkGateway.PostCheck((IEnumerable<IEligibilityServiceType>)model.Data, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 
@@ -83,26 +96,5 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
                 Get_BulkCheck_Results = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.BulkCheckResults}"
             }
         };
-    }
-
-    private static StringBuilder ValidateBulkItems(CheckEligibilityRequestBulk_Fsm model)
-    {
-        var validationResultsItems = new StringBuilder();
-        var validator = new CheckEligibilityRequestDataValidator_Fsm();
-        var sequence = 1;
-
-        foreach (var item in model.Data)
-        {
-            item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpper();
-            item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpper();
-
-            var validationResults = validator.Validate(item);
-            if (!validationResults.IsValid)
-                validationResultsItems.AppendLine($"Item:-{sequence}, {validationResults.ToString()}");
-
-            sequence++;
-        }
-
-        return validationResultsItems;
     }
 }

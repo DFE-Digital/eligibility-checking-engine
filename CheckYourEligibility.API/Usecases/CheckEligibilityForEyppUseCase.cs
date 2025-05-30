@@ -1,3 +1,4 @@
+using System.Text;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
@@ -11,29 +12,30 @@ using ValidationException = CheckYourEligibility.API.Domain.Exceptions.Validatio
 namespace CheckYourEligibility.API.UseCases;
 
 /// <summary>
-///     Interface for processing a single FSM eligibility check
+///     Interface for processing a single EYPP eligibility check
 /// </summary>
-public interface ICheckEligibilityForFSMUseCase
+public interface ICheckEligibilityForEyppUseCase
 {
     /// <summary>
     ///     Execute the use case
     /// </summary>
-    /// <param name="model">FSM eligibility check request</param>
+    /// <param name="model">EYPP eligibility check request</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Fsm model);
+    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Eypp model);
 }
 
-public class CheckEligibilityForFSMUseCase : ICheckEligibilityForFSMUseCase
+
+public class CheckEligibilityForEyppUseCase : ICheckEligibilityForEyppUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
-    private readonly ILogger<CheckEligibilityForFSMUseCase> _logger;
-    private readonly IValidator<CheckEligibilityRequestData_Fsm> _validator;
-    public CheckEligibilityForFSMUseCase(
+    private readonly ILogger<CheckEligibilityForEyppUseCase> _logger;
+    private readonly IValidator<CheckEligibilityRequestData_Eypp> _validator;
+    public CheckEligibilityForEyppUseCase(
         ICheckEligibility checkGateway,
         IAudit auditGateway,
-        IValidator<CheckEligibilityRequestData_Fsm> validator,
-        ILogger<CheckEligibilityForFSMUseCase> logger)
+        IValidator<CheckEligibilityRequestData_Eypp> validator,
+        ILogger<CheckEligibilityForEyppUseCase> logger)
     {
         _checkGateway = checkGateway;
         _auditGateway = auditGateway;
@@ -41,17 +43,17 @@ public class CheckEligibilityForFSMUseCase : ICheckEligibilityForFSMUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Fsm model)
+
+    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Eypp model)
     {
         if (model == null || model.Data == null)
             throw new ValidationException(null, "Invalid Request, data is required.");
-        if (model.GetType() != typeof(CheckEligibilityRequest_Fsm))
+        if (model.GetType() != typeof(CheckEligibilityRequest_Eypp))
             throw new ValidationException(null, $"Unknown request type:-{model.GetType()}");
 
         // Normalize and validate the request
         model.Data.NationalInsuranceNumber = model.Data.NationalInsuranceNumber?.ToUpper();
-        model.Data.NationalAsylumSeekerServiceNumber = model.Data.NationalAsylumSeekerServiceNumber?.ToUpper();
-
+        
         var validationResults = _validator.Validate(model.Data);
 
         if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
