@@ -88,23 +88,35 @@ public class ApplicationController : BaseController
     ///     Gets an application by guid
     /// </summary>
     /// <param name="guid"></param>
-    /// <returns></returns>
-    [ProducesResponseType(typeof(ApplicationItemResponse), (int)HttpStatusCode.OK)]
+    /// <returns></returns>    [ProducesResponseType(typeof(ApplicationItemResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> Application(string guid)
     {
         try
         {
-            var response = await _getApplicationUseCase.Execute(guid);
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _getApplicationUseCase.Execute(guid, localAuthorityIds);
 
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
-        }
-        catch (NotFoundException ex)
+        }        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
