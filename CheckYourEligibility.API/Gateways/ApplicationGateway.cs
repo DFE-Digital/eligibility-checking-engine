@@ -215,7 +215,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Unable to find application:- {applicationId}");
+            _logger.LogError(ex, $"Unable to find application:- {applicationId?.Replace(Environment.NewLine, "")}");
             throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
         }
     }

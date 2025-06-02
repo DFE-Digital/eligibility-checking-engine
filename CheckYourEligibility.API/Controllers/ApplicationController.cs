@@ -198,7 +198,7 @@ public class ApplicationController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating application status for guid {Guid}", guid);
+            _logger.LogError(ex, $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
