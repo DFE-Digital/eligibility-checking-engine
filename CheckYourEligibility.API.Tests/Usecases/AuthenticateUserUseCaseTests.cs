@@ -501,18 +501,279 @@ public class AuthenticateUserUseCaseTests
     [Test]
     public void ValidateScopes_Should_Return_True_When_All_RequestedScopes_In_AllowedScopes()
     {
-        // This test uses reflection to access the private ValidateScopes method
         // Arrange
         var requestedScopes = "read write"; // Requesting 'read' and 'write'
         var allowedScopes = "read write admin"; // All requested scopes are allowed
 
         // Act
-        var method = typeof(AuthenticateUserUseCase).GetMethod("ValidateScopes",
-            BindingFlags.NonPublic | BindingFlags.Static);
-
-        var result = (bool)method.Invoke(null, new object[] { requestedScopes, allowedScopes });
+        var result = ValidateScopes(requestedScopes, allowedScopes);
 
         // Assert
         result.Should().BeTrue();
+    } // Helper method for scope validation testing
+
+    private static bool ValidateScopes(string requestedScopes, string allowedScopes)
+    {
+        var method = typeof(AuthenticateUserUseCase).GetMethod("ValidateScopes",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        return method != null && method.Invoke(null, new object[] { requestedScopes, allowedScopes }) is bool result &&
+               result;
+    }
+
+    // Helper method to test the IsScopeValid method directly
+    private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)
+    {
+        var method = typeof(AuthenticateUserUseCase).GetMethod("IsScopeValid",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        return method != null &&
+               method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
+    }
+
+    // Helper method to test the IsLocalAuthoritySpecificScopeValid method directly
+    private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
+    {
+        var method = typeof(AuthenticateUserUseCase).GetMethod("IsLocalAuthoritySpecificScopeValid",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        return method != null &&
+               method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Is_LocalAuthority()
+    {
+        // appsettings has "local_authority check" and user logs in with "local_authority:xx"
+
+        // Arrange
+        var requestedScopes = "local_authority:99 check";
+        var allowedScopes = "local_authority check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthorityWithId_And_AllowedScope_Has_SameId()
+    {
+        // appsettings has "local_authority:xx check" and user logs in with "local_authority:xx"
+
+        // Arrange
+        var requestedScopes = "local_authority:99";
+        var allowedScopes = "local_authority:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_False_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Has_SpecificId()
+    {
+        // appsettings has "local_authority:xx check" and user logs in with "local_authority"
+
+        // Arrange
+        var requestedScopes = "local_authority";
+        var allowedScopes = "local_authority:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_LocalAuthority_And_AllowedScope_Is_LocalAuthority()
+    {
+        // appsettings has "local_authority check" and user logs in with "local_authority"
+
+        // Arrange
+        var requestedScopes = "local_authority";
+        var allowedScopes = "local_authority check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Return_False_When_RequestedScope_Is_LocalAuthorityWithDifferentId()
+    {
+        // appsettings has "local_authority:99 check" but user logs in with "local_authority:88"
+
+        // Arrange
+        var requestedScopes = "local_authority:88";
+        var allowedScopes = "local_authority:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Handle_Multiple_Scopes_Correctly()
+    {
+        // Arrange
+        var requestedScopes = "local_authority:99 check application";
+        var allowedScopes = "local_authority:99 check application admin";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Return_False_When_Any_RequestedScope_Is_Not_Allowed()
+    {
+        // Arrange
+        var requestedScopes = "local_authority:99 check unauthorized_scope";
+        var allowedScopes = "local_authority:99 check application";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Handle_Multiple_LocalAuthority_Scopes_Correctly()
+    {
+        // Arrange
+        var requestedScopes = "local_authority:99 check";
+        var allowedScopes = "local_authority:99 local_authority:88 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Allow_LocalAuthorityWithAnyId_When_LocalAuthority_Is_Allowed()
+    {
+        // Arrange
+        var requestedScopes = "local_authority:123 check";
+        var allowedScopes = "local_authority check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Handle_Empty_Values_Correctly()
+    {
+        // Arrange & Act
+        var result1 = ValidateScopes("", "local_authority check");
+        var result2 = ValidateScopes("local_authority", "");
+
+        // Assert
+        result1.Should().BeTrue(); // Empty requested scope should be valid
+        result2.Should().BeFalse(); // Valid requested scope but empty allowed scope should be invalid
+    }
+
+    [Test]
+    public void IsScopeValid_Should_Return_True_For_Direct_Match()
+    {
+        // Arrange
+        var requestedScope = "read";
+        var allowedScopesList = new[] { "read", "write" };
+
+        // Act
+        var result = IsScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsScopeValid_Should_Handle_LocalAuthority_Generic_Scope_Correctly()
+    {
+        // Arrange
+        var requestedScope = "local_authority";
+        var allowedScopesList = new[] { "local_authority", "read" };
+
+        // Act
+        var result = IsScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsScopeValid_Should_Return_False_When_Requesting_Generic_But_Only_Specific_Is_Allowed()
+    {
+        // Arrange
+        var requestedScope = "local_authority";
+        var allowedScopesList = new[] { "local_authority:99", "read" };
+
+        // Act
+        var result = IsScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void IsLocalAuthoritySpecificScopeValid_Should_Return_True_When_Generic_Is_Allowed()
+    {
+        // Arrange
+        var requestedScope = "local_authority:99";
+        var allowedScopesList = new[] { "local_authority", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsLocalAuthoritySpecificScopeValid_Should_Return_True_When_Same_Id_Is_Allowed()
+    {
+        // Arrange
+        var requestedScope = "local_authority:99";
+        var allowedScopesList = new[] { "local_authority:99", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsLocalAuthoritySpecificScopeValid_Should_Return_False_When_Different_Id_Is_Requested()
+    {
+        // Arrange
+        var requestedScope = "local_authority:99";
+        var allowedScopesList = new[] { "local_authority:88", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeFalse();
     }
 }

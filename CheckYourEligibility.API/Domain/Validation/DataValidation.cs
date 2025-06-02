@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace CheckYourEligibility.API.Domain.Validation;
 
@@ -16,8 +17,17 @@ internal static class DataValidation
 
     internal static bool BeAValidDate(string value)
     {
+        return DateTime.TryParseExact(value,
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var temp);
+    }
+
+    internal static bool BeAValidName(string value)
+    {
         var regexString =
-            @"^\d{4}-\d{2}-\d{2}$";
+            @"^[a-zA-Z ,.'-]+$";
         var rg = new Regex(regexString);
         var res = rg.Match(value);
         return res.Success;

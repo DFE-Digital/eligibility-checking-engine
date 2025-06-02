@@ -20,7 +20,6 @@ public interface IAuthenticateUserUseCase
     ///     Prepares the JWT configuration and authenticates the user.
     /// </summary>
     /// <param name="credentials">Client credentials</param>
-    /// <param name="configuration">Application configuration</param>
     /// <returns>JWT auth response with token</returns>
     Task<JwtAuthResponse> Execute(SystemUser credentials);
 }
@@ -37,8 +36,9 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <summary>
     ///     Constructor for the AuthenticateUserUseCase.
     /// </summary>
-    /// <param name="auditService">Audit service for logging authentication attempts</param>
+    /// <param name="auditGateway">Audit gateway for logging authentication attempts</param>
     /// <param name="logger">Logger service</param>
+    /// <param name="jwtSettings">JWT settings configuration</param>
     public AuthenticateUserUseCase(IAudit auditGateway, ILogger<AuthenticateUserUseCase> logger,
         JwtSettings jwtSettings)
     {
@@ -51,7 +51,6 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     ///     Prepares the JWT configuration and authenticates the user.
     /// </summary>
     /// <param name="credentials">Client credentials</param>
-    /// <param name="configuration">Application configuration</param>
     /// <returns>JWT auth response with token</returns>
     /// <exception cref="AuthenticationException">Thrown when authentication fails</exception>
     public async Task<JwtAuthResponse> Execute(SystemUser credentials)
@@ -80,12 +79,12 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             Key = _jwtSettings.Key,
             Issuer = _jwtSettings.Issuer,
             ExpectedSecret = secret
-        };
-
-        // Get and validate allowed scopes
+        }; // Get and validate allowed scopes
         if (!string.IsNullOrEmpty(credentials.client_id) && !string.IsNullOrEmpty(credentials.scope))
         {
-            jwtConfig.AllowedScopes = _jwtSettings.Clients[credentials.client_id]?.Scope;
+            var clientSettings = _jwtSettings.Clients[credentials.client_id];
+            if (clientSettings != null) jwtConfig.AllowedScopes = clientSettings.Scope;
+
             if (string.IsNullOrEmpty(jwtConfig.AllowedScopes))
             {
                 _logger.LogError(
@@ -123,22 +122,57 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         return !string.IsNullOrEmpty(secret) && !string.IsNullOrEmpty(expectedSecret) && secret == expectedSecret;
     }
 
-    private static bool ValidateScopes(string requestedScopes, string allowedScopes)
+    private static bool ValidateScopes(string? requestedScopes, string? allowedScopes)
     {
         // Empty or default scopes are always valid
         if (string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default") return true;
 
-        // If we have specific scope requests but no allowed scopes, it's invalid
         if (string.IsNullOrEmpty(allowedScopes)) return false;
 
         var requestedScopesList = requestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        // Check if each requested scope is in the allowed scopes list
-        return requestedScopesList.All(scope => allowedScopesList.Contains(scope));
+        return requestedScopesList.All(requestedScope => IsScopeValid(requestedScope, allowedScopesList));
     }
 
-    private static string GenerateJSONWebToken(string identifier, string scope, JwtConfig jwtConfig,
+    private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)
+    {
+        if (allowedScopesList.Contains(requestedScope)) return true;
+
+        // local_authority:XX pattern
+        if (requestedScope.StartsWith("local_authority:"))
+            return IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Check if "local_authority" is requested
+        if (requestedScope == "local_authority")
+            // If a client has "local_authority:XX" scope, they should NOT have access to the generic "local_authority" scope
+            // Only allow if specifically the generic "local_authority" is in allowed scopes
+            return allowedScopesList.Contains("local_authority");
+
+        // If we got here, the scope is not valid
+        return false;
+    }
+
+    private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
+    {
+        // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope
+        if (allowedScopesList.Contains("local_authority")) return true;
+
+        // Otherwise check if there's a match with specific local_authority:xx pattern in allowed scopes
+        var requestedAuthority = requestedScope.Split(':', 2)[1];
+
+        foreach (var allowedScope in allowedScopesList)
+            if (allowedScope.StartsWith("local_authority:"))
+            {
+                var allowedAuthority = allowedScope.Split(':', 2)[1];
+
+                if (requestedAuthority == allowedAuthority) return true;
+            }
+
+        return false;
+    }
+
+    private static string GenerateJSONWebToken(string identifier, string? scope, JwtConfig jwtConfig,
         out DateTime expires)
     {
         try
@@ -168,7 +202,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         catch (Exception)
         {
             expires = DateTime.MinValue;
-            return null;
+            return string.Empty; // Return empty string instead of null to avoid null reference exception
         }
     }
 }

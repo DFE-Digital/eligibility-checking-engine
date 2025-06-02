@@ -65,17 +65,13 @@ public class ApplicationGateway : BaseGateway, IApplication
             }
 
             if (data.Evidence != null && data.Evidence.Any())
-            {
                 foreach (var evidenceItem in data.Evidence)
-                {
                     item.Evidence.Add(new ApplicationEvidence
                     {
                         FileName = evidenceItem.FileName,
                         FileType = evidenceItem.FileType,
                         StorageAccountReference = evidenceItem.StorageAccountReference
                     });
-                }
-            }
 
 
             await _db.Applications.AddAsync(item);
@@ -112,7 +108,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -171,7 +167,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -258,31 +254,25 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         const int maxAttempts = 5;
 
-        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             // timestamp ticks to genereate a reference
-            string timestamp = DateTime.UtcNow.Ticks.ToString();
-            string reference = timestamp.Substring(timestamp.Length - 8);
+            var timestamp = DateTime.UtcNow.Ticks.ToString();
+            var reference = timestamp.Substring(timestamp.Length - 8);
 
-            if (_db.Applications.FirstOrDefault(x => x.Reference == reference) == null)
-            {
-                return reference;
-            }
+            if (_db.Applications.FirstOrDefault(x => x.Reference == reference) == null) return reference;
 
             // Reference exists, wait a bit and try again
             Task.Delay(5).Wait();
         }
 
         // Fallback: add a random suffix to virtually guarantee uniqueness
-        string finalTimestamp = DateTime.UtcNow.Ticks.ToString();
-        string randomSuffix = randomNumber.Next(10, 100).ToString();
-        string fallbackReference = finalTimestamp.Substring(finalTimestamp.Length - 6) + randomSuffix;
+        var finalTimestamp = DateTime.UtcNow.Ticks.ToString();
+        var randomSuffix = randomNumber.Next(10, 100).ToString();
+        var fallbackReference = finalTimestamp.Substring(finalTimestamp.Length - 6) + randomSuffix;
 
         // safe check for uniqueness
-        if (_db.Applications.FirstOrDefault(x => x.Reference == fallbackReference) == null)
-        {
-            return fallbackReference;
-        }
+        if (_db.Applications.FirstOrDefault(x => x.Reference == fallbackReference) == null) return fallbackReference;
 
         // Final fallback
         return Guid.NewGuid().ToString("N").Substring(0, 8);

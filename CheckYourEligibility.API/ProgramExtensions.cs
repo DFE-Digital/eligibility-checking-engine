@@ -135,7 +135,7 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireEngineScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:engine"] ?? "engine")));
-            
+
             options.AddPolicy(PolicyNames.RequireNotificationScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:notification"] ?? "notification")));

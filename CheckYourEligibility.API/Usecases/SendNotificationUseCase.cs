@@ -2,7 +2,6 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -25,7 +24,7 @@ public class SendNotificationUseCase : ISendNotificationUseCase
     public async Task<NotificationResponse> Execute(NotificationRequest notificationRequest)
     {
         _gateway.SendNotification(notificationRequest);
-        
+
         await _auditGateway.CreateAuditEntry(AuditType.Notification, notificationRequest.Data.Email);
         return new NotificationResponse();
     }

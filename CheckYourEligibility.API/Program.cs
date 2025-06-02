@@ -82,9 +82,11 @@ builder.Services.AddSwaggerGen(c =>
             Title = "ECE Local Authority API - V1",
             Version = "v1.4",
             Description =
-                "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs"+(!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()?
-                    "<br /><br />Test data can be downloaded <a href='"+builder.Configuration.GetValue<string>("TestData:SampleData")+"'>here</a>.":
-                    ""
+                "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs" +
+                (!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()
+                    ? "<br /><br />Test data can be downloaded <a href='" +
+                      builder.Configuration.GetValue<string>("TestData:SampleData") + "'>here</a>."
+                    : ""
                 )
         });
 
@@ -184,6 +186,8 @@ builder.Services.AddScoped<IValidator<CheckEligibilityRequestBulkData_2yo>, Chec
 builder.Services.AddScoped<IValidator<CheckEligibilityRequestBulkData_Eypp>, CheckEligibilityRequestDataValidator_Eypp>();
 
 builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
+builder.Services.AddTransient<INotificationClient>(x =>
+    new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

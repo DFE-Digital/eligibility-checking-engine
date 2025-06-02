@@ -7,16 +7,14 @@ namespace CheckYourEligibility.API.Domain;
 public class ApplicationEvidence
 {
     public int Id { get; set; }
-    
-    [Column(TypeName = "varchar(255)")]
-    public string FileName { get; set; }
-    
-    [Column(TypeName = "varchar(50)")]
-    public string FileType { get; set; }
-    
-    [Column(TypeName = "varchar(500)")]
-    public string StorageAccountReference { get; set; }
+
+    [Column(TypeName = "varchar(255)")] public string FileName { get; set; }
+
+    [Column(TypeName = "varchar(50)")] public string FileType { get; set; }
+
+    [Column(TypeName = "varchar(500)")] public string StorageAccountReference { get; set; }
+
     public virtual Application Application { get; set; }
-    
+
     public string ApplicationID { get; set; }
 }

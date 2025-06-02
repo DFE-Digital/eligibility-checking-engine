@@ -14,10 +14,11 @@ namespace CheckYourEligibility.API.Controllers;
 [Authorize]
 public class NotificationController : BaseController
 {
-    private readonly ISendNotificationUseCase _sendNotificationUseCase;
     private readonly ILogger<NotificationController> _logger;
+    private readonly ISendNotificationUseCase _sendNotificationUseCase;
 
-    public NotificationController(ILogger<NotificationController> logger, ISendNotificationUseCase sendNotificationUseCase,
+    public NotificationController(ILogger<NotificationController> logger,
+        ISendNotificationUseCase sendNotificationUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -40,7 +41,7 @@ public class NotificationController : BaseController
         catch (Exception ex)
         {
             return BadRequest(new ErrorResponse
-                { Errors = [new Error { Title = "" }] });        
+                { Errors = [new Error { Title = "" }] });
         }
     }
 }

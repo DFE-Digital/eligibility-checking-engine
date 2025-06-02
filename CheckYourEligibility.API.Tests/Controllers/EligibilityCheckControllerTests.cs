@@ -85,14 +85,14 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockProcessEligibilityCheckUseCase.Object,
             _mockGetEligibilityCheckItemUseCase.Object
         );
-        
+
         // Setup default HttpContext with a Mock HttpRequest
         var httpContext = new DefaultHttpContext();
         var request = new Mock<HttpRequest>();
         var path = new PathString("/check/free-school-meals");
         request.Setup(r => r.Path).Returns(path);
         httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext()
+        _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
         };
@@ -199,7 +199,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/free-school-meals");
         httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext()
+        _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
         };
@@ -229,7 +229,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/free-school-meals");
         httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext()
+        _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
         };

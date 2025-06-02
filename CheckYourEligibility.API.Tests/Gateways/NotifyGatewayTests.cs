@@ -5,15 +5,13 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Notify.Interfaces;
-using System;
-using System.Collections.Generic;
 
 namespace CheckYourEligibility.API.Tests;
 
 public class NotifyGatewayTests : TestBase.TestBase
 {
-    private Mock<INotificationClient> _mockClient;
     private IConfiguration _configuration;
+    private Mock<INotificationClient> _mockClient;
     private NotifyGateway _sut;
 
     [SetUp]
@@ -61,7 +59,7 @@ public class NotifyGatewayTests : TestBase.TestBase
         var templateId = Guid.NewGuid().ToString();
 
         // Act
-        Action act = () => _sut.SendNotification(notificationRequest);
+        var act = () => _sut.SendNotification(notificationRequest);
 
         // Assert
         act.Should().NotThrow();

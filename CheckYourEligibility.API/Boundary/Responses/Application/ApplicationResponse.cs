@@ -1,6 +1,4 @@
-﻿using CheckYourEligibility.API.Boundary.Responses;
-
-namespace CheckYourEligibility.API.Boundary.Responses;
+﻿namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ApplicationResponse
 {
