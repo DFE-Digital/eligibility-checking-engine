@@ -80,8 +80,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Mock ClaimsPrincipal extension method
         _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds)).ReturnsAsync(applicationFsm);
 
-        // Set up test to simulate User with local authority scope
-        SetupTestUserWithLocalAuthority(localAuthorityIds);
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         var expectedResult = new ObjectResult(applicationFsm)
         { StatusCode = StatusCodes.Status201Created };
@@ -92,27 +92,6 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
-
-    private void SetupTestUserWithLocalAuthority(List<int> localAuthorityIds)
-    {
-        // Create a method to mock the User.GetLocalAuthorityIds extension method
-        // This is typically done through reflection or by setting up the HttpContext
-        // For this test, we're using a test hook through internal implementation
-        typeof(ApplicationController)
-            .GetProperty("HttpContext", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?.SetValue(_sut, new DefaultHttpContext());
-
-        // Mock the extension method behavior
-        var user = new ClaimsPrincipal();
-        _sut.ControllerContext.HttpContext.User = user;
-
-        // Use reflection to access the private _localAuthorityScopeName field
-        // This is a workaround for testing purposes
-        typeof(Extensions.ClaimsPrincipalExtensions)
-            .GetMethod("GetLocalAuthorityIds", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-            ?.Invoke(null, new object[] { user, "local_authority" });
-    }
-
     private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
     {
         // Create mock HttpContext with ClaimsPrincipal
@@ -248,8 +227,14 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
+        // Set the LocalAuthority in the model to match our authorized LocalAuthority
+        if (model.Data == null)
+        {
+            model.Data = new ApplicationRequestSearchData();
+        }
+        model.Data.LocalAuthority = 1;  // Match the localAuthorityIds we set up
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model)).ReturnsAsync(expectedResponse);
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, It.IsAny<string>())).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
         { StatusCode = StatusCodes.Status200OK };
 
