@@ -77,6 +77,11 @@ public class ApplicationController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating application");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 
     /// <summary>
@@ -149,11 +154,40 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationStatusUpdate(string guid,
         [FromBody] ApplicationStatusUpdateRequest model)
     {
-        var response = await _updateApplicationStatusUseCase.Execute(guid, model);
-        if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
-        return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        try
+        {
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+            var response = await _updateApplicationStatusUseCase.Execute(guid, model, localAuthorityIds);
+            if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating application status for guid {Guid}", guid);
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 }

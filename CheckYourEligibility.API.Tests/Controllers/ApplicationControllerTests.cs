@@ -243,15 +243,17 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }
-    [Test]
+    }    [Test]
     public async Task Given_InValid_guid_ApplicationStatusUpdate_Should_Return_StatusNotFound()
     {
         // Arrange
         var guid = _fixture.Create<string>();
         var request = _fixture.Create<ApplicationStatusUpdateRequest>();
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request))
-            .ReturnsAsync((ApplicationStatusUpdateResponse)null);
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ReturnsAsync((ApplicationStatusUpdateResponse)null!);
         var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
 
         // Act
@@ -259,16 +261,19 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }
-
-    [Test]
+    }    [Test]
     public async Task Given_Valid_guid_ApplicationStatusUpdate_Should_Return_StatusOk()
     {
         // Arrange
         var guid = _fixture.Create<string>();
         var request = _fixture.Create<ApplicationStatusUpdateRequest>();
         var expectedResponse = _fixture.Create<ApplicationStatusUpdateResponse>();
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request)).ReturnsAsync(expectedResponse);
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
         { StatusCode = StatusCodes.Status200OK };
 
@@ -322,5 +327,101 @@ public class ApplicationControllerTests : TestBase.TestBase
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
         errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Local authority scope does not match requested LocalAuthority");
+    }
+
+    [Test]
+    public async Task Given_ApplicationStatusUpdate_Without_LocalAuthority_Should_Return_BadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+
+        // Setup controller with empty local authority claims
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var response = await _sut.ApplicationStatusUpdate(guid, request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task Given_ApplicationStatusUpdate_With_NotFoundException_Should_Return_StatusNotFound()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ThrowsAsync(new NotFoundException("Application not found"));
+
+        // Act
+        var response = await _sut.ApplicationStatusUpdate(guid, request);
+
+        // Assert
+        response.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = response as NotFoundObjectResult;
+        notFoundResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = notFoundResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Application not found");
+    }
+
+    [Test]
+    public async Task Given_ApplicationStatusUpdate_With_UnauthorizedAccessException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("Access denied"));
+
+        // Act
+        var response = await _sut.ApplicationStatusUpdate(guid, request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Access denied");
+    }
+
+    [Test]
+    public async Task Given_ApplicationStatusUpdate_With_ValidationException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ThrowsAsync(new ValidationException("Invalid status"));
+
+        // Act
+        var response = await _sut.ApplicationStatusUpdate(guid, request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult?.Value as ErrorResponse;
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Invalid status");
     }
 }
