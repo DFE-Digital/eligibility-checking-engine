@@ -13,6 +13,8 @@ public class CheckEligibilityRequestData_Eypp : IEligibilityServiceType
     public string LastName { get; set; }
 
     public string DateOfBirth { get; set; }
+
+    public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
 

@@ -13,6 +13,7 @@ public class CheckEligibilityRequestData_2yo : IEligibilityServiceType
     public string LastName { get; set; }
 
     public string DateOfBirth { get; set; }
+    public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
 public class CheckEligibilityRequest_2yo : ICheckEligibilityRequest<CheckEligibilityRequestData_2yo>

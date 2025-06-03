@@ -14,12 +14,13 @@ namespace CheckYourEligibility.API.Boundary.Requests;
 //    }
 //}
 
-public interface IEligibilityServiceType: IHasNationalInsurance
+public interface IEligibilityServiceType: IHasNationalInsurance, IHasAsylumSeekerNumber
 {
     CheckEligibilityType Type { get; }
     string LastName { get; set; }
     string DateOfBirth { get; set; }
     string? NationalInsuranceNumber { get; set; }
+    string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 public interface IHasNationalInsurance
 {
@@ -38,7 +39,7 @@ public interface ICheckEligibilityRequest<TItem>
 
 #region FreeSchoolMeals Type
 
-public class CheckEligibilityRequestData_Fsm : IEligibilityServiceType, IHasAsylumSeekerNumber
+public class CheckEligibilityRequestData_Fsm : IEligibilityServiceType
 {
     public CheckEligibilityType Type => CheckEligibilityType.FreeSchoolMeals;
 
