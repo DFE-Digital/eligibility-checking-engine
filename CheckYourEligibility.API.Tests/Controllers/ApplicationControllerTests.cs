@@ -221,8 +221,7 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }
-    [Test]
+    }    [Test]
     public async Task Given_Valid_ApplicationSearch_Should_Return_StatusOk()
     {
         // Arrange
@@ -239,7 +238,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         }
         model.Data.LocalAuthority = 1;  // Match the localAuthorityIds we set up
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, It.IsAny<string>())).ReturnsAsync(expectedResponse);
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
         { StatusCode = StatusCodes.Status200OK };
 
@@ -248,7 +247,7 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }    [Test]
+    }[Test]
     public async Task Given_InValid_guid_ApplicationStatusUpdate_Should_Return_StatusNotFound()
     {
         // Arrange
@@ -307,9 +306,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
         errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority scope found");
-    }
-
-    [Test]
+    }    [Test]
     public async Task Given_ApplicationSearch_With_NonMatching_LocalAuthority_Should_Return_BadRequest()
     {
         // Arrange
@@ -322,6 +319,11 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Setup controller with specific local authority claims (not including 5)
         SetupControllerWithLocalAuthorityIds(new List<int> { 1, 2, 3 });
+
+        // Setup mock to throw UnauthorizedAccessException for unauthorized access
+        _mockSearchApplicationsUseCase
+            .Setup(cs => cs.Execute(It.IsAny<ApplicationRequestSearch>(), It.IsAny<List<int>>()))
+            .ThrowsAsync(new UnauthorizedAccessException("Local authority scope does not match requested LocalAuthority"));
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -472,5 +474,77 @@ public class ApplicationControllerTests : TestBase.TestBase
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
         errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Access denied");
+    }
+
+    [Test]
+    public async Task Given_ApplicationSearch_With_ArgumentException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+            .ThrowsAsync(new ArgumentException("Invalid request, data is required"));
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult!.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult.Value as ErrorResponse;
+        errorResponse!.Errors!.FirstOrDefault()?.Title.Should().Be("Invalid request, data is required");
+    }
+
+    [Test]
+    public async Task Given_ApplicationSearch_With_UnauthorizedAccessException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("You do not have permission to search applications for this local authority"));
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult!.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult.Value as ErrorResponse;
+        errorResponse!.Errors!.FirstOrDefault()?.Title.Should().Be("You do not have permission to search applications for this local authority");
+    }
+
+    [Test]
+    public async Task Given_ApplicationSearch_With_GeneralException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+            .ThrowsAsync(new Exception("Database connection failed"));
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = response as BadRequestObjectResult;
+        badRequestResult!.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = badRequestResult.Value as ErrorResponse;
+        errorResponse!.Errors!.FirstOrDefault()?.Title.Should().Be("Database connection failed");
     }
 }

@@ -128,31 +128,36 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ApplicationSearchResponse), (int)HttpStatusCode.OK)]
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
-        var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
-        if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+        try
         {
-            return BadRequest(new ErrorResponse
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                Errors = [new Error { Title = "No local authority scope found" }]
-            });
-        }
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
 
-        int? requestedLocalAuthority = model.Data?.LocalAuthority;
-        // If not 'all', must match one of the allowed LocalAuthorities
-        if (!localAuthorityIds.Contains(0) && (requestedLocalAuthority == null || !localAuthorityIds.Contains(requestedLocalAuthority.Value)))
+            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds);
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (ArgumentException ex)
         {
-            return BadRequest(new ErrorResponse
-            {
-                Errors = [new Error { Title = "Local authority scope does not match requested LocalAuthority" }]
-            });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
-
-        var response = await _searchApplicationsUseCase.Execute(model);
-        return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching applications");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 
     /// <summary>
