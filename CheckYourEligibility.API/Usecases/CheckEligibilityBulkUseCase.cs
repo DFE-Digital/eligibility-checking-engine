@@ -3,37 +3,32 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
 
-public interface ICheckEligibilityBulkUseCase<TRequest, TItem>
-    where TRequest : ICheckEligibilityBulkRequest<TItem>
-    where TItem : IEligibilityServiceType
+public interface ICheckEligibilityBulkUseCase
 {
     Task<CheckEligibilityResponseBulk> Execute(
-        TRequest model,
+        CheckEligibilityRequestBulk model,
         int recordCountLimit);
 }
 
-public class CheckEligibilityBulkUseCase<TRequest, TItem> : ICheckEligibilityBulkUseCase<TRequest, TItem>
-        where TRequest : ICheckEligibilityBulkRequest<TItem>
-        where TItem : IEligibilityServiceType
+public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
+
 {
-    private readonly IValidator<TItem> _validator;
+    private readonly IValidator<CheckEligibilityRequestData> _validator;
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
-    private readonly ILogger<CheckEligibilityBulkUseCase<TRequest, TItem>> _logger;
+    private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
 
     public CheckEligibilityBulkUseCase(
-        IValidator<TItem> validator,
+        IValidator<CheckEligibilityRequestData> validator,
         ICheckEligibility checkGateway,
         IAudit auditGateway,
-        ILogger<CheckEligibilityBulkUseCase<TRequest, TItem>> logger)
+        ILogger<CheckEligibilityBulkUseCase> logger)
     {
         _validator = validator;
         _checkGateway = checkGateway;
@@ -42,7 +37,7 @@ public class CheckEligibilityBulkUseCase<TRequest, TItem> : ICheckEligibilityBul
     }
 
     public async Task<CheckEligibilityResponseBulk> Execute(
-        TRequest model,
+        CheckEligibilityRequestBulk model,
         int recordCountLimit)
     {
         if (model == null || model.Data == null)
@@ -61,11 +56,8 @@ public class CheckEligibilityBulkUseCase<TRequest, TItem> : ICheckEligibilityBul
 
         foreach (var item in model.Data)
         {
-            if (item is IHasNationalInsurance ni)
-                ni.NationalInsuranceNumber = ni.NationalInsuranceNumber?.ToUpperInvariant();
-
-            if (item is IHasAsylumSeekerNumber asn)
-                asn.NationalAsylumSeekerServiceNumber = asn.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
+            item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpperInvariant();
+            item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
 
             var result = _validator.Validate(item);
             if (!result.IsValid)

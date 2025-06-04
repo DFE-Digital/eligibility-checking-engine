@@ -6,15 +6,20 @@ namespace CheckYourEligibility.API.Boundary.Requests;
 //{
 //    // Set the default type to FreeSchoolMeals instead of None
 //    protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
-    
+
 //    public CheckEligibilityType Type 
 //    { 
 //        get => baseType; 
 //        set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
 //    }
 //}
+public class CheckEligibilityRequestDataBase : IEligibilityServiceType
+{
+    protected CheckEligibilityType baseType;
+    public int? Sequence { get; set; }
+}
 
-public interface IEligibilityServiceType: IHasNationalInsurance, IHasAsylumSeekerNumber
+public interface IEligibilityServiceType
 {
     CheckEligibilityType Type { get; }
     string LastName { get; set; }
@@ -22,39 +27,33 @@ public interface IEligibilityServiceType: IHasNationalInsurance, IHasAsylumSeeke
     string? NationalInsuranceNumber { get; set; }
     string? NationalAsylumSeekerServiceNumber { get; set; }
 }
-public interface IHasNationalInsurance
+
+public interface ICheckEligibilityRequest
 {
-    string? NationalInsuranceNumber { get; set; }
+    CheckEligibilityRequestData? Data { get; set; }
 }
 
-public interface IHasAsylumSeekerNumber
+public static class EligibilityModelFactory
 {
-    string? NationalAsylumSeekerServiceNumber { get; set; }
+    public static CheckEligibilityRequest CreateFromGeneric(CheckEligibilityRequest model, CheckEligibilityType routeType)
+    {
+        if (model.Data.Type != routeType)
+            model.Data.Type = routeType;
+
+        return model;
+    }
 }
 
-public interface ICheckEligibilityRequest<TItem>
+public class CheckEligibilityRequestData : IEligibilityServiceType
 {
-    TItem? Data {get;set;}
-}
-
-#region FreeSchoolMeals Type
-
-public class CheckEligibilityRequestData_Fsm : IEligibilityServiceType
-{
-    public CheckEligibilityType Type => CheckEligibilityType.FreeSchoolMeals;
-
+    public CheckEligibilityType Type { get; set; } 
+    public string LastName { get; set; } = string.Empty;
+    public string DateOfBirth { get; set; } = string.Empty;
     public string? NationalInsuranceNumber { get; set; }
-
-    public string LastName { get; set; }
-
-    public string DateOfBirth { get; set; }
-
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
-public class CheckEligibilityRequest_Fsm : ICheckEligibilityRequest<CheckEligibilityRequestData_Fsm>
+public class CheckEligibilityRequest : ICheckEligibilityRequest
 {
-    public CheckEligibilityRequestData_Fsm? Data { get; set; }
+    public CheckEligibilityRequestData? Data { get; set; }
 }
-
-#endregion

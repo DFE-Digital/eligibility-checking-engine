@@ -7,12 +7,13 @@ using FluentValidation;
 
 namespace FeatureManagement.Domain.Validation;
 
-public class CheckEligibilityRequestDataValidator_Eypp : AbstractValidator<CheckEligibilityRequestData_Eypp>
+public class CheckEligibilityRequestDataValidator : AbstractValidator<CheckEligibilityRequestData>
 {
-    public CheckEligibilityRequestDataValidator_Eypp()
+    public CheckEligibilityRequestDataValidator()
     {
         RuleFor(x => x.LastName)
-            .NotEmpty().WithMessage(ValidationMessages.LastName);
+            .Must(DataValidation.BeAValidName)
+            .WithMessage(ValidationMessages.LastName);
 
         RuleFor(x => x.DateOfBirth)
             .NotEmpty()
@@ -21,10 +22,18 @@ public class CheckEligibilityRequestDataValidator_Eypp : AbstractValidator<Check
 
         When(x => !string.IsNullOrEmpty(x.NationalInsuranceNumber), () =>
         {
+            RuleFor(x => x.NationalAsylumSeekerServiceNumber)
+                .Empty()
+                .WithMessage(ValidationMessages.NI_and_NASS);
             RuleFor(x => x.NationalInsuranceNumber)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidNi)
                 .WithMessage(ValidationMessages.NI);
+        }).Otherwise(() =>
+        {
+            RuleFor(x => x.NationalAsylumSeekerServiceNumber)
+                .NotEmpty()
+                .WithMessage(ValidationMessages.NI_or_NASS);
         });
     }
 }
