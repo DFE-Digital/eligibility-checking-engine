@@ -375,7 +375,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.FreeSchoolMeals:
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestData>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }

@@ -154,6 +154,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
+
         _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
                 d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>()))
             .Returns(Task.CompletedTask);

@@ -72,7 +72,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             throw new ValidationException(null, errors.ToString());
 
         var groupId = Guid.NewGuid().ToString();
-        await _checkGateway.PostCheck((IEnumerable<IEligibilityServiceType>)model.Data, groupId);
+        await _checkGateway.PostCheck(model.Data, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 
