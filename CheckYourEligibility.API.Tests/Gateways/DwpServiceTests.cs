@@ -429,7 +429,7 @@ public class DwpServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = new CheckEligibilityRequestData().CheckType
         };
     }
 }

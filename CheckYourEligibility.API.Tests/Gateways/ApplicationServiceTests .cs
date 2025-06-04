@@ -453,7 +453,7 @@ public class ApplicationServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = new CheckEligibilityRequestData().CheckType
         };
         var hashId = await _HashGateway.Create(processItem, status, ProcessEligibilityCheckSource.HO,
             new AuditData { Type = AuditType.Check });

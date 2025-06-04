@@ -67,7 +67,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var baseType = data as CheckEligibilityRequestDataBase;
             item.CheckData = JsonConvert.SerializeObject(data);
 
-            item.Type = baseType.Type;
+            item.Type = baseType.CheckType;
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
