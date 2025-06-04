@@ -58,3 +58,16 @@ public static class EligibilityModelFactory
     }
 }
 
+public static class EligibilityBulkModelFactory
+{
+    public static CheckEligibilityRequestBulk CreateFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType)
+    {
+        foreach (var item in model.Data)
+        {
+            if (item.Type != routeType)
+                item.Type = routeType;
+        }
+
+        return model;
+    }
+}

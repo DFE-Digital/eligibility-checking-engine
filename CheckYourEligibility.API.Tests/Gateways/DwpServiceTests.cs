@@ -122,7 +122,7 @@ public class DwpServiceTests : TestBase.TestBase
         var httpClient = new HttpClient(handlerMock.Object);
         _sut = new DwpGateway(new NullLoggerFactory(), httpClient, _configuration);
 
-        var fsm = _fixture.Create<CheckEligibilityRequestData_Fsm>();
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
 
@@ -421,7 +421,7 @@ public class DwpServiceTests : TestBase.TestBase
         response.Should().Be(true);
     }
 
-    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData_Fsm request)
+    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
         {
@@ -429,7 +429,7 @@ public class DwpServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData_Fsm().Type
+            Type = new CheckEligibilityRequestData().Type
         };
     }
 }
