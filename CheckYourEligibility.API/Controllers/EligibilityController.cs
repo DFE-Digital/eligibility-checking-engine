@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.ComponentModel;
+using System.Net;
+using Azure.Core;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
@@ -6,9 +8,12 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
+using FeatureManagement.Domain.Validation;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
+using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
 
@@ -18,8 +23,8 @@ namespace CheckYourEligibility.API.Controllers;
 public class EligibilityCheckController : BaseController
 {
     private readonly int _bulkUploadRecordCountLimit;
+    private readonly ICheckEligibilityUseCase _checkEligibilityUseCase;
     private readonly ICheckEligibilityBulkUseCase _checkEligibilityBulkUseCase;
-    private readonly ICheckEligibilityForFSMUseCase _checkEligibilityForFsmUseCase;
     private readonly IGetBulkUploadProgressUseCase _getBulkUploadProgressUseCase;
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
@@ -36,14 +41,15 @@ public class EligibilityCheckController : BaseController
         IAudit audit,
         IConfiguration configuration,
         IProcessQueueMessagesUseCase processQueueMessagesUseCase,
-        ICheckEligibilityForFSMUseCase checkEligibilityForFsmUseCase,
+        ICheckEligibilityUseCase checkEligibilityUseCase,
         ICheckEligibilityBulkUseCase checkEligibilityBulkUseCase,
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IGetEligibilityCheckStatusUseCase getEligibilityCheckStatusUseCase,
         IUpdateEligibilityCheckStatusUseCase updateEligibilityCheckStatusUseCase,
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase,
-        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase)
+        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase
+        )
         : base(audit)
     {
         _logger = logger;
@@ -51,7 +57,7 @@ public class EligibilityCheckController : BaseController
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
-        _checkEligibilityForFsmUseCase = checkEligibilityForFsmUseCase;
+        _checkEligibilityUseCase = checkEligibilityUseCase;
         _checkEligibilityBulkUseCase = checkEligibilityBulkUseCase;
         _getBulkUploadProgressUseCase = getBulkUploadProgressUseCase;
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
@@ -90,28 +96,66 @@ public class EligibilityCheckController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check/free-school-meals")]
-    [HttpPost("/check/early-year-pupil-premium")]
-    [HttpPost("/check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
-    public async Task<ActionResult> CheckEligibility([FromBody] CheckEligibilityRequest_Fsm model)
+    public async Task<ActionResult> CheckEligibilityFsm(
+        [FromBody] CheckEligibilityRequest model)
+    {
+        return await HandleSingleRequest(model, CheckEligibilityType.FreeSchoolMeals);
+    }
+
+    /// <summary>
+    ///     Posts a 2YO Eligibility Check to the processing queue
+    /// </summary>
+    /// <param name="model"></param>
+    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/check/two-year-offer")]
+
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> CheckEligibility2yo(
+        [FromBody] CheckEligibilityRequest model)
+    {
+        return await HandleSingleRequest(model, CheckEligibilityType.TwoYearOffer);
+    }
+
+    /// <summary>
+    ///     Posts a EYPP Eligibility Check to the processing queue
+    /// </summary>
+    /// <param name="model"></param>
+    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/check/early-year-pupil-premium")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> CheckEligibilityEypp(
+        [FromBody] CheckEligibilityRequest model)
+    {
+        return await HandleSingleRequest(model, CheckEligibilityType.EarlyYearPupilPremium);
+    }
+
+    private async Task<ActionResult> HandleSingleRequest(
+        CheckEligibilityRequest model,
+        CheckEligibilityType routeType)
     {
         try
         {
-            // Ensure we have a Data object
-            if (model.Data == null) model.Data = new CheckEligibilityRequestData_Fsm();
+            if (model.Data == null)
+                return BadRequest(new ErrorResponse { Errors = 
+                    [ new Error {
+                        Title = "Missing request data",
+                        Detail = "Missing request data"
+                        }
+                    ] 
+                });
 
-            if (HttpContext.Request.Path.Value.EndsWith("/two-year-offer"))
-                model.Data.Type = CheckEligibilityType.TwoYearOffer;
-            else if (HttpContext.Request.Path.Value.EndsWith("/early-year-pupil-premium"))
-                model.Data.Type = CheckEligibilityType.EarlyYearPupilPremium;
-            else
-                model.Data.Type = CheckEligibilityType.FreeSchoolMeals;
+            var modelData = EligibilityModelFactory.CreateFromGeneric(model, routeType);
 
-            var result = await _checkEligibilityForFsmUseCase.Execute(model);
-
+            var result = await _checkEligibilityUseCase.Execute(modelData);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
-
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -127,34 +171,65 @@ public class EligibilityCheckController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
-    [HttpPost("/bulk-check/early-year-pupil-premium")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model) 
+    {
+        return await HandleBulkRequest(model, CheckEligibilityType.FreeSchoolMeals);
+    }
+
+    /// <summary>
+    ///     Posts the array of 2YO checks
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    public async Task<ActionResult> CheckEligibilityBulk([FromBody] CheckEligibilityRequestBulk_Fsm model)
+    public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
+    {
+        return await HandleBulkRequest(model, CheckEligibilityType.TwoYearOffer);
+    }
+
+    /// <summary>
+    ///     Posts the array of EYPP checks
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/bulk-check/early-year-pupil-premium")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
+    {
+        return await HandleBulkRequest(model, CheckEligibilityType.EarlyYearPupilPremium);
+    }
+
+    private async Task<ActionResult> HandleBulkRequest(
+        CheckEligibilityRequestBulk model,
+        CheckEligibilityType routeType)
     {
         try
         {
-            var eligibilityType = CheckEligibilityType.FreeSchoolMeals;
+            if (model?.Data == null)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = {
+                new Error(){
+                    Title = "Data Mismatch",
+                    Detail ="No data provided." } }
+                });
+            }
 
-            if (HttpContext.Request.Path.Value.EndsWith("/two-year-offer"))
-                eligibilityType = CheckEligibilityType.TwoYearOffer;
-            else if (HttpContext.Request.Path.Value.EndsWith("/early-year-pupil-premium"))
-                eligibilityType = CheckEligibilityType.EarlyYearPupilPremium;
+            var modelData = EligibilityBulkModelFactory.CreateFromGeneric(model, routeType);
 
-            if (model.Data == null)
-                model.Data = new List<CheckEligibilityRequestBulkData_Fsm>();
-            else
-                // Set the type for each item in the collection
-                // This ensures each item uses the correct eligibility type based on the endpoint URL
-                foreach (var item in model.Data)
-                    if (item != null)
-                        item.Type = eligibilityType;
-
-            var result = await _checkEligibilityBulkUseCase.Execute(model, _bulkUploadRecordCountLimit);
-
+            var result = await _checkEligibilityBulkUseCase.Execute(modelData, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
-        }
 
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });

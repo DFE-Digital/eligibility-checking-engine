@@ -67,7 +67,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var baseType = data as CheckEligibilityRequestDataBase;
             item.CheckData = JsonConvert.SerializeObject(data);
 
-            item.Type = baseType.Type;
+            item.Type = baseType.CheckType;
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -123,9 +123,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                {
-                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                }
+                    {
+                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    }
                     break;
             }
 
@@ -375,7 +375,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.FreeSchoolMeals:
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestBulkData_Fsm>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }

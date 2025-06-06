@@ -19,8 +19,10 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private IConfigurationRoot _configuration;
 
     private Mock<IAudit> _mockAuditGateway;
+    
     private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;
-    private Mock<ICheckEligibilityForFSMUseCase> _mockCheckEligibilityForFsmUseCase;
+    private Mock<ICheckEligibilityUseCase> _mockCheckEligibilityUseCase;
+    
     private Mock<IGetBulkUploadProgressUseCase> _mockGetBulkUploadProgressUseCase;
     private Mock<IGetBulkUploadResultsUseCase> _mockGetBulkUploadResultsUseCase;
     private Mock<IGetEligibilityCheckItemUseCase> _mockGetEligibilityCheckItemUseCase;
@@ -34,9 +36,9 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockProcessQueueMessagesUseCase = new Mock<IProcessQueueMessagesUseCase>(MockBehavior.Strict);
-        _mockCheckEligibilityForFsmUseCase = new Mock<ICheckEligibilityForFSMUseCase>(MockBehavior.Strict);
         _mockCheckEligibilityBulkUseCase = new Mock<ICheckEligibilityBulkUseCase>(MockBehavior.Strict);
+        _mockCheckEligibilityUseCase = new Mock<ICheckEligibilityUseCase>(MockBehavior.Strict);
+        _mockProcessQueueMessagesUseCase = new Mock<IProcessQueueMessagesUseCase>(MockBehavior.Strict);
         _mockGetBulkUploadProgressUseCase = new Mock<IGetBulkUploadProgressUseCase>(MockBehavior.Strict);
         _mockGetBulkUploadResultsUseCase = new Mock<IGetBulkUploadResultsUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckStatusUseCase = new Mock<IGetEligibilityCheckStatusUseCase>(MockBehavior.Strict);
@@ -60,7 +62,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockAuditGateway.Object,
             _configuration,
             _mockProcessQueueMessagesUseCase.Object,
-            _mockCheckEligibilityForFsmUseCase.Object,
+            _mockCheckEligibilityUseCase.Object,
             _mockCheckEligibilityBulkUseCase.Object,
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
@@ -86,7 +88,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockProcessQueueMessagesUseCase.VerifyAll();
-        _mockCheckEligibilityForFsmUseCase.VerifyAll();
+        _mockCheckEligibilityUseCase.VerifyAll();
         _mockCheckEligibilityBulkUseCase.VerifyAll();
         _mockGetBulkUploadProgressUseCase.VerifyAll();
         _mockGetBulkUploadResultsUseCase.VerifyAll();
@@ -137,14 +139,14 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest_Fsm>();
+        var request = _fixture.Create<CheckEligibilityRequest>();
         var executionResult = new CheckEligibilityResponse();
 
-        _mockCheckEligibilityForFsmUseCase.Setup(u => u.Execute(request))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
-        var response = await _sut.CheckEligibility(request);
+        var response = await _sut.CheckEligibilityFsm(request);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -156,14 +158,14 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest_Fsm>();
+        var request = _fixture.Create<CheckEligibilityRequest>();
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityForFsmUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
 
         // Act
-        var response = await _sut.CheckEligibility(request);
+        var response = await _sut.CheckEligibilityFsm(request);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();
@@ -176,7 +178,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibilityBulk_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequestBulk_Fsm>();
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
         var executionResult = new CheckEligibilityResponseBulk();
 
         // Set up HttpContext for bulk check path
@@ -193,7 +195,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
-        var response = await _sut.CheckEligibilityBulk(request);
+        var response = await _sut.CheckEligibilityBulkFsm(request);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -205,7 +207,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibilityBulk_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequestBulk_Fsm>();
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
 
@@ -223,7 +225,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             .ReturnsAsync(executionResult);
 
         // Act
-        var response = await _sut.CheckEligibilityBulk(request);
+        var response = await _sut.CheckEligibilityBulkFsm(request);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();
