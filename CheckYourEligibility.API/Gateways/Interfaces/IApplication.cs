@@ -9,4 +9,6 @@ public interface IApplication
     Task<ApplicationResponse?> GetApplication(string guid);
     Task<ApplicationSearchResponse> GetApplications(ApplicationRequestSearch model);
     Task<ApplicationStatusUpdateResponse> UpdateApplicationStatus(string guid, ApplicationStatusData data);
+    Task<int> GetLocalAuthorityIdForEstablishment(int establishmentId);
+    Task<int> GetLocalAuthorityIdForApplication(string applicationId);
 }
