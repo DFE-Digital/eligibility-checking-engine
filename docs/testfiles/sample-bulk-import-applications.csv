@@ -1,0 +1,6 @@
+Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date
+John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31
+Sarah,Johnson,1990-07-22,CD789012D,sarah.johnson@example.com,Oliver,Johnson,150716,2025-08-15
+Michael,Brown,1988-11-08,EF345678E,michael.brown@example.com,Sophie,Brown,139856,2025-09-01
+Lisa,Davis,1992-05-03,GH901234F,lisa.davis@example.com,Jacob,Davis,123456,2025-07-20
+David,Wilson,1987-12-14,IJ567890G,david.wilson@example.com,Chloe,Wilson,150716,2025-08-31

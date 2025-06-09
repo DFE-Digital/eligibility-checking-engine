@@ -16,21 +16,20 @@ namespace CheckYourEligibility.API.Controllers;
 [Route("[controller]")]
 [Authorize]
 public class ApplicationController : BaseController
-{
-    private readonly ICreateApplicationUseCase _createApplicationUseCase;
+{    private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
-
-    public ApplicationController(
+    private readonly IImportApplicationsUseCase _importApplicationsUseCase;    public ApplicationController(
         ILogger<ApplicationController> logger,
         IConfiguration configuration,
         ICreateApplicationUseCase createApplicationUseCase,
         IGetApplicationUseCase getApplicationUseCase,
         ISearchApplicationsUseCase searchApplicationsUseCase,
         IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
+        IImportApplicationsUseCase importApplicationsUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -40,6 +39,7 @@ public class ApplicationController : BaseController
         _getApplicationUseCase = getApplicationUseCase;
         _searchApplicationsUseCase = searchApplicationsUseCase;
         _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
+        _importApplicationsUseCase = importApplicationsUseCase;
     }
 
     /// <summary>
@@ -204,6 +204,48 @@ public class ApplicationController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    /// Bulk imports applications from a CSV or JSON file
+    /// </summary>
+    /// <param name="request">The bulk import request containing the CSV or JSON file</param>
+    /// <returns>Import results with success/failure counts and error details</returns>
+    [ProducesResponseType(typeof(ApplicationBulkImportResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("multipart/form-data")]
+    [HttpPost("/application/bulk-import")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    public async Task<ActionResult> BulkImportApplications([FromForm] ApplicationBulkImportRequest request)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _importApplicationsUseCase.Execute(request, localAuthorityIds);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk import");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

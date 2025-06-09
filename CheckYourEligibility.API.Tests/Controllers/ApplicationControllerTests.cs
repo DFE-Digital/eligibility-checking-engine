@@ -19,15 +19,16 @@ namespace CheckYourEligibility.API.Tests;
 
 public class ApplicationControllerTests : TestBase.TestBase
 {
-    private IConfigurationRoot _configuration;
-    private Fixture _fixture;
-    private Mock<IAudit> _mockAuditGateway;
-    private Mock<ICreateApplicationUseCase> _mockCreateApplicationUseCase;
-    private Mock<IGetApplicationUseCase> _mockGetApplicationUseCase;
-    private ILogger<ApplicationController> _mockLogger;
-    private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase;
-    private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase;
-    private ApplicationController _sut;
+    private IConfigurationRoot _configuration = null!;
+    private new Fixture _fixture = null!; // Added 'new' keyword
+    private Mock<IAudit> _mockAuditGateway = null!;
+    private Mock<ICreateApplicationUseCase> _mockCreateApplicationUseCase = null!;
+    private Mock<IGetApplicationUseCase> _mockGetApplicationUseCase = null!;
+    private ILogger<ApplicationController> _mockLogger = null!;
+    private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase = null!;
+    private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
+    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!; 
+    private ApplicationController _sut = null!;
 
     [SetUp]
     public void Setup()
@@ -36,17 +37,19 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase = new Mock<IGetApplicationUseCase>(MockBehavior.Strict);
         _mockSearchApplicationsUseCase = new Mock<ISearchApplicationsUseCase>(MockBehavior.Strict);
         _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
+        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict); 
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
+        _fixture = new Fixture(); // Ensure _fixture is initialized
 
         // config data for Jwt:Scopes:local_authority
-        var configData = new Dictionary<string, string>
+        var configData = new Dictionary<string, string?> // Changed to string? for value
         {
             { "Jwt:Scopes:local_authority", "local_authority" }
         };
 
         _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
+            .AddInMemoryCollection(configData) // Now matches expected type
             .Build();
 
         _sut = new ApplicationController(
@@ -56,8 +59,8 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockGetApplicationUseCase.Object,
             _mockSearchApplicationsUseCase.Object,
             _mockUpdateApplicationStatusUseCase.Object,
+            _mockImportApplicationsUseCase.Object, 
             _mockAuditGateway.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -67,6 +70,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase.VerifyAll();
         _mockSearchApplicationsUseCase.VerifyAll();
         _mockUpdateApplicationStatusUseCase.VerifyAll();
+        _mockImportApplicationsUseCase.VerifyAll(); // Added
         _mockAuditGateway.VerifyAll();
     }
     [Test]
@@ -131,7 +135,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
         var badRequestResult = response as BadRequestObjectResult;
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
+        badRequestResult!.Value.Should().BeOfType<ErrorResponse>(); // Added null-forgiving operator
     }
     [Test]
     public async Task Given_InValidRequest_Validation_Application_Should_Return_Status400BadRequest()
@@ -546,5 +550,102 @@ public class ApplicationControllerTests : TestBase.TestBase
         badRequestResult!.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult.Value as ErrorResponse;
         errorResponse!.Errors!.FirstOrDefault()?.Title.Should().Be("Database connection failed");
+    }
+
+    [Test]
+    public async Task BulkImportApplications_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await _sut.BulkImportApplications(request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(expectedResponse);
+    }
+
+    [Test]
+    public async Task BulkImportApplications_NoLocalAuthorityScope_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.BulkImportApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task BulkImportApplications_ValidationException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new ValidationException("Validation error"));
+
+        // Act
+        var result = await _sut.BulkImportApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
+    public async Task BulkImportApplications_UnauthorizedAccessException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+
+        // Act
+        var result = await _sut.BulkImportApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Unauthorized");
+    }
+
+    [Test]
+    public async Task BulkImportApplications_GeneralException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
+
+        // Act
+        var result = await _sut.BulkImportApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("General error");
     }
 }

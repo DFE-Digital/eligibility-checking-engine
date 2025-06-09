@@ -1,0 +1,57 @@
+[
+  {
+    "ParentFirstName": "John",
+    "ParentSurname": "Smith",
+    "ParentDateOfBirth": "1985-03-15",
+    "ParentNino": "AB123456C",
+    "ParentEmail": "john.smith@example.com",
+    "ChildFirstName": "Emma",
+    "ChildSurname": "Smith",
+    "ChildSchoolUrn": "123456",
+    "EligibilityEndDate": "2025-07-31"
+  },
+  {
+    "ParentFirstName": "Sarah",
+    "ParentSurname": "Johnson",
+    "ParentDateOfBirth": "1990-07-22",
+    "ParentNino": "CD789012D",
+    "ParentEmail": "sarah.johnson@example.com",
+    "ChildFirstName": "Oliver",
+    "ChildSurname": "Johnson",
+    "ChildSchoolUrn": "150716",
+    "EligibilityEndDate": "2025-08-15"
+  },
+  {
+    "ParentFirstName": "Michael",
+    "ParentSurname": "Brown",
+    "ParentDateOfBirth": "1988-11-08",
+    "ParentNino": "EF345678E",
+    "ParentEmail": "michael.brown@example.com",
+    "ChildFirstName": "Sophie",
+    "ChildSurname": "Brown",
+    "ChildSchoolUrn": "139856",
+    "EligibilityEndDate": "2025-09-01"
+  },
+  {
+    "ParentFirstName": "Lisa",
+    "ParentSurname": "Davis",
+    "ParentDateOfBirth": "1992-05-03",
+    "ParentNino": "GH901234F",
+    "ParentEmail": "lisa.davis@example.com",
+    "ChildFirstName": "Jacob",
+    "ChildSurname": "Davis",
+    "ChildSchoolUrn": "123456",
+    "EligibilityEndDate": "2025-07-20"
+  },
+  {
+    "ParentFirstName": "David",
+    "ParentSurname": "Wilson",
+    "ParentDateOfBirth": "1987-12-14",
+    "ParentNino": "IJ567890G",
+    "ParentEmail": "david.wilson@example.com",
+    "ChildFirstName": "Chloe",
+    "ChildSurname": "Wilson",
+    "ChildSchoolUrn": "954938",
+    "EligibilityEndDate": "2025-08-31"
+  }
+]

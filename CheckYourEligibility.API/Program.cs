@@ -155,6 +155,7 @@ builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>(
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationStatusUseCase>();
+builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
 builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
 builder.Services.AddScoped<ICheckEligibilityForFSMUseCase, CheckEligibilityForFSMUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
