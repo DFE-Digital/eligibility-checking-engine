@@ -3,9 +3,11 @@ using System.Net;
 using Azure.Core;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
@@ -25,6 +27,7 @@ public class EligibilityCheckController : BaseController
     private readonly int _bulkUploadRecordCountLimit;
     private readonly ICheckEligibilityUseCase _checkEligibilityUseCase;
     private readonly ICheckEligibilityBulkUseCase _checkEligibilityBulkUseCase;
+    private readonly IGetBulkCheckStatusesUseCase _getBulkCheckStatusesUseCase;
     private readonly IGetBulkUploadProgressUseCase _getBulkUploadProgressUseCase;
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
@@ -43,6 +46,7 @@ public class EligibilityCheckController : BaseController
         IProcessQueueMessagesUseCase processQueueMessagesUseCase,
         ICheckEligibilityUseCase checkEligibilityUseCase,
         ICheckEligibilityBulkUseCase checkEligibilityBulkUseCase,
+        IGetBulkCheckStatusesUseCase getBulkCheckStatusesUseCase,
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IGetEligibilityCheckStatusUseCase getEligibilityCheckStatusUseCase,
@@ -59,6 +63,7 @@ public class EligibilityCheckController : BaseController
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
         _checkEligibilityUseCase = checkEligibilityUseCase;
         _checkEligibilityBulkUseCase = checkEligibilityBulkUseCase;
+        _getBulkCheckStatusesUseCase = getBulkCheckStatusesUseCase;
         _getBulkUploadProgressUseCase = getBulkUploadProgressUseCase;
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _getEligibilityCheckStatusUseCase = getEligibilityCheckStatusUseCase;
@@ -112,7 +117,6 @@ public class EligibilityCheckController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check/two-year-offer")]
-
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibility2yo(
         [FromBody] CheckEligibilityRequest model)
@@ -224,7 +228,9 @@ public class EligibilityCheckController : BaseController
                 });
             }
 
-            var modelData = EligibilityBulkModelFactory.CreateFromGeneric(model, routeType);
+            var localAuthority = HttpContext.User.GetLocalAuthorityId("local_authority");
+
+            var modelData = EligibilityBulkModelFactory.CreateFromGeneric(model, routeType, localAuthority);
 
             var result = await _checkEligibilityBulkUseCase.Execute(modelData, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
@@ -258,6 +264,38 @@ public class EligibilityCheckController : BaseController
         catch (NotFoundException ex)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Bulk Upload status
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityBulkStatusResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/bulk-check/")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> BulkCheckStatuses()
+    {
+        try
+        {
+            var localAuthority = HttpContext.User.GetLocalAuthorityId("local_authority");
+
+            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
         }
 
         catch (ValidationException ex)

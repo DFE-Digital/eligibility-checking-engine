@@ -65,9 +65,16 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         try
         {
             var baseType = data as CheckEligibilityRequestDataBase;
+
+
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.CheckType;
+
+            if (data is CheckEligibilityRequestBulkData bulkData)
+            {
+                item.ClientIdentifier = bulkData.ClientIdentifier;
+            }
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -220,6 +227,20 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             };
         return null;
     }
+
+    public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
+    {
+        var minDate = DateTime.Now.AddDays(-7);
+        var results = _db.CheckEligibilities
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate)
+            .Select(b => new BulkCheck { 
+                Guid = b.EligibilityCheckID,
+                EligibilityType = b.Type.ToString(),
+                SubmittedDate = b.Created,
+                Status = b.Status.ToString()});
+        return results;
+    }
+
 
     public static string GetHash(CheckProcessData item)
     {

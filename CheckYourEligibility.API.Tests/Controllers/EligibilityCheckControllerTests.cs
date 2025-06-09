@@ -22,7 +22,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     
     private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;
     private Mock<ICheckEligibilityUseCase> _mockCheckEligibilityUseCase;
-    
+
+    private Mock<IGetBulkCheckStatusesUseCase> _mockGetBulkCheckStatusesUseCase;
     private Mock<IGetBulkUploadProgressUseCase> _mockGetBulkUploadProgressUseCase;
     private Mock<IGetBulkUploadResultsUseCase> _mockGetBulkUploadResultsUseCase;
     private Mock<IGetEligibilityCheckItemUseCase> _mockGetEligibilityCheckItemUseCase;
@@ -39,6 +40,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockCheckEligibilityBulkUseCase = new Mock<ICheckEligibilityBulkUseCase>(MockBehavior.Strict);
         _mockCheckEligibilityUseCase = new Mock<ICheckEligibilityUseCase>(MockBehavior.Strict);
         _mockProcessQueueMessagesUseCase = new Mock<IProcessQueueMessagesUseCase>(MockBehavior.Strict);
+        _mockGetBulkCheckStatusesUseCase = new Mock<IGetBulkCheckStatusesUseCase>(MockBehavior.Strict);
         _mockGetBulkUploadProgressUseCase = new Mock<IGetBulkUploadProgressUseCase>(MockBehavior.Strict);
         _mockGetBulkUploadResultsUseCase = new Mock<IGetBulkUploadResultsUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckStatusUseCase = new Mock<IGetEligibilityCheckStatusUseCase>(MockBehavior.Strict);
@@ -64,6 +66,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockProcessQueueMessagesUseCase.Object,
             _mockCheckEligibilityUseCase.Object,
             _mockCheckEligibilityBulkUseCase.Object,
+            _mockGetBulkCheckStatusesUseCase.Object,
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
             _mockGetEligibilityCheckStatusUseCase.Object,

@@ -61,12 +61,14 @@ public static class EligibilityModelFactory
 
 public static class EligibilityBulkModelFactory
 {
-    public static CheckEligibilityRequestBulk CreateFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType)
+    public static CheckEligibilityRequestBulk CreateFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType, string? localAuthority)
     {
         foreach (var item in model.Data)
         {
             if (item.CheckType != routeType)
                 item.CheckType = routeType;
+
+            item.ClientIdentifier = localAuthority;
         }
 
         return model;
