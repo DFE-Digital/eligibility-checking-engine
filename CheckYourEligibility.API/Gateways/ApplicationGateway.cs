@@ -470,7 +470,8 @@ public class ApplicationGateway : BaseGateway, IApplication
     }
 
     private async Task AddStatusHistory(Application application, ApplicationStatus applicationStatus)
-    {        var status = new Domain.ApplicationStatus
+    {
+        var status = new Domain.ApplicationStatus
         {
             ApplicationStatusID = Guid.NewGuid().ToString(),
             ApplicationID = application.ApplicationID,

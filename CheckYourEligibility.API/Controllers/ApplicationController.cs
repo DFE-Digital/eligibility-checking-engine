@@ -219,6 +219,7 @@ public class ApplicationController : BaseController
     [HttpPost("/application/bulk-import")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
     public async Task<ActionResult> BulkImportApplications([FromForm] ApplicationBulkImportRequest request)
     {
         try
