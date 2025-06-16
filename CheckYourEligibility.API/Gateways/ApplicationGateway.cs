@@ -108,7 +108,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -167,10 +167,57 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Gets the local authority ID for an establishment
+    /// </summary>
+    /// <param name="establishmentId">The establishment ID</param>
+    /// <returns>The local authority ID</returns>
+    public async Task<int> GetLocalAuthorityIdForEstablishment(int establishmentId)
+    {
+        try
+        {
+            var localAuthorityId = await _db.Establishments
+                .Where(x => x.EstablishmentId == establishmentId)
+                .Select(x => x.LocalAuthorityId)
+                .FirstAsync();
+
+            return localAuthorityId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
+            throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Get the local authority ID based on application ID
+    /// </summary>
+    /// <param name="applicationId">The application ID</param>
+    /// <returns>The local authority ID</returns>
+    public async Task<int> GetLocalAuthorityIdForApplication(string applicationId)
+    {
+        try
+        {
+
+            var localAuthorityId = await _db.Applications
+                .Where(x => x.ApplicationID == applicationId)
+                .Select(x => x.LocalAuthorityId)
+                .FirstAsync();
+
+            return localAuthorityId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Unable to find application:- {applicationId?.Replace(Environment.NewLine, "")}");
+            throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
+        }
     }
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,

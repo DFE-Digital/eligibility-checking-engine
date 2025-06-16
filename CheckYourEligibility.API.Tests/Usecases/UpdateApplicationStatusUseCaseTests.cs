@@ -26,45 +26,160 @@ public class UpdateApplicationStatusUseCaseTests
     {
         _mockApplicationGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }
-
-    private Mock<IApplication> _mockApplicationGateway;
-    private Mock<IAudit> _mockAuditGateway;
-    private UpdateApplicationStatusUseCase _sut;
-    private Fixture _fixture;
-
-    [Test]
+    }    private Mock<IApplication> _mockApplicationGateway = null!;
+    private Mock<IAudit> _mockAuditGateway = null!;
+    private UpdateApplicationStatusUseCase _sut = null!;
+    private Fixture _fixture = null!;[Test]
     public async Task Execute_Should_Return_Null_When_Response_Is_Null()
     {
         // Arrange
         var guid = _fixture.Create<string>();
         var model = _fixture.Create<ApplicationStatusUpdateRequest>();
-        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data))
-            .ReturnsAsync((ApplicationStatusUpdateResponse)null);
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var localAuthorityId = 1;
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!))
+            .ReturnsAsync((ApplicationStatusUpdateResponse)null!);
 
         // Act
-        var result = await _sut.Execute(guid, model);
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
 
         // Assert
         result.Should().BeNull();
-    }
-
-    [Test]
+    }    [Test]
     public async Task Execute_Should_Call_UpdateApplicationStatus_On_ApplicationGateway()
     {
         // Arrange
         var guid = _fixture.Create<string>();
         var model = _fixture.Create<ApplicationStatusUpdateRequest>();
         var response = _fixture.Create<ApplicationStatusUpdateResponse>();
-        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data)).ReturnsAsync(response);
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var localAuthorityId = 1;
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(guid, model);
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
 
         // Assert
-        _mockApplicationGateway.Verify(s => s.UpdateApplicationStatus(guid, model.Data), Times.Once);
-        result.Data.Should().Be(response.Data);
+        _mockApplicationGateway.Verify(s => s.UpdateApplicationStatus(guid, model.Data!), Times.Once);
+        result!.Data.Should().Be(response.Data);
+    }
+
+    [Test]
+    public async Task Execute_Should_Allow_Access_When_AllowedLocalAuthorityIds_Contains_Zero()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var model = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var response = _fixture.Create<ApplicationStatusUpdateResponse>();
+        var allowedLocalAuthorityIds = new List<int> { 0 }; // 0 means all authorities
+        var localAuthorityId = 5; // Any authority ID
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Data.Should().Be(response.Data);
+    }
+
+    [Test]
+    public async Task Execute_Should_Allow_Access_When_LocalAuthorityId_Is_In_AllowedList()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var model = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var response = _fixture.Create<ApplicationStatusUpdateResponse>();
+        var localAuthorityId = 2;
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+            .ReturnsAsync(_fixture.Create<string>());        // Act
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Data.Should().Be(response.Data);
+    }
+
+    [Test]
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_LocalAuthorityId_Is_Not_In_AllowedList()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var model = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var localAuthorityId = 5;
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);
+
+        // Act & Assert
+        var exception = await FluentActions.Invoking(() => _sut.Execute(guid, model, allowedLocalAuthorityIds))
+            .Should().ThrowAsync<UnauthorizedAccessException>();
+        
+        exception.WithMessage("You do not have permission to create applications for this establishment's local authority");
+    }
+
+    [Test]
+    public async Task Execute_Should_Call_GetLocalAuthorityIdForApplication_Before_Authorization_Check()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var model = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var response = _fixture.Create<ApplicationStatusUpdateResponse>();
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var localAuthorityId = 1;
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
+
+        // Assert
+        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForApplication(guid), Times.Once);
+        result.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task Execute_Should_Create_Audit_Entry_After_Successful_Update()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var model = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var response = _fixture.Create<ApplicationStatusUpdateResponse>();
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var localAuthorityId = 1;
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
+
+        // Assert
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Application, guid), Times.Once);
+        result.Should().NotBeNull();
     }
 }
