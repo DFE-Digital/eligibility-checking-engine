@@ -648,4 +648,101 @@ public class ApplicationControllerTests : TestBase.TestBase
         var errorResponse = badRequestResult!.Value as ErrorResponse;
         errorResponse!.Errors!.First().Title.Should().Be("General error");
     }
+
+    [Test]
+    public async Task BulkImportApplicationsFromJson_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
+        var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(expectedResponse);
+    }
+
+    [Test]
+    public async Task BulkImportApplicationsFromJson_NoLocalAuthorityScope_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task BulkImportApplicationsFromJson_ValidationException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new ValidationException("Validation error"));
+
+        // Act
+        var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
+    public async Task BulkImportApplicationsFromJson_UnauthorizedAccessException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+
+        // Act
+        var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Unauthorized");
+    }
+
+    [Test]
+    public async Task BulkImportApplicationsFromJson_GeneralException_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
+
+        // Act
+        var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("General error");
+    }
 }

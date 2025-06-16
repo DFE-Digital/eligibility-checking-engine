@@ -27,6 +27,14 @@ public interface IImportApplicationsUseCase
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>A response containing import results and any errors</returns>
     Task<ApplicationBulkImportResponse> Execute(ApplicationBulkImportRequest request, List<int> allowedLocalAuthorityIds);
+
+    /// <summary>
+    /// Executes the bulk import of applications from JSON body data
+    /// </summary>
+    /// <param name="request">The bulk import request containing application data in JSON format</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>A response containing import results and any errors</returns>
+    Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request, List<int> allowedLocalAuthorityIds);
 }
 
 /// <summary>
@@ -95,20 +103,66 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             {
                 importData = await ParseJSONFile(request.File);
             }
-
             if (importData == null || importData.Count == 0)
             {
                 response.Message = "Import failed - no valid records found in the file.";
                 response.Errors.Add("Invalid file content - no records found.");
                 return response;
             }
-        }        catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Error parsing file");
             response.Message = $"Error parsing {(isCSV ? "CSV" : "JSON")} file";
             response.Errors.Add($"Error parsing {(isCSV ? "CSV" : "JSON")} file: {ex.Message}");
             return response;
-        }        var applications = new List<Application>();
+        }
+
+        // Use shared processing logic
+        return await ProcessImportData(importData, allowedLocalAuthorityIds);
+    }
+
+    /// <summary>
+    /// Executes the bulk import of applications from JSON body data
+    /// </summary>
+    /// <param name="request">The bulk import request containing application data in JSON format</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>A response containing import results and any errors</returns>
+    public async Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request, List<int> allowedLocalAuthorityIds)
+    {
+        var response = new ApplicationBulkImportResponse();
+
+        if (request.Applications == null || request.Applications.Count == 0)
+        {
+            response.Message = "Import failed - no application data provided.";
+            response.Errors.Add("Application data required.");
+            return response;
+        }
+        // Convert JSON data to import rows (reusing existing logic)
+        var importData = request.Applications.Select(ConvertToImportRow).ToList();
+
+        // Use shared processing logic
+        return await ProcessImportData(importData, allowedLocalAuthorityIds);
+    }
+
+    /// <summary>
+    /// Processes import data and creates applications
+    /// </summary>
+    /// <param name="importData">List of application import rows</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>A response containing import results and any errors</returns>
+    private async Task<ApplicationBulkImportResponse> ProcessImportData(List<ApplicationBulkImportRow> importData, List<int> allowedLocalAuthorityIds)
+    {
+        var response = new ApplicationBulkImportResponse();
+
+        if (importData == null || importData.Count == 0)
+        {
+            response.Message = "Import failed - no valid records found in the data.";
+            response.Errors.Add("Invalid data content - no records found.");
+            return response;
+        }
+
+        var applications = new List<Application>();
 
         // First, validate all rows and collect valid URNs
         var validRows = new List<(ApplicationBulkImportRow row, int rowNumber, ValidationResult validation)>();
@@ -118,7 +172,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         {
             var row = importData[rowIndex];
             var rowDisplayNumber = rowIndex + 1; // For display in error messages
-            
+
             var validationResult = ValidateRow(row);
             if (validationResult.IsValid)
             {
@@ -137,7 +191,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
 
         // Process each validated row
         foreach (var (row, rowNum, validationResult) in validRows)
-        {            try
+        {
+            try
             {
                 // Check if establishment exists in our bulk lookup
                 if (!establishmentLookup.TryGetValue(row.ChildSchoolUrn, out var establishment))
@@ -146,7 +201,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     response.Errors.Add($"Row {rowNum}: Establishment with URN {row.ChildSchoolUrn} not found");
                     continue;
                 }
-                
+
                 // Check local authority permissions - similar to CreateApplicationUseCase
                 if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(establishment.LocalAuthorityId))
                 {
@@ -177,11 +232,12 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                 };
                 applications.Add(application);
                 response.SuccessfulImports++;
-            }            catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error processing row {rowNum}");
                 response.FailedImports++;
-                response.Errors.Add($"Row {rowNum + 1}: Error processing record - {ex.Message}");
+                response.Errors.Add($"Row {rowNum}: Error processing record - {ex.Message}");
             }
         }
 
@@ -300,7 +356,9 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             ChildSchoolUrn = data.ChildSchoolUrn,
             EligibilityEndDate = data.EligibilityEndDate
         };
-    }    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
+    }
+
+    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
     {
         var result = new ValidationResult { IsValid = true };
 

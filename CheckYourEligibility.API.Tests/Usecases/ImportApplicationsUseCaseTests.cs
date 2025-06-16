@@ -765,4 +765,790 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         
         return fileMock;
     }
+
+    #region ExecuteFromJson Tests
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Return_Error_When_Applications_Is_Null()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportJsonRequest { Applications = null! };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Message.Should().Be("Import failed - no application data provided.");
+        result.Errors.Should().Contain("Application data required.");
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(0);
+        result.TotalRecords.Should().Be(0);
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Return_Error_When_Applications_Is_Empty()
+    {
+        // Arrange
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData>() };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Message.Should().Be("Import failed - no application data provided.");
+        result.Errors.Should().Contain("Application data required.");
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(0);
+        result.TotalRecords.Should().Be(0);
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Process_Valid_Single_Application()
+    {
+        // Arrange
+        var applicationData = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        var establishment = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(1);
+        result.FailedImports.Should().Be(0);
+        result.TotalRecords.Should().Be(1);
+        result.Message.Should().Contain("Import completed successfully");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Process_Valid_Multiple_Applications()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment2 = new DomainEstablishment
+        {
+            EstablishmentId = 654321,
+            LocalAuthorityId = 2,
+            EstablishmentName = "Test School 2"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "654321", establishment2 }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(2);
+        result.FailedImports.Should().Be(0);
+        result.TotalRecords.Should().Be(2);
+        result.Message.Should().Contain("Import completed successfully");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Skip_Unauthorized_LocalAuthority_Applications()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
+        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1, // Allowed
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment2 = new DomainEstablishment
+        {
+            EstablishmentId = 654321,
+            LocalAuthorityId = 2, // Not allowed
+            EstablishmentName = "Test School 2"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "654321", establishment2 }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(1); // Only the authorized one
+        result.FailedImports.Should().Be(1); // The unauthorized one
+        result.TotalRecords.Should().Be(2);
+        result.Errors.Should().Contain("Row 2: You do not have permission to create applications for this establishment's local authority");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Allow_All_Applications_When_SuperUser()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
+        var allowedLocalAuthorityIds = new List<int> { 0 }; // Super user (contains 0)
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment2 = new DomainEstablishment
+        {
+            EstablishmentId = 654321,
+            LocalAuthorityId = 2,
+            EstablishmentName = "Test School 2"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "654321", establishment2 }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.Is<IEnumerable<Application>>(apps => apps.Count() == 2)))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(2);
+        result.FailedImports.Should().Be(0);
+        result.TotalRecords.Should().Be(2);
+        result.Message.Should().Contain("Import completed successfully");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Allow_Multiple_LocalAuthorities()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData3 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Bob",
+            ParentSurname = "Wilson",
+            ParentDateOfBirth = "1988-05-10",
+            ParentNino = "EF345678G",
+            ParentEmail = "bob.wilson@example.com",
+            ChildFirstName = "Alice",
+            ChildSurname = "Wilson",
+            ChildSchoolUrn = "789012",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1, // Allowed
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment2 = new DomainEstablishment
+        {
+            EstablishmentId = 654321,
+            LocalAuthorityId = 2, // Allowed
+            EstablishmentName = "Test School 2"
+        };
+
+        var establishment3 = new DomainEstablishment
+        {
+            EstablishmentId = 789012,
+            LocalAuthorityId = 3, // Not allowed
+            EstablishmentName = "Test School 3"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "654321", establishment2 },
+            { "789012", establishment3 }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(2); // First two should be allowed
+        result.FailedImports.Should().Be(1); // Third should be rejected
+        result.TotalRecords.Should().Be(3);
+        result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Handle_Mixed_Authorization_And_Other_Errors()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "999999", // Non-existent establishment
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData3 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Bob",
+            ParentSurname = "Wilson",
+            ParentDateOfBirth = "1988-05-10",
+            ParentNino = "EF345678G",
+            ParentEmail = "bob.wilson@example.com",
+            ChildFirstName = "Alice",
+            ChildSurname = "Wilson",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 } };
+        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1, // Allowed
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment3 = new DomainEstablishment
+        {
+            EstablishmentId = 654321,
+            LocalAuthorityId = 2, // Not allowed
+            EstablishmentName = "Test School 3"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "654321", establishment3 }
+            // Note: establishment 999999 is missing - this will cause an "establishment not found" error
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(1); // Only the first one should succeed
+        result.FailedImports.Should().Be(2); // Both others should fail
+        result.TotalRecords.Should().Be(3);
+        result.Errors.Should().Contain("Row 2: Establishment with URN 999999 not found");
+        result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Handle_Invalid_Data()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "", // Invalid - empty
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "", // Invalid - empty
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData3 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Bob",
+            ParentSurname = "Wilson",
+            ParentDateOfBirth = "invalid-date", // Invalid date format
+            ParentNino = "EF345678G",
+            ParentEmail = "bob.wilson@example.com",
+            ChildFirstName = "Alice",
+            ChildSurname = "Wilson",
+            ChildSchoolUrn = "789012",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        // Setup mock for URN lookup
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>();
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+
+        // Setup audit mock - won't actually be called, but need to set it up for teardown
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Override verification for this test
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(3);
+        result.TotalRecords.Should().Be(3);
+        result.Errors.Should().HaveCount(3);
+        result.Errors.Should().Contain(error => error.Contains("Row 1:") && error.Contains("Parent first name"));
+        result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent surname"));
+        result.Errors.Should().Contain(error => error.Contains("Row 3:") && error.Contains("Parent date of birth"));
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Handle_BulkImport_Gateway_Exception()
+    {
+        // Arrange
+        var applicationData = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        var establishment = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .ThrowsAsync(new Exception("Database error"));
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Don't verify audit as it won't be called on exception
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Never);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Message.Should().Be("Import failed - error during bulk database operation.");
+        result.Errors.Should().Contain("Error during bulk import: Database error");
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(1);
+    }
+
+    [Test]
+    public void ExecuteFromJson_Should_Handle_GetEstablishments_Gateway_Exception() // Removed async
+    {
+        // Arrange
+        var applicationData = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ThrowsAsync(new Exception("Database connection error"));
+
+        // Act & Assert - The exception should bubble up
+        var exception = Assert.ThrowsAsync<Exception>(async () => await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds));
+
+        exception.Should().NotBeNull();
+        exception!.Message.Should().Be("Database connection error");
+    }
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Handle_Partial_Success_Scenario()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "", // Invalid - empty
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData3 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Bob",
+            ParentSurname = "Wilson",
+            ParentDateOfBirth = "1988-05-10",
+            ParentNino = "EF345678G",
+            ParentEmail = "bob.wilson@example.com",
+            ChildFirstName = "Alice",
+            ChildSurname = "Wilson",
+            ChildSchoolUrn = "789012",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        var establishment1 = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School 1"
+        };
+
+        var establishment3 = new DomainEstablishment
+        {
+            EstablishmentId = 789012,
+            LocalAuthorityId = 3,
+            EstablishmentName = "Test School 3"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment1 },
+            { "789012", establishment3 }
+        };
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(2);
+        result.FailedImports.Should().Be(1);
+        result.TotalRecords.Should().Be(3);
+        result.Message.Should().Contain("Import partially completed");
+        result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent first name"));
+    }    [Test]
+    public async Task ExecuteFromJson_Should_Create_Applications_With_Correct_Properties()
+    {
+        // Arrange
+        var applicationData = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        var establishment = new DomainEstablishment
+        {
+            EstablishmentId = 123456,
+            LocalAuthorityId = 1,
+            EstablishmentName = "Test School"
+        };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            { "123456", establishment }
+        };
+
+        Application capturedApplication = null!;
+
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Callback<IEnumerable<Application>>(apps => capturedApplication = apps.First())
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(1);
+        
+        capturedApplication.Should().NotBeNull();
+        capturedApplication.ParentFirstName.Should().Be("John");
+        capturedApplication.ParentLastName.Should().Be("Smith");
+        capturedApplication.ParentDateOfBirth.Should().Be(new DateTime(1985, 3, 15));
+        capturedApplication.ParentNationalInsuranceNumber.Should().Be("AB123456C");
+        capturedApplication.ParentEmail.Should().Be("john.smith@example.com");
+        capturedApplication.ChildFirstName.Should().Be("Emma");
+        capturedApplication.ChildLastName.Should().Be("Smith");
+        capturedApplication.EstablishmentId.Should().Be(123456);
+        capturedApplication.LocalAuthorityId.Should().Be(1);
+        capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
+        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.SentForReview);
+        capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
+        capturedApplication.Reference.Should().NotBeNullOrEmpty();
+        capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        capturedApplication.Updated.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+    }
+
+    #endregion ExecuteFromJson Tests
 }

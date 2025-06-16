@@ -94,15 +94,42 @@ The API accepts the following content types:
 - **CSV:** `text/csv`, `application/csv`
 - **JSON:** `application/json`, `text/json`
 
-## API Endpoint
+## API Endpoints
 
+### File Upload Endpoint
 **POST** `/application/bulk-import`
 
 **Request:**
 - Content-Type: `multipart/form-data`
-- Body: Form data with file upload
+- Body: Form data with file upload (CSV or JSON file)
 
-**Response:**
+### JSON Body Endpoint
+**POST** `/application/bulk-import-json`
+
+**Request:**
+- Content-Type: `application/json`
+- Body: JSON with application data array
+
+**Example Request Body:**
+```json
+{
+  "Applications": [
+    {
+      "ParentFirstName": "John",
+      "ParentSurname": "Smith",
+      "ParentDateOfBirth": "1985-03-15",
+      "ParentNino": "AB123456C",
+      "ParentEmail": "john.smith@example.com",
+      "ChildFirstName": "Emma",
+      "ChildSurname": "Smith",
+      "ChildSchoolUrn": "123456",
+      "EligibilityEndDate": "2025-07-31"
+    }
+  ]
+}
+```
+
+**Response (for both endpoints):**
 ```json
 {
   "TotalRecords": 5,

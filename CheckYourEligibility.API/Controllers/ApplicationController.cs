@@ -250,4 +250,47 @@ public class ApplicationController : BaseController
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
+
+    /// <summary>
+    /// Bulk imports applications from JSON body data
+    /// </summary>
+    /// <param name="request">The bulk import request containing application data in JSON format</param>
+    /// <returns>Import results with success/failure counts and error details</returns>
+    [ProducesResponseType(typeof(ApplicationBulkImportResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json")]
+    [HttpPost("/application/bulk-import-json")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> BulkImportApplicationsFromJson([FromBody] ApplicationBulkImportJsonRequest request)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _importApplicationsUseCase.ExecuteFromJson(request, localAuthorityIds);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk import from JSON");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
 }
