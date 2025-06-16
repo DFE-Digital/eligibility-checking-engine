@@ -8,7 +8,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
     //public int? Sequence { get; set; }
 
-    public CheckEligibilityType CheckType
+    public CheckEligibilityType Type
     {
         get => baseType;
         set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
@@ -55,8 +55,8 @@ public static class EligibilityModelFactory
 {
     public static CheckEligibilityRequest CreateFromGeneric(CheckEligibilityRequest model, CheckEligibilityType routeType)
     {
-        if (model.Data.CheckType != routeType)
-            model.Data.CheckType = routeType;
+        if (model.Data.Type != routeType)
+            model.Data.Type = routeType;
 
         return model;
     }
@@ -68,8 +68,8 @@ public static class EligibilityBulkModelFactory
     {
         foreach (var item in model.Data)
         {
-            if (item.CheckType != routeType)
-                item.CheckType = routeType;
+            if (item.Type != routeType)
+                item.Type = routeType;
 
             item.ClientIdentifier = model.ClientIdentifier;
         }

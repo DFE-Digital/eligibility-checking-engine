@@ -223,7 +223,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
                 LastName = request.LastName,
                 NationalInsuranceNumber = request.NationalInsuranceNumber,
                 NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
-                Type = request.CheckType
+                Type = request.Type
             });
         // Assert
         _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.Hash == hash).Should().NotBeNull();
@@ -385,7 +385,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -410,7 +410,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -437,7 +437,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -464,7 +464,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -493,7 +493,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -522,7 +522,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -552,7 +552,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -580,7 +580,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -610,7 +610,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -639,7 +639,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -668,7 +668,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -697,7 +697,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -723,7 +723,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         fsm.DateOfBirth = "1990-01-01";
         fsm.NationalInsuranceNumber = null;
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -745,7 +745,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -774,7 +774,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var surnamevalid = "simpson";
@@ -810,7 +810,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var surnamevalid = "simpson";
         fsm.LastName = surnamevalid;
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
 
@@ -840,7 +840,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         fsm.NationalInsuranceNumber = string.Empty;
 
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.CheckType;
+        item.Type = fsm.Type;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
@@ -885,7 +885,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
-        item.Type = check.CheckType;
+        item.Type = check.Type;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
 
@@ -978,7 +978,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().CheckType
+            Type = new CheckEligibilityRequestData().Type
         };
     }
 }

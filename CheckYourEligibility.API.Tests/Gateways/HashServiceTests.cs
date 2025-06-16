@@ -107,7 +107,7 @@ public class HashServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().CheckType
+            Type = new CheckEligibilityRequestData().Type
         };
     }
 }

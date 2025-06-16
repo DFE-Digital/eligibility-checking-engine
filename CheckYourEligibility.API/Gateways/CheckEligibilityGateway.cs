@@ -69,7 +69,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.CheckData = JsonConvert.SerializeObject(data);
 
-            item.Type = baseType.CheckType;
+            item.Type = baseType.Type;
 
             if (data is CheckEligibilityRequestBulkData bulkData)
             {
