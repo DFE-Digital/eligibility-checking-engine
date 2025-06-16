@@ -44,6 +44,9 @@ public class CheckEligibilityRequest
 
 public class CheckEligibilityRequestBulk
 {
+    public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy{ get; set; }
     public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
 }
 
@@ -61,16 +64,16 @@ public static class EligibilityModelFactory
 
 public static class EligibilityBulkModelFactory
 {
-    public static CheckEligibilityRequestBulk CreateFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType, string? localAuthority)
+    public static CheckEligibilityRequestBulk CreateBulkFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType)
     {
         foreach (var item in model.Data)
         {
             if (item.CheckType != routeType)
                 item.CheckType = routeType;
 
-            item.ClientIdentifier = localAuthority;
+            item.ClientIdentifier = model.ClientIdentifier;
         }
-
+        
         return model;
     }
 }

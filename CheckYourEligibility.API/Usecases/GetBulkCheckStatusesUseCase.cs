@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -16,7 +18,7 @@ public interface IGetBulkCheckStatusesUseCase
     /// </summary>
     /// <param name="guid">The group ID of the bulk upload</param>
     /// <returns>Bulk upload progress status</returns>
-    Task<CheckEligibilityBulkStatusesResponse> Execute(string guid);
+    Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds);
 }
 
 public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
@@ -32,9 +34,14 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority)
+    public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds)
     {
         if (string.IsNullOrEmpty(localAuthority)) throw new ValidationException(null, "Invalid Request, localAuthority is required.");
+
+        if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(int.Parse(localAuthority)))
+        {
+            throw new UnauthorizedAccessException("You do not have permission to access applications for this establishment's local authority");
+        }
 
         var response = await _checkGateway.GetBulkStatuses(localAuthority);
         if (response == null)

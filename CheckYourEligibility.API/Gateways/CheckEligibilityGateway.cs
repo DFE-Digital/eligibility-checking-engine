@@ -641,6 +641,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
         }
     }
-
+    
     #endregion
 }

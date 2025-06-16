@@ -34,6 +34,7 @@ public class EligibilityCheckController : BaseController
     private readonly IGetEligibilityCheckStatusUseCase _getEligibilityCheckStatusUseCase;
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
+    private readonly string _localAuthorityScopeName;
 
     // Use case services
     private readonly IProcessQueueMessagesUseCase _processQueueMessagesUseCase;
@@ -58,6 +59,7 @@ public class EligibilityCheckController : BaseController
     {
         _logger = logger;
         _bulkUploadRecordCountLimit = configuration.GetValue<int>("BulkEligibilityCheckLimit");
+        _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
@@ -228,9 +230,7 @@ public class EligibilityCheckController : BaseController
                 });
             }
 
-            var localAuthority = HttpContext.User.GetLocalAuthorityId("local_authority");
-
-            var modelData = EligibilityBulkModelFactory.CreateFromGeneric(model, routeType, localAuthority);
+            var modelData = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, routeType);
 
             var result = await _checkEligibilityBulkUseCase.Execute(modelData, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
@@ -280,15 +280,24 @@ public class EligibilityCheckController : BaseController
     [ProducesResponseType(typeof(CheckEligibilityBulkStatusResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpGet("/bulk-check/status")]
+    [HttpGet("/bulk-check/status/{organisationId}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    public async Task<ActionResult> BulkCheckStatuses()
+    public async Task<ActionResult> BulkCheckStatuses(string organisationId)
     {
         try
         {
-            var localAuthority = HttpContext.User.GetLocalAuthorityId("local_authority");
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
 
-            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority);
+            var localAuthority = organisationId; // HttpContext.User.GetLocalAuthorityId("local_authority");
+
+            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority, localAuthorityIds);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
