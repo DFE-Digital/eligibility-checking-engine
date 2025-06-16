@@ -231,13 +231,39 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
     {
         var minDate = DateTime.Now.AddDays(-7);
-        var results = _db.CheckEligibilities
-            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate)
-            .Select(b => new BulkCheck { 
-                Guid = b.EligibilityCheckID,
-                EligibilityType = b.Type.ToString(),
-                SubmittedDate = b.Created,
-                Status = b.Status.ToString()});
+        
+        var allChecks = await _db.CheckEligibilities
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate && !string.IsNullOrWhiteSpace(x.Group))
+            .ToListAsync();
+
+        var results = allChecks
+            .GroupBy(b => b.Group)
+            .Select(g =>
+            {
+                var statuses = g.Select(x => x.Status);
+
+                var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
+                var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
+
+                string status;
+                if (allQueued)
+                    status = "NotStarted";
+                else if (allCompleted)
+                    status = "Complete";
+                else
+                    status = "InProgress";
+
+                var any = g.First(); 
+
+                return new BulkCheck
+                {
+                    Guid = g.Key,
+                    EligibilityType = any.Type.ToString(),
+                    SubmittedDate = any.Created,
+                    Status = status
+                };
+            });
+
         return results;
     }
 
