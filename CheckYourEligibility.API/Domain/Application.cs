@@ -39,6 +39,7 @@ public class Application
     public DateTime Created { get; set; }
 
     public DateTime Updated { get; set; }
+    public DateTime? EligibilityEndDate { get; set; }
 
     public virtual IEnumerable<ApplicationStatus> Statuses { get; set; }
 
