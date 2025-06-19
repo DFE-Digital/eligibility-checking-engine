@@ -39,12 +39,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             _mockAuditGateway.Object,
             _mockLogger.Object,
             _mockMapper.Object);
-    }    [TearDown]
+    }
+    [TearDown]
     public void Teardown()
     {
         _mockApplicationGateway.VerifyAll();
         // Don't verify audit gateway as it may not be called in all test cases
-    }[Test]
+    }
+    [Test]
     public async Task Execute_Should_Return_Error_When_File_Is_Null()
     {
         // Arrange
@@ -61,7 +63,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     [TestCase("application/pdf")]
     [TestCase("text/plain")]
     [TestCase("application/xml")]
@@ -83,16 +86,17 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Process_Valid_CSV_File()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };        var establishment = new DomainEstablishment
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; var establishment = new DomainEstablishment
         {
             EstablishmentId = 123456,
             LocalAuthorityId = 1,
@@ -120,10 +124,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(1);
         result.Message.Should().Contain("Import completed successfully");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Process_Valid_JSON_File()
-    {
-        // Arrange
+    {        // Arrange
         var jsonContent = "[{" +
                          "\"ParentFirstName\": \"John\"," +
                          "\"ParentSurname\": \"Smith\"," +
@@ -132,10 +136,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
                          "\"ParentEmail\": \"john.smith@example.com\"," +
                          "\"ChildFirstName\": \"Emma\"," +
                          "\"ChildSurname\": \"Smith\"," +
+                         "\"ChildDateOfBirth\": \"2015-04-12\"," +
                          "\"ChildSchoolUrn\": \"123456\"," +
                          "\"EligibilityEndDate\": \"2025-07-31\"" +
                          "}]";
-        
+
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -168,12 +173,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(1);
         result.Message.Should().Contain("Import completed successfully");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Empty_CSV_File()
-    {
-        // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n";
-        
+    {        // Arrange
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -188,12 +193,13 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Empty_JSON_Array()
     {
         // Arrange
         var jsonContent = "[]";
-        
+
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -208,14 +214,15 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Skip_Unauthorized_LocalAuthority_Applications()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,654321,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
@@ -256,14 +263,15 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(1); // The unauthorized one
         result.TotalRecords.Should().Be(2);
         result.Errors.Should().Contain("Row 2: You do not have permission to create applications for this establishment's local authority");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Allow_All_Applications_When_SuperUser()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,654321,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 0 }; // Super user (contains 0)
@@ -304,15 +312,15 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(2);
         result.Message.Should().Contain("Import completed successfully");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Allow_Multiple_LocalAuthorities()
-    {
-        // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,654321,2025-07-31\n" +
-                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,789012,2025-07-31";
-        
+    {        // Arrange
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
@@ -361,15 +369,16 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(1); // Third should be rejected
         result.TotalRecords.Should().Be(3);
         result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Mixed_Authorization_And_Other_Errors()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,999999,2025-07-31\n" +
-                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,654321,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,999999,2025-07-31\n" +
+                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,654321,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
@@ -412,28 +421,29 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(3);
         result.Errors.Should().Contain("Row 2: Establishment with URN 999999 not found");
         result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Invalid_CSV_Data()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        ",Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        "Jane,,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,654321,2025-07-31\n" +
-                        "Bob,Wilson,invalid-date,EF345678G,bob.wilson@example.com,Alice,Wilson,789012,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        ",Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        "Jane,,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+                        "Bob,Wilson,invalid-date,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
-        
+
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ReturnsAsync(establishmentLookup);
-        
+
         // Setup audit mock - won't actually be called, but need to set it up for teardown
         _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync("audit-id");
-        
+
         // Override verification for this test
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
@@ -449,7 +459,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain(error => error.Contains("Row 1:") && error.Contains("Parent first name"));
         result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent surname"));
         result.Errors.Should().Contain(error => error.Contains("Row 3:") && error.Contains("Parent date of birth"));
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Invalid_JSON_Data()
     {
         // Arrange
@@ -461,23 +472,24 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
                          "\"ParentEmail\": \"john.smith@example.com\"," +
                          "\"ChildFirstName\": \"Emma\"," +
                          "\"ChildSurname\": \"Smith\"," +
+                         "\"ChildDateOfBirth\": \"2015-04-12\"," +
                          "\"ChildSchoolUrn\": \"123456\"," +
                          "\"EligibilityEndDate\": \"2025-07-31\"" +
                          "}]";
-        
+
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
-        
+
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ReturnsAsync(establishmentLookup);
-            
+
         // Setup audit mock - won't actually be called, but need to set it up for teardown
         _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync("audit-id");
-        
+
         // Override verification for this test
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
@@ -488,13 +500,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(1);
         result.TotalRecords.Should().Be(1);
         result.Errors.Should().Contain(error => error.Contains("Row 1:") && error.Contains("Parent first name"));
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Malformed_CSV_File()
     {
         // Arrange
         var csvContent = "Malformed CSV content without proper headers\n" +
                         "Some,random,data";
-        
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -509,12 +522,13 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Malformed_JSON_File()
     {
         // Arrange
         var jsonContent = "{ invalid json content";
-        
+
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -529,13 +543,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_BulkImport_Gateway_Exception()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -550,7 +565,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var establishmentLookup = new Dictionary<string, DomainEstablishment>
         {
             { "123456", establishment }
-        };        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+        }; _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .ThrowsAsync(new Exception("Database error"));
@@ -569,13 +584,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain("Error during bulk import: Database error");
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(1);
-    }    [Test]
+    }
+    [Test]
     public void Execute_Should_Handle_GetEstablishments_Gateway_Exception() // Removed async
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -585,18 +601,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         // Act & Assert - The exception should bubble up
         var exception = Assert.ThrowsAsync<Exception>(async () => await _sut.Execute(request, allowedLocalAuthorityIds));
-            
+
         exception.Should().NotBeNull();
         exception!.Message.Should().Be("Database connection error");
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Handle_Partial_Success_Scenario()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31\n" +
-                        ",Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,654321,2025-07-31\n" +
-                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,789012,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+                        ",Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+                        "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -636,7 +653,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(3);
         result.Message.Should().Contain("Import partially completed");
         result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent first name"));
-    }    [Test]
+    }
+    [Test]
     [TestCase("text/csv")]
     [TestCase("application/csv")]
     [TestCase("application/json")]
@@ -655,14 +673,15 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
                      "\"ParentEmail\": \"john.smith@example.com\"," +
                      "\"ChildFirstName\": \"Emma\"," +
                      "\"ChildSurname\": \"Smith\"," +
+                     "\"ChildDateOfBirth\": \"2015-04-12\"," +
                      "\"ChildSchoolUrn\": \"123456\"," +
                      "\"EligibilityEndDate\": \"2025-07-31\"" +
                      "}]";
         }
         else
         {
-            content = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                     "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31";
+            content = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                     "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31";
         }
 
         var fileMock = CreateMockFile(content, contentType);
@@ -696,13 +715,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(1);
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(1);
-    }    [Test]
+    }
+    [Test]
     public async Task Execute_Should_Create_Applications_With_Correct_Properties()
     {
         // Arrange
-        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date\n" +
-                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31";
-        
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31";
+
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -735,7 +755,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().NotBeNull();
         result.SuccessfulImports.Should().Be(1);
-        
+
         capturedApplication.Should().NotBeNull();
         capturedApplication.ParentFirstName.Should().Be("John");
         capturedApplication.ParentLastName.Should().Be("Smith");
@@ -744,6 +764,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.ParentEmail.Should().Be("john.smith@example.com");
         capturedApplication.ChildFirstName.Should().Be("Emma");
         capturedApplication.ChildLastName.Should().Be("Smith");
+        capturedApplication.ChildDateOfBirth.Should().Be(new DateTime(2015, 4, 12));
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
@@ -758,15 +779,16 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     {
         var fileMock = new Mock<IFormFile>();
         var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        
+
         fileMock.Setup(f => f.OpenReadStream()).Returns(stream);
         fileMock.Setup(f => f.ContentType).Returns(contentType);
         fileMock.Setup(f => f.Length).Returns(stream.Length);
-        
+
         return fileMock;
     }
 
     #region ExecuteFromJson Tests
+
 
     [Test]
     public async Task ExecuteFromJson_Should_Return_Error_When_Applications_Is_Null()
@@ -787,6 +809,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(0);
     }
 
+
     [Test]
     public async Task ExecuteFromJson_Should_Return_Error_When_Applications_Is_Empty()
     {
@@ -805,7 +828,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.FailedImports.Should().Be(0);
         result.TotalRecords.Should().Be(0);
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Process_Valid_Single_Application()
     {
@@ -819,6 +841,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -855,7 +878,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(1);
         result.Message.Should().Contain("Import completed successfully");
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Process_Valid_Multiple_Applications()
     {
@@ -869,6 +891,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -882,6 +905,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -926,7 +950,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(2);
         result.Message.Should().Contain("Import completed successfully");
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Skip_Unauthorized_LocalAuthority_Applications()
     {
@@ -940,6 +963,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -953,6 +977,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -998,6 +1023,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain("Row 2: You do not have permission to create applications for this establishment's local authority");
     }
 
+
     [Test]
     public async Task ExecuteFromJson_Should_Allow_All_Applications_When_SuperUser()
     {
@@ -1011,6 +1037,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1024,6 +1051,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1068,7 +1096,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(2);
         result.Message.Should().Contain("Import completed successfully");
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Allow_Multiple_LocalAuthorities()
     {
@@ -1082,6 +1109,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1095,6 +1123,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1108,6 +1137,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
+            ChildDateOfBirth = "2014-12-20",
             ChildSchoolUrn = "789012",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1161,6 +1191,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
     }
 
+
     [Test]
     public async Task ExecuteFromJson_Should_Handle_Mixed_Authorization_And_Other_Errors()
     {
@@ -1174,6 +1205,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1187,6 +1219,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "999999", // Non-existent establishment
             EligibilityEndDate = "2025-07-31"
         };
@@ -1200,6 +1233,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
+            ChildDateOfBirth = "2014-12-20",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1246,7 +1280,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain("Row 2: Establishment with URN 999999 not found");
         result.Errors.Should().Contain("Row 3: You do not have permission to create applications for this establishment's local authority");
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Handle_Invalid_Data()
     {
@@ -1260,6 +1293,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1273,6 +1307,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "2016-09-08",
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1286,6 +1321,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
+            ChildDateOfBirth = "2014-12-20",
             ChildSchoolUrn = "789012",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1318,7 +1354,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent surname"));
         result.Errors.Should().Contain(error => error.Contains("Row 3:") && error.Contains("Parent date of birth"));
     }
-
     [Test]
     public async Task ExecuteFromJson_Should_Handle_BulkImport_Gateway_Exception()
     {
@@ -1332,6 +1367,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1371,7 +1407,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(1);
     }
-
     [Test]
     public void ExecuteFromJson_Should_Handle_GetEstablishments_Gateway_Exception() // Removed async
     {
@@ -1385,6 +1420,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1402,6 +1438,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         exception!.Message.Should().Be("Database connection error");
     }
 
+
     [Test]
     public async Task ExecuteFromJson_Should_Handle_Partial_Success_Scenario()
     {
@@ -1415,6 +1452,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1428,6 +1466,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
+            ChildDateOfBirth = "654321", // Invalid DOB format
             ChildSchoolUrn = "654321",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1441,6 +1480,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
+            ChildDateOfBirth = "2014-12-20",
             ChildSchoolUrn = "789012",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1483,7 +1523,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         result.TotalRecords.Should().Be(3);
         result.Message.Should().Contain("Import partially completed");
         result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Parent first name"));
-    }    [Test]
+    }
+    [Test]
     public async Task ExecuteFromJson_Should_Create_Applications_With_Correct_Properties()
     {
         // Arrange
@@ -1496,6 +1537,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
             ChildSchoolUrn = "123456",
             EligibilityEndDate = "2025-07-31"
         };
@@ -1531,7 +1573,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().NotBeNull();
         result.SuccessfulImports.Should().Be(1);
-        
+
         capturedApplication.Should().NotBeNull();
         capturedApplication.ParentFirstName.Should().Be("John");
         capturedApplication.ParentLastName.Should().Be("Smith");
@@ -1540,6 +1582,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.ParentEmail.Should().Be("john.smith@example.com");
         capturedApplication.ChildFirstName.Should().Be("Emma");
         capturedApplication.ChildLastName.Should().Be("Smith");
+        capturedApplication.ChildDateOfBirth.Should().Be(new DateTime(2015, 4, 12));
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
@@ -1551,4 +1594,101 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     }
 
     #endregion ExecuteFromJson Tests
+
+
+    [Test]
+    public async Task Execute_Should_Handle_Invalid_Child_Date_Of_Birth_CSV()
+    {
+        // Arrange
+        var csvContent = "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+                        "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,invalid-date,123456,2025-07-31\n" +
+                        "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,,654321,2025-07-31";
+
+        var fileMock = CreateMockFile(csvContent, "text/csv");
+        var request = new ApplicationBulkImportRequest { File = fileMock.Object };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        // Setup mock for URN lookup
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>();
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+
+        // Setup audit mock - won't actually be called, but need to set it up for teardown
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Override verification for this test
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+
+        // Act
+        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(2);
+        result.TotalRecords.Should().Be(2);
+        result.Errors.Should().Contain(error => error.Contains("Row 1:") && error.Contains("Child date of birth"));
+        result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Child Date of Birth is required"));
+    }
+
+
+    [Test]
+    public async Task ExecuteFromJson_Should_Handle_Invalid_Child_Date_Of_Birth()
+    {
+        // Arrange
+        var applicationData1 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildDateOfBirth = "invalid-date", // Invalid date format
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var applicationData2 = new ApplicationBulkImportData
+        {
+            ParentFirstName = "Jane",
+            ParentSurname = "Doe",
+            ParentDateOfBirth = "1990-02-20",
+            ParentNino = "CD789012E",
+            ParentEmail = "jane.doe@example.com",
+            ChildFirstName = "Peter",
+            ChildSurname = "Doe",
+            ChildDateOfBirth = "", // Empty date
+            ChildSchoolUrn = "654321",
+            EligibilityEndDate = "2025-07-31"
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+
+        // Setup mock for URN lookup
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>();
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+
+        // Setup audit mock - won't actually be called, but need to set it up for teardown
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync("audit-id");
+
+        // Override verification for this test
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(2);
+        result.TotalRecords.Should().Be(2);
+        result.Errors.Should().Contain(error => error.Contains("Row 1:") && error.Contains("Child date of birth"));
+        result.Errors.Should().Contain(error => error.Contains("Row 2:") && error.Contains("Child Date of Birth is required"));
+    }
 }

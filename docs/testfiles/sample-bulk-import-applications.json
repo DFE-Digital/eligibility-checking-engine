@@ -7,6 +7,7 @@
     "ParentEmail": "john.smith@example.com",
     "ChildFirstName": "Emma",
     "ChildSurname": "Smith",
+    "ChildDateOfBirth": "2015-04-12",
     "ChildSchoolUrn": "123456",
     "EligibilityEndDate": "2025-07-31"
   },
@@ -18,6 +19,7 @@
     "ParentEmail": "sarah.johnson@example.com",
     "ChildFirstName": "Oliver",
     "ChildSurname": "Johnson",
+    "ChildDateOfBirth": "2016-09-08",
     "ChildSchoolUrn": "150716",
     "EligibilityEndDate": "2025-08-15"
   },
@@ -29,6 +31,7 @@
     "ParentEmail": "michael.brown@example.com",
     "ChildFirstName": "Sophie",
     "ChildSurname": "Brown",
+    "ChildDateOfBirth": "2014-12-20",
     "ChildSchoolUrn": "139856",
     "EligibilityEndDate": "2025-09-01"
   },
@@ -40,6 +43,7 @@
     "ParentEmail": "lisa.davis@example.com",
     "ChildFirstName": "Jacob",
     "ChildSurname": "Davis",
+    "ChildDateOfBirth": "2017-02-15",
     "ChildSchoolUrn": "123456",
     "EligibilityEndDate": "2025-07-20"
   },
@@ -51,6 +55,7 @@
     "ParentEmail": "david.wilson@example.com",
     "ChildFirstName": "Chloe",
     "ChildSurname": "Wilson",
+    "ChildDateOfBirth": "2015-11-03",
     "ChildSchoolUrn": "954938",
     "EligibilityEndDate": "2025-08-31"
   }

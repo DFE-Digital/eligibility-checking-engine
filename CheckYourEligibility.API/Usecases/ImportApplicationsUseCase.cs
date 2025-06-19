@@ -224,7 +224,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     ParentEmail = row.ParentEmail,
                     ChildFirstName = row.ChildFirstName,
                     ChildLastName = row.ChildSurname,
-                    ChildDateOfBirth = validationResult.EligibilityEndDate!.Value, // Using Eligibility end date as child DOB for now
+                    ChildDateOfBirth = validationResult.ChildDateOfBirth!.Value,
+                    EligibilityEndDate = validationResult.EligibilityEndDate!.Value,
                     Created = DateTime.UtcNow,
                     Updated = DateTime.UtcNow,
                     Status = ApplicationStatus.SentForReview, // Default status for bulk import
@@ -335,9 +336,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         }
 
         throw new InvalidOperationException("Unable to parse JSON content as ApplicationBulkImportData");
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Converts ApplicationBulkImportData to ApplicationBulkImportRow
     /// </summary>
     /// <param name="data">The data object to convert</param>
@@ -353,79 +352,99 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             ParentEmail = data.ParentEmail,
             ChildFirstName = data.ChildFirstName,
             ChildSurname = data.ChildSurname,
+            ChildDateOfBirth = data.ChildDateOfBirth,
             ChildSchoolUrn = data.ChildSchoolUrn,
             EligibilityEndDate = data.EligibilityEndDate
         };
-    }
-
-    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
+    }    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
     {
-        var result = new ValidationResult { IsValid = true };
+        var result = new ValidationResult { IsValid = true, ErrorMessages = new List<string>() };
 
         // Validate required fields
         if (string.IsNullOrWhiteSpace(row.ParentFirstName))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Parent first name is required";
-            return result;
+            result.ErrorMessages.Add("Parent first name is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ParentSurname))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Parent surname is required";
-            return result;
+            result.ErrorMessages.Add("Parent surname is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ParentNino))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Parent NINO is required";
-            return result;
+            result.ErrorMessages.Add("Parent NINO is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ParentEmail))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Parent Email Address is required";
-            return result;
+            result.ErrorMessages.Add("Parent Email Address is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ChildFirstName))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Child First Name is required";
-            return result;
+            result.ErrorMessages.Add("Child First Name is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ChildSurname))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Child Surname is required";
-            return result;
+            result.ErrorMessages.Add("Child Surname is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(row.ChildDateOfBirth))
+        {
+            result.IsValid = false;
+            result.ErrorMessages.Add("Child Date of Birth is required");
         }
 
         if (string.IsNullOrWhiteSpace(row.ChildSchoolUrn) || !int.TryParse(row.ChildSchoolUrn, out var urn) || urn <= 0)
         {
             result.IsValid = false;
-            result.ErrorMessage = "Child School URN is required and must be greater than 0";
-            return result;
-        }        // Validate dates
+            result.ErrorMessages.Add("Child School URN is required and must be greater than 0");
+        }
+
+        // Validate dates
         if (!DateTime.TryParseExact(row.ParentDOB, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parentDob))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Parent date of birth must be in format yyyy-MM-dd";
-            return result;
+            result.ErrorMessages.Add("Parent date of birth must be in format yyyy-MM-dd");
         }
-        result.ParentDateOfBirth = parentDob;
+        else
+        {
+            result.ParentDateOfBirth = parentDob;
+        }
+
+        if (!DateTime.TryParseExact(row.ChildDateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var childDob))
+        {
+            result.IsValid = false;
+            result.ErrorMessages.Add("Child date of birth must be in format yyyy-MM-dd");
+        }
+        else
+        {
+            result.ChildDateOfBirth = childDob;
+        }
 
         if (!DateTime.TryParseExact(row.EligibilityEndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var eligibilityEndDate))
         {
             result.IsValid = false;
-            result.ErrorMessage = "Eligibility end date must be in format yyyy-MM-dd";
-            return result;
+            result.ErrorMessages.Add("Eligibility End Date must be in format yyyy-MM-dd");
         }
-        result.EligibilityEndDate = eligibilityEndDate;
+        else
+        {
+            result.EligibilityEndDate = eligibilityEndDate;
+        }
+
+        // Combine all error messages into a single string for backward compatibility
+        if (result.ErrorMessages.Any())
+        {
+            result.ErrorMessage = string.Join("; ", result.ErrorMessages);
+        }
 
         return result;
     }
@@ -435,13 +454,13 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         // Generate a simple reference based on timestamp
         var timestamp = DateTime.UtcNow.Ticks.ToString();
         return timestamp.Substring(timestamp.Length - 8);
-    }
-
-    private class ValidationResult
+    }    private class ValidationResult
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
+        public List<string> ErrorMessages { get; set; } = new List<string>();
         public DateTime? ParentDateOfBirth { get; set; }
+        public DateTime? ChildDateOfBirth { get; set; }
         public DateTime? EligibilityEndDate { get; set; }
     }
 }

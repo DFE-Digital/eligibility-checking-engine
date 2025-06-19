@@ -13,14 +13,15 @@ The CSV file should have the following headers in the first row:
 - Parent Email Address
 - Child First Name
 - Child Surname
+- Child Date of Birth
 - Child School URN
-- Eligibility end date
+- Eligibility End Date
 
 **Example CSV:**
 ```csv
-Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child School URN,Eligibility end date
-John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,123456,2025-07-31
-Sarah,Johnson,1990-07-22,CD789012D,sarah.johnson@example.com,Oliver,Johnson,150716,2025-08-15
+Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date
+John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31
+Sarah,Johnson,1990-07-22,CD789012D,sarah.johnson@example.com,Oliver,Johnson,2016-09-08,150716,2025-08-15
 ```
 
 ### JSON Format
@@ -39,6 +40,7 @@ The JSON file can contain either:
     "ParentEmail": "john.smith@example.com",
     "ChildFirstName": "Emma",
     "ChildSurname": "Smith",
+    "ChildDateOfBirth": "2015-04-12",
     "ChildSchoolUrn": "123456",
     "EligibilityEndDate": "2025-07-31"
   },
@@ -50,6 +52,7 @@ The JSON file can contain either:
     "ParentEmail": "sarah.johnson@example.com",
     "ChildFirstName": "Oliver",
     "ChildSurname": "Johnson",
+    "ChildDateOfBirth": "2016-09-08",
     "ChildSchoolUrn": "150716",
     "EligibilityEndDate": "2025-08-15"
   }
@@ -66,6 +69,7 @@ The JSON file can contain either:
   "ParentEmail": "john.smith@example.com",
   "ChildFirstName": "Emma",
   "ChildSurname": "Smith",
+  "ChildDateOfBirth": "2015-04-12",
   "ChildSchoolUrn": "123456",
   "EligibilityEndDate": "2025-07-31"
 }
@@ -82,12 +86,14 @@ All data is validated regardless of format:
 - Parent Email Address
 - Child First Name
 - Child Surname
+- Child Date of Birth
 - Child School URN (must be a positive integer)
 
 ### Date Format
 All dates must be in the format `yyyy-MM-dd`:
 - Parent Date of Birth
-- Eligibility end date
+- Child Date of Birth
+- Eligibility End Date
 
 ### Content Types
 The API accepts the following content types:
@@ -122,6 +128,7 @@ The API accepts the following content types:
       "ParentEmail": "john.smith@example.com",
       "ChildFirstName": "Emma",
       "ChildSurname": "Smith",
+      "ChildDateOfBirth": "2015-04-12",
       "ChildSchoolUrn": "123456",
       "EligibilityEndDate": "2025-07-31"
     }

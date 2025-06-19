@@ -45,8 +45,7 @@ public class ApplicationBulkImportData
     /// Parent's email address
     /// </summary>
     public required string ParentEmail { get; set; }
-    
-    /// <summary>
+      /// <summary>
     /// Child's first name
     /// </summary>
     public required string ChildFirstName { get; set; }
@@ -57,12 +56,17 @@ public class ApplicationBulkImportData
     public required string ChildSurname { get; set; }
     
     /// <summary>
+    /// Child's date of birth
+    /// </summary>
+    public required string ChildDateOfBirth { get; set; }
+    
+    /// <summary>
     /// Child's school URN
     /// </summary>
     public required string ChildSchoolUrn { get; set; }
     
     /// <summary>
-    /// Eligibility end date
+    /// Eligibility End Date
     /// </summary>
     public required string EligibilityEndDate { get; set; }
 }
