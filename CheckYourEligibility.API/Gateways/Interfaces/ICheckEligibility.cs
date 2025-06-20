@@ -14,6 +14,8 @@ public interface ICheckEligibility
 
     Task<CheckEligibilityStatus?> GetStatus(string guid);
     Task<BulkStatus?> GetBulkStatus(string guid);
+    Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string guid);
+
     Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditItem);
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data);
     Task ProcessQueue(string queue);

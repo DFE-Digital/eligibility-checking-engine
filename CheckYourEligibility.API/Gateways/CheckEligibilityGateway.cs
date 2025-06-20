@@ -65,9 +65,16 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         try
         {
             var baseType = data as CheckEligibilityRequestDataBase;
+
+
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;
+
+            if (data is CheckEligibilityRequestBulkData bulkData)
+            {
+                item.ClientIdentifier = bulkData.ClientIdentifier;
+            }
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -123,9 +130,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                {
-                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                }
+                    {
+                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    }
                     break;
             }
 
@@ -220,6 +227,46 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             };
         return null;
     }
+
+    public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
+    {
+        var minDate = DateTime.Now.AddDays(-7);
+        
+        var allChecks = await _db.CheckEligibilities
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate && !string.IsNullOrWhiteSpace(x.Group))
+            .ToListAsync();
+
+        var results = allChecks
+            .GroupBy(b => b.Group)
+            .Select(g =>
+            {
+                var statuses = g.Select(x => x.Status);
+
+                var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
+                var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
+
+                string status;
+                if (allQueued)
+                    status = "NotStarted";
+                else if (allCompleted)
+                    status = "Complete";
+                else
+                    status = "InProgress";
+
+                var any = g.First(); 
+
+                return new BulkCheck
+                {
+                    Guid = g.Key,
+                    EligibilityType = any.Type.ToString(),
+                    SubmittedDate = any.Created,
+                    Status = status
+                };
+            });
+
+        return results;
+    }
+
 
     public static string GetHash(CheckProcessData item)
     {
@@ -375,7 +422,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.FreeSchoolMeals:
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestBulkData_Fsm>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
@@ -594,6 +641,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
         }
     }
-
+    
     #endregion
 }

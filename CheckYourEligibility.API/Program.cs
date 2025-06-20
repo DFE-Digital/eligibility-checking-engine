@@ -1,12 +1,16 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json.Serialization;
+using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using CheckYourEligibility.API;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.UseCases;
+using FeatureManagement.Domain.Validation;
+using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
@@ -156,8 +160,10 @@ builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationStatusUseCase>();
 builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
-builder.Services.AddScoped<ICheckEligibilityForFSMUseCase, CheckEligibilityForFSMUseCase>();
+builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
+
+builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
 builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
 builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
@@ -166,6 +172,9 @@ builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCh
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
+builder.Services.AddScoped<IValidator<CheckEligibilityRequestData>, CheckEligibilityRequestDataValidator>();
+
+builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>
     new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 

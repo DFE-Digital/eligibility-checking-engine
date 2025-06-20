@@ -5,51 +5,55 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FeatureManagement.Domain.Validation;
+using FluentValidation;
+using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
 
 /// <summary>
-///     Interface for processing a single FSM eligibility check
+///     Interface for processing a single eligibility check
 /// </summary>
-public interface ICheckEligibilityForFSMUseCase
+public interface ICheckEligibilityUseCase
 {
     /// <summary>
     ///     Execute the use case
     /// </summary>
-    /// <param name="model">FSM eligibility check request</param>
+    /// <param name="model">Eligibility check request</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Fsm model);
+
+    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model);
+
 }
 
-public class CheckEligibilityForFSMUseCase : ICheckEligibilityForFSMUseCase
+public class CheckEligibilityUseCase : ICheckEligibilityUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
-    private readonly ILogger<CheckEligibilityForFSMUseCase> _logger;
-
-    public CheckEligibilityForFSMUseCase(
+    private readonly ILogger<CheckEligibilityUseCase> _logger;
+    private readonly IValidator<CheckEligibilityRequestData> _validator;
+    private readonly IServiceProvider _serviceProvider;
+    public CheckEligibilityUseCase(
         ICheckEligibility checkGateway,
         IAudit auditGateway,
-        ILogger<CheckEligibilityForFSMUseCase> logger)
+        IValidator<CheckEligibilityRequestData> validator,
+        ILogger<CheckEligibilityUseCase> logger)
     {
         _checkGateway = checkGateway;
         _auditGateway = auditGateway;
+        _validator = validator;
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest_Fsm model)
+    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model)         
     {
         if (model == null || model.Data == null)
             throw new ValidationException(null, "Invalid Request, data is required.");
-        if (model.GetType() != typeof(CheckEligibilityRequest_Fsm))
-            throw new ValidationException(null, $"Unknown request type:-{model.GetType()}");
 
         // Normalize and validate the request
         model.Data.NationalInsuranceNumber = model.Data.NationalInsuranceNumber?.ToUpper();
         model.Data.NationalAsylumSeekerServiceNumber = model.Data.NationalAsylumSeekerServiceNumber?.ToUpper();
 
-        var validator = new CheckEligibilityRequestDataValidator_Fsm();
-        var validationResults = validator.Validate(model.Data);
+        var validationResults = _validator.Validate(model.Data);
 
         if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
 
@@ -58,7 +62,7 @@ public class CheckEligibilityForFSMUseCase : ICheckEligibilityForFSMUseCase
         if (response != null)
         {
             await _auditGateway.CreateAuditEntry(AuditType.Check, response.Id);
-            _logger.LogInformation($"FSM eligibility check created with ID: {response.Id}");
+            _logger.LogInformation($"Eligibility check created with ID: {response.Id}");
             return new CheckEligibilityResponse
             {
                 Data = new StatusValue { Status = response.Status.ToString() },
@@ -71,7 +75,8 @@ public class CheckEligibilityForFSMUseCase : ICheckEligibilityForFSMUseCase
             };
         }
 
-        _logger.LogWarning("Response for FSM eligibility check was null.");
+        _logger.LogWarning("Response for eligibility check was null.");
         throw new ValidationException(null, "Eligibility check not completed successfully.");
     }
+
 }

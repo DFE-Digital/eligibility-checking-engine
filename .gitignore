@@ -404,3 +404,4 @@ tests/cypress.env.json
 /CheckYourEligibility.API/Properties/serviceDependencies.json
 /CheckYourEligibility.API/Properties/serviceDependencies.local.json
 /CheckYourEligibility.AcceptanceTests/acceptance.runsettings
+/CheckYourEligibility.API/appsettings - Copy.Development.json

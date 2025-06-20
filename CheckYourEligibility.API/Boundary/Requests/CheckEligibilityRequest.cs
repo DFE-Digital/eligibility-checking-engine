@@ -6,6 +6,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
     // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
+    //public int? Sequence { get; set; }
 
     public CheckEligibilityType Type
     {
@@ -20,7 +21,7 @@ public interface IEligibilityServiceType
 
 #region FreeSchoolMeals Type
 
-public class CheckEligibilityRequestData_Fsm : CheckEligibilityRequestDataBase
+public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalInsuranceNumber { get; set; }
 
@@ -31,19 +32,48 @@ public class CheckEligibilityRequestData_Fsm : CheckEligibilityRequestDataBase
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
-public class CheckEligibilityRequestBulkData_Fsm : CheckEligibilityRequestData_Fsm
+public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
 }
 
-public class CheckEligibilityRequest_Fsm
+public class CheckEligibilityRequest
 {
-    public CheckEligibilityRequestData_Fsm? Data { get; set; }
+    public CheckEligibilityRequestData? Data { get; set; }
 }
 
-public class CheckEligibilityRequestBulk_Fsm
+public class CheckEligibilityRequestBulk
 {
-    public IEnumerable<CheckEligibilityRequestBulkData_Fsm> Data { get; set; }
+    public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy{ get; set; }
+    public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
 }
 
 #endregion
+public static class EligibilityModelFactory
+{
+    public static CheckEligibilityRequest CreateFromGeneric(CheckEligibilityRequest model, CheckEligibilityType routeType)
+    {
+        if (model.Data.Type != routeType)
+            model.Data.Type = routeType;
+
+        return model;
+    }
+}
+
+public static class EligibilityBulkModelFactory
+{
+    public static CheckEligibilityRequestBulk CreateBulkFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType)
+    {
+        foreach (var item in model.Data)
+        {
+            if (item.Type != routeType)
+                item.Type = routeType;
+
+            item.ClientIdentifier = model.ClientIdentifier;
+        }
+        
+        return model;
+    }
+}
