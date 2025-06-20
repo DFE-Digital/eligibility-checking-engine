@@ -54,7 +54,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         var model = new CheckEligibilityRequestBulk { Data = null };
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(model, _recordCountLimit);
+        Func<Task> act = async () => await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, data is required.");
@@ -69,7 +69,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         var model = new CheckEligibilityRequestBulk { Data = data };
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(model, limit);
+        Func<Task> act = async () => await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, limit);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>()
@@ -91,7 +91,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         var model = new CheckEligibilityRequestBulk { Data = data };
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(model, _recordCountLimit);
+        Func<Task> act = async () => await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>();
@@ -123,7 +123,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
 
         // Act
-        var result = await _sut.Execute(model, _recordCountLimit);
+        var result = await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
         result.Data.Status.Should().Be(Messages.Processing);
@@ -162,7 +162,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(model, _recordCountLimit);
+        await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
         _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
@@ -188,7 +188,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         var model = new DerivedCheckEligibilityRequestBulk { Data = data };
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(model, _recordCountLimit);
+        Func<Task> act = async () => await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage($"Unknown request type:-{model.GetType()}");

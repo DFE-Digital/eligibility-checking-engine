@@ -194,7 +194,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -224,7 +224,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
         // Act

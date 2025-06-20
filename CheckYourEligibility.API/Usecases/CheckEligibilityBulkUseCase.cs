@@ -14,6 +14,7 @@ public interface ICheckEligibilityBulkUseCase
 {
     Task<CheckEligibilityResponseBulk> Execute(
         CheckEligibilityRequestBulk model,
+        CheckEligibilityType type,
         int recordCountLimit);
 }
 
@@ -39,12 +40,15 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
     public async Task<CheckEligibilityResponseBulk> Execute(
         CheckEligibilityRequestBulk model,
+        CheckEligibilityType type,
         int recordCountLimit)
     {
-        if (model == null || model.Data == null)
+        var modelData = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
+
+        if (modelData == null || model.Data == null)
             throw new ValidationException(null, "Invalid Request, data is required.");
 
-        if (model.Data.Count() > recordCountLimit)
+        if (modelData.Data.Count() > recordCountLimit)
         {
             var errorMessage =
                 $"Invalid Request, data limit of {recordCountLimit} exceeded, {model.Data.Count()} records.";
@@ -55,7 +59,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         var errors = new StringBuilder();
         int index = 1;
 
-        foreach (var item in model.Data)
+        foreach (var item in modelData.Data)
         {
             item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpperInvariant();
             item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
@@ -73,7 +77,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             throw new ValidationException(null, errors.ToString());
 
         var groupId = Guid.NewGuid().ToString();
-        await _checkGateway.PostCheck(model.Data, groupId);
+        await _checkGateway.PostCheck(modelData.Data, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 

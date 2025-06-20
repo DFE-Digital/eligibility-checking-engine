@@ -217,22 +217,20 @@ public class EligibilityCheckController : BaseController
         CheckEligibilityRequestBulk model,
         CheckEligibilityType routeType)
     {
-        try
+        if (model?.Data == null)
         {
-            if (model?.Data == null)
+            return BadRequest(new ErrorResponse
             {
-                return BadRequest(new ErrorResponse
-                {
-                    Errors = {
+                Errors = {
                 new Error(){
                     Title = "Data Mismatch",
                     Detail ="No data provided." } }
-                });
-            }
+            });
+        }
 
-            var modelData = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, routeType);
-
-            var result = await _checkEligibilityBulkUseCase.Execute(modelData, _bulkUploadRecordCountLimit);
+        try
+        {
+            var result = await _checkEligibilityBulkUseCase.Execute(model, routeType, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
 
         }
