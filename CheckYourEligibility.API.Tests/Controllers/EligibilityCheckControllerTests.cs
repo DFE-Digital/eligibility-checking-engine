@@ -145,7 +145,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequest>();
         var executionResult = new CheckEligibilityResponse();
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -165,7 +165,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.CheckEligibilityFsm(request);

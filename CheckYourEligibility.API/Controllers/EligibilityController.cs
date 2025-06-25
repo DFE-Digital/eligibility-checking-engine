@@ -107,7 +107,15 @@ public class EligibilityCheckController : BaseController
     public async Task<ActionResult> CheckEligibilityFsm(
         [FromBody] CheckEligibilityRequest model)
     {
-        return await HandleSingleRequest(model, CheckEligibilityType.FreeSchoolMeals);
+        try
+        {
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
     }
 
     /// <summary>
@@ -123,7 +131,15 @@ public class EligibilityCheckController : BaseController
     public async Task<ActionResult> CheckEligibility2yo(
         [FromBody] CheckEligibilityRequest model)
     {
-        return await HandleSingleRequest(model, CheckEligibilityType.TwoYearOffer);
+        try
+        {
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.TwoYearOffer);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
     }
 
     /// <summary>
@@ -139,27 +155,9 @@ public class EligibilityCheckController : BaseController
     public async Task<ActionResult> CheckEligibilityEypp(
         [FromBody] CheckEligibilityRequest model)
     {
-        return await HandleSingleRequest(model, CheckEligibilityType.EarlyYearPupilPremium);
-    }
-
-    private async Task<ActionResult> HandleSingleRequest(
-        CheckEligibilityRequest model,
-        CheckEligibilityType routeType)
-    {
         try
         {
-            if (model.Data == null)
-                return BadRequest(new ErrorResponse { Errors = 
-                    [ new Error {
-                        Title = "Missing request data",
-                        Detail = "Missing request data"
-                        }
-                    ] 
-                });
-
-            var modelData = EligibilityModelFactory.CreateFromGeneric(model, routeType);
-
-            var result = await _checkEligibilityUseCase.Execute(modelData);
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -178,9 +176,17 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model) 
+    public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
-        return await HandleBulkRequest(model, CheckEligibilityType.FreeSchoolMeals);
+        try
+        {
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals, _bulkUploadRecordCountLimit);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
     }
 
     /// <summary>
@@ -195,7 +201,15 @@ public class EligibilityCheckController : BaseController
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
     {
-        return await HandleBulkRequest(model, CheckEligibilityType.TwoYearOffer);
+        try
+        {
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer, _bulkUploadRecordCountLimit);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
     }
 
     /// <summary>
@@ -210,36 +224,16 @@ public class EligibilityCheckController : BaseController
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
     {
-        return await HandleBulkRequest(model, CheckEligibilityType.EarlyYearPupilPremium);
-    }
-
-    private async Task<ActionResult> HandleBulkRequest(
-        CheckEligibilityRequestBulk model,
-        CheckEligibilityType routeType)
-    {
-        if (model?.Data == null)
-        {
-            return BadRequest(new ErrorResponse
-            {
-                Errors = {
-                new Error(){
-                    Title = "Data Mismatch",
-                    Detail ="No data provided." } }
-            });
-        }
-
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, routeType, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
-
         }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
-
     /// <summary>
     ///     Bulk Upload status
     /// </summary>
@@ -259,7 +253,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -273,7 +267,7 @@ public class EligibilityCheckController : BaseController
     /// <summary>
     ///     Bulk Upload status
     /// </summary>
-    /// <param name="guid"></param>
+    /// <param name="organisationId"></param>
     /// <returns></returns>
     [ProducesResponseType(typeof(CheckEligibilityBulkStatusResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
@@ -299,8 +293,7 @@ public class EligibilityCheckController : BaseController
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
         }
@@ -330,8 +323,7 @@ public class EligibilityCheckController : BaseController
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid, Status = "404" }] });
         }
@@ -361,7 +353,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -392,7 +384,7 @@ public class EligibilityCheckController : BaseController
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
         }
@@ -424,7 +416,7 @@ public class EligibilityCheckController : BaseController
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -437,7 +429,7 @@ public class EligibilityCheckController : BaseController
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
-        catch (ProcessCheckException ex)
+        catch (ProcessCheckException)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -458,11 +450,10 @@ public class EligibilityCheckController : BaseController
         try
         {
             var result = await _getEligibilityCheckItemUseCase.Execute(guid);
-
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }

@@ -19,10 +19,9 @@ public interface ICheckEligibilityUseCase
     ///     Execute the use case
     /// </summary>
     /// <param name="model">Eligibility check request</param>
+    /// <param name="routeType">The type of eligibility check to perform</param>
     /// <returns>Check eligibility response or validation errors</returns>
-
-    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model);
-
+    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model, CheckEligibilityType routeType);
 }
 
 public class CheckEligibilityUseCase : ICheckEligibilityUseCase
@@ -31,7 +30,7 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
     private readonly ICheckEligibility _checkGateway;
     private readonly ILogger<CheckEligibilityUseCase> _logger;
     private readonly IValidator<CheckEligibilityRequestData> _validator;
-    private readonly IServiceProvider _serviceProvider;
+
     public CheckEligibilityUseCase(
         ICheckEligibility checkGateway,
         IAudit auditGateway,
@@ -44,35 +43,40 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model)         
+    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model, CheckEligibilityType routeType)
     {
-        if (model == null || model.Data == null)
-            throw new ValidationException(null, "Invalid Request, data is required.");
+        
+        if (model?.Data == null)
+            throw new ValidationException(null, "Missing request data");
 
-        // Normalize and validate the request
-        model.Data.NationalInsuranceNumber = model.Data.NationalInsuranceNumber?.ToUpper();
-        model.Data.NationalAsylumSeekerServiceNumber = model.Data.NationalAsylumSeekerServiceNumber?.ToUpper();
+        var modelData = EligibilityModelFactory.CreateFromGeneric(model, routeType);
 
-        var validationResults = _validator.Validate(model.Data);
-
-        if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
-
-        // Execute the check
-        var response = await _checkGateway.PostCheck(model.Data);
-        if (response != null)
+        if (modelData.Data != null)
         {
-            await _auditGateway.CreateAuditEntry(AuditType.Check, response.Id);
-            _logger.LogInformation($"Eligibility check created with ID: {response.Id}");
-            return new CheckEligibilityResponse
+            modelData.Data.NationalInsuranceNumber = modelData.Data.NationalInsuranceNumber?.ToUpper();
+            modelData.Data.NationalAsylumSeekerServiceNumber = modelData.Data.NationalAsylumSeekerServiceNumber?.ToUpper();
+
+            var validationResults = _validator.Validate(modelData.Data);
+
+            if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
+
+            // Execute the check
+            var response = await _checkGateway.PostCheck(modelData.Data);
+            if (response != null)
             {
-                Data = new StatusValue { Status = response.Status.ToString() },
-                Links = new CheckEligibilityResponseLinks
+                await _auditGateway.CreateAuditEntry(AuditType.Check, response.Id);
+                _logger.LogInformation($"Eligibility check created with ID: {response.Id}");
+                return new CheckEligibilityResponse
                 {
-                    Get_EligibilityCheck = $"{CheckLinks.GetLink}{response.Id}",
-                    Put_EligibilityCheckProcess = $"{CheckLinks.ProcessLink}{response.Id}",
-                    Get_EligibilityCheckStatus = $"{CheckLinks.GetLink}{response.Id}/status"
-                }
-            };
+                    Data = new StatusValue { Status = response.Status.ToString() },
+                    Links = new CheckEligibilityResponseLinks
+                    {
+                        Get_EligibilityCheck = $"{CheckLinks.GetLink}{response.Id}",
+                        Put_EligibilityCheckProcess = $"{CheckLinks.ProcessLink}{response.Id}",
+                        Get_EligibilityCheckStatus = $"{CheckLinks.GetLink}{response.Id}/status"
+                    }
+                };
+            }
         }
 
         _logger.LogWarning("Response for eligibility check was null.");
