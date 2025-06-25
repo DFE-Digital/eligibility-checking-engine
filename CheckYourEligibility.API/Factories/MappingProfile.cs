@@ -15,7 +15,7 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<CheckEligibilityRequestData_Fsm, EligibilityCheck>()
+        CreateMap<CheckEligibilityRequestData, EligibilityCheck>()
             .ReverseMap();
 
         CreateMap<EligibilityCheck, CheckEligibilityItem>()

@@ -7,9 +7,9 @@ using FluentValidation;
 
 namespace FeatureManagement.Domain.Validation;
 
-public class CheckEligibilityRequestDataValidator_Fsm : AbstractValidator<CheckEligibilityRequestData_Fsm>
+public class CheckEligibilityRequestDataValidator : AbstractValidator<CheckEligibilityRequestData>
 {
-    public CheckEligibilityRequestDataValidator_Fsm()
+    public CheckEligibilityRequestDataValidator()
     {
         RuleFor(x => x.LastName)
             .Must(DataValidation.BeAValidName)

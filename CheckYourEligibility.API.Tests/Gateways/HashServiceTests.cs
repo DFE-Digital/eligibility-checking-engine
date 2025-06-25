@@ -59,7 +59,7 @@ public class HashServiceTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<EligibilityCheck>();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
-        var fsm = _fixture.Create<CheckEligibilityRequestData_Fsm>();
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
 
@@ -80,7 +80,7 @@ public class HashServiceTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<EligibilityCheck>();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
-        var fsm = _fixture.Create<CheckEligibilityRequestData_Fsm>();
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
 
@@ -99,7 +99,7 @@ public class HashServiceTests : TestBase.TestBase
         response.Should().BeNull();
     }
 
-    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData_Fsm request)
+    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
         {
@@ -107,7 +107,7 @@ public class HashServiceTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData_Fsm().Type
+            Type = new CheckEligibilityRequestData().Type
         };
     }
 }
