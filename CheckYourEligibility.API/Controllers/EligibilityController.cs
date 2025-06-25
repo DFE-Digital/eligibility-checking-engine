@@ -9,6 +9,7 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
@@ -32,6 +33,7 @@ public class EligibilityCheckController : BaseController
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
     private readonly IGetEligibilityCheckStatusUseCase _getEligibilityCheckStatusUseCase;
+    private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
@@ -53,7 +55,8 @@ public class EligibilityCheckController : BaseController
         IGetEligibilityCheckStatusUseCase getEligibilityCheckStatusUseCase,
         IUpdateEligibilityCheckStatusUseCase updateEligibilityCheckStatusUseCase,
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase,
-        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase
+        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase,
+        IDeleteBulkCheckUseCase deleteBulkUploadUseCase
         )
         : base(audit)
     {
@@ -72,6 +75,7 @@ public class EligibilityCheckController : BaseController
         _updateEligibilityCheckStatusUseCase = updateEligibilityCheckStatusUseCase;
         _processEligibilityCheckUseCase = processEligibilityCheckUseCase;
         _getEligibilityCheckItemUseCase = getEligibilityCheckItemUseCase;
+        _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
     }
 
     /// <summary>
@@ -328,6 +332,30 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid, Status = "404" }] });
         }
 
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Loads results of bulk loads given a group Id
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityBulkDeleteResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpDelete("/bulk-check/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> DeleteBulkUpload(string guid)
+    {
+        try
+        {
+            var result = await _deleteBulkUploadUseCase.Execute(guid);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }    
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });

@@ -970,6 +970,112 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         statusUpdate.Data.Status.Should().BeEquivalentTo(requestUpdateStatus.Status.ToString());
     }
 
+    [Test]
+    public async Task Given_InvalidRequest_DeleteBulkEligibilityChecks_Should_Return_ErrorMessage()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        Func<Task> act = async () => await _sut.DeleteByGroup(string.Empty);
+
+        // Assert
+
+        act.Should().ThrowExactlyAsync<ValidationException>();
+    }
+
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With5Records_Should_Delete5Records()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();        
+
+        for(var i = 0; i < 5; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.Group = groupId;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+            await _fakeInMemoryDb.SaveChangesAsync();
+        }
+
+        var item2 = _fixture.Create<EligibilityCheck>();
+        _fakeInMemoryDb.CheckEligibilities.Add(item2);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+
+        // Assert
+        deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
+        deleteRespomse.DeletedCount.Should().Be(5);
+        deleteRespomse.Error.Should().BeNullOrEmpty();
+        deleteRespomse.Message.Should().BeEquivalentTo("5 record(s) successfully deleted.");
+    }
+
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With0Records_Should_Delete0Records()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.Group = groupId;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+            await _fakeInMemoryDb.SaveChangesAsync();
+        }
+
+        var item2 = _fixture.Create<EligibilityCheck>();
+        _fakeInMemoryDb.CheckEligibilities.Add(item2);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        Func<Task> act = async () => await _sut.DeleteByGroup(Guid.NewGuid().ToString());
+
+        // Assert
+        act.Should().ThrowExactlyAsync<ValidationException>();        
+    }
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_WithMoreThan250Records_Should_Return_ErrorMessage()
+    {
+        // Arrange
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+
+
+        for (var i = 0; i < 300; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.Group = groupId;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+            await _fakeInMemoryDb.SaveChangesAsync();
+        }
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+
+        // Assert
+        deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
+        deleteRespomse.DeletedCount.Should().Be(0);
+        deleteRespomse.Error.Should().BeEquivalentTo("Too many records (300) matched. Max allowed per bulk group is 250.");
+    }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
@@ -981,4 +1087,5 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             Type = new CheckEligibilityRequestData().Type
         };
     }
+
 }

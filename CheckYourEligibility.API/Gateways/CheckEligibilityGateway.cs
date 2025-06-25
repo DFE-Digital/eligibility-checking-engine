@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -17,6 +18,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Index.HPRtree;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -74,6 +76,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if (data is CheckEligibilityRequestBulkData bulkData)
             {
                 item.ClientIdentifier = bulkData.ClientIdentifier;
+                item.Filename = bulkData.Filename;
+                item.SubmittedBy = bulkData.SubmittedBy;
             }
 
             item.Group = _groupId;
@@ -142,7 +146,61 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
+    public async Task<CheckEligibilityBulkDeleteResponse> DeleteByGroup(string groupId)
+    {
+        if (string.IsNullOrEmpty(groupId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
 
+        var response = new CheckEligibilityBulkDeleteResponse
+        {
+            GroupId = groupId,
+            Timestamp = DateTime.UtcNow
+        };
+
+        try
+        {
+            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId}");
+
+            var records = await _db.CheckEligibilities
+                .Where(x => x.Group == groupId)
+                .ToListAsync();
+
+            if (!records.Any())
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+                throw new NotFoundException(groupId);
+            }
+            
+            if (records.Count > 250)
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding 250 max — operation aborted.");
+                response.Success = false;
+                response.DeletedCount = 0;
+                response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is 250.";
+                return response;
+            }
+
+            _db.CheckEligibilities.RemoveRange(records);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId}");
+
+            response.Success = true;
+            response.DeletedCount = records.Count;
+            response.Message = $"{records.Count} record(s) successfully deleted.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {groupId}");
+
+            response.Success = false;
+            response.DeletedCount = 0;
+            response.Error = $"Error during deletion: {ex.Message}";
+        }
+
+        return response;
+    }
     public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
@@ -253,13 +311,15 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 else
                     status = "InProgress";
 
-                var any = g.First(); 
+                var item = g.First();
 
                 return new BulkCheck
                 {
                     Guid = g.Key,
-                    EligibilityType = any.Type.ToString(),
-                    SubmittedDate = any.Created,
+                    EligibilityType = item.Type.ToString(),
+                    SubmittedDate = item.Created,
+                    SubmittedBy = item.SubmittedBy ?? string.Empty,
+                    Filename = item.Filename ?? string.Empty,
                     Status = status
                 };
             });

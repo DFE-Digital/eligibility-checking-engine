@@ -8,6 +8,7 @@ using CheckYourEligibility.API;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Telemetry;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
@@ -170,6 +171,7 @@ builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityChec
 builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibilityCheckStatusUseCase>();
 builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCheckUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
+builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
 builder.Services.AddScoped<IValidator<CheckEligibilityRequestData>, CheckEligibilityRequestDataValidator>();
