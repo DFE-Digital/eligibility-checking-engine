@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private Mock<IProcessEligibilityCheckUseCase> _mockProcessEligibilityCheckUseCase;
     private Mock<IProcessQueueMessagesUseCase> _mockProcessQueueMessagesUseCase;
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
+    private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
+
     private EligibilityCheckController _sut;
 
     [SetUp]
@@ -47,7 +50,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockUpdateEligibilityCheckStatusUseCase = new Mock<IUpdateEligibilityCheckStatusUseCase>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
-
+;        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckController>>();
 
@@ -72,7 +75,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockGetEligibilityCheckStatusUseCase.Object,
             _mockUpdateEligibilityCheckStatusUseCase.Object,
             _mockProcessEligibilityCheckUseCase.Object,
-            _mockGetEligibilityCheckItemUseCase.Object
+            _mockGetEligibilityCheckItemUseCase.Object,
+            _mockDeleteBulkCheckUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest
@@ -610,6 +614,45 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().Be(itemResponse);
+    }
+
+    [Test]
+    public async Task DeleteBulkEligibilityCheck_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var executionResult = new CheckEligibilityBulkDeleteResponse();
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid))
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
+    public async Task DeleteBulkEligibilityCheck_returns_ok_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var itemResponse = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
+        var executionResult = itemResponse;
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250618120803_AddNewBulkFileFieldsToEligibilityCheck")]
+    partial class AddNewBulkFileFieldsToEligibilityCheck
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,9 +45,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("EligibilityCheckHashID")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("EligibilityEndDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("EstablishmentId")
                         .HasColumnType("int");

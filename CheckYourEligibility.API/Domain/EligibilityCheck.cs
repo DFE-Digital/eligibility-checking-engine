@@ -26,5 +26,7 @@ public class EligibilityCheck
     public string? Group { get; set; }
 
     public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy { get; set; }
     public string CheckData { get; set; }
 }

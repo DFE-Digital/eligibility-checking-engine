@@ -19,4 +19,5 @@ public interface ICheckEligibility
     Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditItem);
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data);
     Task ProcessQueue(string queue);
+    Task<CheckEligibilityBulkDeleteResponse> DeleteByGroup(string groupId);
 }
