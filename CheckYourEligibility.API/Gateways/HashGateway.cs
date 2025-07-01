@@ -83,10 +83,11 @@ public class HashGateway : BaseGateway, IHash
     /// <returns></returns>
     private string GetHash(CheckProcessData item)
     {
+        var key1 = item.Type != CheckEligibilityType.WorkingFamilies ? item.LastName.ToUpper() : item.EligibilityCode;
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
             ? item.NationalAsylumSeekerServiceNumber.ToUpper()
             : item.NationalInsuranceNumber.ToUpper();
-        var input = $"{item.LastName.ToUpper()}{key}{item.DateOfBirth}{item.Type}";
+        var input = $"{key1}{key}{item.DateOfBirth}{item.Type}";
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var inputHash = SHA256.HashData(inputBytes);
         return Convert.ToHexString(inputHash);

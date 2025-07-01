@@ -2,6 +2,8 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -10,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests;
@@ -19,7 +22,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private IConfigurationRoot _configuration;
 
     private Mock<IAudit> _mockAuditGateway;
-    
+
     private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;
     private Mock<ICheckEligibilityUseCase> _mockCheckEligibilityUseCase;
 
@@ -205,7 +208,52 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
     }
+    #region Working Families
+    /// <summary>
+    /// In this test we ensure 
+    /// 1.The Code correctly catches the exception.
+    /// 2.Translates it into a BadRequestObjectResult.
+    /// 3.Passes the exception message into the error response.
+    /// </summary>
+    [Test]
+    public async Task CheckEligibility_WF_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequest>();
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
+        .ThrowsAsync(new ValidationException(null, "Validation error"));
 
+        var response = await _sut.CheckEligibilityWF(request);
+        response.Should().BeOfType<BadRequestObjectResult>();
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+    /// <summary>
+    /// In this test we ensure 
+    /// 1. Correct response code is returned on success
+    /// </summary>
+    [Test]
+    public async Task CheckEligibility_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequest>();
+        var statusResponse = _fixture.Create<CheckEligibilityResponse>();
+        var executionResult = statusResponse;
+
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.CheckEligibilityWF(request);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+        objectResult.Value.Should().Be(statusResponse);
+    }
+    #endregion
     [Test]
     public async Task CheckEligibilityBulk_returns_accepted_with_response_when_use_case_returns_valid_result()
     {

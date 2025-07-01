@@ -8,6 +8,8 @@ public class CheckProcessData
 
     public string LastName { get; set; }
 
+    public string EligibilityCode { get; set; }
+
     public string DateOfBirth { get; set; }
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }

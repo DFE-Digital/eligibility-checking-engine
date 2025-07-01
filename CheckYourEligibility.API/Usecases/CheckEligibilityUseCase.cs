@@ -2,9 +2,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -45,19 +43,17 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
 
     public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model, CheckEligibilityType routeType)
     {
-        
         if (model?.Data == null)
+        {
             throw new ValidationException(null, "Missing request data");
+        }
 
         var modelData = EligibilityModelFactory.CreateFromGeneric(model, routeType);
 
         if (modelData.Data != null)
         {
-            modelData.Data.NationalInsuranceNumber = modelData.Data.NationalInsuranceNumber?.ToUpper();
-            modelData.Data.NationalAsylumSeekerServiceNumber = modelData.Data.NationalAsylumSeekerServiceNumber?.ToUpper();
 
             var validationResults = _validator.Validate(modelData.Data);
-
             if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
 
             // Execute the check

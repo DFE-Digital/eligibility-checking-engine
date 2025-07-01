@@ -13,6 +13,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
         get => baseType;
         set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
     }
+	
 }
 
 public interface IEligibilityServiceType
@@ -24,19 +25,16 @@ public interface IEligibilityServiceType
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalInsuranceNumber { get; set; }
-
-    public string LastName { get; set; }
-
+    public string? LastName { get; set; }
     public string DateOfBirth { get; set; }
-
-    public string? NationalAsylumSeekerServiceNumber { get; set; }
+    public string? NationalAsylumSeekerServiceNumber { get; set; } 
+    public string? EligibilityCode { get; set; }
 }
 
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
 }
-
 public class CheckEligibilityRequest
 {
     public CheckEligibilityRequestData? Data { get; set; }
