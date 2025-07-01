@@ -158,7 +158,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         try
         {
-            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId}");
+            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             var records = await _db.CheckEligibilities
                 .Where(x => x.Group == groupId)
@@ -184,7 +184,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             _db.CheckEligibilities.RemoveRange(records);
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId}");
+            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             response.Success = true;
             response.DeletedCount = records.Count;
@@ -192,7 +192,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {groupId}");
+            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             response.Success = false;
             response.DeletedCount = 0;

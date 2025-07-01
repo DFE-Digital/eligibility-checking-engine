@@ -37,7 +37,7 @@ namespace CheckYourEligibility.API.Usecases
         {
             if (string.IsNullOrEmpty(groupId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
 
-            _logger.LogInformation($"Deleting EligibilityChecks for GroupId: {groupId}");
+            _logger.LogInformation($"Deleting EligibilityChecks for GroupId: {groupId?.Replace(Environment.NewLine, "")}");
             return await _checkGateway.DeleteByGroup(groupId);
         }
     }
