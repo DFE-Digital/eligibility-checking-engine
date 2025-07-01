@@ -19,7 +19,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private IConfigurationRoot _configuration;
 
     private Mock<IAudit> _mockAuditGateway;
-    
+
     private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;
     private Mock<ICheckEligibilityUseCase> _mockCheckEligibilityUseCase;
 
@@ -236,7 +236,110 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(bulkResponse);
     }
+    #region Working Families
+    /// <summary>
+    /// In this test we ensure 
+    /// 1.The Code correctly catches the exception.
+    /// 2.Translates it into a BadRequestObjectResult.
+    /// 3.Passes the exception message into the error response.
+    /// </summary>
+    [Test]
+    public async Task CheckEligibility_WF_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequest>();
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
+        .ThrowsAsync(new ValidationException(null, "Validation error"));
 
+        var response = await _sut.CheckEligibilityWF(request);
+        response.Should().BeOfType<BadRequestObjectResult>();
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+    /// <summary>
+    /// In this test we ensure 
+    /// 1. Correct response code is returned on success
+    /// </summary>
+    [Test]
+    public async Task CheckEligibility_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequest>();
+        var statusResponse = _fixture.Create<CheckEligibilityResponse>();
+        var executionResult = statusResponse;
+
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.CheckEligibilityWF(request);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+        objectResult.Value.Should().Be(statusResponse);
+    }
+    [Test]
+    public async Task CheckEligibilityBulk_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
+        var executionResult = bulkResponse;
+
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/working-families");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = httpContext
+        };
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkWF(request);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+        objectResult.Value.Should().Be(bulkResponse);
+    }
+    [Test]
+    public async Task CheckEligibilityBulk_WF_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var executionResult = new CheckEligibilityResponseBulk();
+
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/working-families");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = httpContext
+        };
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkWF(request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+    #endregion
     [Test]
     public async Task BulkUploadProgress_returns_not_found_when_use_case_returns_not_found()
     {

@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Notify.Client;
 using Notify.Interfaces;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
@@ -136,8 +137,10 @@ builder.Services.AddSwaggerGen(c =>
 
     var filePath = Path.Combine(AppContext.BaseDirectory, "CheckYourEligibility.API.xml");
     c.IncludeXmlComments(filePath);
+    c.ExampleFilters();
 });
 
+builder.Services.AddSwaggerExamplesFromAssemblyOf<CheckEligibilityRequest>();
 // Register Database and other services
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddAzureClients(builder.Configuration);

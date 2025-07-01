@@ -12,5 +12,6 @@ public enum CheckEligibilityType
     None = 0,
     [Description("Free School Meals")] FreeSchoolMeals,
     EarlyYearPupilPremium,
-    TwoYearOffer
+    TwoYearOffer,
+    WorkingFamilies
 }

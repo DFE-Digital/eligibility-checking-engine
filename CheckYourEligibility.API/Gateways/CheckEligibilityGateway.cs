@@ -130,6 +130,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
+                case CheckEligibilityType.WorkingFamilies:
                     {
                         await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
                     }
@@ -422,6 +423,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.FreeSchoolMeals:
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
+            case CheckEligibilityType.WorkingFamilies:
                 return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");

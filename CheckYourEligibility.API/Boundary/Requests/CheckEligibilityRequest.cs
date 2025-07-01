@@ -1,4 +1,6 @@
 ﻿using CheckYourEligibility.API.Domain.Enums;
+using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace CheckYourEligibility.API.Boundary.Requests;
 
@@ -13,6 +15,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
         get => baseType;
         set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
     }
+	
 }
 
 public interface IEligibilityServiceType
@@ -21,15 +24,14 @@ public interface IEligibilityServiceType
 
 #region FreeSchoolMeals Type
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalInsuranceNumber { get; set; }
-
-    public string LastName { get; set; }
-
+    public string? LastName { get; set; }
     public string DateOfBirth { get; set; }
-
-    public string? NationalAsylumSeekerServiceNumber { get; set; }
+    public string? NationalAsylumSeekerServiceNumber { get; set; } 
+    public string? EligibilityCode { get; set; }
 }
 
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
@@ -40,6 +42,41 @@ public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 public class CheckEligibilityRequest
 {
     public CheckEligibilityRequestData? Data { get; set; }
+}
+
+public class CheckWFModelExample : IExamplesProvider<CheckEligibilityRequest>
+{
+    public CheckEligibilityRequest GetExamples() {
+        return new CheckEligibilityRequest
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                Type = CheckEligibilityType.WorkingFamilies,
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = null,
+                LastName = null,
+                DateOfBirth = "2024-01-01",
+                EligibilityCode = "50012345678"
+            }
+        };
+    }
+}
+public class CheckFSMModelExample : IExamplesProvider<CheckEligibilityRequest>
+{
+    public CheckEligibilityRequest GetExamples()
+    {
+        return new CheckEligibilityRequest
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = "AB123456C",
+                LastName = "Smith",
+                DateOfBirth = "2024-01-01",
+                EligibilityCode = null
+            }
+        };
+    }
 }
 
 public class CheckEligibilityRequestBulk

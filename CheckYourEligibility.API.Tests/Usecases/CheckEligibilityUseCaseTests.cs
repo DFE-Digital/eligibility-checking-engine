@@ -3,7 +3,6 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
@@ -107,12 +106,13 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
     public async Task Execute_normalizes_input_data()
     {
         // Arrange
-        var model = CreateValidFsmRequest();
+        var model = CreateValidCheckRequest();
 
         var responseData = new PostCheckResult
         {
             Id = _fixture.Create<string>(),
-            Status = CheckEligibilityStatus.queuedForProcessing        };
+            Status = CheckEligibilityStatus.queuedForProcessing        
+        };
         
         // Setup with a callback to capture the actual argument
         IEligibilityServiceType? capturedArg = null;
@@ -162,12 +162,40 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         // Assert
         await act.Should().ThrowAsync<ValidationException>();
     }
+    [Test]
+    public async Task Execute_returns_success_with_correct_data_when_gateway_returns_response_WF()
+    {
+        // Arrange
+        var model = CreateValidCheckRequest(CheckEligibilityType.WorkingFamilies);
+        var checkId = _fixture.Create<string>();
+        var responseData = new PostCheckResult
+        {
+            Id = checkId,
+            Status = CheckEligibilityStatus.queuedForProcessing
+        };
 
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
+            .ReturnsAsync(responseData);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies);
+
+        // Assert
+        result.Data.Should().NotBeNull();
+        result.Data.Status.Should().Be(responseData.Status.ToString()); result.Links.Should().NotBeNull();
+        result.Links.Get_EligibilityCheck.Should().Be($"{CheckLinks.GetLink}{checkId}");
+        result.Links.Put_EligibilityCheckProcess.Should().Be($"{CheckLinks.ProcessLink}{checkId}");
+        result.Links.Get_EligibilityCheckStatus.Should().Be($"{CheckLinks.GetLink}{checkId}/status");
+    }
     [Test]
     public async Task Execute_returns_success_with_correct_data_when_gateway_returns_response()
     {
         // Arrange
-        var model = CreateValidFsmRequest();
+        var model = CreateValidCheckRequest();
         var checkId = _fixture.Create<string>();
         var responseData = new PostCheckResult
         {
@@ -196,7 +224,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
     public async Task Execute_calls_gateway_PostCheck_with_correct_data()
     {
         // Arrange
-        var model = CreateValidFsmRequest();
+        var model = CreateValidCheckRequest();
         var checkId = _fixture.Create<string>();
         var responseData = new PostCheckResult
         {
@@ -222,7 +250,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
     public async Task Execute_returns_failure_when_gateway_returns_null_response()
     {
         // Arrange
-        var model = CreateValidFsmRequest();
+        var model = CreateValidCheckRequest();
           _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
 
@@ -239,16 +267,32 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
     }
 
-    private CheckEligibilityRequest CreateValidFsmRequest()
+    private CheckEligibilityRequest CreateValidCheckRequest(CheckEligibilityType routeType = CheckEligibilityType.FreeSchoolMeals)
     {
-        return new CheckEligibilityRequest
-        {
-            Data = new CheckEligibilityRequestData
-            {
-                NationalInsuranceNumber = "AB123456C",
-                DateOfBirth = "2000-01-01",
-                LastName = "Doe"
-            }
-        };
+        switch (routeType) {
+            case CheckEligibilityType.WorkingFamilies:
+                return new CheckEligibilityRequest
+                {
+                    Data = new CheckEligibilityRequestData
+                    {
+                        NationalInsuranceNumber = "AB123456C",
+                        DateOfBirth = "2000-01-01",
+                        EligibilityCode= "50012344556"
+                    }
+                };
+
+            default:
+                return new CheckEligibilityRequest
+                {
+                    Data = new CheckEligibilityRequestData
+                    {
+                        NationalInsuranceNumber = "AB123456C",
+                        DateOfBirth = "2000-01-01",
+                        LastName = "Doe"
+                    }
+                };
+
+
+        }
     }
 }
