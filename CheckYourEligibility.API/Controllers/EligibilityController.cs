@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 using System.Net;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
@@ -94,6 +95,7 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest), typeof(CheckFSMModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
@@ -165,11 +167,13 @@ public class EligibilityCheckController : BaseController
     /// Posts a WF Eligibility Check to the processing queue
     /// </summary>
     /// <param name="model"></param>
-    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
+    [HttpPost("/check/working-families")]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest),typeof(CheckWFModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/check/working-families")]
+
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityWF(
         [FromBody] CheckEligibilityRequest model)

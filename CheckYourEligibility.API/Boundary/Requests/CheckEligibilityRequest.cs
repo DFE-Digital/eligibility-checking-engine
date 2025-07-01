@@ -1,4 +1,6 @@
 ﻿using CheckYourEligibility.API.Domain.Enums;
+using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace CheckYourEligibility.API.Boundary.Requests;
 
@@ -22,6 +24,7 @@ public interface IEligibilityServiceType
 
 #region FreeSchoolMeals Type
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalInsuranceNumber { get; set; }
@@ -35,9 +38,45 @@ public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
 }
+
 public class CheckEligibilityRequest
 {
     public CheckEligibilityRequestData? Data { get; set; }
+}
+
+public class CheckWFModelExample : IExamplesProvider<CheckEligibilityRequest>
+{
+    public CheckEligibilityRequest GetExamples() {
+        return new CheckEligibilityRequest
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                Type = CheckEligibilityType.WorkingFamilies,
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = null,
+                LastName = null,
+                DateOfBirth = "2024-01-01",
+                EligibilityCode = "50012345678"
+            }
+        };
+    }
+}
+public class CheckFSMModelExample : IExamplesProvider<CheckEligibilityRequest>
+{
+    public CheckEligibilityRequest GetExamples()
+    {
+        return new CheckEligibilityRequest
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = "AB123456C",
+                LastName = "Smith",
+                DateOfBirth = "2024-01-01",
+                EligibilityCode = null
+            }
+        };
+    }
 }
 
 public class CheckEligibilityRequestBulk
