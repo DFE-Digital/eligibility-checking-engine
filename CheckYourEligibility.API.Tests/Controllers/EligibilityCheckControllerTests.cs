@@ -2,8 +2,6 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -12,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests;
@@ -208,6 +205,37 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
     }
+
+    [Test]
+    public async Task CheckEligibilityBulk_returns_accepted_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
+        var executionResult = bulkResponse;
+
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/free-school-meals");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = httpContext
+        };
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkFsm(request);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+        objectResult.Value.Should().Be(bulkResponse);
+    }
     #region Working Families
     /// <summary>
     /// In this test we ensure 
@@ -253,9 +281,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(statusResponse);
     }
-    #endregion
     [Test]
-    public async Task CheckEligibilityBulk_returns_accepted_with_response_when_use_case_returns_valid_result()
+    public async Task CheckEligibilityBulk_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
@@ -264,7 +291,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
 
         // Set up HttpContext for bulk check path
         var httpContext = new DefaultHttpContext();
-        var path = new PathString("/bulk-check/free-school-meals");
+        var path = new PathString("/bulk-check/working-families");
         httpContext.Request.Path = path;
         _sut.ControllerContext = new ControllerContext
         {
@@ -272,11 +299,11 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
         // Act
-        var response = await _sut.CheckEligibilityBulkFsm(request);
+        var response = await _sut.CheckEligibilityBulkWF(request);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();
@@ -284,7 +311,35 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(bulkResponse);
     }
+    [Test]
+    public async Task CheckEligibilityBulk_WF_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var executionResult = new CheckEligibilityResponseBulk();
 
+        // Set up HttpContext for bulk check path
+        var httpContext = new DefaultHttpContext();
+        var path = new PathString("/bulk-check/working-families");
+        httpContext.Request.Path = path;
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = httpContext
+        };
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkWF(request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+    #endregion
     [Test]
     public async Task BulkUploadProgress_returns_not_found_when_use_case_returns_not_found()
     {

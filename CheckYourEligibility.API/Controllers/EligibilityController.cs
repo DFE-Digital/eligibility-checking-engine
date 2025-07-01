@@ -184,6 +184,28 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+    /// <summary>
+    ///     Posts the array of FSM checks
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/bulk-check/working-families")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestBulk model)
+    {
+        try
+        {
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies, _bulkUploadRecordCountLimit);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
 
     /// <summary>
     ///     Posts the array of FSM checks
