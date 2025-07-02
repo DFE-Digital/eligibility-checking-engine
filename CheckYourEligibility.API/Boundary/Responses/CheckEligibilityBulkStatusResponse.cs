@@ -21,10 +21,12 @@ public class BulkStatus
 
 public class BulkCheck : BulkCheckResponseLinks
 {
-    public string Guid { get; set; }
+    public string Guid { get; set; } = string.Empty;
     public DateTime SubmittedDate { get; set; }
-    public string EligibilityType { get; set; }
-    public string Status { get; set; }
+    public string EligibilityType { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Filename {  get; set; } = string.Empty;
+    public string SubmittedBy {  get; set; } = string.Empty;
 }
 
 public class CheckEligibilityBulkStatusesResponse

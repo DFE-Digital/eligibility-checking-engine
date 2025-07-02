@@ -37,6 +37,8 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy { get; set; }
 }
 
 public class CheckEligibilityRequest
@@ -109,6 +111,8 @@ public static class EligibilityBulkModelFactory
                 item.Type = routeType;
 
             item.ClientIdentifier = model.ClientIdentifier;
+            item.Filename = model.Filename;
+            item.SubmittedBy = model.SubmittedBy;
         }
         
         return model;
