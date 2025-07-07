@@ -15,7 +15,6 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
         When(x => x is CheckEligibilityRequestData, () =>
         {
             RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
-                .NotEmpty()
                 .Must(DataValidation.BeAValidName)
                 .WithMessage(ValidationMessages.LastName);
 
