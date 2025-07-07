@@ -142,7 +142,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest>();
+        var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestData>>();
         var executionResult = new CheckEligibilityResponse();
 
         _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals))
@@ -161,7 +161,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest>();
+        var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestData>>();
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
@@ -247,7 +247,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_WF_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest>();
+        var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
         _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
         .ThrowsAsync(new ValidationException(null, "Validation error"));
 
@@ -266,7 +266,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibility_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequest>();
+        var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 

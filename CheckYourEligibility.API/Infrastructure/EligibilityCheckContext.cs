@@ -13,9 +13,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public EligibilityCheckContext(DbContextOptions<EligibilityCheckContext> options) : base(options)
     {
     }
-
+    public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
-
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IEligibilityCheckContext
 {
+    DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }

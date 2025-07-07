@@ -140,7 +140,7 @@ builder.Services.AddSwaggerGen(c =>
     c.ExampleFilters();
 });
 
-builder.Services.AddSwaggerExamplesFromAssemblyOf<CheckEligibilityRequest>();
+builder.Services.AddSwaggerExamplesFromAssemblyOf<IEligibilityServiceType>();
 // Register Database and other services
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddAzureClients(builder.Configuration);
@@ -176,7 +176,7 @@ builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCh
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
-builder.Services.AddScoped<IValidator<CheckEligibilityRequestData>, CheckEligibilityRequestDataValidator>();
+builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
 builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>

@@ -21,13 +21,13 @@ public interface ICheckEligibilityBulkUseCase
 public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
 {
-    private readonly IValidator<CheckEligibilityRequestData> _validator;
+    private readonly IValidator<IEligibilityServiceType> _validator;
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
     private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
 
     public CheckEligibilityBulkUseCase(
-        IValidator<CheckEligibilityRequestData> validator,
+        IValidator<IEligibilityServiceType> validator,
         ICheckEligibility checkGateway,
         IAudit auditGateway,
         ILogger<CheckEligibilityBulkUseCase> logger)

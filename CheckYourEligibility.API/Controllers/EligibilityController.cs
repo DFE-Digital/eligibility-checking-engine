@@ -95,14 +95,14 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
-    [SwaggerRequestExample(typeof(CheckEligibilityRequest), typeof(CheckFSMModelExample))]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(CheckFSMModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityFsm(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
@@ -126,7 +126,7 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibility2yo(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
@@ -150,7 +150,7 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityEypp(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
@@ -168,18 +168,18 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
-    [HttpPost("/check/working-families")]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [SwaggerRequestExample(typeof(CheckEligibilityRequest),typeof(CheckWFModelExample))]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),typeof(CheckWFModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-
+    [HttpPost("/check/working-families")]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityWF(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData> model)
     {
         try
         {
+
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
