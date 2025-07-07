@@ -19,7 +19,7 @@ public interface ICheckEligibilityUseCase
     /// <param name="model">Eligibility check request</param>
     /// <param name="routeType">The type of eligibility check to perform</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model, CheckEligibilityType routeType);
+    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType;
 }
 
 public class CheckEligibilityUseCase : ICheckEligibilityUseCase
@@ -27,12 +27,12 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
     private readonly IAudit _auditGateway;
     private readonly ICheckEligibility _checkGateway;
     private readonly ILogger<CheckEligibilityUseCase> _logger;
-    private readonly IValidator<CheckEligibilityRequestData> _validator;
+    private readonly IValidator<IEligibilityServiceType> _validator;
 
     public CheckEligibilityUseCase(
         ICheckEligibility checkGateway,
         IAudit auditGateway,
-        IValidator<CheckEligibilityRequestData> validator,
+        IValidator<IEligibilityServiceType> validator,
         ILogger<CheckEligibilityUseCase> logger)
     {
         _checkGateway = checkGateway;
@@ -41,9 +41,9 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute(CheckEligibilityRequest model, CheckEligibilityType routeType)
+    public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType
     {
-        if (model?.Data == null)
+        if (model == null || model.Data == null)
         {
             throw new ValidationException(null, "Missing request data");
         }

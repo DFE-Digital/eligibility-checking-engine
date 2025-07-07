@@ -15,7 +15,7 @@ internal static class DataValidation
         var res = rg.Match(value);
         return res.Success;
     }
-    internal static bool BeValidEligibilityCode(string? value)
+    internal static bool BeAValidEligibilityCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
         var regexString = @"^\d{11}$";

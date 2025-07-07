@@ -385,7 +385,6 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -410,7 +409,6 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -522,7 +520,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -639,7 +637,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -770,16 +768,16 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
-        fsm.DateOfBirth = "1990-01-01";
-        var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
-        item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+        fsm.DateOfBirth = "1990-01-01";
         var surnamevalid = "simpson";
         var surnameInvalid = "x" + surnamevalid;
-
+        var dataItem = GetCheckProcessData(fsm);
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+     
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.FreeSchoolMealsHMRC.Add(new FreeSchoolMealsHMRC
         {
@@ -840,7 +838,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         fsm.NationalInsuranceNumber = string.Empty;
 
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
@@ -881,17 +879,16 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
-
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
-        item.Type = check.Type;
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
-
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
@@ -900,6 +897,27 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
     }
 
+    [Test]
+    public async Task Given_ValidRequest_GetItem_Should_Return_Working_Families_Item()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        var check = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
+        // Assert
+        response.Should().BeOfType<CheckEligibilityItem>();
+        response.EligibilityCode.Should().BeEquivalentTo(check.EligibilityCode);
+        response.ValidityStartDate.Should().BeEquivalentTo(check.ValidityStartDate);
+        response.ValidityEndDate.Should().BeEquivalentTo(check.ValidityEndDate);
+        response.GracePeriodEndDate.Should().BeEquivalentTo(check.GracePeriodEndDate);
+        response.ParentLastName.Should().BeEquivalentTo(check.ParentLastName);
+    }
     [Test]
     public void Given_InValidRequest_GetBulkCheckResults_Should_Return_null()
     {
@@ -931,7 +949,6 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         // Assert
         response.Result.Should().BeOfType<List<CheckEligibilityItem>>();
-
         response.Result.First().DateOfBirth.Should().Contain("2000-01-01");
         response.Result.First().NationalInsuranceNumber.Should().Contain("AB123456C");
         response.Result.First().LastName.Should().Contain("SOMETHING");
@@ -979,6 +996,18 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = new CheckEligibilityRequestData().Type
+        };
+    }
+    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestWorkingFamiliesData request)
+    {
+        return new CheckProcessData
+        {
+            EligibilityCode = request.EligibilityCode,
+            ParentLastName = request.ParentLastName,
+            GracePeriodEndDate = request.GracePeriodEndDate,
+            ValidityStartDate = request.ValidityStartDate,
+            ValidityEndDate = request.ValidityEndDate,
+            Type = CheckEligibilityType.WorkingFamilies
         };
     }
 }

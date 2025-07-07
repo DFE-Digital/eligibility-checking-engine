@@ -15,12 +15,10 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<CheckEligibilityRequestData, EligibilityCheck>()
+        CreateMap<IEligibilityServiceType, EligibilityCheck>()
             .ReverseMap();
-
         CreateMap<EligibilityCheck, CheckEligibilityItem>()
             .ReverseMap();
-
         CreateMap<ApplicationRequestData, Application>()
             .ForMember(dest => dest.ParentNationalInsuranceNumber,
                 opt => opt.MapFrom(src => src.ParentNationalInsuranceNumber))

@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
-using FeatureManagement.Domain.Validation;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -18,7 +17,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockValidator = new Mock<IValidator<CheckEligibilityRequestData>>();
+        _mockValidator = new Mock<IValidator<IEligibilityServiceType>>();
         _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<CheckEligibilityBulkUseCase>>(MockBehavior.Loose);
@@ -39,7 +38,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     }
 
 
-    private Mock<IValidator<CheckEligibilityRequestData>> _mockValidator;
+    private Mock<IValidator<IEligibilityServiceType>> _mockValidator;
     private Mock<ICheckEligibility> _mockCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<CheckEligibilityBulkUseCase>> _mockLogger;
