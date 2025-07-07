@@ -53,6 +53,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         transaction.Commit();
     }
 
+    public void BulkInsert_Applications(IEnumerable<Application> data)
+    {
+        this.BulkInsert(data);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");

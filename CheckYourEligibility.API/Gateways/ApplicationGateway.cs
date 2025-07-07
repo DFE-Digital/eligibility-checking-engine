@@ -194,9 +194,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
             throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Get the local authority ID based on application ID
     /// </summary>
     /// <param name="applicationId">The application ID</param>
@@ -219,6 +217,137 @@ public class ApplicationGateway : BaseGateway, IApplication
             throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
         }
     }
+    
+    /// <summary>
+    /// Gets establishment information by URN
+    /// </summary>
+    /// <param name="urn">The establishment URN</param>
+    /// <returns>Tuple containing existence flag, establishment ID, and local authority ID</returns>
+    public async Task<(bool exists, int establishmentId, int localAuthorityId)> GetEstablishmentByUrn(string urn)
+    {
+        try
+        {
+            if (!int.TryParse(urn, out var establishmentId))
+            {
+                return (false, 0, 0);
+            }
+
+            var establishment = await _db.Establishments
+                .Where(x => x.EstablishmentId == establishmentId)
+                .Select(x => new { x.EstablishmentId, x.LocalAuthorityId })
+                .FirstOrDefaultAsync();
+
+            if (establishment == null)
+            {
+                return (false, 0, 0);
+            }
+
+            return (true, establishment.EstablishmentId, establishment.LocalAuthorityId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error finding establishment with URN: {urn}");
+            return (false, 0, 0);
+        }
+    }
+    
+    /// <summary>
+    /// Bulk imports applications without creating eligibility check hashes
+    /// </summary>
+    /// <param name="applications">Collection of applications to import</param>
+    /// <returns>Task</returns>
+    public Task BulkImportApplications(IEnumerable<Application> applications)
+    {
+        try
+        {
+            var applicationsList = applications.ToList();
+            
+            if (!applicationsList.Any())
+            {
+                _logger.LogInformation("No applications to import");
+                return Task.CompletedTask;
+            }
+
+            _logger.LogInformation($"Starting bulk import of {applicationsList.Count} applications");
+
+            // Use the bulk insert method from the context
+            _db.BulkInsert_Applications(applicationsList);
+
+            _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
+            
+            // Track metrics
+            TrackMetric("Bulk Applications Imported", applicationsList.Count);
+            
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk application import");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets establishment entity by URN (Unique Reference Number)
+    /// </summary>
+    /// <param name="urn">School URN as string</param>
+    /// <returns>Establishment entity or null if not found</returns>
+    public async Task<CheckYourEligibility.API.Domain.Establishment?> GetEstablishmentEntityByUrn(string urn)
+    {
+        if (string.IsNullOrWhiteSpace(urn) || !int.TryParse(urn, out var establishmentId))
+        {
+            return null;
+        }
+
+        return await _db.Establishments
+            .FirstOrDefaultAsync(e => e.EstablishmentId == establishmentId);
+    }
+    
+    /// <summary>
+    /// Gets multiple establishment entities by their URNs in bulk
+    /// </summary>
+    /// <param name="urns">Collection of School URNs as strings</param>
+    /// <returns>Dictionary mapping URN to establishment entity</returns>
+    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns)
+    {
+        if (urns == null || !urns.Any())
+        {
+            return new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+        }
+
+        // Filter out invalid URNs and convert to integers
+        var validUrns = urns
+            .Where(urn => !string.IsNullOrWhiteSpace(urn) && int.TryParse(urn, out _))
+            .Select(urn => new { OriginalUrn = urn, EstablishmentId = int.Parse(urn) })
+            .ToList();
+
+        if (!validUrns.Any())
+        {
+            return new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+        }
+
+        // Get all establishments in a single query
+        var establishmentIds = validUrns.Select(v => v.EstablishmentId).ToList();
+        var establishments = await _db.Establishments
+            .Where(e => establishmentIds.Contains(e.EstablishmentId))
+            .ToListAsync();
+
+        // Create dictionary mapping original URN string to establishment
+        var result = new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+        
+        foreach (var validUrn in validUrns)
+        {
+            var establishment = establishments.FirstOrDefault(e => e.EstablishmentId == validUrn.EstablishmentId);
+            if (establishment != null)
+            {
+                result[validUrn.OriginalUrn] = establishment;
+            }
+        }
+
+        return result;
+    }
+
+    #region Private
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,
         ApplicationRequestSearch model)
@@ -282,7 +411,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         } */
     }
 
-    #region Private
+    
 
     /* private string GetReference()
     {
