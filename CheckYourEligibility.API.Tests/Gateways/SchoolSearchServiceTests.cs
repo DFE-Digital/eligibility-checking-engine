@@ -39,9 +39,10 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         _fakeInMemoryDb.Establishments.Add(Establishment);
         _fakeInMemoryDb.SaveChanges();
         var expectedResult = _fakeInMemoryDb.Establishments.First();
+        string la = null;
 
         // Act
-        var response = await _sut.Search(expectedResult.EstablishmentName);
+        var response = await _sut.Search(expectedResult.EstablishmentName, la);
 
         // Assert
         if (response != null && response.Any())
@@ -59,9 +60,10 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         _fakeInMemoryDb.Establishments.Add(Establishment);
         _fakeInMemoryDb.SaveChanges();
         var expectedResult = _fakeInMemoryDb.Establishments.First();
+        string la = null;
 
         // Act
-        var response = await _sut.Search(urn.ToString());
+        var response = await _sut.Search(urn.ToString(), la);
 
         // Assert
         if (response != null && response.Any())
