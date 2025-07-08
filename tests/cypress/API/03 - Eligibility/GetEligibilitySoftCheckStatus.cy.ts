@@ -23,7 +23,7 @@ describe('GET eligibility soft check  Status ', () => {
 
 describe('Verify Eligibility Check Statuses', () => {
 
-  
+
   it('Verify Eligible status is returned', () => {
     cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', validRequestBody)
     cy.get('@status').then((status: any) => {
