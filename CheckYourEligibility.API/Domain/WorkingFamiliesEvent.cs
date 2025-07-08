@@ -27,7 +27,7 @@ public class WorkingFamiliesEvent
     [Column(TypeName = "varchar(100)")] public string PartnerLastName { get; set; }
 
     [Column(TypeName = "varchar(10)")] public string? PartnerNationalInsuranceNumber { get; set; }
-
+    public DateTime SubmissionDate { get; set; }
     public DateTime ValidityStartDate { get; set; }
     public DateTime ValidityEndDate { get; set; }
     public DateTime DiscretionaryValidityStartDate { get; set; }

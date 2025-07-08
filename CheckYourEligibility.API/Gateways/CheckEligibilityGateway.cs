@@ -18,6 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -154,7 +155,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (result != null)
         {
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
-            switch (result.Type) {
+            switch (result.Type)
+            {
                 case CheckEligibilityType.WorkingFamilies:
                     item.EligibilityCode = CheckData.EligibilityCode;
                     item.ParentLastName = CheckData.ParentLastName;
@@ -376,32 +378,46 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
-    /// Else - change status to not  found 
+    /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
+    /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
+    /// Else change status to 'notEligible'
+    /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
     /// </summary>
     /// <returns></returns>
-    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result, CheckProcessData checkData) {
-       
+    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result, CheckProcessData checkData)
+    {
+
         var source = ProcessEligibilityCheckSource.HMRC;
-        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode && 
-        ( x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) );
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
+        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber));
         if (wfEvent != null)
         {
-            checkData.ValidityStartDate = wfEvent.ValidityStartDate.ToString("yyyyy-MM-dd");
-            checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyyy-MM-dd");
-            checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            checkData.ParentLastName = wfEvent.ParentLastName;
+            var wfCheckData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesData>(result.CheckData);
+            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.ParentLastName = wfEvent.ParentLastName;
+            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
-            //
-            // logic to dertermine validity here
-            // if eligible 
-            //   status = CheckEligibilityStatus.eligible
-            // else 
-            //   status = CheckEligibilityStatus.notEligible
-            //
+            //Get current date
+            var currentDate = DateTime.UtcNow.Date;
+            
+            if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
+                (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
+            {
+
+                result.Status = CheckEligibilityStatus.eligible;
+            }
+            else
+            {
+
+                result.Status = CheckEligibilityStatus.notEligible;
+
+            }
 
             result.EligibilityCheckHashID =
                 await _hashGateway.Create(checkData, result.Status, source, auditDataTemplate);
-            
+
         }
         else { result.Status = CheckEligibilityStatus.notFound; }
         result.Updated = DateTime.UtcNow;
@@ -478,7 +494,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         where T : IEligibilityServiceType
     {
         dynamic checkItem = JsonConvert.DeserializeObject(data, typeof(T));
-        //CheckEligibilityRequestData_Fsm checkItem = JsonConvert.DeserializeObject<T>(data);
         switch (type)
         {
             case CheckEligibilityType.WorkingFamilies:
@@ -489,7 +504,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName  = checkItem.ParentLastName,
+                    ParentLastName = checkItem.ParentLastName,
                     Type = type
                 };
             default:
