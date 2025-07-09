@@ -198,7 +198,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestBulk model)
+    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
         {

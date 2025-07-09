@@ -95,7 +95,44 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         // Assert
         act.Should().ThrowAsync<ValidationException>();
     }
+    [Test]
+    public async Task Execute_calls_gateways_with_correct_parameters_when_valid_WF()
+    {
+        // Arrange
+        var data = new List<CheckEligibilityRequestWorkingFamiliesBulkData>
+        {
+            new()
+            {
+                EligibilityCode = "50012345678",
+                ChildDateOfBirth = "2023-01-01",
+                NationalInsuranceNumber = "AB123456C"
+            }
+        };
+        var model = new CheckEligibilityRequestWorkingFamiliesBulk { Data = data };
 
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
+
+        _mockCheckGateway.Setup(s =>
+                s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()))
+            .ReturnsAsync(_fixture.Create<string>());
+
+
+        // Act
+        var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies, _recordCountLimit);
+
+        // Assert
+        result.Data.Status.Should().Be(Messages.Processing);
+        result.Links.Should().NotBeNull();
+        result.Links.Get_Progress_Check.Should().Contain(CheckLinks.BulkCheckProgress);
+        result.Links.Get_BulkCheck_Results.Should().Contain(CheckLinks.BulkCheckResults);
+
+        _mockCheckGateway.Verify(
+            s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Once);
+    }
     [Test]
     public async Task Execute_calls_gateways_with_correct_parameters_when_valid()
     {
