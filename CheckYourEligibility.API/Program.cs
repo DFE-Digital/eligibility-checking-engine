@@ -18,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Notify.Client;
 using Notify.Interfaces;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
@@ -137,8 +138,10 @@ builder.Services.AddSwaggerGen(c =>
 
     var filePath = Path.Combine(AppContext.BaseDirectory, "CheckYourEligibility.API.xml");
     c.IncludeXmlComments(filePath);
+    c.ExampleFilters();
 });
 
+builder.Services.AddSwaggerExamplesFromAssemblyOf<IEligibilityServiceType>();
 // Register Database and other services
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddAzureClients(builder.Configuration);
@@ -160,6 +163,7 @@ builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>(
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationStatusUseCase>();
+builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
 builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
@@ -174,7 +178,7 @@ builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckI
 builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
-builder.Services.AddScoped<IValidator<CheckEligibilityRequestData>, CheckEligibilityRequestDataValidator>();
+builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
 builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>

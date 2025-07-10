@@ -23,7 +23,7 @@ public class Audit
 
     [Column(TypeName = "varchar(5000)")] public string authentication { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string? scope { get; set; }
+    [Column(TypeName = "varchar(500)")] public string? scope { get; set; }
 
     public DateTime TimeStamp { get; set; }
 }

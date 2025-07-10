@@ -1,9 +1,5 @@
-﻿using System.ComponentModel;
-using System.Net;
-using Azure.Core;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -11,10 +7,10 @@ using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
-using FeatureManagement.Domain.Validation;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
+using System.Net;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -103,13 +99,14 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(CheckFSMModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityFsm(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
@@ -133,7 +130,7 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibility2yo(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
@@ -157,11 +154,59 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> CheckEligibilityEypp(
-        [FromBody] CheckEligibilityRequest model)
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestData> model)
     {
         try
         {
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    /// Posts a WF Eligibility Check to the processing queue
+    /// </summary>
+    /// <param name="model"></param>
+    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),typeof(CheckWFModelExample))]
+    [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [HttpPost("/check/working-families")]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> CheckEligibilityWF(
+        [FromBody] CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData> model)
+    {
+        try
+        {
+
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+    /// <summary>
+    ///     Posts the array of FSM checks
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/bulk-check/working-families")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestBulk model)
+    {
+        try
+        {
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies, _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -192,7 +237,6 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
-
     /// <summary>
     ///     Posts the array of 2YO checks
     /// </summary>

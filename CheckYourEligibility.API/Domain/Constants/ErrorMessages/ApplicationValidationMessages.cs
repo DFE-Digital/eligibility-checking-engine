@@ -15,4 +15,5 @@ public static class ValidationMessages
     public const string ChildFirstName = "Child FirstName is required";
     public const string NI = "Invalid National Insurance Number";
     public const string NI_or_NASS = "National Insurance Number or National Asylum Seeker Service Number is required";
+    public const string EligibilityCode = "Eligibility code must be 11 digits long";
 }

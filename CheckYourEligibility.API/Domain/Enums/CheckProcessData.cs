@@ -7,7 +7,12 @@ public class CheckProcessData
     public string? NationalInsuranceNumber { get; set; }
 
     public string LastName { get; set; }
-
+    public string ParentLastName { get; set; }
+    
+    public string EligibilityCode { get; set; }
+    public string ValidityStartDate { get; set; }
+    public string ValidityEndDate { get; set; }
+    public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }

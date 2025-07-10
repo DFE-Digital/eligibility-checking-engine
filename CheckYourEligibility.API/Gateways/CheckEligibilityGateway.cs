@@ -20,6 +20,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NetTopologySuite.Index.HPRtree;
 using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Nodes;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -138,6 +143,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
                     }
                     break;
+                case CheckEligibilityType.WorkingFamilies:
+                    {
+                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    }
+                    break;
             }
 
             return result.Status;
@@ -204,16 +214,26 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
-
+        var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
-            var item = _mapper.Map<CheckEligibilityItem>(result);
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
-            item.DateOfBirth = CheckData.DateOfBirth;
-            item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-            item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
-            item.LastName = CheckData.LastName;
-
+            switch (result.Type)
+            {
+                case CheckEligibilityType.WorkingFamilies:
+                    item.EligibilityCode = CheckData.EligibilityCode;
+                    item.ParentLastName = CheckData.ParentLastName;
+                    item.ValidityStartDate = CheckData.ValidityStartDate;
+                    item.ValidityEndDate = CheckData.ValidityEndDate;
+                    item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
+                    break;
+                default:
+                    item.DateOfBirth = CheckData.DateOfBirth;
+                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
+                    item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
+                    item.LastName = CheckData.LastName;
+                    break;
+            }
             return (T)item;
         }
 
@@ -289,7 +309,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
     {
         var minDate = DateTime.Now.AddDays(-7);
-        
+
         var allChecks = await _db.CheckEligibilities
             .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate && !string.IsNullOrWhiteSpace(x.Group))
             .ToListAsync();
@@ -326,7 +346,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return results;
     }
-
 
     public static string GetHash(CheckProcessData item)
     {
@@ -421,8 +440,54 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return queueName;
     }
+    /// <summary>
+    /// Checks if record with the same EligibilityCode-ParentNINO exists in the WorkingFamiliesEvents Table
+    /// If record is found, process logic to determine eligibility
+    /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
+    /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
+    /// Else change status to 'notEligible'
+    /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
+    /// </summary>
+    /// <returns></returns>
+    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result, CheckProcessData checkData)
+    {
 
+        var source = ProcessEligibilityCheckSource.HMRC;
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
+        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber));
+        if (wfEvent != null)
+        {
+            var wfCheckData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesData>(result.CheckData);
+            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.ParentLastName = wfEvent.ParentLastName;
+            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
+            //Get current date
+            var currentDate = DateTime.UtcNow.Date;
+            
+            if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
+                (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
+            {
+
+                result.Status = CheckEligibilityStatus.eligible;
+            }
+            else
+            {
+
+                result.Status = CheckEligibilityStatus.notEligible;
+
+            }
+
+            result.EligibilityCheckHashID =
+                await _hashGateway.Create(checkData, result.Status, source, auditDataTemplate);
+
+        }
+        else { result.Status = CheckEligibilityStatus.notFound; }
+        result.Updated = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+    }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
         CheckProcessData checkData)
     {
@@ -483,6 +548,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.TwoYearOffer:
             case CheckEligibilityType.EarlyYearPupilPremium:
                 return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
+            case CheckEligibilityType.WorkingFamilies:
+                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
@@ -492,16 +559,31 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         where T : IEligibilityServiceType
     {
         dynamic checkItem = JsonConvert.DeserializeObject(data, typeof(T));
-        //CheckEligibilityRequestData_Fsm checkItem = JsonConvert.DeserializeObject<T>(data);
-        return new CheckProcessData
+        switch (type)
         {
-            DateOfBirth = checkItem.DateOfBirth,
-            LastName = checkItem.LastName.ToUpper(),
-            NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
-            NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-            Type = type,
-            ClientIdentifier = checkItem.ClientIdentifier
-        };
+            case CheckEligibilityType.WorkingFamilies:
+                return new CheckProcessData
+                {
+                    EligibilityCode = checkItem.EligibilityCode,
+                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
+                    ValidityStartDate = checkItem.ValidityStartDate,
+                    ValidityEndDate = checkItem.ValidityEndDate,
+                    GracePeriodEndDate = checkItem.GracePeriodEndDate,
+                    ParentLastName = checkItem.ParentLastName,
+                    Type = type
+                };
+            default:
+                return new CheckProcessData
+                {
+                    DateOfBirth = checkItem.DateOfBirth,
+                    LastName = checkItem.LastName.ToUpper(),
+                    NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
+                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
+                    Type = type,
+                    ClientIdentifier = checkItem.ClientIdentifier
+                };
+        }
+
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
@@ -701,6 +783,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
         }
     }
-    
+
     #endregion
 }

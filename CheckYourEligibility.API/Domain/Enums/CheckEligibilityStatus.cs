@@ -8,5 +8,6 @@ public enum CheckEligibilityStatus
     parentNotFound,
     eligible,
     notEligible,
-    error
+    error,
+    notFound
 }
