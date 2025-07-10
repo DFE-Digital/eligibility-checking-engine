@@ -17,7 +17,6 @@ namespace CheckYourEligibility.API.Tests;
 public class EligibilityCheckControllerTests : TestBase.TestBase
 {
     private IConfigurationRoot _configuration;
-
     private Mock<IAudit> _mockAuditGateway;
 
     private Mock<ICheckEligibilityBulkUseCase> _mockCheckEligibilityBulkUseCase;

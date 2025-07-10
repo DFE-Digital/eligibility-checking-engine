@@ -35,13 +35,14 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var query = "test";
+        string la = null;
         var establishments = _fixture.CreateMany<Establishment>().ToList();
-        _mockEstablishmentSearchGateway.Setup(es => es.Search(query)).ReturnsAsync(establishments);
+        _mockEstablishmentSearchGateway.Setup(es => es.Search(query, la)).ReturnsAsync(establishments);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(query);
+        var result = await _sut.Execute(query, la);
 
         // Assert
         result.Should().BeEquivalentTo(establishments);
@@ -52,15 +53,16 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var query = "test";
+        string la = null;  
         var establishments = new List<Establishment>();
 
-        _mockEstablishmentSearchGateway.Setup(es => es.Search(query)).ReturnsAsync(establishments);
+        _mockEstablishmentSearchGateway.Setup(es => es.Search(query, la)).ReturnsAsync(establishments);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
 
 
         // Act
-        var result = await _sut.Execute(query);
+        var result = await _sut.Execute(query, la);
 
         // Assert
         result.Should().BeEmpty();
@@ -71,9 +73,9 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         string query = null;
-
+        string la = null;
         // Act
-        Func<Task> act = async () => await _sut.Execute(query);
+        Func<Task> act = async () => await _sut.Execute(query, la);
 
         // Assert
         act.Should().ThrowAsync<ArgumentException>().WithMessage("Required input query was empty. (Parameter 'query')");
@@ -84,9 +86,10 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var query = "ab";
+        string la = null;
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(query);
+        Func<Task> act = async () => await _sut.Execute(query, la);
 
         // Assert
         act.Should().ThrowAsync<ArgumentOutOfRangeException>()
