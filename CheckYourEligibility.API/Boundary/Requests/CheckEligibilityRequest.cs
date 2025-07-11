@@ -119,7 +119,11 @@ public static class EligibilityBulkModelFactory
             if (item.Type != routeType)
                 item.Type = routeType;
 
-            item.ClientIdentifier = model.ClientIdentifier;
+            if (model.ClientIdentifier != null && item.ClientIdentifier == null) {
+
+                item.ClientIdentifier = model.ClientIdentifier;
+            }
+            
         }
         
         return model;
