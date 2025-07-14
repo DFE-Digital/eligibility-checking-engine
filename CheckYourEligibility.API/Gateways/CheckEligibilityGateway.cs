@@ -66,7 +66,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             var baseType = data as CheckEligibilityRequestDataBase;
 
-
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;
@@ -147,13 +146,18 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
+    public async Task<T?> GetItem<T>(string guid, bool isBatchRecord = false) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
         var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
+            if (isBatchRecord) {
+                item.Status = result.Status.ToString();
+                item.Created = result.Created;
+                item.ClientIdentifier = CheckData.ClientIdentifier;
+            }
             switch (result.Type)
             {
                 case CheckEligibilityType.WorkingFamilies:
@@ -189,41 +193,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                   var item =  await GetItem<CheckEligibilityItem>(result.EligibilityCheckID);
+                   var item =  await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, isBatchRecord:true);
                    items.Add(item);
-                    //var data = GetCheckProcessData(result.Type, result.CheckData);
-
-                    //switch (result.Type)
-                    //{
-                    //    case CheckEligibilityType.WorkingFamilies:
-
-                    //        items.Add(new CheckEligibilityItem
-                    //        {
-                    //            Status = result.Status.ToString(),
-                    //            Created = result.Created,
-                    //            EligibilityCode = data.EligibilityCode,
-                    //            NationalInsuranceNumber = data.NationalInsuranceNumber,
-                    //            ValidityStartDate = data.ValidityStartDate,
-                    //            ValidityEndDate = data.ValidityEndDate,
-                    //            GracePeriodEndDate = data.GracePeriodEndDate,
-                    //            ParentLastName = data.ParentLastName
-                    //        });
-
-                    //        break;
-                    //    default:
-                    //        items.Add(new CheckEligibilityItem
-                    //        {
-                    //            Status = result.Status.ToString(),
-                    //            Created = result.Created,
-                    //            NationalInsuranceNumber = data.NationalInsuranceNumber,
-                    //            LastName = data.LastName,
-                    //            DateOfBirth = data.DateOfBirth,
-                    //            NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
-                    //            ClientIdentifier = data.ClientIdentifier
-                    //        });
-                    //        break;
-                    //}
-
 
                     sequence++;
                 }
@@ -507,7 +478,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.EarlyYearPupilPremium:
                 return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             case CheckEligibilityType.WorkingFamilies:
-                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesData>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
@@ -528,6 +499,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
                     ParentLastName = checkItem.ParentLastName,
+                    ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
                 };
             default:
