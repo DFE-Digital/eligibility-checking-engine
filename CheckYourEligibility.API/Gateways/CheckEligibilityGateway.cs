@@ -18,7 +18,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json.Nodes;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -72,9 +71,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.Type = baseType.Type;
 
-            if (data is CheckEligibilityRequestBulkData bulkData)
+            if (data is CheckEligibilityRequestBulkData bulkDataItem)
             {
-                item.ClientIdentifier = bulkData.ClientIdentifier;
+                item.ClientIdentifier = bulkDataItem.ClientIdentifier;
             }
 
             item.Group = _groupId;
@@ -119,7 +118,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
-
+   
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
@@ -181,7 +180,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.Group == guid);
+            .Where(x => x.Group == guid).ToList();
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -190,20 +189,44 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                    var data = GetCheckProcessData(result.Type, result.CheckData);
-                    items.Add(new CheckEligibilityItem
-                    {
-                        Status = result.Status.ToString(),
-                        Created = result.Created,
-                        NationalInsuranceNumber = data.NationalInsuranceNumber,
-                        LastName = data.LastName,
-                        DateOfBirth = data.DateOfBirth,
-                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
-                        ClientIdentifier = data.ClientIdentifier
-                    });
+                   var item =  await GetItem<CheckEligibilityItem>(result.EligibilityCheckID);
+                   items.Add(item);
+                    //var data = GetCheckProcessData(result.Type, result.CheckData);
+
+                    //switch (result.Type)
+                    //{
+                    //    case CheckEligibilityType.WorkingFamilies:
+
+                    //        items.Add(new CheckEligibilityItem
+                    //        {
+                    //            Status = result.Status.ToString(),
+                    //            Created = result.Created,
+                    //            EligibilityCode = data.EligibilityCode,
+                    //            NationalInsuranceNumber = data.NationalInsuranceNumber,
+                    //            ValidityStartDate = data.ValidityStartDate,
+                    //            ValidityEndDate = data.ValidityEndDate,
+                    //            GracePeriodEndDate = data.GracePeriodEndDate,
+                    //            ParentLastName = data.ParentLastName
+                    //        });
+
+                    //        break;
+                    //    default:
+                    //        items.Add(new CheckEligibilityItem
+                    //        {
+                    //            Status = result.Status.ToString(),
+                    //            Created = result.Created,
+                    //            NationalInsuranceNumber = data.NationalInsuranceNumber,
+                    //            LastName = data.LastName,
+                    //            DateOfBirth = data.DateOfBirth,
+                    //            NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
+                    //            ClientIdentifier = data.ClientIdentifier
+                    //        });
+                    //        break;
+                    //}
+
+
                     sequence++;
                 }
-
                 return (T)items;
             }
 
@@ -401,7 +424,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             //Get current date
             var currentDate = DateTime.UtcNow.Date;
-            
+
             if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
                 (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
             {
@@ -698,7 +721,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                                 await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                             }
                         }
-
                         // If status is not queued for Processing, we have a conclusive answer
                         else
                         {
