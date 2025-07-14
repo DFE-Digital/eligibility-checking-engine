@@ -75,6 +75,46 @@ public class CheckEligibilityRequest<T> where T : IEligibilityServiceType
     public T? Data { get; set; }
 }
 
+public class CheckWFBulkModelExample : IExamplesProvider<CheckEligibilityRequestWorkingFamiliesBulk>
+{
+
+    public CheckEligibilityRequestWorkingFamiliesBulk GetExamples()
+    {
+
+
+        return new CheckEligibilityRequestWorkingFamiliesBulk
+        {
+            Data = new List<CheckEligibilityRequestWorkingFamiliesBulkData>
+            {
+
+                new CheckEligibilityRequestWorkingFamiliesBulkData
+                {
+                    Type = CheckEligibilityType.WorkingFamilies,
+                    EligibilityCode = "50012345678",
+                    ChildDateOfBirth = "2022-01-01",
+                    NationalInsuranceNumber = "AB123456C",
+                    ClientIdentifier = "12345",
+                    GracePeriodEndDate = null,
+                    ParentLastName = null,
+                    ValidityStartDate = null,
+                    ValidityEndDate = null
+                },
+                 new CheckEligibilityRequestWorkingFamiliesBulkData
+                {
+                    Type = CheckEligibilityType.WorkingFamilies,
+                    EligibilityCode = "50012345679",
+                    ChildDateOfBirth = "2022-01-02",
+                    NationalInsuranceNumber = "AB123456D",
+                    ClientIdentifier = "12346",
+                    GracePeriodEndDate = null,
+                    ParentLastName = null,
+                    ValidityStartDate = null,
+                    ValidityEndDate = null
+                }
+            }
+        };
+    }
+}
 public class CheckWFModelExample : IExamplesProvider<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>
 {
     public CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData> GetExamples() {
