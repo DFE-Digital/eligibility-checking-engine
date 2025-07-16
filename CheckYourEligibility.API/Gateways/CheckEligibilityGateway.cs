@@ -311,13 +311,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             nass = nass.Substring(2, 2);
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
                 return CheckEligibilityStatus.eligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return CheckEligibilityStatus.notEligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
                 return CheckEligibilityStatus.parentNotFound;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
                 return CheckEligibilityStatus.error;
         }
 
