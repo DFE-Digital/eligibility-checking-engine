@@ -284,7 +284,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibilityBulk_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var request = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulk>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
 
@@ -314,7 +314,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibilityBulk_WF_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
-        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var request = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulk>();
         var executionResult = new CheckEligibilityResponseBulk();
 
         // Set up HttpContext for bulk check path

@@ -23,9 +23,13 @@ public interface IEligibilityServiceType
 {
     public CheckEligibilityType Type { get; set;}
 }
-
-#region FreeSchoolMeals Type
-[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+public class CheckEligibilityRequestBulkBase
+{
+    public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy { get; set; }
+}
+#region FreeSchoolMeals,  EarlyYearPupilPremium, TwoYearOffer type
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? LastName { get; set; }
@@ -33,6 +37,17 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
     public string? NationalAsylumSeekerServiceNumber { get; set; } 
 
 }
+public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
+{
+    public string? ClientIdentifier { get; set; }
+}
+
+public class CheckEligibilityRequestBulk : CheckEligibilityRequestBulkBase
+{
+    public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
+}
+#endregion
+#region Working Families
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityRequestDataBase
 {
@@ -44,16 +59,62 @@ public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityReques
     public string ChildDateOfBirth { get; set; }
 
 }
-public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
+
+public class CheckEligibilityRequestWorkingFamiliesBulk : CheckEligibilityRequestBulkBase
+{
+    public IEnumerable<CheckEligibilityRequestWorkingFamiliesBulkData> Data { get; set; }
+}
+public class CheckEligibilityRequestWorkingFamiliesBulkData : CheckEligibilityRequestWorkingFamiliesData
 {
     public string? ClientIdentifier { get; set; }
 }
+#endregion
 
 public class CheckEligibilityRequest<T> where T : IEligibilityServiceType
 {
     public T? Data { get; set; }
 }
 
+public class CheckWFBulkModelExample : IExamplesProvider<CheckEligibilityRequestWorkingFamiliesBulk>
+{
+
+    public CheckEligibilityRequestWorkingFamiliesBulk GetExamples()
+    {
+
+
+        return new CheckEligibilityRequestWorkingFamiliesBulk
+        {
+            Data = new List<CheckEligibilityRequestWorkingFamiliesBulkData>
+            {
+
+                new CheckEligibilityRequestWorkingFamiliesBulkData
+                {
+                    Type = CheckEligibilityType.WorkingFamilies,
+                    EligibilityCode = "50012345678",
+                    ChildDateOfBirth = "2022-01-01",
+                    NationalInsuranceNumber = "AB123456C",
+                    ClientIdentifier = "12345",
+                    GracePeriodEndDate = null,
+                    ParentLastName = null,
+                    ValidityStartDate = null,
+                    ValidityEndDate = null
+                },
+                 new CheckEligibilityRequestWorkingFamiliesBulkData
+                {
+                    Type = CheckEligibilityType.WorkingFamilies,
+                    EligibilityCode = "50012345679",
+                    ChildDateOfBirth = "2022-01-02",
+                    NationalInsuranceNumber = "AB123456D",
+                    ClientIdentifier = "12346",
+                    GracePeriodEndDate = null,
+                    ParentLastName = null,
+                    ValidityStartDate = null,
+                    ValidityEndDate = null
+                }
+            }
+        };
+    }
+}
 public class CheckWFModelExample : IExamplesProvider<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>
 {
     public CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData> GetExamples() {
@@ -90,16 +151,7 @@ public class CheckFSMModelExample : IExamplesProvider<CheckEligibilityRequest<Ch
     }
 }
 
-public class CheckEligibilityRequestBulk
-{
-    public string? ClientIdentifier { get; set; }
-    public string? Filename { get; set; }
-    public string? SubmittedBy{ get; set; }
-    public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
-}
-
-#endregion
-public static class EligibilityModelFactory
+    public static class EligibilityModelFactory
 {
     public static CheckEligibilityRequest<T> CreateFromGeneric<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType
     {
@@ -112,13 +164,14 @@ public static class EligibilityModelFactory
 
 public static class EligibilityBulkModelFactory
 {
-    public static CheckEligibilityRequestBulk CreateBulkFromGeneric(CheckEligibilityRequestBulk model, CheckEligibilityType routeType)
+    public static T CreateBulkFromGeneric<T>(T model, CheckEligibilityType routeType) where T : CheckEligibilityRequestBulkBase
     {
-        foreach (var item in model.Data)
+        var modelData = (model as dynamic).Data;
+
+        foreach (var item in modelData)
         {
             if (item.Type != routeType)
                 item.Type = routeType;
-
                           
         }
         
