@@ -228,7 +228,10 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     EligibilityEndDate = validationResult.EligibilityEndDate!.Value,
                     Created = DateTime.UtcNow,
                     Updated = DateTime.UtcNow,
-                    Status = ApplicationStatus.SentForReview, // Default status for bulk import
+                    // If ApplicationStatus is not provided, set Status to Receiving else to whatever is provided
+                    Status = string.IsNullOrWhiteSpace(row.ApplicationStatus)
+                        ? ApplicationStatus.Receiving
+                        : Enum.Parse<ApplicationStatus>(row.ApplicationStatus),
                     EligibilityCheckHashID = null // No hash for bulk import
                 };
                 applications.Add(application);
@@ -354,7 +357,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             ChildSurname = data.ChildSurname,
             ChildDateOfBirth = data.ChildDateOfBirth,
             ChildSchoolUrn = data.ChildSchoolUrn,
-            EligibilityEndDate = data.EligibilityEndDate
+            EligibilityEndDate = data.EligibilityEndDate,
+            ApplicationStatus = data.ApplicationStatus
         };
     }    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
     {

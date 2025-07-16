@@ -768,7 +768,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
-        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.SentForReview);
+        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
@@ -1586,7 +1586,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
-        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.SentForReview);
+        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
