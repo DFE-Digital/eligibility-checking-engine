@@ -384,9 +384,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         var source = ProcessEligibilityCheckSource.HMRC;
         var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
         (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber));
+     
         if (wfEvent != null)
         {
-            var wfCheckData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesData>(result.CheckData);
+            var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
@@ -410,7 +411,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
 
             result.EligibilityCheckHashID =
-                await _hashGateway.Create(checkData, result.Status, source, auditDataTemplate);
+                await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
 
         }
         else { result.Status = CheckEligibilityStatus.notFound; }
