@@ -166,6 +166,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     item.ValidityStartDate = CheckData.ValidityStartDate;
                     item.ValidityEndDate = CheckData.ValidityEndDate;
                     item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
+                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
+                    item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
                     break;
                 default:
                     item.DateOfBirth = CheckData.DateOfBirth;
@@ -500,6 +502,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
                     ParentLastName = checkItem.ParentLastName,
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
                 };

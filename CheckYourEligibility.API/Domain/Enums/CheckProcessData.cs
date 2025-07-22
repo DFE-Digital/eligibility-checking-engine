@@ -14,6 +14,7 @@ public class CheckProcessData
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
+    public string ChildDateOfBirth { get; set; }
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
