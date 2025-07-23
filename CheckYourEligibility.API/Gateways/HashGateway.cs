@@ -89,7 +89,7 @@ public class HashGateway : BaseGateway, IHash
             : item.NationalInsuranceNumber.ToUpper();
         var input = $"{key1}{key}{item.DateOfBirth}{item.Type}";
         if (item.Type == CheckEligibilityType.WorkingFamilies) {
-            input += $"{item.ParentLastName}{item.GracePeriodEndDate}{item.ValidityStartDate}{item.ValidityEndDate}";
+            input += $"{item.ParentLastName.ToUpper()}{item.ChildDateOfBirth}{item.GracePeriodEndDate}{item.ValidityStartDate}{item.ValidityEndDate}";
         }
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var inputHash = SHA256.HashData(inputBytes);
