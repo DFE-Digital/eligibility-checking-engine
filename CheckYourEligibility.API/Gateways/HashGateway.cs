@@ -83,12 +83,17 @@ public class HashGateway : BaseGateway, IHash
     /// <returns></returns>
     private string GetHash(CheckProcessData item)
     {
+        //Can we move this into the other if statement e.g. just one check for WorkingFamilies type
+        // Rename variables to make it clearer on the order? Also remove numbers from variable name
         var key1 = item.Type != CheckEligibilityType.WorkingFamilies ? item.LastName.ToUpper() : item.EligibilityCode;
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
             ? item.NationalAsylumSeekerServiceNumber.ToUpper()
             : item.NationalInsuranceNumber.ToUpper();
+        //Move DateOfBirth into its own logic?
         var input = $"{key1}{key}{item.DateOfBirth}{item.Type}";
         if (item.Type == CheckEligibilityType.WorkingFamilies) {
+            //TODO: Add childDateOfBirth here? Or in place of DateOfBirth above
+            //Should we also use ToUpper on parentLastName
             input += $"{item.ParentLastName}{item.GracePeriodEndDate}{item.ValidityStartDate}{item.ValidityEndDate}";
         }
         var inputBytes = Encoding.UTF8.GetBytes(input);

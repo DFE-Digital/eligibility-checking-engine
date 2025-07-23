@@ -11,6 +11,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.UseCases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -146,35 +147,22 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<T?> GetItem<T>(string guid, bool isBatchRecord = false) where T : CheckEligibilityItem
+    public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
-        var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
-            var CheckData = GetCheckProcessData(result.Type, result.CheckData);
-            if (isBatchRecord) {
-                item.Status = result.Status.ToString();
-                item.Created = result.Created;
-                item.ClientIdentifier = CheckData.ClientIdentifier;
-            }
             switch (result.Type)
             {
+                case CheckEligibilityType.FreeSchoolMeals:
+                case CheckEligibilityType.TwoYearOffer:
+                case CheckEligibilityType.EarlyYearPupilPremium:
+                    return (T)GetCheckEligibilityItemType<CheckEligibilityRequestBulkData>(result);
                 case CheckEligibilityType.WorkingFamilies:
-                    item.EligibilityCode = CheckData.EligibilityCode;
-                    item.ParentLastName = CheckData.ParentLastName;
-                    item.ValidityStartDate = CheckData.ValidityStartDate;
-                    item.ValidityEndDate = CheckData.ValidityEndDate;
-                    item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
-                    break;
+                    return (T)GetCheckEligibilityItemType<CheckEligibilityRequestWorkingFamiliesBulkData>(result);
                 default:
-                    item.DateOfBirth = CheckData.DateOfBirth;
-                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-                    item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
-                    item.LastName = CheckData.LastName;
-                    break;
+                    throw new NotImplementedException($"Type:-{result.Type} not supported.");
             }
-            return (T)item;
         }
 
         return default;
@@ -193,8 +181,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                   var item =  await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, isBatchRecord:true);
-                   items.Add(item);
+                    var item = await GetItem<CheckEligibilityItem>(result.EligibilityCheckID);
+                    items.Add(item);
 
                     sequence++;
                 }
@@ -392,6 +380,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.ParentLastName = wfEvent.ParentLastName;
+            //TODO: Add ChildDateOfBirth here as well?
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
@@ -500,6 +489,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
                     ParentLastName = checkItem.ParentLastName,
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
                 };
@@ -515,6 +505,41 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 };
         }
 
+    }
+
+
+    private static CheckEligibilityItem GetCheckEligibilityItemType<T>(EligibilityCheck result)
+        where T : IEligibilityServiceType
+    {
+        dynamic checkItem = JsonConvert.DeserializeObject(result.CheckData, typeof(T));
+        switch (result.Type)
+        {
+            case CheckEligibilityType.WorkingFamilies:
+                return new CheckEligibilityItem
+                {
+                    EligibilityCode = checkItem.EligibilityCode,
+                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
+                    ValidityStartDate = checkItem.ValidityStartDate,
+                    ValidityEndDate = checkItem.ValidityEndDate,
+                    GracePeriodEndDate = checkItem.GracePeriodEndDate,
+                    ParentLastName = checkItem.ParentLastName,
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
+                    ClientIdentifier = checkItem.ClientIdentifier,
+                    Status = result.Status.ToString(),
+                    Created = result.Created
+                };
+            default:
+                return new CheckEligibilityItem
+                {
+                    DateOfBirth = checkItem.DateOfBirth,
+                    LastName = checkItem.LastName.ToUpper(),
+                    NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
+                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
+                    ClientIdentifier = checkItem.ClientIdentifier,
+                    Status = result.Status.ToString(),
+                    Created = result.Created
+                };
+        }
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]

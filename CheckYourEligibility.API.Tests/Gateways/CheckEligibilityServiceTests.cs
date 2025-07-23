@@ -917,6 +917,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.ValidityEndDate.Should().BeEquivalentTo(check.ValidityEndDate);
         response.GracePeriodEndDate.Should().BeEquivalentTo(check.GracePeriodEndDate);
         response.ParentLastName.Should().BeEquivalentTo(check.ParentLastName);
+        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
+        response.ChildDateOfBirth.Should().BeEquivalentTo(check.ChildDateOfBirth);
     }
     [Test]
     public void Given_InValidRequest_GetBulkCheckResults_Should_Return_null()
@@ -1007,6 +1009,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             GracePeriodEndDate = request.GracePeriodEndDate,
             ValidityStartDate = request.ValidityStartDate,
             ValidityEndDate = request.ValidityEndDate,
+            NationalInsuranceNumber = request.NationalInsuranceNumber,
+            ChildDateOfBirth = request.ChildDateOfBirth,
             Type = CheckEligibilityType.WorkingFamilies
         };
     }
