@@ -394,7 +394,8 @@ public class ApplicationGateway : BaseGateway, IApplication
                         x.ParentLastName.Contains(keyword) ||
                         x.ParentNationalInsuranceNumber.Contains(keyword) ||
                         x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword) ||
-                        x.ParentEmail.Contains(keyword)
+                        x.ParentEmail.Contains(keyword) ||
+                        x.Establishment.EstablishmentName.Contains(keyword)
                 );
         }
 
