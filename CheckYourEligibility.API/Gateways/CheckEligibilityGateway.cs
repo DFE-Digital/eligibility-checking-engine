@@ -11,7 +11,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -147,7 +146,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<T?> GetItem<T>(string guid, bool isBatchRecord = false) where T : CheckEligibilityItem
+    public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
         if (result != null)
@@ -380,7 +379,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.ParentLastName = wfEvent.ParentLastName;
-            //TODO: Add ChildDateOfBirth here as well?
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
@@ -488,7 +486,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName = checkItem.ParentLastName.ToUpper(),
+                    ParentLastName = checkItem.ParentLastName?.ToUpper(),
                     ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
@@ -522,7 +520,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName = checkItem.ParentLastName.ToUpper(),
+                    ParentLastName = checkItem.ParentLastName?.ToUpper(),
                     ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Status = result.Status.ToString(),

@@ -10,7 +10,7 @@ public interface ICheckEligibility
     Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>;
 
     Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
-    Task<T?> GetItem<T>(string guid, bool isBatchRecord = false) where T : CheckEligibilityItem;
+    Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem;
 
     Task<CheckEligibilityStatus?> GetStatus(string guid);
     Task<BulkStatus?> GetBulkStatus(string guid);
