@@ -294,7 +294,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             Data = new CheckEligibilityRequestWorkingFamiliesData
             {
                 NationalInsuranceNumber = "AB123456C",
-                ChildDateOfBirth = "2000-01-01",
+                DateOfBirth = "2000-01-01",
+                LastName = "Doe",
                 EligibilityCode = "50012344556"
             }
         };

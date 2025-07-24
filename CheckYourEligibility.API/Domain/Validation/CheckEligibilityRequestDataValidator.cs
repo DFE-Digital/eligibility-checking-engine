@@ -46,13 +46,12 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .NotEmpty()
                 .Must(DataValidation.BeAValidEligibilityCode)
                 .WithMessage(ValidationMessages.EligibilityCode);
-            RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).ChildDateOfBirth)
-                .NotEmpty()
-                .Must(DataValidation.BeAValidDate)
-                .WithMessage(ValidationMessages.ChildDOB);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).NationalInsuranceNumber)
                .Must(DataValidation.BeAValidNi)
                .WithMessage(ValidationMessages.NI);
+            RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
+                .NotEmpty() //Apply to all checks?
+                .WithMessage(ValidationMessages.LastName);
         });
     }
 

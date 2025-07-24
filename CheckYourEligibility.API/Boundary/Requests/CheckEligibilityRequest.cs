@@ -10,6 +10,9 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
     //public int? Sequence { get; set; }
 
+    public string? LastName { get; set; }
+    public string DateOfBirth { get; set; }
+
     public CheckEligibilityType Type
     {
         get => baseType;
@@ -32,8 +35,6 @@ public class CheckEligibilityRequestBulkBase
 #region FreeSchoolMeals,  EarlyYearPupilPremium, TwoYearOffer type
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
-    public string? LastName { get; set; }
-    public string DateOfBirth { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; } 
 
 }
@@ -54,9 +55,7 @@ public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityReques
     public string EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
     public string? ValidityEndDate { get; set; }
-    public string? GracePeriodEndDate { get; set; }  
-    public string? ParentLastName { get; set; }  
-    public string ChildDateOfBirth { get; set; }
+    public string? GracePeriodEndDate { get; set; }
 
 }
 
@@ -91,11 +90,11 @@ public class CheckWFBulkModelExample : IExamplesProvider<CheckEligibilityRequest
                 {
                     Type = CheckEligibilityType.WorkingFamilies,
                     EligibilityCode = "50012345678",
-                    ChildDateOfBirth = "2022-01-01",
+                    DateOfBirth = "2022-01-01",
                     NationalInsuranceNumber = "AB123456C",
                     ClientIdentifier = "12345",
                     GracePeriodEndDate = null,
-                    ParentLastName = null,
+                    LastName = "Smith",
                     ValidityStartDate = null,
                     ValidityEndDate = null
                 },
@@ -103,11 +102,11 @@ public class CheckWFBulkModelExample : IExamplesProvider<CheckEligibilityRequest
                 {
                     Type = CheckEligibilityType.WorkingFamilies,
                     EligibilityCode = "50012345679",
-                    ChildDateOfBirth = "2022-01-02",
+                    DateOfBirth = "2022-01-02",
                     NationalInsuranceNumber = "AB123456D",
                     ClientIdentifier = "12346",
                     GracePeriodEndDate = null,
-                    ParentLastName = null,
+                    LastName = "Smith",
                     ValidityStartDate = null,
                     ValidityEndDate = null
                 }
@@ -124,9 +123,9 @@ public class CheckWFModelExample : IExamplesProvider<CheckEligibilityRequest<Che
             {
                 Type = CheckEligibilityType.WorkingFamilies,
                 NationalInsuranceNumber = "AB123456C",
-                ChildDateOfBirth = "2024-01-01",
+                DateOfBirth = "2024-01-01",
                 EligibilityCode = "50012345678",
-                ParentLastName = null,
+                LastName = "Smith",
                 ValidityStartDate = null,
                 ValidityEndDate = null,
                 GracePeriodEndDate = null

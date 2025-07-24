@@ -162,12 +162,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 case CheckEligibilityType.WorkingFamilies:
                     item.EligibilityCode = CheckData.EligibilityCode;
-                    item.ParentLastName = CheckData.ParentLastName;
+                    item.LastName = CheckData.LastName;
                     item.ValidityStartDate = CheckData.ValidityStartDate;
                     item.ValidityEndDate = CheckData.ValidityEndDate;
                     item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-                    item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
+                    item.DateOfBirth = CheckData.DateOfBirth;
                     break;
                 default:
                     item.DateOfBirth = CheckData.DateOfBirth;
@@ -393,7 +393,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.ParentLastName = wfEvent.ParentLastName;
+            wfCheckData.LastName = wfEvent.ParentLastName;
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
@@ -501,8 +501,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName = checkItem.ParentLastName?.ToUpper(),
-                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
+                    LastName = checkItem.LastName?.ToUpper(),
+                    DateOfBirth = checkItem.DateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
                 };
