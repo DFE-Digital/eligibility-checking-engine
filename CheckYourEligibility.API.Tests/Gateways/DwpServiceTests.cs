@@ -51,7 +51,8 @@ public class DwpServiceTests : TestBase.TestBase
             { "Dwp:EcsServiceVersion", "20170701" },
             { "Dwp:EcsLAId", "999" },
             { "Dwp:EcsSystemId", "testId" },
-            { "Dwp:EcsPassword", "testpassword" }
+            { "Dwp:EcsPassword", "testpassword" },
+            { "Dwp:UseEcsForChecks", "true" },
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
