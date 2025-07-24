@@ -904,6 +904,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.WorkingFamilies;
         var check = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        check.ParentLastName = "simpson";
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -916,7 +917,9 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.ValidityStartDate.Should().BeEquivalentTo(check.ValidityStartDate);
         response.ValidityEndDate.Should().BeEquivalentTo(check.ValidityEndDate);
         response.GracePeriodEndDate.Should().BeEquivalentTo(check.GracePeriodEndDate);
-        response.ParentLastName.Should().BeEquivalentTo(check.ParentLastName);
+        response.ParentLastName.Should().BeEquivalentTo(check.ParentLastName.ToUpper());
+        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
+        response.ChildDateOfBirth.Should().BeEquivalentTo(check.ChildDateOfBirth);
     }
     [Test]
     public void Given_InValidRequest_GetBulkCheckResults_Should_Return_null()
@@ -1007,6 +1010,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             GracePeriodEndDate = request.GracePeriodEndDate,
             ValidityStartDate = request.ValidityStartDate,
             ValidityEndDate = request.ValidityEndDate,
+            NationalInsuranceNumber = request.NationalInsuranceNumber,
+            ChildDateOfBirth = request.ChildDateOfBirth,
             Type = CheckEligibilityType.WorkingFamilies
         };
     }

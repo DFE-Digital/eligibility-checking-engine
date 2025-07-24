@@ -40,7 +40,7 @@ public class HashGateway : BaseGateway, IHash
     public async Task<EligibilityCheckHash?> Exists(CheckProcessData item)
     {
         var age = DateTime.UtcNow.AddDays(-_hashCheckDays);
-        var hash = GetHash(item);
+        var hash = item.GetHash();
         return await _db.EligibilityCheckHashes.FirstOrDefaultAsync(x => x.Hash == hash && x.TimeStamp >= age);
     }
 
@@ -56,7 +56,7 @@ public class HashGateway : BaseGateway, IHash
     public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome,
         ProcessEligibilityCheckSource source, AuditData auditDataTemplate)
     {
-        var hash = GetHash(item);
+        var hash = item.GetHash();
         var HashItem = new EligibilityCheckHash
         {
             EligibilityCheckHashID = Guid.NewGuid().ToString(),
@@ -74,25 +74,5 @@ public class HashGateway : BaseGateway, IHash
         auditDataTemplate.typeId = HashItem.EligibilityCheckHashID;
         await _audit.AuditAdd(auditDataTemplate);
         return HashItem.EligibilityCheckHashID;
-    }
-
-    /// <summary>
-    ///     Get hash identifier for type
-    /// </summary>
-    /// <param name="item"></param>
-    /// <returns></returns>
-    private string GetHash(CheckProcessData item)
-    {
-        var key1 = item.Type != CheckEligibilityType.WorkingFamilies ? item.LastName.ToUpper() : item.EligibilityCode;
-        var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
-            ? item.NationalAsylumSeekerServiceNumber.ToUpper()
-            : item.NationalInsuranceNumber.ToUpper();
-        var input = $"{key1}{key}{item.DateOfBirth}{item.Type}";
-        if (item.Type == CheckEligibilityType.WorkingFamilies) {
-            input += $"{item.ParentLastName}{item.GracePeriodEndDate}{item.ValidityStartDate}{item.ValidityEndDate}";
-        }
-        var inputBytes = Encoding.UTF8.GetBytes(input);
-        var inputHash = SHA256.HashData(inputBytes);
-        return Convert.ToHexString(inputHash);
     }
 }
