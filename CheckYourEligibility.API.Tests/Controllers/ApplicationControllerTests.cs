@@ -29,6 +29,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
     private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!; 
     private Mock<IDeleteApplicationUseCase> _mockDeleteApplicationUseCase = null!; 
+    private Mock<IBulkDeleteApplicationsUseCase> _mockBulkDeleteApplicationsUseCase = null!;
     private ApplicationController _sut = null!;
 
     [SetUp]
@@ -40,6 +41,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
         _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict); 
         _mockDeleteApplicationUseCase = new Mock<IDeleteApplicationUseCase>(MockBehavior.Strict); 
+        _mockBulkDeleteApplicationsUseCase = new Mock<IBulkDeleteApplicationsUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
         _fixture = new Fixture(); // Ensure _fixture is initialized
@@ -63,6 +65,7 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockUpdateApplicationStatusUseCase.Object,
             _mockImportApplicationsUseCase.Object, 
             _mockDeleteApplicationUseCase.Object,
+            _mockBulkDeleteApplicationsUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -75,6 +78,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockUpdateApplicationStatusUseCase.VerifyAll();
         _mockImportApplicationsUseCase.VerifyAll();
         _mockDeleteApplicationUseCase.VerifyAll();
+        _mockBulkDeleteApplicationsUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -844,4 +848,253 @@ public class ApplicationControllerTests : TestBase.TestBase
         var errorResponse = badRequestResult!.Value as ErrorResponse;
         errorResponse!.Errors!.First().Title.Should().Be("General error");
     }
+
+    #region Bulk Delete Tests
+
+    [Test]
+    public async Task BulkDeleteApplications_ValidCsvFile_ReturnsOk()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var response = _fixture.Create<ApplicationBulkDeleteResponse>();
+        response.SuccessfulDeletions = 2;
+        response.FailedDeletions = 0;
+        response.Message = "Delete completed successfully";
+
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.ContentType).Returns("text/csv");
+        mockFile.Setup(f => f.Length).Returns(100);
+
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ReturnsAsync(response);
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task BulkDeleteApplications_ValidJsonFile_ReturnsOk()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var response = _fixture.Create<ApplicationBulkDeleteResponse>();
+        response.SuccessfulDeletions = 3;
+        response.FailedDeletions = 1;
+        response.Message = "Delete partially completed";
+
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.ContentType).Returns("application/json");
+        mockFile.Setup(f => f.Length).Returns(200);
+
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ReturnsAsync(response);
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task BulkDeleteApplications_NoLocalAuthorityScope_ReturnsBadRequest()
+    {
+        // Arrange
+        var mockFile = new Mock<IFormFile>();
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplications_ValidationException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var mockFile = new Mock<IFormFile>();
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new ValidationException("Validation failed"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Validation failed");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplications_UnauthorizedAccessException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var mockFile = new Mock<IFormFile>();
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Unauthorized");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplications_GeneralException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var mockFile = new Mock<IFormFile>();
+        var request = new ApplicationBulkDeleteRequest { File = mockFile.Object };
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new Exception("General error"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplications(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("General error");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplicationsFromJson_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var request = _fixture.Create<ApplicationBulkDeleteJsonRequest>();
+        var response = _fixture.Create<ApplicationBulkDeleteResponse>();
+        response.SuccessfulDeletions = 5;
+        response.FailedDeletions = 0;
+        response.Message = "Delete completed successfully";
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ReturnsAsync(response);
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task BulkDeleteApplicationsFromJson_NoLocalAuthorityScope_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = _fixture.Create<ApplicationBulkDeleteJsonRequest>();
+
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.BulkDeleteApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplicationsFromJson_ValidationException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var request = _fixture.Create<ApplicationBulkDeleteJsonRequest>();
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new ValidationException("Validation failed"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Validation failed");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplicationsFromJson_UnauthorizedAccessException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var request = _fixture.Create<ApplicationBulkDeleteJsonRequest>();
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Unauthorized");
+    }
+
+    [Test]
+    public async Task BulkDeleteApplicationsFromJson_GeneralException_ReturnsBadRequest()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var request = _fixture.Create<ApplicationBulkDeleteJsonRequest>();
+
+        _mockBulkDeleteApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new Exception("General error"));
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var result = await _sut.BulkDeleteApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("General error");
+    }
+
+    #endregion
 }

@@ -389,6 +389,118 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
     }
 
+    /// <summary>
+    /// Bulk deletes applications by their GUIDs
+    /// </summary>
+    /// <param name="guids">Collection of application GUIDs to delete</param>
+    /// <returns>Dictionary mapping GUID to deletion success (true) or failure (false)</returns>
+    public async Task<Dictionary<string, bool>> BulkDeleteApplications(IEnumerable<string> guids)
+    {
+        var guidsList = guids.ToList();
+        var results = new Dictionary<string, bool>();
+        
+        try
+        {
+            if (!guidsList.Any())
+            {
+                _logger.LogInformation("No application GUIDs provided for bulk delete");
+                return results;
+            }
+
+            _logger.LogInformation($"Starting bulk delete of {guidsList.Count} applications");
+
+            // Get all applications to delete in a single query
+            var applications = await _db.Applications
+                .Include(x => x.Statuses)
+                .Include(x => x.Evidence)
+                .Where(x => guidsList.Contains(x.ApplicationID))
+                .ToListAsync();
+
+            // Track which applications were found
+            var foundGuids = applications.Select(a => a.ApplicationID).ToHashSet();
+            
+            // Mark not found applications as failed
+            foreach (var guid in guidsList)
+            {
+                if (!foundGuids.Contains(guid))
+                {
+                    results[guid] = false;
+                }
+            }
+
+            if (applications.Any())
+            {
+                // Remove all status histories in bulk
+                var statusesToRemove = applications
+                    .SelectMany(a => a.Statuses)
+                    .ToList();
+                    
+                if (statusesToRemove.Any())
+                {
+                    _db.ApplicationStatuses.RemoveRange(statusesToRemove);
+                }
+
+                // Remove all applications in bulk
+                _db.Applications.RemoveRange(applications);
+                
+                await _db.SaveChangesAsync();
+
+                // Mark successfully deleted applications
+                foreach (var application in applications)
+                {
+                    results[application.ApplicationID] = true;
+                }
+
+                _logger.LogInformation($"Successfully deleted {applications.Count} applications");
+                TrackMetric("Bulk Applications Deleted", applications.Count);
+            }
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk application deletion");
+            
+            // Mark all as failed in case of exception
+            foreach (var guid in guidsList.Where(g => !results.ContainsKey(g)))
+            {
+                results[guid] = false;
+            }
+            
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets local authority IDs for multiple applications in bulk
+    /// </summary>
+    /// <param name="applicationIds">Collection of application IDs</param>
+    /// <returns>Dictionary mapping application ID to local authority ID</returns>
+    public async Task<Dictionary<string, int>> GetLocalAuthorityIdsForApplications(IEnumerable<string> applicationIds)
+    {
+        try
+        {
+            var applicationIdsList = applicationIds.ToList();
+            
+            if (!applicationIdsList.Any())
+            {
+                return new Dictionary<string, int>();
+            }
+
+            var results = await _db.Applications
+                .Where(x => applicationIdsList.Contains(x.ApplicationID))
+                .Select(x => new { x.ApplicationID, x.LocalAuthorityId })
+                .ToDictionaryAsync(x => x.ApplicationID, x => x.LocalAuthorityId);
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting local authority IDs for applications");
+            throw;
+        }
+    }
+
     #region Private
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,

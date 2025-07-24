@@ -46,6 +46,12 @@ public class DeleteApplicationUseCase : IDeleteApplicationUseCase
     /// <returns>Task</returns>
     public async Task Execute(string guid, List<int> allowedLocalAuthorityIds)
     {
+        // Validate parameters
+        if (allowedLocalAuthorityIds == null)
+        {
+            throw new ArgumentNullException(nameof(allowedLocalAuthorityIds));
+        }
+
         // First check if the application exists and get its local authority ID
         var localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForApplication(guid);
 
