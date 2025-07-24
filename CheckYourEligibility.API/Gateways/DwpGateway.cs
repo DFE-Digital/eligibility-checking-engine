@@ -177,7 +177,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _httpClient.DefaultRequestHeaders.Add("access-level", _DWP_ApiAccessLevel);
             _httpClient.DefaultRequestHeaders.Add("correlation-id", _DWP_ApiCorrelationId);
             _httpClient.DefaultRequestHeaders.Add("context", _DWP_ApiContext);
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + GetToken());
+            string token = await GetToken();
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
 
             var response = await _httpClient.GetAsync(uri);
             if (response.IsSuccessStatusCode)
@@ -289,7 +290,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
             content.Headers.Add("policy-id", _DWP_ApiPolicyId);
             content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             content.Headers.Add("context", _DWP_ApiContext);
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + GetToken());
+            string token = await GetToken();
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
 
             var response = await _httpClient.PostAsync(uri, content);
             if (response.IsSuccessStatusCode)
