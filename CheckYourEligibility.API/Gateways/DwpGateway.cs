@@ -70,7 +70,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
         if (_UseEcsforChecks==false)
         {
             var privateKeyBytes = Convert.FromBase64String(_configuration["Dwp:ApiCertificate"]);
-            _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, string.Empty);
+            _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, (string)null,
+                X509KeyStorageFlags.MachineKeySet);
 
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
@@ -288,7 +289,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             content.Headers.Add("policy-id", _DWP_ApiPolicyId);
             content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             content.Headers.Add("context", _DWP_ApiContext);
-            content.Headers.Add("Authorization", "Bearer "+GetToken());
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer "+GetToken());
 
             var response = await _httpClient.PostAsync(uri, content);
             if (response.IsSuccessStatusCode)
