@@ -16,13 +16,16 @@ namespace CheckYourEligibility.API.Controllers;
 [Route("[controller]")]
 [Authorize]
 public class ApplicationController : BaseController
-{    private readonly ICreateApplicationUseCase _createApplicationUseCase;
+{
+    private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
-    private readonly IImportApplicationsUseCase _importApplicationsUseCase;    public ApplicationController(
+    private readonly IImportApplicationsUseCase _importApplicationsUseCase;
+
+    public ApplicationController(
         ILogger<ApplicationController> logger,
         IConfiguration configuration,
         ICreateApplicationUseCase createApplicationUseCase,
@@ -110,7 +113,8 @@ public class ApplicationController : BaseController
             var response = await _getApplicationUseCase.Execute(guid, localAuthorityIds);
 
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
-        }        catch (NotFoundException)
+        }
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -128,7 +132,8 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ApplicationSearchResponse), (int)HttpStatusCode.OK)]
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
@@ -185,6 +190,7 @@ public class ApplicationController : BaseController
                     Errors = [new Error { Title = "No local authority scope found" }]
                 });
             }
+
             var response = await _updateApplicationStatusUseCase.Execute(guid, model, localAuthorityIds);
             if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
@@ -203,7 +209,8 @@ public class ApplicationController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
+            _logger.LogError(ex,
+                $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

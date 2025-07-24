@@ -59,25 +59,26 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;
         bool.TryParse(_configuration["Dwp:UseEcsforChecks"], out _UseEcsforChecks);
-        
+
         _DWP_ApiHost = _configuration["Dwp:ApiHost"];
         _DWP_ApiTokenUrl = _configuration["Dwp:ApiTokenUrl"];
         _DWP_ApiClientId = _configuration["Dwp:ApiClientId"];
         _DWP_ApiSecret = _configuration["Dwp:ApiSecret"];
-        
+
         _httpClient = httpClient;
 
-        if (_UseEcsforChecks==false)
+        if (_UseEcsforChecks == false)
         {
             var privateKeyBytes = Convert.FromBase64String(_configuration["Dwp:ApiCertificate"]);
-            _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, string.Empty);
+            _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, (string)null,
+                X509KeyStorageFlags.MachineKeySet);
 
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.ClientCertificates.Add(_DWP_ApiCertificate);
             _httpClient = new HttpClient(handler);
         }
-        
+
         _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"];
         _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];
         _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"];
@@ -176,7 +177,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _httpClient.DefaultRequestHeaders.Add("access-level", _DWP_ApiAccessLevel);
             _httpClient.DefaultRequestHeaders.Add("correlation-id", _DWP_ApiCorrelationId);
             _httpClient.DefaultRequestHeaders.Add("context", _DWP_ApiContext);
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer "+GetToken());
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + GetToken());
 
             var response = await _httpClient.GetAsync(uri);
             if (response.IsSuccessStatusCode)
@@ -288,7 +289,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             content.Headers.Add("policy-id", _DWP_ApiPolicyId);
             content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             content.Headers.Add("context", _DWP_ApiContext);
-            content.Headers.Add("Authorization", "Bearer "+GetToken());
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + GetToken());
 
             var response = await _httpClient.PostAsync(uri, content);
             if (response.IsSuccessStatusCode)
@@ -328,9 +329,9 @@ public class DwpGateway : BaseGateway, IDwpGateway
             client_secret = _DWP_ApiSecret,
             grant_type = "client_credentials"
         };
-        
+
         var content = new StringContent(JsonConvert.SerializeObject(jwt), Encoding.UTF8, "application/json");
-        
+
         content.Headers.Add("policy-id", _DWP_ApiPolicyId);
         content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
         content.Headers.Add("context", _DWP_ApiContext);

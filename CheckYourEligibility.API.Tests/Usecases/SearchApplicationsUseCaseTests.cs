@@ -42,7 +42,7 @@ public class SearchApplicationsUseCaseTests
         // Act & Assert
         var exception = FluentActions.Invoking(() => _sut.Execute(null!, allowedLocalAuthorityIds))
             .Should().ThrowAsync<ArgumentException>();
-        
+
         exception.WithMessage("Invalid request, data is required");
     }
 
@@ -56,7 +56,7 @@ public class SearchApplicationsUseCaseTests
         // Act & Assert
         var exception = FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds))
             .Should().ThrowAsync<ArgumentException>();
-        
+
         exception.WithMessage("Invalid request, data is required");
     }
 
@@ -65,10 +65,10 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
-                LocalAuthority = null, 
-                Establishment = null 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
+                LocalAuthority = null,
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -76,7 +76,7 @@ public class SearchApplicationsUseCaseTests
         // Act & Assert
         var exception = FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds))
             .Should().ThrowAsync<ArgumentException>();
-        
+
         exception.WithMessage("Either LocalAuthority or Establishment must be specified");
     }
 
@@ -85,10 +85,10 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 999, // Not in allowed list
-                Establishment = null 
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; // Specific authorities only, not including 0 (all)
@@ -96,7 +96,7 @@ public class SearchApplicationsUseCaseTests
         // Act & Assert
         var exception = FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
-        
+
         exception.WithMessage("You do not have permission to search applications for this local authority");
     }
 
@@ -105,15 +105,15 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 999, // Any local authority should be allowed
-                Establishment = null 
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 0 }; // 0 means 'all' permissions
         var response = _fixture.Create<ApplicationSearchResponse>();
-        
+
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
@@ -133,10 +133,10 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 999; // Not in allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = null,
-                Establishment = establishmentId 
+                Establishment = establishmentId
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; // Specific authorities only
@@ -147,8 +147,9 @@ public class SearchApplicationsUseCaseTests
         // Act & Assert
         var exception = FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
-        
-        exception.WithMessage("You do not have permission to search applications for this establishment's local authority");
+
+        exception.WithMessage(
+            "You do not have permission to search applications for this establishment's local authority");
     }
 
     [Test]
@@ -158,10 +159,10 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 2; // In allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = null,
-                Establishment = establishmentId 
+                Establishment = establishmentId
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -189,10 +190,10 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 2; // In allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 1, // Also in allowed list
-                Establishment = establishmentId 
+                Establishment = establishmentId
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
@@ -218,14 +219,14 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 1,
-                Establishment = null 
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
-        
+
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync((ApplicationSearchResponse?)null);
 
         // Act
@@ -243,17 +244,17 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 1,
-                Establishment = null 
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var response = _fixture.Build<ApplicationSearchResponse>()
             .With(r => r.Data, new List<ApplicationResponse>())
             .Create();
-        
+
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
 
         // Act
@@ -271,15 +272,15 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData 
-            { 
+            .With(x => x.Data, new ApplicationRequestSearchData
+            {
                 LocalAuthority = 1,
-                Establishment = null 
+                Establishment = null
             })
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var response = _fixture.Create<ApplicationSearchResponse>();
-        
+
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());

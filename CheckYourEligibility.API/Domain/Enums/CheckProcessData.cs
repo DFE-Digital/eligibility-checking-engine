@@ -32,19 +32,19 @@ public class CheckProcessData
     public string GetHash()
     {
         string input = $"""
-            {LastName?.ToUpper()}
-            {EligibilityCode}
-            {(NationalInsuranceNumber.IsNullOrEmpty() ?
-                NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
-            {DateOfBirth}
-            {Type}
-            {ParentLastName?.ToUpper()}
-            {ChildDateOfBirth}
-            {GracePeriodEndDate}
-            {ValidityStartDate}
-            {ValidityEndDate}
-            """
-        .Replace(Environment.NewLine, "");
+             {LastName?.ToUpper()}
+             {EligibilityCode}
+             {(NationalInsuranceNumber.IsNullOrEmpty() ?
+                            NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
+             {DateOfBirth}
+             {Type}
+             {ParentLastName?.ToUpper()}
+             {ChildDateOfBirth}
+             {GracePeriodEndDate}
+             {ValidityStartDate}
+             {ValidityEndDate}
+             """
+            .Replace(Environment.NewLine, "");
 
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var inputHash = SHA256.HashData(inputBytes);

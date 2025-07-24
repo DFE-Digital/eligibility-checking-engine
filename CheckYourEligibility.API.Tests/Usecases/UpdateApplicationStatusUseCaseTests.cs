@@ -26,10 +26,14 @@ public class UpdateApplicationStatusUseCaseTests
     {
         _mockApplicationGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }    private Mock<IApplication> _mockApplicationGateway = null!;
+    }
+
+    private Mock<IApplication> _mockApplicationGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;
     private UpdateApplicationStatusUseCase _sut = null!;
-    private Fixture _fixture = null!;[Test]
+    private Fixture _fixture = null!;
+
+    [Test]
     public async Task Execute_Should_Return_Null_When_Response_Is_Null()
     {
         // Arrange
@@ -39,7 +43,8 @@ public class UpdateApplicationStatusUseCaseTests
         var localAuthorityId = 1;
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
-            .ReturnsAsync(localAuthorityId);        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!))
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!))
             .ReturnsAsync((ApplicationStatusUpdateResponse)null!);
 
         // Act
@@ -47,7 +52,9 @@ public class UpdateApplicationStatusUseCaseTests
 
         // Assert
         result.Should().BeNull();
-    }    [Test]
+    }
+
+    [Test]
     public async Task Execute_Should_Call_UpdateApplicationStatus_On_ApplicationGateway()
     {
         // Arrange
@@ -82,7 +89,8 @@ public class UpdateApplicationStatusUseCaseTests
         var localAuthorityId = 5; // Any authority ID
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
-            .ReturnsAsync(localAuthorityId);        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
+            .ReturnsAsync(localAuthorityId);
+        _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
             .ReturnsAsync(_fixture.Create<string>());
 
@@ -108,7 +116,7 @@ public class UpdateApplicationStatusUseCaseTests
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.UpdateApplicationStatus(guid, model.Data!)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
-            .ReturnsAsync(_fixture.Create<string>());        // Act
+            .ReturnsAsync(_fixture.Create<string>()); // Act
         var result = await _sut.Execute(guid, model, allowedLocalAuthorityIds);
 
         // Assert
@@ -131,8 +139,9 @@ public class UpdateApplicationStatusUseCaseTests
         // Act & Assert
         var exception = await FluentActions.Invoking(() => _sut.Execute(guid, model, allowedLocalAuthorityIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
-        
-        exception.WithMessage("You do not have permission to create applications for this establishment's local authority");
+
+        exception.WithMessage(
+            "You do not have permission to create applications for this establishment's local authority");
     }
 
     [Test]

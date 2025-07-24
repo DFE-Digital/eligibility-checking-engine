@@ -55,7 +55,8 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, false)).ReturnsAsync((CheckEligibilityItem)null);
+        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, false))
+            .ReturnsAsync((CheckEligibilityItem)null);
 
         // Act
         Func<Task> act = async () => await _sut.Execute(guid);
@@ -94,7 +95,7 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(guid);   
+        await _sut.Execute(guid);
 
         // Assert
         _mockCheckGateway.Verify(s => s.GetItem<CheckEligibilityItem>(guid, false), Times.Once);
