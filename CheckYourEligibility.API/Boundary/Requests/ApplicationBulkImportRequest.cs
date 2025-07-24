@@ -21,57 +21,58 @@ public class ApplicationBulkImportRequest
 /// </summary>
 public class ApplicationBulkImportData
 {
-  /// <summary>
-  /// Parent's first name
-  /// </summary>
-  public required string ParentFirstName { get; set; }
+    /// <summary>
+    /// Parent's first name
+    /// </summary>
+    public required string ParentFirstName { get; set; }
 
-  /// <summary>
-  /// Parent's surname
-  /// </summary>
-  public required string ParentSurname { get; set; }
+    /// <summary>
+    /// Parent's surname
+    /// </summary>
+    public required string ParentSurname { get; set; }
 
-  /// <summary>
-  /// Parent's date of birth
-  /// </summary>
-  public required string ParentDateOfBirth { get; set; }
+    /// <summary>
+    /// Parent's date of birth
+    /// </summary>
+    public required string ParentDateOfBirth { get; set; }
 
-  /// <summary>
-  /// Parent's National Insurance Number
-  /// </summary>
-  public required string ParentNino { get; set; }
+    /// <summary>
+    /// Parent's National Insurance Number
+    /// </summary>
+    public required string ParentNino { get; set; }
 
-  /// <summary>
-  /// Parent's email address
-  /// </summary>
-  public required string ParentEmail { get; set; }
-  /// <summary>
-  /// Child's first name
-  /// </summary>
-  public required string ChildFirstName { get; set; }
+    /// <summary>
+    /// Parent's email address
+    /// </summary>
+    public required string ParentEmail { get; set; }
 
-  /// <summary>
-  /// Child's surname
-  /// </summary>
-  public required string ChildSurname { get; set; }
+    /// <summary>
+    /// Child's first name
+    /// </summary>
+    public required string ChildFirstName { get; set; }
 
-  /// <summary>
-  /// Child's date of birth
-  /// </summary>
-  public required string ChildDateOfBirth { get; set; }
+    /// <summary>
+    /// Child's surname
+    /// </summary>
+    public required string ChildSurname { get; set; }
 
-  /// <summary>
-  /// Child's school URN
-  /// </summary>
-  public required string ChildSchoolUrn { get; set; }
+    /// <summary>
+    /// Child's date of birth
+    /// </summary>
+    public required string ChildDateOfBirth { get; set; }
 
-  /// <summary>
-  /// Eligibility End Date
-  /// </summary>
-  public required string EligibilityEndDate { get; set; }
-    
-  /// <summary>
-  /// Application status for bulk import, optional
-  /// </summary>
-  public string? ApplicationStatus { get; set; }
+    /// <summary>
+    /// Child's school URN
+    /// </summary>
+    public required string ChildSchoolUrn { get; set; }
+
+    /// <summary>
+    /// Eligibility End Date
+    /// </summary>
+    public required string EligibilityEndDate { get; set; }
+
+    /// <summary>
+    /// Application status for bulk import, optional
+    /// </summary>
+    public string? ApplicationStatus { get; set; }
 }

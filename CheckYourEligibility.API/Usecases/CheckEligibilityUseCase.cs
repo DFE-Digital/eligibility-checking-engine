@@ -19,7 +19,8 @@ public interface ICheckEligibilityUseCase
     /// <param name="model">Eligibility check request</param>
     /// <param name="routeType">The type of eligibility check to perform</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType;
+    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType)
+        where T : IEligibilityServiceType;
 }
 
 public class CheckEligibilityUseCase : ICheckEligibilityUseCase
@@ -41,7 +42,8 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType
+    public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model,
+        CheckEligibilityType routeType) where T : IEligibilityServiceType
     {
         if (model == null || model.Data == null)
         {
@@ -52,7 +54,6 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
 
         if (modelData.Data != null)
         {
-
             var validationResults = _validator.Validate(modelData.Data);
             if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
 
@@ -78,5 +79,4 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger.LogWarning("Response for eligibility check was null.");
         throw new ValidationException(null, "Eligibility check not completed successfully.");
     }
-
 }

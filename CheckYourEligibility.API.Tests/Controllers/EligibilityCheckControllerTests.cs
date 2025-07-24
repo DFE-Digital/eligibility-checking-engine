@@ -164,7 +164,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync(executionResult);
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals))
+            .ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.CheckEligibilityFsm(request);
@@ -193,7 +194,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -223,7 +225,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -235,7 +238,9 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(bulkResponse);
     }
+
     #region Working Families
+
     /// <summary>
     /// In this test we ensure 
     /// 1.The Code correctly catches the exception.
@@ -248,7 +253,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
         _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
-        .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         var response = await _sut.CheckEligibilityWF(request);
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -257,6 +262,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
     }
+
     /// <summary>
     /// In this test we ensure 
     /// 1. Correct response code is returned on success
@@ -269,7 +275,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies)).ReturnsAsync(executionResult);
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
+            .ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.CheckEligibilityWF(request);
@@ -280,6 +287,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(statusResponse);
     }
+
     [Test]
     public async Task CheckEligibilityBulk_WF_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
@@ -298,7 +306,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -310,6 +319,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(bulkResponse);
     }
+
     [Test]
     public async Task CheckEligibilityBulk_WF_returns_bad_request_when_use_case_returns_invalid_result()
     {
@@ -327,7 +337,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies, _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -338,7 +349,9 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
     }
+
     #endregion
+
     [Test]
     public async Task BulkUploadProgress_returns_not_found_when_use_case_returns_not_found()
     {

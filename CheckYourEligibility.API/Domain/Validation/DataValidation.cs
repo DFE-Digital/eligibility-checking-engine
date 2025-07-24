@@ -15,14 +15,16 @@ internal static class DataValidation
         var res = rg.Match(value);
         return res.Success;
     }
+
     internal static bool BeAValidEligibilityCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
         var regexString = @"^\d{11}$";
         var rg = new Regex(regexString);
         var res = rg.Match(value);
-		return res.Success;
+        return res.Success;
     }
+
     internal static bool BeAValidDate(string value)
     {
         return DateTime.TryParseExact(value,

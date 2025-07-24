@@ -777,7 +777,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
-     
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.FreeSchoolMealsHMRC.Add(new FreeSchoolMealsHMRC
         {
@@ -921,6 +921,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
         response.ChildDateOfBirth.Should().BeEquivalentTo(check.ChildDateOfBirth);
     }
+
     [Test]
     public void Given_InValidRequest_GetBulkCheckResults_Should_Return_null()
     {
@@ -1001,6 +1002,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             Type = new CheckEligibilityRequestData().Type
         };
     }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestWorkingFamiliesData request)
     {
         return new CheckProcessData

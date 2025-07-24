@@ -108,7 +108,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -167,7 +167,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -194,7 +194,9 @@ public class ApplicationGateway : BaseGateway, IApplication
             _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
             throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
         }
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Get the local authority ID based on application ID
     /// </summary>
     /// <param name="applicationId">The application ID</param>
@@ -203,7 +205,6 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         try
         {
-
             var localAuthorityId = await _db.Applications
                 .Where(x => x.ApplicationID == applicationId)
                 .Select(x => x.LocalAuthorityId)
@@ -217,7 +218,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
         }
     }
-    
+
     /// <summary>
     /// Gets establishment information by URN
     /// </summary>
@@ -250,7 +251,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             return (false, 0, 0);
         }
     }
-    
+
     /// <summary>
     /// Bulk imports applications without creating eligibility check hashes
     /// </summary>
@@ -261,7 +262,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         try
         {
             var applicationsList = applications.ToList();
-            
+
             if (!applicationsList.Any())
             {
                 _logger.LogInformation("No applications to import");
@@ -274,10 +275,10 @@ public class ApplicationGateway : BaseGateway, IApplication
             _db.BulkInsert_Applications(applicationsList);
 
             _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
-            
+
             // Track metrics
             TrackMetric("Bulk Applications Imported", applicationsList.Count);
-            
+
             return Task.CompletedTask;
         }
         catch (Exception ex)
@@ -302,13 +303,14 @@ public class ApplicationGateway : BaseGateway, IApplication
         return await _db.Establishments
             .FirstOrDefaultAsync(e => e.EstablishmentId == establishmentId);
     }
-    
+
     /// <summary>
     /// Gets multiple establishment entities by their URNs in bulk
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
-    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns)
+    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(
+        IEnumerable<string> urns)
     {
         if (urns == null || !urns.Any())
         {
@@ -334,7 +336,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
         // Create dictionary mapping original URN string to establishment
         var result = new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
-        
+
         foreach (var validUrn in validUrns)
         {
             var establishment = establishments.FirstOrDefault(e => e.EstablishmentId == validUrn.EstablishmentId);
@@ -412,7 +414,6 @@ public class ApplicationGateway : BaseGateway, IApplication
         } */
     }
 
-    
 
     /* private string GetReference()
     {
