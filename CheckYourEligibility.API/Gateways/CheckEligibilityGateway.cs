@@ -501,7 +501,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName = checkItem.ParentLastName.ToUpper(),
+                    ParentLastName = checkItem.ParentLastName?.ToUpper(),
                     ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
@@ -510,7 +510,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 return new CheckProcessData
                 {
                     DateOfBirth = checkItem.DateOfBirth,
-                    LastName = checkItem.LastName.ToUpper(),
+                    LastName = checkItem.LastName?.ToUpper(),
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
