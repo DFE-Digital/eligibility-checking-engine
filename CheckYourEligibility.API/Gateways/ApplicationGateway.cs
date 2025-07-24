@@ -347,6 +347,48 @@ public class ApplicationGateway : BaseGateway, IApplication
         return result;
     }
 
+    /// <summary>
+    /// Deletes an application by GUID
+    /// </summary>
+    /// <param name="guid">Application GUID</param>
+    /// <returns>True if deleted successfully, false if not found</returns>
+    public async Task<bool> DeleteApplication(string guid)
+    {
+        try
+        {
+            var application = await _db.Applications
+                .Include(x => x.Statuses)
+                .Include(x => x.Evidence)
+                .FirstOrDefaultAsync(x => x.ApplicationID == guid);
+
+            if (application == null)
+            {
+                return false;
+            }
+
+            // Remove related status history
+            if (application.Statuses.Any())
+            {
+                _db.ApplicationStatuses.RemoveRange(application.Statuses);
+            }
+
+            // Remove the application
+            _db.Applications.Remove(application);
+            
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Application {guid} deleted successfully");
+            TrackMetric("Application Deleted", 1);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting application {guid?.Replace(Environment.NewLine, "")}");
+            throw;
+        }
+    }
+
     #region Private
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,
