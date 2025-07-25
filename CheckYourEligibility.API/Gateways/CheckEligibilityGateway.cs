@@ -619,7 +619,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
                 {
                     LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber,
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length-5, 4),
                     DateOfBirth = data.DateOfBirth
                 }
             }
