@@ -31,21 +31,25 @@ public interface ICreateApplicationUseCase
 public class CreateApplicationUseCase : ICreateApplicationUseCase
 {
     private readonly IApplication _applicationGateway;
-    private readonly IAudit _auditGateway;/// <summary>
-                                          /// Constructor for CreateApplicationUseCase
-                                          /// </summary>
-                                          /// <param name="applicationGateway">The application gateway</param>
-                                          /// <param name="auditGateway">The audit gateway</param>
+    private readonly IAudit _auditGateway;
+
+    /// <summary>
+    /// Constructor for CreateApplicationUseCase
+    /// </summary>
+    /// <param name="applicationGateway">The application gateway</param>
+    /// <param name="auditGateway">The audit gateway</param>
     public CreateApplicationUseCase(IApplication applicationGateway, IAudit auditGateway)
     {
         _applicationGateway = applicationGateway;
         _auditGateway = auditGateway;
-    }/// <summary>
-     /// Creates a new application after validating local authority permissions
-     /// </summary>
-     /// <param name="model">The application request data</param>
-     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
-     /// <returns>The created application response</returns>
+    }
+
+    /// <summary>
+    /// Creates a new application after validating local authority permissions
+    /// </summary>
+    /// <param name="model">The application request data</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>The created application response</returns>
     public async Task<ApplicationSaveItemResponse> Execute(ApplicationRequest model, List<int> allowedLocalAuthorityIds)
     {
         if (model == null || model.Data == null) throw new ValidationException("Invalid request, data is required");
@@ -67,8 +71,10 @@ public class CreateApplicationUseCase : ICreateApplicationUseCase
         // If not 'all', must match one of the allowed LocalAuthorities
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
         {
-            throw new UnauthorizedAccessException("You do not have permission to create applications for this establishment's local authority");
+            throw new UnauthorizedAccessException(
+                "You do not have permission to create applications for this establishment's local authority");
         }
+
         var response = await _applicationGateway.PostApplication(model.Data);
         if (response != null) await _auditGateway.CreateAuditEntry(AuditType.Application, response.Id);
 

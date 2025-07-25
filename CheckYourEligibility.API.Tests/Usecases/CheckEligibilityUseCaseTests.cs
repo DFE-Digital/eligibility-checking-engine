@@ -27,6 +27,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             _mockValidator.Object, _mockLogger.Object);
         _fixture = new Fixture();
     }
+
     [TearDown]
     public void Teardown()
     {
@@ -45,7 +46,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
     public async Task Execute_returns_failure_when_model_is_null()
     {
         // Act
-        Func<Task> act = async () => await _sut.Execute<CheckEligibilityRequestData>(null!, CheckEligibilityType.FreeSchoolMeals);
+        Func<Task> act = async () =>
+            await _sut.Execute<CheckEligibilityRequestData>(null!, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         await act.Should().ThrowAsync<ValidationException>().WithMessage("Missing request data");
@@ -83,12 +85,13 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         {
             Id = _fixture.Create<string>(),
             Status = CheckEligibilityStatus.queuedForProcessing
-        }; _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
+        };
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id))
-            .ReturnsAsync(_fixture.Create<string>());// Act
+            .ReturnsAsync(_fixture.Create<string>()); // Act
         // The factory will convert any model to the correct type based on routeType
         // So this test should actually succeed now
         var result = await _sut.Execute(incorrectModel, CheckEligibilityType.FreeSchoolMeals);
@@ -136,9 +139,10 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         // Assert
         // Check that normalization happened on the model
-        model.Data!.NationalInsuranceNumber.Should().Be("AB123456C");        // Verify the service was called
+        model.Data!.NationalInsuranceNumber.Should().Be("AB123456C"); // Verify the service was called
         _mockCheckGateway.Verify(
-            s => s.PostCheck(It.IsAny<IEligibilityServiceType>()), Times.Once);// Additional check to diagnose the issue - examine what was actually passed
+            s => s.PostCheck(It.IsAny<IEligibilityServiceType>()),
+            Times.Once); // Additional check to diagnose the issue - examine what was actually passed
         capturedArg.Should().NotBeNull("PostCheck should have been called");
         if (capturedArg != null && capturedArg is CheckEligibilityRequestData requestData)
             requestData.NationalInsuranceNumber.Should().Be("AB123456C");
@@ -158,12 +162,15 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult([new FluentValidation.Results.ValidationFailure("test", "test error")]));        // Act
+            .Returns(new FluentValidation.Results.ValidationResult([
+                new FluentValidation.Results.ValidationFailure("test", "test error")
+            ])); // Act
         Func<Task> act = async () => await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         await act.Should().ThrowAsync<ValidationException>();
     }
+
     [Test]
     public async Task Execute_returns_success_with_correct_data_when_gateway_returns_response_WF()
     {
@@ -188,11 +195,13 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         // Assert
         result.Data.Should().NotBeNull();
-        result.Data.Status.Should().Be(responseData.Status.ToString()); result.Links.Should().NotBeNull();
+        result.Data.Status.Should().Be(responseData.Status.ToString());
+        result.Links.Should().NotBeNull();
         result.Links.Get_EligibilityCheck.Should().Be($"{CheckLinks.GetLink}{checkId}");
         result.Links.Put_EligibilityCheckProcess.Should().Be($"{CheckLinks.ProcessLink}{checkId}");
         result.Links.Get_EligibilityCheckStatus.Should().Be($"{CheckLinks.GetLink}{checkId}/status");
     }
+
     [Test]
     public async Task Execute_returns_success_with_correct_data_when_gateway_returns_response()
     {
@@ -217,7 +226,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         // Assert
         result.Data.Should().NotBeNull();
-        result.Data.Status.Should().Be(responseData.Status.ToString()); result.Links.Should().NotBeNull();
+        result.Data.Status.Should().Be(responseData.Status.ToString());
+        result.Links.Should().NotBeNull();
         result.Links.Get_EligibilityCheck.Should().Be($"{CheckLinks.GetLink}{checkId}");
         result.Links.Put_EligibilityCheckProcess.Should().Be($"{CheckLinks.ProcessLink}{checkId}");
         result.Links.Get_EligibilityCheckStatus.Should().Be($"{CheckLinks.GetLink}{checkId}/status");
@@ -236,7 +246,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult()); _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
 
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
@@ -255,7 +266,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         // Arrange
         var model = CreateValidCheckRequest();
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-          .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new FluentValidation.Results.ValidationResult());
 
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync((PostCheckResult)null!);
@@ -264,7 +275,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         Func<Task> act = async () => await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>().WithMessage("Eligibility check not completed successfully.");
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("Eligibility check not completed successfully.");
 
         // Verify audit service was not called
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
@@ -272,7 +284,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
     private CheckEligibilityRequest<CheckEligibilityRequestData> CreateValidCheckRequest()
     {
-
         return new CheckEligibilityRequest<CheckEligibilityRequestData>
         {
             Data = new CheckEligibilityRequestData
@@ -282,8 +293,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
                 LastName = "Doe"
             }
         };
-
-
     }
 
 
@@ -299,8 +308,5 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
                 EligibilityCode = "50012344556"
             }
         };
-
-
     }
-
 }

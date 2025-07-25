@@ -27,7 +27,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     private ILogger<ApplicationController> _mockLogger = null!;
     private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase = null!;
     private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
-    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!; 
+    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!;
     private ApplicationController _sut = null!;
 
     [SetUp]
@@ -37,7 +37,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase = new Mock<IGetApplicationUseCase>(MockBehavior.Strict);
         _mockSearchApplicationsUseCase = new Mock<ISearchApplicationsUseCase>(MockBehavior.Strict);
         _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
-        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict); 
+        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
         _fixture = new Fixture(); // Ensure _fixture is initialized
@@ -59,7 +59,7 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockGetApplicationUseCase.Object,
             _mockSearchApplicationsUseCase.Object,
             _mockUpdateApplicationStatusUseCase.Object,
-            _mockImportApplicationsUseCase.Object, 
+            _mockImportApplicationsUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -73,6 +73,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockImportApplicationsUseCase.VerifyAll(); // Added
         _mockAuditGateway.VerifyAll();
     }
+
     [Test]
     public async Task Given_valid_NInumber_ApplicationRequest_Post_Should_Return_Status201Created()
     {
@@ -88,7 +89,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         var expectedResult = new ObjectResult(applicationFsm)
-        { StatusCode = StatusCodes.Status201Created };
+            { StatusCode = StatusCodes.Status201Created };
 
         // Act
         var response = await _sut.Application(request);
@@ -96,6 +97,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
+
     private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
     {
         // Create mock HttpContext with ClaimsPrincipal
@@ -116,6 +118,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
         _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
+
     [Test]
     public async Task Given_InValidRequest_Values_Application_Should_Return_Status400BadRequest()
     {
@@ -137,6 +140,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult!.Value.Should().BeOfType<ErrorResponse>(); // Added null-forgiving operator
     }
+
     [Test]
     public async Task Given_InValidRequest_Validation_Application_Should_Return_Status400BadRequest()
     {
@@ -162,6 +166,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
     }
+
     [Test]
     public async Task Given_InValidRequest_Type_Application_Should_Return_Status400BadRequest()
     {
@@ -186,7 +191,9 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
-    }    [Test]
+    }
+
+    [Test]
     public async Task Given_InValid_guid_Application_Should_Return_StatusNotFound()
     {
         // Arrange
@@ -205,7 +212,9 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }    [Test]
+    }
+
+    [Test]
     public async Task Given_Valid_guid_Application_Should_Return_StatusOk()
     {
         // Arrange
@@ -218,14 +227,16 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-        { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.Application(guid);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }    [Test]
+    }
+
+    [Test]
     public async Task Given_Valid_ApplicationSearch_Should_Return_StatusOk()
     {
         // Arrange
@@ -240,18 +251,21 @@ public class ApplicationControllerTests : TestBase.TestBase
         {
             model.Data = new ApplicationRequestSearchData();
         }
-        model.Data.LocalAuthority = 1;  // Match the localAuthorityIds we set up
+
+        model.Data.LocalAuthority = 1; // Match the localAuthorityIds we set up
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-        { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationSearch(model);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }[Test]
+    }
+
+    [Test]
     public async Task Given_InValid_guid_ApplicationStatusUpdate_Should_Return_StatusNotFound()
     {
         // Arrange
@@ -260,7 +274,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ReturnsAsync((ApplicationStatusUpdateResponse)null!);
         var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
 
@@ -269,7 +284,9 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
-    }    [Test]
+    }
+
+    [Test]
     public async Task Given_Valid_guid_ApplicationStatusUpdate_Should_Return_StatusOk()
     {
         // Arrange
@@ -281,9 +298,10 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds)).ReturnsAsync(expectedResponse);
+        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-        { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationStatusUpdate(guid, request);
@@ -310,7 +328,9 @@ public class ApplicationControllerTests : TestBase.TestBase
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
         errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority scope found");
-    }    [Test]
+    }
+
+    [Test]
     public async Task Given_ApplicationSearch_With_NonMatching_LocalAuthority_Should_Return_BadRequest()
     {
         // Arrange
@@ -319,6 +339,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         {
             model.Data = new ApplicationRequestSearchData();
         }
+
         model.Data.LocalAuthority = 5; // A different local authority than we'll authorize
 
         // Setup controller with specific local authority claims (not including 5)
@@ -327,7 +348,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Setup mock to throw UnauthorizedAccessException for unauthorized access
         _mockSearchApplicationsUseCase
             .Setup(cs => cs.Execute(It.IsAny<ApplicationRequestSearch>(), It.IsAny<List<int>>()))
-            .ThrowsAsync(new UnauthorizedAccessException("Local authority scope does not match requested LocalAuthority"));
+            .ThrowsAsync(
+                new UnauthorizedAccessException("Local authority scope does not match requested LocalAuthority"));
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -337,7 +359,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
-        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("Local authority scope does not match requested LocalAuthority");
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should()
+            .Be("Local authority scope does not match requested LocalAuthority");
     }
 
     [Test]
@@ -515,7 +538,9 @@ public class ApplicationControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
-            .ThrowsAsync(new UnauthorizedAccessException("You do not have permission to search applications for this local authority"));
+            .ThrowsAsync(
+                new UnauthorizedAccessException(
+                    "You do not have permission to search applications for this local authority"));
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -525,7 +550,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult!.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult.Value as ErrorResponse;
-        errorResponse!.Errors!.FirstOrDefault()?.Title.Should().Be("You do not have permission to search applications for this local authority");
+        errorResponse!.Errors!.FirstOrDefault()?.Title.Should()
+            .Be("You do not have permission to search applications for this local authority");
     }
 
     [Test]
@@ -556,7 +582,8 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task BulkImportApplications_ValidRequest_ReturnsOk()
     {
         // Arrange
-        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var request = new ApplicationBulkImportRequest
+            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
         var localAuthorityIds = new List<int> { 1 };
 
@@ -576,7 +603,8 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task BulkImportApplications_NoLocalAuthorityScope_ReturnsBadRequest()
     {
         // Arrange
-        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var request = new ApplicationBulkImportRequest
+            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         SetupControllerWithLocalAuthorityIds(new List<int>());
 
         // Act
@@ -593,11 +621,13 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task BulkImportApplications_ValidationException_ReturnsBadRequest()
     {
         // Arrange
-        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var request = new ApplicationBulkImportRequest
+            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new ValidationException("Validation error"));
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var result = await _sut.BulkImportApplications(request);
@@ -613,11 +643,13 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task BulkImportApplications_UnauthorizedAccessException_ReturnsBadRequest()
     {
         // Arrange
-        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var request = new ApplicationBulkImportRequest
+            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
 
         // Act
         var result = await _sut.BulkImportApplications(request);
@@ -633,11 +665,13 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task BulkImportApplications_GeneralException_ReturnsBadRequest()
     {
         // Arrange
-        var request = new ApplicationBulkImportRequest { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        var request = new ApplicationBulkImportRequest
+            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
+        _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
+            .ThrowsAsync(new Exception("General error"));
 
         // Act
         var result = await _sut.BulkImportApplications(request);
@@ -658,7 +692,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ReturnsAsync(expectedResponse);
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ReturnsAsync(expectedResponse);
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);
@@ -694,7 +729,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new ValidationException("Validation error"));
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);
@@ -714,7 +750,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);
@@ -734,7 +771,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
+        _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
+            .ThrowsAsync(new Exception("General error"));
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);

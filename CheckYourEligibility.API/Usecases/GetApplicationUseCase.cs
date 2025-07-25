@@ -19,7 +19,9 @@ public class GetApplicationUseCase : IGetApplicationUseCase
     {
         _applicationGateway = applicationGateway;
         _auditGateway = auditGateway;
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Gets an application by guid after validating local authority permissions
     /// </summary>
     /// <param name="guid">The application guid</param>
@@ -33,7 +35,8 @@ public class GetApplicationUseCase : IGetApplicationUseCase
         // If not 'all', must match one of the allowed LocalAuthorities
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
         {
-            throw new UnauthorizedAccessException("You do not have permission to access applications for this establishment's local authority");
+            throw new UnauthorizedAccessException(
+                "You do not have permission to access applications for this establishment's local authority");
         }
 
         var response = await _applicationGateway.GetApplication(guid);

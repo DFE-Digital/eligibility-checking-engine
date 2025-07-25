@@ -21,7 +21,8 @@ public class ApplicationBulkImportRow
 
 [ExcludeFromCodeCoverage]
 public class ApplicationBulkImportRowMap : ClassMap<ApplicationBulkImportRow>
-{    public ApplicationBulkImportRowMap()
+{
+    public ApplicationBulkImportRowMap()
     {
         Map(m => m.ParentFirstName).Name("Parent First Name");
         Map(m => m.ParentSurname).Name("Parent Surname");

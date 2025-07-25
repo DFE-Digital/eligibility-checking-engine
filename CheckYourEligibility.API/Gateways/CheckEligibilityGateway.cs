@@ -117,7 +117,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
-   
+
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
@@ -129,14 +129,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                    {
-                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
-                    {
-                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
             }
 
@@ -153,11 +153,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (result != null)
         {
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
-            if (isBatchRecord) {
+            if (isBatchRecord)
+            {
                 item.Status = result.Status.ToString();
                 item.Created = result.Created;
                 item.ClientIdentifier = CheckData.ClientIdentifier;
             }
+
             switch (result.Type)
             {
                 case CheckEligibilityType.WorkingFamilies:
@@ -176,6 +178,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     item.LastName = CheckData.LastName;
                     break;
             }
+
             return (T)item;
         }
 
@@ -195,11 +198,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                   var item =  await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, isBatchRecord:true);
-                   items.Add(item);
+                    var item = await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, isBatchRecord: true);
+                    items.Add(item);
 
                     sequence++;
                 }
+
                 return (T)items;
             }
 
@@ -244,7 +248,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         var minDate = DateTime.Now.AddDays(-7);
 
         var allChecks = await _db.CheckEligibilities
-            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate && !string.IsNullOrWhiteSpace(x.Group))
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate &&
+                        !string.IsNullOrWhiteSpace(x.Group))
             .ToListAsync();
 
         var results = allChecks
@@ -309,9 +314,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             nass = nass.Substring(2, 2);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
                 return CheckEligibilityStatus.eligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
+            if (nass == _configuration.GetValue<string>(
+                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return CheckEligibilityStatus.notEligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
+            if (nass == _configuration.GetValue<string>(
+                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
                 return CheckEligibilityStatus.parentNotFound;
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
                 return CheckEligibilityStatus.error;
@@ -371,6 +378,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return queueName;
     }
+
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
@@ -380,9 +388,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
     /// </summary>
     /// <returns></returns>
-    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result, CheckProcessData checkData)
+    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
+        EligibilityCheck? result, CheckProcessData checkData)
     {
-
         var source = ProcessEligibilityCheckSource.HMRC;
         var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
         (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
@@ -404,24 +412,25 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
                 (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
             {
-
                 result.Status = CheckEligibilityStatus.eligible;
             }
             else
             {
-
                 result.Status = CheckEligibilityStatus.notEligible;
-
             }
 
             result.EligibilityCheckHashID =
                 await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
-
         }
-        else { result.Status = CheckEligibilityStatus.notFound; }
+        else
+        {
+            result.Status = CheckEligibilityStatus.notFound;
+        }
+
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
+
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
         CheckProcessData checkData)
     {
@@ -519,7 +528,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ClientIdentifier = checkItem.ClientIdentifier
                 };
         }
-
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
@@ -604,21 +612,21 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var citizenRequest = new CitizenMatchRequest
         {
-            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "2.0" },
+            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
             Data = new CitizenMatchRequest.CitizenMatchRequest_Data
             {
                 Type = "Match",
                 Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
                 {
                     LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber,
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length-5, 4),
                     DateOfBirth = data.DateOfBirth
                 }
             }
         };
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
-        var guid = await _dwpGateway.GetCitizen(citizenRequest);
+        var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
         if (!Guid.TryParse(guid, out _))
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
 
@@ -626,7 +634,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             //check for benefit
             var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
-                DateTime.Now.ToString("yyyy-MMM-dd"));
+                DateTime.Now.ToString("yyyy-MMM-dd"), data.Type);
             if (result.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;

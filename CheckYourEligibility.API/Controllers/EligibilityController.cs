@@ -50,7 +50,7 @@ public class EligibilityCheckController : BaseController
         IUpdateEligibilityCheckStatusUseCase updateEligibilityCheckStatusUseCase,
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase,
         IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase
-        )
+    )
         : base(audit)
     {
         _logger = logger;
@@ -168,7 +168,8 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
-    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),typeof(CheckWFModelExample))]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),
+        typeof(CheckWFModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [HttpPost("/check/working-families")]
@@ -179,7 +180,6 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
@@ -188,6 +188,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
     ///     Posts the array of FSM checks
     /// </summary>
@@ -202,7 +203,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -225,7 +227,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -233,6 +236,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
     ///     Posts the array of 2YO checks
     /// </summary>
@@ -247,7 +251,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -270,7 +275,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -278,6 +284,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
     ///     Bulk Upload status
     /// </summary>

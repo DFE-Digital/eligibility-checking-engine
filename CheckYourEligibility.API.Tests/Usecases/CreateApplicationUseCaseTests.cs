@@ -129,11 +129,12 @@ public class CreateApplicationUseCaseTests
         var result = await _sut.Execute(model, _allowedLocalAuthorityIds);
 
         // Assert
-        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment), Times.Once);
+        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment),
+            Times.Once);
         _mockApplicationGateway.Verify(s => s.PostApplication(model.Data!), Times.Once);
         result.Data.Should().Be(response);
     }
-    
+
     [Test]
     public async Task Execute_Should_Succeed_When_AllLocalAuthorities_Are_Allowed()
     {
@@ -153,7 +154,8 @@ public class CreateApplicationUseCaseTests
         var result = await _sut.Execute(model, allAuthoritiesAllowed);
 
         // Assert
-        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment), Times.Once);
+        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment),
+            Times.Once);
         _mockApplicationGateway.Verify(s => s.PostApplication(model.Data!), Times.Once);
         result.Data.Should().Be(response);
     }

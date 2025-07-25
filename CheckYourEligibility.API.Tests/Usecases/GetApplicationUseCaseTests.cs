@@ -26,17 +26,21 @@ public class GetApplicationUseCaseTests
     {
         _mockApplicationGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }    private Mock<IApplication> _mockApplicationGateway = null!;
+    }
+
+    private Mock<IApplication> _mockApplicationGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;
     private GetApplicationUseCase _sut = null!;
-    private Fixture _fixture = null!;[Test]
+    private Fixture _fixture = null!;
+
+    [Test]
     public async Task Execute_Should_Return_Null_When_Response_Is_Null()
     {
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var localAuthorityId = 1;
-        
+
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync((ApplicationResponse)null);
@@ -46,7 +50,9 @@ public class GetApplicationUseCaseTests
 
         // Assert
         result.Should().BeNull();
-    }    [Test]
+    }
+
+    [Test]
     public async Task Execute_Should_Call_GetApplication_On_ApplicationGateway()
     {
         // Arrange
@@ -54,7 +60,7 @@ public class GetApplicationUseCaseTests
         var response = _fixture.Create<ApplicationResponse>();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var localAuthorityId = 1;
-        
+
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync(response);
@@ -69,7 +75,7 @@ public class GetApplicationUseCaseTests
         _mockApplicationGateway.Verify(s => s.GetApplication(guid), Times.Once);
         result.Data.Should().Be(response);
     }
-    
+
     [Test]
     public async Task Execute_Should_Allow_Access_When_AllowedLocalAuthorityIds_Contains_Zero()
     {

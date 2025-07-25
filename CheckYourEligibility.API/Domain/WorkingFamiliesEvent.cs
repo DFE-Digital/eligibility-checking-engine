@@ -32,6 +32,4 @@ public class WorkingFamiliesEvent
     public DateTime ValidityEndDate { get; set; }
     public DateTime DiscretionaryValidityStartDate { get; set; }
     public DateTime GracePeriodEndDate { get; set; }
-
-
 }

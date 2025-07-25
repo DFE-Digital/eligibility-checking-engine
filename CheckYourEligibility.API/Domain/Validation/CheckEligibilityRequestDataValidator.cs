@@ -1,4 +1,5 @@
 ﻿// Ignore Spelling: Validator
+
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Domain.Validation;
@@ -10,7 +11,6 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
 {
     public CheckEligibilityRequestDataValidator()
     {
-
         // Rules for FSM, EYPP, 2YO
         When(x => x is CheckEligibilityRequestData, () =>
         {
@@ -58,5 +58,4 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .WithMessage(ValidationMessages.DOB);
         });
     }
-
 }
