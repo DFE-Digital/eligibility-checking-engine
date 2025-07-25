@@ -626,7 +626,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         };
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
-        var guid = await _dwpGateway.GetCitizen(citizenRequest);
+        var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
         if (!Guid.TryParse(guid, out _))
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
 
@@ -634,7 +634,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             //check for benefit
             var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
-                DateTime.Now.ToString("yyyy-MMM-dd"));
+                DateTime.Now.ToString("yyyy-MMM-dd"), data.Type);
             if (result.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;
