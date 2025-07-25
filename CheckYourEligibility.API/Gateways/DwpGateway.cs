@@ -324,12 +324,14 @@ public class DwpGateway : BaseGateway, IDwpGateway
             requestMessage.Headers.Add("context", GetContext(type));
             _logger.LogInformation($"Dwp before citizen token");
             string token = await GetToken();
+            _logger.LogInformation($"Dwp token "+token);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             
             _logger.LogInformation($"Dwp before citizen request");
             var response = await _httpClient.SendAsync(requestMessage);
             _logger.LogInformation($"Dwp after citizen request");
             _logger.LogInformation("Dwp " + response.StatusCode.ToString());
+            _logger.LogInformation($"Dwp response "+response.Content.ReadAsStringAsync().Result);
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
