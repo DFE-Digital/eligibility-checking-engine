@@ -690,7 +690,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
 
-            while (properties.ApproximateMessagesCount > 0)
+            if(properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
                 foreach (var item in retrievedMessage)
