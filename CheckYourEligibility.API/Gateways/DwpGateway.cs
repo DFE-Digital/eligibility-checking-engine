@@ -304,7 +304,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
     {
-        var uri = $"{_DWP_ApiHost}/v2/citizens";
+        var uri = $"{_DWP_ApiHost}/v2/citizens/match";
         try
         {
             var requestMessage = new HttpRequestMessage

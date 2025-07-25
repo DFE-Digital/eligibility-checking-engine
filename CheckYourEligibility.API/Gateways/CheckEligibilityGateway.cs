@@ -612,7 +612,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var citizenRequest = new CitizenMatchRequest
         {
-            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "2.0" },
+            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
             Data = new CitizenMatchRequest.CitizenMatchRequest_Data
             {
                 Type = "Match",
