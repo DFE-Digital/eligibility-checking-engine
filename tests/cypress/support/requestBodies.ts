@@ -72,8 +72,9 @@ export function validWorkingFamiliesRequestBody() {
     return {
         data: {
              nationalInsuranceNumber: "BB123456D",
-             childDateOfBirth: "2022-06-07",
-             eligibilityCode: "50012345678"
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "50012345678",
+             lastName: "Smith"
         }
     }
 }
@@ -81,8 +82,9 @@ export function invalidEligiblityCodeRequestBody() {
     return {
         data: {
              nationalInsuranceNumber: "BB123456D",
-             childDateOfBirth: "2022-06-07",
-             eligibilityCode: "5001234"
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "5001234",
+             lastName: "Smith"
         }
     }
 }

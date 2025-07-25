@@ -108,7 +108,8 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
             new()
             {
                 EligibilityCode = "50012345678",
-                ChildDateOfBirth = "2023-01-01",
+                DateOfBirth = "2023-01-01",
+                LastName = "Smith",
                 NationalInsuranceNumber = "AB123456C"
             }
         };

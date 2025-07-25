@@ -10,14 +10,12 @@ public class CheckProcessData
     public string? NationalInsuranceNumber { get; set; }
 
     public string LastName { get; set; }
-    public string ParentLastName { get; set; }
 
     public string EligibilityCode { get; set; }
     public string ValidityStartDate { get; set; }
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
-    public string ChildDateOfBirth { get; set; }
 
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
@@ -32,19 +30,17 @@ public class CheckProcessData
     public string GetHash()
     {
         string input = $"""
-             {LastName?.ToUpper()}
-             {EligibilityCode}
-             {(NationalInsuranceNumber.IsNullOrEmpty() ?
-                            NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
-             {DateOfBirth}
-             {Type}
-             {ParentLastName?.ToUpper()}
-             {ChildDateOfBirth}
-             {GracePeriodEndDate}
-             {ValidityStartDate}
-             {ValidityEndDate}
-             """
-            .Replace(Environment.NewLine, "");
+            {LastName?.ToUpper()}
+            {EligibilityCode}
+            {(NationalInsuranceNumber.IsNullOrEmpty() ?
+                NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
+            {DateOfBirth}
+            {Type}
+            {GracePeriodEndDate}
+            {ValidityStartDate}
+            {ValidityEndDate}
+            """
+        .Replace(Environment.NewLine, "");
 
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var inputHash = SHA256.HashData(inputBytes);

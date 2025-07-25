@@ -15,10 +15,8 @@ public class CheckEligibilityItemBase
 public class CheckEligibilityItem : CheckEligibilityItemBase
 {
     public string LastName { get; set; }
-    public string ParentLastName { get; set; }
 
     public string DateOfBirth { get; set; }
-    public string ChildDateOfBirth { get; set; }
 
     public string NationalAsylumSeekerServiceNumber { get; set; }
 
