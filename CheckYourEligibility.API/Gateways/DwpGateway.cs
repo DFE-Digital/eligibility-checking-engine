@@ -324,24 +324,17 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private async Task<string?> GetToken()
     {
         var uri = $"{_DWP_ApiTokenUrl}";
-
-        Jwt jwt = new Jwt()
-        {
-            client_id = _DWP_ApiClientId,
-            client_secret = _DWP_ApiSecret,
-            grant_type = "client_credentials"
-        };
-
-        var content = new StringContent(JsonConvert.SerializeObject(jwt), Encoding.UTF8, "application/json");
-
-        content.Headers.Add("policy-id", _DWP_ApiPolicyId);
-        content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
-        content.Headers.Add("context", _DWP_ApiContext);
-
-        var response = await _httpClient.PostAsync(uri, content);
+        
+        var parameters = new Dictionary<string, string>();
+        parameters.Add("client_id", _DWP_ApiClientId);
+        parameters.Add("client_secret", _DWP_ApiSecret);
+        parameters.Add("grant_type", "client_credentials");
+        
+        var formData = new FormUrlEncodedContent(parameters);
+        
+        var response = await _httpClient.PostAsync(uri, formData);
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
-        throw new Exception(response.Content.ReadAsStringAsync().Result);
         return responseData.access_token;
     }
 
