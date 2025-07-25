@@ -341,6 +341,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         var response = await _httpClient.PostAsync(uri, content);
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
+        throw new Exception(response.Content.ReadAsStringAsync().Result);
         return responseData.access_token;
     }
 
