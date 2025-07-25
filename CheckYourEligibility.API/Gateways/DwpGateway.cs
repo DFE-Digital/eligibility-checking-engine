@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
@@ -17,8 +18,8 @@ namespace CheckYourEligibility.API.Gateways;
 public interface IDwpGateway
 {
     public bool UseEcsforChecks { get; }
-    Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate);
-    Task<string?> GetCitizen(CitizenMatchRequest requestBody);
+    Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate, CheckEligibilityType type);
+    Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
     Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck);
 }
 
@@ -166,21 +167,25 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     #region Citizen Api Rest
 
-    public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate)
+    public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate, CheckEligibilityType type)
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?effectiveFromDate={effectiveFromDate}&effectiveToDate={effectiveToDate}";
 
         try
         {
-            _httpClient.DefaultRequestHeaders.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
-            _httpClient.DefaultRequestHeaders.Add("access-level", _DWP_ApiAccessLevel);
-            _httpClient.DefaultRequestHeaders.Add("correlation-id", _DWP_ApiCorrelationId);
-            _httpClient.DefaultRequestHeaders.Add("context", _DWP_ApiContext);
             string token = await GetToken();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
 
-            var response = await _httpClient.GetAsync(uri);
+            var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
+            requestMessage.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+            requestMessage.Headers.Add("context", GetContext(type));
+            requestMessage.Headers.Add("access-level", _DWP_ApiAccessLevel);
+            requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
+            requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
+
+            var response = await _httpClient.SendAsync(requestMessage);
+            
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
@@ -201,6 +206,23 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _logger.LogError(ex, $"CheckForBenefit failed. uri:-{_httpClient.BaseAddress}{uri}");
             return new InternalServerErrorResult();
         }
+    }
+
+    private string GetContext(CheckEligibilityType type)
+    {
+        switch (type)
+        {
+            case CheckEligibilityType.FreeSchoolMeals:
+                return "DFE-FSM";
+                
+            case CheckEligibilityType.EarlyYearPupilPremium:
+                return "DFE-EYPP";
+            
+            case CheckEligibilityType.TwoYearOffer:
+                return "DFE-2EY";
+        }
+
+        return null;
     }
 
     public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims)
@@ -280,7 +302,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody)
+    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens";
         var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
@@ -289,9 +311,9 @@ public class DwpGateway : BaseGateway, IDwpGateway
             content.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
             content.Headers.Add("policy-id", _DWP_ApiPolicyId);
             content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
-            content.Headers.Add("context", _DWP_ApiContext);
+            content.Headers.Add("context", GetContext(type));
             string token = await GetToken();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+            content.Headers.Add("Authorization", "Bearer " + token);
 
             var response = await _httpClient.PostAsync(uri, content);
             if (response.IsSuccessStatusCode)
