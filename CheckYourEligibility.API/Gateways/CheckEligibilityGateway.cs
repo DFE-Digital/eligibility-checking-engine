@@ -372,7 +372,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return queueName;
     }
     /// <summary>
-    /// Checks if record with the same EligibilityCode-ParentNINO exists in the WorkingFamiliesEvents Table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
     /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
@@ -385,7 +385,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         var source = ProcessEligibilityCheckSource.HMRC;
         var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
-        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber));
+        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
+        (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
+        x.ChildDateOfBirth.ToString("yyyy-MM-dd") == checkData.DateOfBirth);
      
         if (wfEvent != null)
         {
