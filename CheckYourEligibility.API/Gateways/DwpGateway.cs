@@ -305,17 +305,23 @@ public class DwpGateway : BaseGateway, IDwpGateway
     public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens";
-        var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
         try
         {
-            content.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
-            content.Headers.Add("policy-id", _DWP_ApiPolicyId);
-            content.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
-            content.Headers.Add("context", GetContext(type));
-            string token = await GetToken();
-            content.Headers.Add("Authorization", "Bearer " + token);
+            var requestMessage = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                Content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"),
+                RequestUri = new Uri(uri)
+            };
 
-            var response = await _httpClient.PostAsync(uri, content);
+            requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
+            requestMessage.Headers.Add("policy-id", _DWP_ApiPolicyId);
+            requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
+            requestMessage.Headers.Add("context", GetContext(type));
+            string token = await GetToken();
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            
+            var response = await _httpClient.SendAsync(requestMessage);
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
