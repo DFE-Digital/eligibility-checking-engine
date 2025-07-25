@@ -50,7 +50,6 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                .Must(DataValidation.BeAValidNi)
                .WithMessage(ValidationMessages.NI);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
-                .NotEmpty()
                 .Must(DataValidation.BeAValidName)
                 .WithMessage(ValidationMessages.LastName);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).DateOfBirth)
