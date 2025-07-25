@@ -626,26 +626,39 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         };
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
+        
+        _logger.LogInformation($"Dwp before getting citizen");
+        
+        _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
         var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
+        _logger.LogInformation($"Dwp after getting citizen");
         if (!Guid.TryParse(guid, out _))
+        {
+            _logger.LogInformation($"Dwp after getting citizen error " + guid);
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
+        }
 
         if (!string.IsNullOrEmpty(guid))
         {
+            _logger.LogInformation($"Dwp has valid citizen");
             //check for benefit
             var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
                 DateTime.Now.ToString("yyyy-MMM-dd"), data.Type);
+            _logger.LogInformation($"Dwp after getting claim");
+
             if (result.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;
+                _logger.LogInformation($"Dwp is eligible");
             }
             else if (result.StatusCode == StatusCodes.Status404NotFound)
             {
                 checkResult = CheckEligibilityStatus.notEligible;
+                _logger.LogInformation($"Dwp is not found");
             }
             else
             {
-                _logger.LogError($"Error unknown Response status code:-{result.StatusCode}.");
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.StatusCode}.");
                 checkResult = CheckEligibilityStatus.error;
             }
         }

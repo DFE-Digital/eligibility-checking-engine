@@ -174,6 +174,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
         try
         {
+            _logger.LogInformation("Dwp claim before token");
             string token = await GetToken();
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -184,7 +185,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
             requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
 
+            _logger.LogInformation("Dwp claim before request");
             var response = await _httpClient.SendAsync(requestMessage);
+            _logger.LogInformation("Dwp claim after request");
+            _logger.LogInformation("Dwp "+ response.StatusCode.ToString());
             
             if (response.IsSuccessStatusCode)
             {
@@ -318,10 +322,14 @@ public class DwpGateway : BaseGateway, IDwpGateway
             requestMessage.Headers.Add("policy-id", _DWP_ApiPolicyId);
             requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             requestMessage.Headers.Add("context", GetContext(type));
+            _logger.LogInformation($"Dwp before citizen token");
             string token = await GetToken();
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             
+            _logger.LogInformation($"Dwp before citizen request");
             var response = await _httpClient.SendAsync(requestMessage);
+            _logger.LogInformation($"Dwp after citizen request");
+            _logger.LogInformation("Dwp " + response.StatusCode.ToString());
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
