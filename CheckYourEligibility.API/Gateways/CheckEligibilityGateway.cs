@@ -392,10 +392,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         EligibilityCheck? result, CheckProcessData checkData)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
+        DateTime checkDob = DateTime.ParseExact(checkData.DateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
         (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
         (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
-        x.ChildDateOfBirth.ToString("yyyy-MM-dd") == checkData.DateOfBirth);
+        x.ChildDateOfBirth == checkDob);
      
         if (wfEvent != null)
         {
