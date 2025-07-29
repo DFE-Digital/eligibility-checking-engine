@@ -200,7 +200,7 @@ export function validWorkingFamiliesBulkRequestBody() {
             {
                 nationalInsuranceNumber: "AA123456C",
                 lastName: "TestE",
-                dateOfBirth: "2022-07-06",
+                dateOfBirth: "2022-06-07",
                 eligibilityCode: "90012345671",
                 clientIdentifier: 1234
             },

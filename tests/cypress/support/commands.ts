@@ -10,6 +10,7 @@ declare namespace Cypress {
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
     verifyGetEligibilityCheckStatusResponse(response: any): Chainable<void>;
+    createEligibilityBulkCheckAndGetResults(loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityCheckBulkRequestBody: any): Chainable<any>;
     createEligibilityCheckAndGetStatus(loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any): Chainable<any>;
     updateLastName(requestBody: any): Chainable<any>;
     verifyPostApplicationResponse(response: any, requestData: any): Chainable<void>;
@@ -97,6 +98,11 @@ Cypress.Commands.add('extractGuid', (response) => {
     guid = getEligibilityCheck.substring(getEligibilityCheck.lastIndexOf('/') + 1);
   } else if (response.body.data && response.body.data.id) {
     guid = response.body.data.id;
+  } else if (response.body.links && response.body.links.get_BulkCheck_Results) {
+    const getBulkCheckResults = response.body.links.get_BulkCheck_Results;
+    //remove trailing '/'
+    const trimmedString = getBulkCheckResults.substring(0, getBulkCheckResults.lastIndexOf('/'));
+    guid = trimmedString.substring(trimmedString.lastIndexOf('/') + 1);
   } else {
     throw new Error('No valid GUID found in response');
   }
@@ -173,6 +179,26 @@ Cypress.Commands.add('createEligibilityCheckAndGetStatus', (loginUrl: string, lo
           cy.verifyApiResponseCode(newResponse, 200);
           const status = newResponse.body.data.status;
           cy.wrap(status).as('status');
+        });
+      });
+    });
+  });
+});
+
+Cypress.Commands.add('createEligibilityBulkCheckAndGetResults', (loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityBulkCheckRequestBody: any) => {
+  return cy.apiRequest('POST', loginUrl, loginRequestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {
+    cy.verifyApiResponseCode(response, 200);
+    const token = response.body.access_token;
+
+    return cy.apiRequest('POST', eligibilityBulkCheckUrl, eligibilityBulkCheckRequestBody, token).then((response) => {
+      cy.verifyApiResponseCode(response, 202);
+      cy.extractGuid(response);
+      cy.wait(40000);
+      return cy.get('@Guid').then((eligibilityCheckId) => {
+        return cy.apiRequest('GET', `bulk-check/${eligibilityCheckId}`, {}, token).then((newResponse) => {
+          cy.verifyApiResponseCode(newResponse, 200);
+          const data = newResponse.body.data;
+          cy.wrap(data).as('data');
         });
       });
     });
