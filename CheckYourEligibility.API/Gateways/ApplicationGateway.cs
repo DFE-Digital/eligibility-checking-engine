@@ -377,7 +377,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation($"Application {guid} deleted successfully");
+            _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
             TrackMetric("Application Deleted", 1);
 
             return true;
