@@ -5,6 +5,7 @@ declare namespace Cypress {
     saveBearerToken(): Chainable<any>;
     apiRequest(method: string, url: string, requestBody: any, bearerToken?: string | null, failOnStatusCode?: boolean, contentType?: string | null): Chainable<any>;
     verifyPostEligibilityCheckResponse(response: any): Chainable<any>;
+    verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
@@ -69,6 +70,23 @@ Cypress.Commands.add('verifyPostEligibilityCheckResponse', (response) => {
   expect(response.body.links).to.have.property('get_EligibilityCheckStatus');
 
 
+});
+
+Cypress.Commands.add('verifyPostEligibilityBulkCheckResponse', (response) => {
+  expect(response.body).to.have.property('data');
+  expect(response.body).to.have.property('links');
+  const responseData = response.body.data;
+  const responseLinks = response.body.links;
+
+  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+
+  // Verfiy total number of elements
+  cy.verifyTotalElements(totalElements, 3);
+
+  // Verify response elements
+  expect(response.body.data).to.have.property('status');
+  expect(response.body.links).to.have.property('get_Progress_Check');
+  expect(response.body.links).to.have.property('get_BulkCheck_Results');
 });
 
 Cypress.Commands.add('extractGuid', (response) => {
