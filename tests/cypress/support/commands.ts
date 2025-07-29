@@ -8,6 +8,7 @@ declare namespace Cypress {
     verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
+    verifyGetEligibilityWFCheckResponseData(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
     verifyGetEligibilityCheckStatusResponse(response: any): Chainable<void>;
     createEligibilityBulkCheckAndGetResults(loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityCheckBulkRequestBody: any): Chainable<any>;
@@ -126,6 +127,32 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
   expect(responseData).to.have.property('lastName', requestData.data.lastName);
   expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
   expect(responseData).to.have.property('nationalAsylumSeekerServiceNumber', requestData.data.nationalAsylumSeekerServiceNumber);
+  expect(responseData).to.have.property('status');
+  expect(responseData).to.have.property('created');
+  
+
+  // Verify links properties
+  expect(responseLinks).to.have.property('get_EligibilityCheck');
+  expect(responseLinks).to.have.property('put_EligibilityCheckProcess');
+  expect(responseLinks).to.have.property('get_EligibilityCheckStatus');
+});
+
+Cypress.Commands.add('verifyGetEligibilityWFCheckResponseData', (response, requestData) => {
+  // Verify body has data and links properties
+  expect(response.body).to.have.property('data');
+  expect(response.body).to.have.property('links');
+  const responseData = response.body.data;
+  const responseLinks = response.body.links;
+
+  // Calculate total number of elements in data and links
+  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+  // Verfiy total number of elements
+  cy.verifyTotalElements(totalElements, 9);
+
+  expect(responseData).to.have.property('nationalInsuranceNumber', requestData.data.nationalInsuranceNumber);
+  expect(responseData).to.have.property('lastName', requestData.data.lastName.toUpperCase());
+  expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
+  expect(responseData).to.have.property('eligibilityCode', requestData.data.eligibilityCode);
   expect(responseData).to.have.property('status');
   expect(responseData).to.have.property('created');
   
