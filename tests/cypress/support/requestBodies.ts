@@ -3,14 +3,14 @@
 export const validLoginRequestBody = "client_id=".concat(
     Cypress.env('JWT_USERNAME'),
     "&client_secret=",
-    Cypress.env('JWT_PASSWORD'),
+    encodeURIComponent(Cypress.env('JWT_PASSWORD')),
     "&scope=local_authority check application admin bulk_check establishment user engine"
 );
 
 export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
     Cypress.env('JWT_USERNAME'),
     "&client_secret=",
-    Cypress.env('JWT_PASSWORD')
+    encodeURIComponent(Cypress.env('JWT_PASSWORD'))
 );
 
 export function validHMRCRequestBody() {
