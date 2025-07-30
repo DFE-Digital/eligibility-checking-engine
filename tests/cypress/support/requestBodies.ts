@@ -199,30 +199,30 @@ export function validWorkingFamiliesBulkRequestBody() {
         data: [
             {
                 nationalInsuranceNumber: "AA123456C",
-                lastName: "TestE",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345671",
+                eligibilityCode: "90912345671",
                 clientIdentifier: 1234
             },
             {
                 nationalInsuranceNumber: "BB123456C",
-                lastName: "TestNonE",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345672",
+                eligibilityCode: "90912345672",
                 clientIdentifier: 12345
             },
             {
                 nationalInsuranceNumber: "CC123456A",
-                lastName: "TestEinGP",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345673",
+                eligibilityCode: "90922345673",
                 clientIdentifier: 123456
             },
             {
                 nationalInsuranceNumber: "CC123456A",
-                lastName: "TestNotFound",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345674",
+                eligibilityCode: "90922345674",
                 clientIdentifier: 1234567
             }
         ]
