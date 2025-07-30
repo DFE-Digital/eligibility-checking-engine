@@ -614,7 +614,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
-            .ReturnsAsync(Guid.NewGuid().ToString());
+            .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
@@ -643,7 +643,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
-            .ReturnsAsync(Guid.NewGuid().ToString());
+            .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status404NotFound);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
@@ -672,7 +672,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
-            .ReturnsAsync(Guid.NewGuid().ToString());
+            .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);

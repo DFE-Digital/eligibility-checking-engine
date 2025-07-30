@@ -633,7 +633,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
         var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
         _logger.LogInformation($"Dwp after getting citizen");
-        if (!Guid.TryParse(guid, out _))
+        if (guid.Length!=64)
         {
             _logger.LogInformation($"Dwp after getting citizen error " + guid);
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
