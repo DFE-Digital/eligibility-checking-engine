@@ -1068,7 +1068,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var request = _fixture.Create<EligibilityStatusUpdateRequest>();
 
         // Act
-        var response = _sut.UpdateEligibilityCheckStatus(guid, request.Data);
+        var response = _sut.UpdateEligibilityCheckStatus(guid, request.Data, CheckEligibilityType.None);
 
         // Assert
         response.Result.Should().BeNull();
@@ -1085,7 +1085,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
         // Act
-        var statusUpdate = await _sut.UpdateEligibilityCheckStatus(item.EligibilityCheckID, requestUpdateStatus);
+        var statusUpdate = await _sut.UpdateEligibilityCheckStatus(item.EligibilityCheckID, requestUpdateStatus, CheckEligibilityType.None);
 
         // Assert
         statusUpdate.Should().BeOfType<CheckEligibilityStatusResponse>();

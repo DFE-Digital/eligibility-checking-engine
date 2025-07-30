@@ -532,7 +532,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<EligibilityStatusUpdateRequest>();
         var executionResult = new CheckEligibilityStatusResponse();
 
-        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request))
+        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request, CheckEligibilityType.None))
             .ThrowsAsync(new NotFoundException());
 
         // Act
@@ -550,7 +550,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<EligibilityStatusUpdateRequest>();
         var executionResult = new CheckEligibilityStatusResponse();
 
-        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request))
+        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request, CheckEligibilityType.None))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -571,7 +571,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
         var executionResult = statusResponse;
 
-        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request)).ReturnsAsync(executionResult);
+        _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request, CheckEligibilityType.None)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.EligibilityCheckStatusUpdate(guid, request);
