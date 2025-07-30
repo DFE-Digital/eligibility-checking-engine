@@ -3,14 +3,14 @@
 export const validLoginRequestBody = "client_id=".concat(
     Cypress.env('JWT_USERNAME'),
     "&client_secret=",
-    Cypress.env('JWT_PASSWORD'),
+    encodeURIComponent(Cypress.env('JWT_PASSWORD')),
     "&scope=local_authority check application admin bulk_check establishment user engine"
 );
 
 export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
     Cypress.env('JWT_USERNAME'),
     "&client_secret=",
-    Cypress.env('JWT_PASSWORD')
+    encodeURIComponent(Cypress.env('JWT_PASSWORD'))
 );
 
 export function validHMRCRequestBody() {
@@ -18,7 +18,7 @@ export function validHMRCRequestBody() {
         data: {
             nationalInsuranceNumber: 'NN123456C',
             lastName: Cypress.env('lastName'),
-            dateOfBirth: '2000-01-01',
+            dateOfBirth: '2001-01-01',
             nationalAsylumSeekerServiceNumber: ''
         }
     }
@@ -199,30 +199,30 @@ export function validWorkingFamiliesBulkRequestBody() {
         data: [
             {
                 nationalInsuranceNumber: "AA123456C",
-                lastName: "TestE",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345671",
+                eligibilityCode: "90912345671",
                 clientIdentifier: 1234
             },
             {
                 nationalInsuranceNumber: "BB123456C",
-                lastName: "TestNonE",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345672",
+                eligibilityCode: "90912345672",
                 clientIdentifier: 12345
             },
             {
                 nationalInsuranceNumber: "CC123456A",
-                lastName: "TestEinGP",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345673",
+                eligibilityCode: "90922345673",
                 clientIdentifier: 123456
             },
             {
                 nationalInsuranceNumber: "CC123456A",
-                lastName: "TestNotFound",
+                lastName: "Tester",
                 dateOfBirth: "2022-06-07",
-                eligibilityCode: "90012345674",
+                eligibilityCode: "90922345674",
                 clientIdentifier: 1234567
             }
         ]
