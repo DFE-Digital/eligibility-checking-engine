@@ -18,7 +18,7 @@ export function validHMRCRequestBody() {
         data: {
             nationalInsuranceNumber: 'NN123456C',
             lastName: Cypress.env('lastName'),
-            dateOfBirth: '2000-01-01',
+            dateOfBirth: '2001-01-01',
             nationalAsylumSeekerServiceNumber: ''
         }
     }
