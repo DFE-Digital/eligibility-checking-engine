@@ -281,15 +281,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
                     takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
                     if (takeHomePay <= _DWP_UniversalCreditThreshhold_2) entitled = true;
                 }
-                else if (threshHoldUsed == 3)
-                {
-                    takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_3) entitled = true;
-                }
                 else
                 {
-                    throw new Exception(
-                        $"DWP CheckUniversal credit has {liveAwards.Count()} when there should only be 3.");
+                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3).Sum(x => x.assessmentAttributes.takeHomePay);
+                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_3) entitled = true;
                 }
 
 
