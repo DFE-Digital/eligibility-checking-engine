@@ -81,7 +81,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             item.Updated = DateTime.UtcNow;
 
             item.Status = CheckEligibilityStatus.queuedForProcessing;
-
             var checkHashResult =
                 await _hashGateway.Exists(JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData));
             if (checkHashResult != null)
@@ -380,6 +379,21 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     /// <summary>
+    /// Logic to find a match in Working families events' table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <returns></returns>
+
+    private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(CheckProcessData checkData) {
+
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
+          (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
+          (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
+          x.ChildDateOfBirth.ToString("yyyy-MM-dd") == checkData.DateOfBirth);
+        return wfEvent;
+    }
+    /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
@@ -392,10 +406,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         EligibilityCheck? result, CheckProcessData checkData)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
-        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
-        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
-        (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
-        x.ChildDateOfBirth.ToString("yyyy-MM-dd") == checkData.DateOfBirth);
+        var wfEvent = await Check_Working_Families_EventRecord(checkData);
      
         if (wfEvent != null)
         {
@@ -404,6 +415,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
