@@ -146,9 +146,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<T?> GetItem<T>(string guid, bool isBatchRecord = false) where T : CheckEligibilityItem
+    public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && 
+            (type == CheckEligibilityType.None || type == x.Type)); //TODO: Check that this is LINQ safe
         var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
@@ -198,7 +199,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                    var item = await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, isBatchRecord: true);
+                    var item = await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, result.Type, isBatchRecord: true);
                     items.Add(item);
 
                     sequence++;

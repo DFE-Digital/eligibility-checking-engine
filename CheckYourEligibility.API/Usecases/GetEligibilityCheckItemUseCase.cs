@@ -16,7 +16,7 @@ public interface IGetEligibilityCheckItemUseCase
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
     /// <returns>Eligibility check item details</returns>
-    Task<CheckEligibilityItemResponse> Execute(string guid);
+    Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type = CheckEligibilityType.None);
 }
 
 public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
@@ -35,11 +35,11 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityItemResponse> Execute(string guid)
+    public async Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type = CheckEligibilityType.None)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var response = await _checkGateway.GetItem<CheckEligibilityItem>(guid);
+        var response = await _checkGateway.GetItem<CheckEligibilityItem>(guid, type);
         if (response == null)
         {
             _logger.LogWarning(

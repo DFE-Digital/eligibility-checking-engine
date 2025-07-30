@@ -2,6 +2,7 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -683,7 +684,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityItemResponse();
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid)).ThrowsAsync(new NotFoundException());
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None)).ThrowsAsync(new NotFoundException());
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
@@ -701,7 +702,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityItemResponse();
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid))
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -721,7 +722,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
         var executionResult = itemResponse;
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid)).ReturnsAsync(executionResult);
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.EligibilityCheck(guid);

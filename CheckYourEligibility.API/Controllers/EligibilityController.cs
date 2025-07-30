@@ -514,4 +514,36 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
+    /// <summary>
+    ///     Gets an Eligibility check of the given type using the supplied GUID
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check/{type}/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> EligibilityCheckType(CheckEligibilityType type, string guid)
+    {
+        try
+        {
+            //TODO: ADD ASSERTION THAT RESPONSE IS FOR THE CORRECT TYPE
+            var result = await _getEligibilityCheckItemUseCase.Execute(guid, type);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    
 }

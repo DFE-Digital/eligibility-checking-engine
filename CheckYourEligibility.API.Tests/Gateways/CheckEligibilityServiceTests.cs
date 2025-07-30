@@ -868,7 +868,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetItem<CheckEligibilityItem>(request);
+        var response = _sut.GetItem<CheckEligibilityItem>(request, CheckEligibilityType.None);
 
         // Assert
         response.Result.Should().BeNull();
@@ -888,7 +888,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
@@ -910,7 +910,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.EligibilityCode.Should().BeEquivalentTo(check.EligibilityCode);

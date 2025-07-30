@@ -55,7 +55,7 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, false))
+        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, CheckEligibilityType.None, false))
             .ReturnsAsync((CheckEligibilityItem)null);
 
         // Act
@@ -71,7 +71,7 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var item = _fixture.Create<CheckEligibilityItem>();
-        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, false)).ReturnsAsync(item);
+        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid,CheckEligibilityType.None, false)).ReturnsAsync(item);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -91,14 +91,14 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var item = _fixture.Create<CheckEligibilityItem>();
-        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, false)).ReturnsAsync(item);
+        _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, CheckEligibilityType.None, false)).ReturnsAsync(item);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(guid);
 
         // Assert
-        _mockCheckGateway.Verify(s => s.GetItem<CheckEligibilityItem>(guid, false), Times.Once);
+        _mockCheckGateway.Verify(s => s.GetItem<CheckEligibilityItem>(guid, CheckEligibilityType.None, false), Times.Once);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Check, guid), Times.Once);
     }
 }
