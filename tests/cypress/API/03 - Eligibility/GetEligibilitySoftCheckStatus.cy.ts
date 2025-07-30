@@ -25,7 +25,7 @@ describe('Verify Eligibility Check Statuses', () => {
 
 
   it('Verify Eligible status is returned', () => {
-    eligibleBody = validHMRCRequestBody;
+    var eligibleBody = validHMRCRequestBody();
     eligibleBody.data.lastName = "Tester";
     cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', eligibleBody)
     cy.get('@status').then((status: any) => {
