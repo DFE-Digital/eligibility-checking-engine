@@ -182,7 +182,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate, CheckEligibilityType type)
     {
         var uri =
-            $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?effectiveFromDate={effectiveFromDate}&effectiveToDate={effectiveToDate}";
+            $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?effectiveFromDate={effectiveFromDate}&effectiveToDate={effectiveToDate}&benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
         string token = await GetToken();
         
         try
