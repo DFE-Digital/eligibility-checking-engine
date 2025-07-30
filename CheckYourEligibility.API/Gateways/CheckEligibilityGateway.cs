@@ -643,8 +643,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             _logger.LogInformation($"Dwp has valid citizen");
             //check for benefit
-            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
-                DateTime.Now.ToString("yyyy-MMM-dd"), data.Type);
+            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type);
             _logger.LogInformation($"Dwp after getting claim");
 
             if (result.StatusCode == StatusCodes.Status200OK)
