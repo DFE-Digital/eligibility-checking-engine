@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
@@ -68,15 +70,16 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
         _httpClient = httpClient;
 
-        if (_UseEcsforChecks == false)
+        if (!_UseEcsforChecks)
         {
             var privateKeyBytes = Convert.FromBase64String(_configuration["Dwp:ApiCertificate"]);
             _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, (string)null,
                 X509KeyStorageFlags.MachineKeySet);
 
             var handler = new HttpClientHandler();
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.ClientCertificates.Add(_DWP_ApiCertificate);
+            handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
+            
             _httpClient = new HttpClient(handler);
         }
 
@@ -94,6 +97,15 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _DWP_EcsLAId = _configuration["Dwp:EcsLAId"];
         _DWP_EcsSystemId = _configuration["Dwp:EcsSystemId"];
         _DWP_EcsPassword = _configuration["Dwp:EcsPassword"];
+    }
+    
+    private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
+        HttpRequestMessage httpRequestMsg,
+        X509Certificate2 certificate,
+        X509Chain x509Chain,
+        SslPolicyErrors policyErrors)
+    {
+        return true;
     }
 
     bool IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
@@ -309,6 +321,11 @@ public class DwpGateway : BaseGateway, IDwpGateway
     public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
+        
+        _logger.LogInformation($"Dwp before citizen token");
+        string token = await GetToken();
+        _logger.LogInformation($"Dwp token "+token);
+        
         try
         {
             var requestMessage = new HttpRequestMessage
@@ -322,9 +339,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
             requestMessage.Headers.Add("policy-id", _DWP_ApiPolicyId);
             requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             requestMessage.Headers.Add("context", GetContext(type));
-            _logger.LogInformation($"Dwp before citizen token");
-            string token = await GetToken();
-            _logger.LogInformation($"Dwp token "+token);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             
             _logger.LogInformation($"Dwp before citizen request");
@@ -371,6 +385,9 @@ public class DwpGateway : BaseGateway, IDwpGateway
         var formData = new FormUrlEncodedContent(parameters);
         
         var response = await _httpClient.PostAsync(uri, formData);
+        
+        Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+        
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
         return responseData.access_token;
