@@ -120,9 +120,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            /*if (result.Status != CheckEligibilityStatus.queuedForProcessing)
                 throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-
+*/
             switch (result.Type)
             {
                 case CheckEligibilityType.FreeSchoolMeals:
@@ -406,7 +406,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         EligibilityCheck? result, CheckProcessData checkData)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
-        var wfEvent = await Check_Working_Families_EventRecord(checkData);
+        DateTime checkDob = DateTime.ParseExact(checkData.DateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
+        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
+        (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
+        x.ChildDateOfBirth == checkDob);
      
         if (wfEvent != null)
         {
@@ -644,7 +648,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
         var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
         _logger.LogInformation($"Dwp after getting citizen");
-        if (!Guid.TryParse(guid, out _))
+        if (guid.Length!=64)
         {
             _logger.LogInformation($"Dwp after getting citizen error " + guid);
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
@@ -654,8 +658,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             _logger.LogInformation($"Dwp has valid citizen");
             //check for benefit
-            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
-                DateTime.Now.ToString("yyyy-MMM-dd"), data.Type);
+            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type);
             _logger.LogInformation($"Dwp after getting claim");
 
             if (result.StatusCode == StatusCodes.Status200OK)

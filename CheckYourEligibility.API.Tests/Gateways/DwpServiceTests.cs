@@ -144,6 +144,7 @@ public class DwpServiceTests : TestBase.TestBase
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
         request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.endDate = null;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
 
@@ -173,6 +174,7 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
+        request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
@@ -187,6 +189,7 @@ public class DwpServiceTests : TestBase.TestBase
         // Arrange
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
+        request.data[0].attributes.endDate = null;
         request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
@@ -203,6 +206,7 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
+        request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
