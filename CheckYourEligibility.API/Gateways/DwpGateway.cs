@@ -303,7 +303,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private bool CheckStandardBenefitType(string citizenId, DwpClaimsResponse claims, DwpBenefitType benefitType)
     {
         var benefit = claims.data.FirstOrDefault(x => x.attributes.benefitType == benefitType.ToString()
-                                                      && x.attributes.status == decision_entitled);
+                                                      && x.attributes.endDate == null);
         if (benefit != null)
         {
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");

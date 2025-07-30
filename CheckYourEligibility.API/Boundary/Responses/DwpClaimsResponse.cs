@@ -18,6 +18,7 @@ public class Attributes
     public List<Award> awards { get; set; }
     public string guid { get; set; }
     public string startDate { get; set; }
+    public string endDate { get; set; }
     public string decisionDate { get; set; }
     public string status { get; set; }
     public List<PaymentStatus> paymentStatus { get; set; }
