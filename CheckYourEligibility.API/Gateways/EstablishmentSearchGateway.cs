@@ -53,13 +53,14 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
         }
 
         int.TryParse(la, out int laInt);
-        var allEstablishments = la != null ? _db.Establishments.Where(x => x.StatusOpen
-        && x.EstablishmentName.Contains(query)
-        && x.LocalAuthorityId.Equals(laInt))
-        .Include(x => x.LocalAuthority)
-        : _db.Establishments.Where(x => x.StatusOpen
-        && x.EstablishmentName.Contains(query))
-        .Include(x => x.LocalAuthority);
+        var allEstablishments = la != null
+            ? _db.Establishments.Where(x => x.StatusOpen
+                                            && x.EstablishmentName.Contains(query)
+                                            && x.LocalAuthorityId.Equals(laInt))
+                .Include(x => x.LocalAuthority)
+            : _db.Establishments.Where(x => x.StatusOpen
+                                            && x.EstablishmentName.Contains(query))
+                .Include(x => x.LocalAuthority);
 
         var queryResult = new List<Domain.Establishment>();
 

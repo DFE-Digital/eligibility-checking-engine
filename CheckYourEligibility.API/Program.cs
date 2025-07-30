@@ -180,7 +180,8 @@ builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
-builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
+builder.Services.AddTransient<INotificationClient>(x =>
+    new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>
     new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 

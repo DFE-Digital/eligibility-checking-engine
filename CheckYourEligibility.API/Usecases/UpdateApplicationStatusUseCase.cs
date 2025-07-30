@@ -7,7 +7,8 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IUpdateApplicationStatusUseCase
 {
-    Task<ApplicationStatusUpdateResponse> Execute(string guid, ApplicationStatusUpdateRequest model, List<int> allowedLocalAuthorityIds);
+    Task<ApplicationStatusUpdateResponse> Execute(string guid, ApplicationStatusUpdateRequest model,
+        List<int> allowedLocalAuthorityIds);
 }
 
 public class UpdateApplicationStatusUseCase : IUpdateApplicationStatusUseCase
@@ -21,7 +22,8 @@ public class UpdateApplicationStatusUseCase : IUpdateApplicationStatusUseCase
         _auditGateway = auditGateway;
     }
 
-    public async Task<ApplicationStatusUpdateResponse> Execute(string guid, ApplicationStatusUpdateRequest model, List<int> allowedLocalAuthorityIds)
+    public async Task<ApplicationStatusUpdateResponse> Execute(string guid, ApplicationStatusUpdateRequest model,
+        List<int> allowedLocalAuthorityIds)
     {
         // Get the local authority ID for the application
         var localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForApplication(guid);
@@ -29,7 +31,8 @@ public class UpdateApplicationStatusUseCase : IUpdateApplicationStatusUseCase
         // If not 'all', must match one of the allowed LocalAuthorities
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
         {
-            throw new UnauthorizedAccessException("You do not have permission to create applications for this establishment's local authority");
+            throw new UnauthorizedAccessException(
+                "You do not have permission to create applications for this establishment's local authority");
         }
 
         var response = await _applicationGateway.UpdateApplicationStatus(guid, model.Data);

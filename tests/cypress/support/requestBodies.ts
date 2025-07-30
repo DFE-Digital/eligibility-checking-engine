@@ -68,24 +68,6 @@ export function invalidDOBRequestBody() {
         }
     }
 }
-export function validWorkingFamiliesRequestBody() {
-    return {
-        data: {
-             nationalInsuranceNumber: "BB123456D",
-             childDateOfBirth: "2022-06-07",
-             eligibilityCode: "50012345678"
-        }
-    }
-}
-export function invalidEligiblityCodeRequestBody() {
-    return {
-        data: {
-             nationalInsuranceNumber: "BB123456D",
-             childDateOfBirth: "2022-06-07",
-             eligibilityCode: "5001234"
-        }
-    }
-}
 export function invalidLastNameRequestBody() {
     return {
         data: {
@@ -156,5 +138,134 @@ export function validApplicationRequestBody() {
                 }
             ]
         }
+    }
+}
+
+// Working Families Single check requests
+export function validWorkingFamiliesRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "BB123456D",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "50012345678",
+             lastName: "Smith"
+        }
+    }
+}
+export function invalidEligiblityCodeRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "BB123456D",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "5001234",
+             lastName: "Smith"
+        }
+    }
+}
+export function invalidNinoWorkingFamiliesRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "PPG123456C",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "50012345678",
+             lastName: "Smith"
+        }
+    }
+}
+export function invalidDobWorkingFamiliesRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "BB123456D",
+             dateOfBirth: "2022/06/07",
+             eligibilityCode: "50012345678",
+             lastName: "Smith"
+        }
+    }
+}
+export function invalidLastNameWorkingFamiliesRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "BB123456D",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "50012345678",
+             lastName: ""
+        }
+    }
+}
+
+//Working Families Bulk requests
+export function validWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            {
+                nationalInsuranceNumber: "AA123456C",
+                lastName: "TestE",
+                dateOfBirth: "2022-06-07",
+                eligibilityCode: "90012345671",
+                clientIdentifier: 1234
+            },
+            {
+                nationalInsuranceNumber: "BB123456C",
+                lastName: "TestNonE",
+                dateOfBirth: "2022-06-07",
+                eligibilityCode: "90012345672",
+                clientIdentifier: 12345
+            },
+            {
+                nationalInsuranceNumber: "CC123456A",
+                lastName: "TestEinGP",
+                dateOfBirth: "2022-06-07",
+                eligibilityCode: "90012345673",
+                clientIdentifier: 123456
+            },
+            {
+                nationalInsuranceNumber: "CC123456A",
+                lastName: "TestNotFound",
+                dateOfBirth: "2022-06-07",
+                eligibilityCode: "90012345674",
+                clientIdentifier: 1234567
+            }
+        ]
+    }
+}
+
+export function invalidEligiblityCodeBulkRequestBody() {
+    return {
+        data: [
+            validWorkingFamiliesRequestBody().data,
+            invalidEligiblityCodeRequestBody().data
+        ]
+    }
+}
+export function invalidNinoWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            invalidNinoWorkingFamiliesRequestBody().data,
+            validWorkingFamiliesRequestBody().data
+        ]
+    }
+}
+export function invalidDobWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            validWorkingFamiliesRequestBody().data,
+            invalidDobWorkingFamiliesRequestBody().data
+        ]
+    }
+}
+export function invalidLastNameWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            validWorkingFamiliesRequestBody().data,
+            invalidLastNameWorkingFamiliesRequestBody().data
+        ]
+    }
+}
+export function invalidMultiChecksWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            invalidLastNameWorkingFamiliesRequestBody().data,
+            invalidEligiblityCodeRequestBody().data
+        ]
     }
 }

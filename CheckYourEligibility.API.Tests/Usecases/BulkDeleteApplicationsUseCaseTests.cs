@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text;
 
-namespace CheckYourEligibility.API.Tests.UsecCases;
+namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
 public class BulkDeleteApplicationsUseCaseTests : TestBase.TestBase

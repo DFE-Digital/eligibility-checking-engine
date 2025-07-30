@@ -62,10 +62,11 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         foreach (var item in bulkData)
         {
             item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpperInvariant();
-            if (type != CheckEligibilityType.WorkingFamilies) {
+            if (type != CheckEligibilityType.WorkingFamilies)
+            {
                 item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
             }
-            
+
             var result = _validator.Validate(item);
             if (!result.IsValid)
             {

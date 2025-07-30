@@ -29,6 +29,7 @@ public static class ClaimsPrincipalExtensions
                 }
             }
         }
+
         return ids;
     }
 

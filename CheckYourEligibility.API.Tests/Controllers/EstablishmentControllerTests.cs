@@ -48,7 +48,7 @@ public class EstablishmentControllerTests : TestBase.TestBase
             { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.Search(query , la);
+        var response = await _sut.Search(query, la);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
