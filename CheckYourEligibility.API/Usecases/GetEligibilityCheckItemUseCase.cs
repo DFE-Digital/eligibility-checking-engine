@@ -15,6 +15,7 @@ public interface IGetEligibilityCheckItemUseCase
     ///     Execute the use case
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
+    /// <param name="type">The type of the eligibility check being retrieved (Optional)</param> 
     /// <returns>Eligibility check item details</returns>
     Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type = CheckEligibilityType.None);
 }

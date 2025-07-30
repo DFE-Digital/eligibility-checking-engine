@@ -107,9 +107,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    public async Task<CheckEligibilityStatus?> GetStatus(string guid)
+    public async Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+        (type == CheckEligibilityType.None || type == x.Type));
         if (result != null) return result.Status;
         return null;
     }

@@ -416,6 +416,37 @@ public class EligibilityCheckController : BaseController
     }
 
     /// <summary>
+    ///     Gets an FSM an Eligibility Check status
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityStatusResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check/{type}/{guid}/status")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> CheckEligibilityStatus(CheckEligibilityType type, string guid)
+    {
+        try
+        {
+            var result = await _getEligibilityCheckStatusUseCase.Execute(guid, type);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
     ///     Updates an Eligibility check status
     /// </summary>
     /// <param name="guid"></param>
@@ -519,13 +550,14 @@ public class EligibilityCheckController : BaseController
     ///     Gets an Eligibility check of the given type using the supplied GUID
     /// </summary>
     /// <param name="guid"></param>
+    /// <param name="type"></param>
     /// <returns></returns>
     [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/check/{type}/{guid}")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
-    public async Task<ActionResult> EligibilityCheckType(CheckEligibilityType type, string guid)
+    public async Task<ActionResult> EligibilityCheck(CheckEligibilityType type, string guid)
     {
         try
         {
@@ -536,6 +568,7 @@ public class EligibilityCheckController : BaseController
 
         catch (NotFoundException)
         {
+            //TODO: Include type in error response?
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 

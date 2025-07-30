@@ -12,7 +12,7 @@ public interface ICheckEligibility
     Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
     Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem;
 
-    Task<CheckEligibilityStatus?> GetStatus(string guid);
+    Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type);
     Task<BulkStatus?> GetBulkStatus(string guid);
     Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string guid);
 

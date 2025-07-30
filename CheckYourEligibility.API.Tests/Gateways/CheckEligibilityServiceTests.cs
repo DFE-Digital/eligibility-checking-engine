@@ -286,7 +286,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetStatus(request);
+        var response = _sut.GetStatus(request, CheckEligibilityType.None);
 
         // Assert
         response.Result.Should().BeNull();
@@ -301,7 +301,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = _sut.GetStatus(item.EligibilityCheckID);
+        var response = _sut.GetStatus(item.EligibilityCheckID, CheckEligibilityType.None);
 
         // Assert
         _ = response.Result.ToString().Should().Be(item.Status.ToString());
