@@ -13,6 +13,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Properties;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -303,7 +304,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private bool CheckStandardBenefitType(string citizenId, DwpClaimsResponse claims, DwpBenefitType benefitType)
     {
         var benefit = claims.data.FirstOrDefault(x => x.attributes.benefitType == benefitType.ToString()
-                                                      && x.attributes.endDate == null);
+                                                      && x.attributes.endDate.IsNullOrEmpty());
         if (benefit != null)
         {
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");
