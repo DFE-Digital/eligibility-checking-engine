@@ -183,11 +183,11 @@ public class DwpGateway : BaseGateway, IDwpGateway
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?effectiveFromDate={effectiveFromDate}&effectiveToDate={effectiveToDate}";
-
+        string token = await GetToken();
+        
         try
         {
             _logger.LogInformation("Dwp claim before token");
-            string token = await GetToken();
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
             requestMessage.Headers.Authorization =
@@ -201,6 +201,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             var response = await _httpClient.SendAsync(requestMessage);
             _logger.LogInformation("Dwp claim after request");
             _logger.LogInformation("Dwp "+ response.StatusCode.ToString());
+            _logger.LogInformation("Dwp "+ response.Content.ReadAsStringAsync().Result);
             
             if (response.IsSuccessStatusCode)
             {
