@@ -25,7 +25,6 @@ public class ApplicationController : BaseController
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
     private readonly IImportApplicationsUseCase _importApplicationsUseCase;
     private readonly IDeleteApplicationUseCase _deleteApplicationUseCase;
-    private readonly IBulkDeleteApplicationsUseCase _bulkDeleteApplicationsUseCase;
 
     public ApplicationController(
         ILogger<ApplicationController> logger,
@@ -36,7 +35,6 @@ public class ApplicationController : BaseController
         IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
         IImportApplicationsUseCase importApplicationsUseCase,
         IDeleteApplicationUseCase deleteApplicationUseCase,
-        IBulkDeleteApplicationsUseCase bulkDeleteApplicationsUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -48,7 +46,6 @@ public class ApplicationController : BaseController
         _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
         _importApplicationsUseCase = importApplicationsUseCase;
         _deleteApplicationUseCase = deleteApplicationUseCase;
-        _bulkDeleteApplicationsUseCase = bulkDeleteApplicationsUseCase;
     }
 
     /// <summary>
@@ -346,92 +343,6 @@ public class ApplicationController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error deleting application {guid?.Replace(Environment.NewLine, "")}");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-    }
-
-    /// <summary>
-    /// Bulk deletes applications from a CSV or JSON file
-    /// </summary>
-    /// <param name="request">The bulk delete request containing the CSV or JSON file</param>
-    /// <returns>Delete results with success/failure counts and error details</returns>
-    [ProducesResponseType(typeof(ApplicationBulkDeleteResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("multipart/form-data")]
-    [HttpPost("/application/bulk-delete")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireAdminScope)]
-    public async Task<ActionResult> BulkDeleteApplications([FromForm] ApplicationBulkDeleteRequest request)
-    {
-        try
-        {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Errors = [new Error { Title = "No local authority scope found" }]
-                });
-            }
-
-            var response = await _bulkDeleteApplicationsUseCase.Execute(request, localAuthorityIds);
-            return Ok(response);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during bulk delete");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-    }
-
-    /// <summary>
-    /// Bulk deletes applications from JSON body data
-    /// </summary>
-    /// <param name="request">The bulk delete request containing application GUIDs in JSON format</param>
-    /// <returns>Delete results with success/failure counts and error details</returns>
-    [ProducesResponseType(typeof(ApplicationBulkDeleteResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("application/json")]
-    [HttpPost("/application/bulk-delete-json")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireAdminScope)]
-    public async Task<ActionResult> BulkDeleteApplicationsFromJson([FromBody] ApplicationBulkDeleteJsonRequest request)
-    {
-        try
-        {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Errors = [new Error { Title = "No local authority scope found" }]
-                });
-            }
-
-            var response = await _bulkDeleteApplicationsUseCase.ExecuteFromJson(request, localAuthorityIds);
-            return Ok(response);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during bulk delete from JSON");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

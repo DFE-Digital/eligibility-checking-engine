@@ -79,18 +79,4 @@ public interface IApplication
     /// <param name="guid">Application GUID</param>
     /// <returns>True if deleted successfully, false if not found</returns>
     Task<bool> DeleteApplication(string guid);
-
-    /// <summary>
-    /// Bulk deletes applications by their GUIDs
-    /// </summary>
-    /// <param name="guids">Collection of application GUIDs to delete</param>
-    /// <returns>Dictionary mapping GUID to deletion success (true) or failure (false)</returns>
-    Task<Dictionary<string, bool>> BulkDeleteApplications(IEnumerable<string> guids);
-
-    /// <summary>
-    /// Gets local authority IDs for multiple applications in bulk
-    /// </summary>
-    /// <param name="applicationIds">Collection of application IDs</param>
-    /// <returns>Dictionary mapping application ID to local authority ID</returns>
-    Task<Dictionary<string, int>> GetLocalAuthorityIdsForApplications(IEnumerable<string> applicationIds);
 }
