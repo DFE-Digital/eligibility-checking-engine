@@ -145,7 +145,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestData>>();
         var executionResult = new CheckEligibilityResponse();
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
@@ -165,7 +165,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -195,7 +195,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals,
+            .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
@@ -226,7 +226,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.FreeSchoolMeals,
+            .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
@@ -253,7 +253,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         var response = await _sut.CheckEligibilityWF(request);
@@ -276,7 +276,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -307,7 +307,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies,
+            .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ReturnsAsync(executionResult);
 
@@ -338,7 +338,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         };
 
         _mockCheckEligibilityBulkUseCase
-            .Setup(u => u.Execute(request, Domain.Enums.CheckEligibilityType.WorkingFamilies,
+            .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
@@ -486,6 +486,25 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task CheckEligibilityStatusByType_returns_not_found_when_use_case_returns_not_found()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var executionResult = new CheckEligibilityStatusResponse();
+
+        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, type)).ThrowsAsync(new NotFoundException());
+
+        // Act
+        var response = await _sut.CheckEligibilityStatus(type, guid);
+
+        // Assert
+        response.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = (NotFoundObjectResult)response;
+        ((ErrorResponse)notFoundResult.Value).Errors.First().Title.Should().Be(guid);
+    }
+
+    [Test]
     public async Task CheckEligibilityStatus_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
@@ -505,6 +524,26 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task CheckEligibilityStatusByType_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var executionResult = new CheckEligibilityStatusResponse();
+
+        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, type))
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
+
+        // Act
+        var response = await _sut.CheckEligibilityStatus(type, guid);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
     public async Task CheckEligibilityStatus_returns_ok_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
@@ -516,6 +555,27 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.CheckEligibilityStatus(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().Be(statusResponse);
+    }
+
+    [Test]
+    public async Task CheckEligibilityStatusByType_returns_ok_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
+        var executionResult = statusResponse;
+
+        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, type)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.CheckEligibilityStatus(type, guid);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();
@@ -684,10 +744,29 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityItemResponse();
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None)).ThrowsAsync(new NotFoundException());
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ThrowsAsync(new NotFoundException());
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
+
+        // Assert
+        response.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = (NotFoundObjectResult)response;
+        ((ErrorResponse)notFoundResult.Value).Errors.First().Title.Should().Be(guid);
+    }
+
+    [Test]
+    public async Task EligibilityCheckByType_returns_not_found_when_use_case_returns_not_found()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var executionResult = new CheckEligibilityItemResponse();
+
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type)).ThrowsAsync(new NotFoundException());
+
+        // Act
+        var response = await _sut.EligibilityCheck(type, guid);
 
         // Assert
         response.Should().BeOfType<NotFoundObjectResult>();
@@ -702,11 +781,31 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityItemResponse();
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None))
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
             .ThrowsAsync(new ValidationException(null, "Validation error"));
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
+    public async Task EligibilityCheckByType_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var executionResult = new CheckEligibilityItemResponse();
+
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type))
+            .ThrowsAsync(new ValidationException(null, "Validation error"));
+
+        // Act
+        var response = await _sut.EligibilityCheck(type, guid);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -722,10 +821,31 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
         var executionResult = itemResponse;
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, Domain.Enums.CheckEligibilityType.None)).ReturnsAsync(executionResult);
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().Be(itemResponse);
+    }
+
+    [Test]
+    public async Task EligibilityCheckByType_returns_ok_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
+        var executionResult = itemResponse;
+
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.EligibilityCheck(type, guid);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();

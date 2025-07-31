@@ -561,7 +561,6 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            //TODO: ADD ASSERTION THAT RESPONSE IS FOR THE CORRECT TYPE
             var result = await _getEligibilityCheckItemUseCase.Execute(guid, type);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
