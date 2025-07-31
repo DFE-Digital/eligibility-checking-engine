@@ -1,4 +1,6 @@
 using AutoFixture;
+using AutoMapper;
+using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Infrastructure;
@@ -42,10 +44,14 @@ public class ApplicationGatewayTests : TestBase.TestBase
             .AddInMemoryCollection(configData)
             .Build();
 
+        // Setup AutoMapper with the real mapping profile
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var mapper = config.CreateMapper();
+
         _sut = new ApplicationGateway(
             Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
             _dbContext,
-            Mock.Of<AutoMapper.IMapper>(),
+            mapper,
             _configuration);
     }
 
@@ -111,6 +117,139 @@ public class ApplicationGatewayTests : TestBase.TestBase
 
         // Assert
         result.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Archived Application Filtering Tests
+
+    [Test]
+    public async Task GetApplication_ArchivedApplication_ReturnsNull()
+    {
+        // Arrange
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetApplication(app.ApplicationID);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Test]
+    public async Task GetApplication_NonArchivedApplication_ReturnsApplication()
+    {
+        // Arrange
+        // First create the related entities that are required
+        var localAuthority = new LocalAuthority
+        {
+            LocalAuthorityId = 1,
+            LaName = "Test LA"
+        };
+        
+        var establishment = new Establishment
+        {
+            EstablishmentId = 1,
+            EstablishmentName = "Test School",
+            LocalAuthorityId = localAuthority.LocalAuthorityId,
+            Postcode = "SW1A 1AA",
+            Street = "Test Street",
+            Locality = "Test Locality",
+            Town = "Test Town",
+            County = "Test County",
+            Type = "School",
+            StatusOpen = true
+        };
+
+        var user = new User
+        {
+            UserID = "test-user-id",
+            Email = "test@example.com",
+            Reference = "test-reference"
+        };
+
+        await _dbContext.LocalAuthorities.AddAsync(localAuthority);
+        await _dbContext.Establishments.AddAsync(establishment);
+        await _dbContext.Users.AddAsync(user);
+        await _dbContext.SaveChangesAsync();
+
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.EstablishmentId = establishment.EstablishmentId;
+        app.LocalAuthorityId = localAuthority.LocalAuthorityId;
+        app.UserId = user.UserID;
+        
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetApplication(app.ApplicationID);
+
+        // Assert
+        result.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task GetLocalAuthorityIdForApplication_ArchivedApplication_ReturnsLocalAuthorityId()
+    {
+        // Arrange
+        // First create the related entities that are required
+        var localAuthority = new LocalAuthority
+        {
+            LocalAuthorityId = 2,
+            LaName = "Test LA 2"
+        };
+        
+        var establishment = new Establishment
+        {
+            EstablishmentId = 2,
+            EstablishmentName = "Test School 2",
+            LocalAuthorityId = localAuthority.LocalAuthorityId,
+            Postcode = "SW1A 1AA",
+            Street = "Test Street",
+            Locality = "Test Locality",
+            Town = "Test Town",
+            County = "Test County",
+            Type = "School",
+            StatusOpen = true
+        };
+
+        await _dbContext.LocalAuthorities.AddAsync(localAuthority);
+        await _dbContext.Establishments.AddAsync(establishment);
+        await _dbContext.SaveChangesAsync();
+
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.EstablishmentId = establishment.EstablishmentId;
+        app.LocalAuthorityId = localAuthority.LocalAuthorityId;
+        
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetLocalAuthorityIdForApplication(app.ApplicationID);
+
+        // Assert
+        result.Should().Be(app.LocalAuthorityId);
+    }
+
+    [Test]
+    public async Task GetLocalAuthorityIdForApplication_NonArchivedApplication_ReturnsLocalAuthorityId()
+    {
+        // Arrange
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetLocalAuthorityIdForApplication(app.ApplicationID);
+
+        // Assert
+        result.Should().Be(app.LocalAuthorityId);
     }
 
     #endregion
