@@ -463,8 +463,8 @@ public class ApplicationGateway : BaseGateway, IApplication
         var hash = CheckEligibilityGateway.GetHash(new CheckProcessData
         {
             DateOfBirth = data.ParentDateOfBirth.ToString("yyyy-MM-dd"),
-            NationalInsuranceNumber = data.ParentNationalAsylumSeekerServiceNumber,
-            NationalAsylumSeekerServiceNumber = data.ParentNationalInsuranceNumber,
+            NationalInsuranceNumber = data.ParentNationalInsuranceNumber,
+            NationalAsylumSeekerServiceNumber = data.ParentNationalAsylumSeekerServiceNumber,
             LastName = data.ParentLastName.ToUpper(),
             Type = type
         });

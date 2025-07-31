@@ -85,7 +85,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
 
                 var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName);
-                if (wfEvent != null) {
+                if (wfEvent != null)
+                {
 
                     checkData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
                     checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
@@ -426,11 +427,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var source = ProcessEligibilityCheckSource.HMRC;
 
-        var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName); ;
+        var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName);
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         if (wfEvent != null)
         {
-          
+
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
@@ -451,14 +452,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 result.Status = CheckEligibilityStatus.notEligible;
             }
 
-           
         }
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
         }
-       result.EligibilityCheckHashID =
-                        await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+
+        result.EligibilityCheckHashID =
+                    await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }

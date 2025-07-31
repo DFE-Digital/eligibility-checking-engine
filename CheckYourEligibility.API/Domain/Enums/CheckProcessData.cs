@@ -30,6 +30,7 @@ public class CheckProcessData
     public string GetHash()
     {
         string input = $"""
+            {LastName?.ToUpper()}
             {(NationalInsuranceNumber.IsNullOrEmpty() ?
                 NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
             {DateOfBirth}
@@ -43,18 +44,12 @@ public class CheckProcessData
             {ValidityStartDate}
             {ValidityEndDate}
             {SubmissionDate}
-            """
-        .Replace(Environment.NewLine, "");
-                break;
-            default:
-                input += $"""
-            {LastName?.ToUpper()}
-            """.Replace(Environment.NewLine, "");
-                break;
-              
+            """;
+                break;        
         }
-       
-        var inputBytes = Encoding.UTF8.GetBytes(input);
+
+     
+        var inputBytes = Encoding.UTF8.GetBytes(input.Replace(Environment.NewLine, ""));
         var inputHash = SHA256.HashData(inputBytes);
         return Convert.ToHexString(inputHash);
     }
