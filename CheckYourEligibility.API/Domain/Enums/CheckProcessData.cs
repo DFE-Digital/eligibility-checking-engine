@@ -16,7 +16,7 @@ public class CheckProcessData
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
-
+    public string SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
     public string? ClientIdentifier { get; set; }
@@ -31,18 +31,25 @@ public class CheckProcessData
     {
         string input = $"""
             {LastName?.ToUpper()}
-            {EligibilityCode}
             {(NationalInsuranceNumber.IsNullOrEmpty() ?
                 NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
             {DateOfBirth}
             {Type}
+            """;
+        switch (this.Type) {
+            case CheckEligibilityType.WorkingFamilies:
+               input += $"""           
+            {EligibilityCode}
             {GracePeriodEndDate}
             {ValidityStartDate}
             {ValidityEndDate}
-            """
-        .Replace(Environment.NewLine, "");
+            {SubmissionDate}
+            """;
+                break;        
+        }
 
-        var inputBytes = Encoding.UTF8.GetBytes(input);
+     
+        var inputBytes = Encoding.UTF8.GetBytes(input.Replace(Environment.NewLine, ""));
         var inputHash = SHA256.HashData(inputBytes);
         return Convert.ToHexString(inputHash);
     }
