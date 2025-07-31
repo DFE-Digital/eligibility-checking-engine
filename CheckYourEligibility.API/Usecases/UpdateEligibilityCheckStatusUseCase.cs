@@ -17,7 +17,7 @@ public interface IUpdateEligibilityCheckStatusUseCase
     /// <param name="guid">The ID of the eligibility check</param>
     /// <param name="model">The status update request</param>
     /// <returns>Updated eligibility check status</returns>
-    Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityStatusUpdateRequest model, CheckEligibilityType type = CheckEligibilityType.None);
+    Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityStatusUpdateRequest model);
 }
 
 public class UpdateEligibilityCheckStatusUseCase : IUpdateEligibilityCheckStatusUseCase
@@ -36,14 +36,14 @@ public class UpdateEligibilityCheckStatusUseCase : IUpdateEligibilityCheckStatus
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityStatusUpdateRequest model, CheckEligibilityType type = CheckEligibilityType.None)
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityStatusUpdateRequest model)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
         if (model == null || model.Data == null)
             throw new ValidationException(null, "Invalid Request, update data is required.");
 
-        var response = await _checkGateway.UpdateEligibilityCheckStatus(guid, model.Data, type);
+        var response = await _checkGateway.UpdateEligibilityCheckStatus(guid, model.Data);
         if (response == null)
         {
             _logger.LogWarning(

@@ -216,10 +216,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,
-        EligibilityCheckStatusData data, CheckEligibilityType type)
+        EligibilityCheckStatusData data)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-        (type == CheckEligibilityType.None || type == x.Type));
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
         if (result != null)
         {
             result.Status = data.Status;
@@ -718,10 +717,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                             //If item doesn't exist, or we've tried more than retry limit
                             if (result == null || item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
                             {
-                                Enum.TryParse(checkData.Type, out CheckEligibilityType type);
                                 //Delete message and update status to error
                                 await UpdateEligibilityCheckStatus(checkData.Guid,
-                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, type);
+                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
                                 await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                             }
                         }

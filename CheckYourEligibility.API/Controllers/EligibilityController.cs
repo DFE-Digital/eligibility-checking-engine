@@ -418,8 +418,8 @@ public class EligibilityCheckController : BaseController
     /// <summary>
     ///     Gets an FSM an Eligibility Check status
     /// </summary>
-    /// <param name="type"></param>
     /// <param name="guid"></param>
+    /// <param name="type"></param>
     /// <returns></returns>
     [ProducesResponseType(typeof(CheckEligibilityStatusResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
@@ -463,38 +463,6 @@ public class EligibilityCheckController : BaseController
         try
         {
             var result = await _updateEligibilityCheckStatusUseCase.Execute(guid, model);
-            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
-        }
-
-        catch (NotFoundException)
-        {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
-        }
-
-        catch (ValidationException ex)
-        {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
-        }
-    }
-
-    /// <summary>
-    ///     Updates an Eligibility check status of the given type
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="guid"></param>
-    /// <param name="model"></param>
-    /// <returns></returns>
-    [ProducesResponseType(typeof(CheckEligibilityStatusResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPatch("/engine/check/{type}/{guid}/status")]
-    [Authorize(Policy = PolicyNames.RequireEngineScope)]
-    public async Task<ActionResult> EligibilityCheckStatusUpdate(CheckEligibilityType type, string guid,
-        [FromBody] EligibilityStatusUpdateRequest model)
-    {
-        try
-        {
-            var result = await _updateEligibilityCheckStatusUseCase.Execute(guid, model, type);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 
@@ -581,8 +549,8 @@ public class EligibilityCheckController : BaseController
     /// <summary>
     ///     Gets an Eligibility check of the given type using the supplied GUID
     /// </summary>
-    /// <param name="type"></param>
     /// <param name="guid"></param>
+    /// <param name="type"></param>
     /// <returns></returns>
     [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
