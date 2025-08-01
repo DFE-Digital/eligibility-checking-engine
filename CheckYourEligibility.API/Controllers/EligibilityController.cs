@@ -567,7 +567,6 @@ public class EligibilityCheckController : BaseController
 
         catch (NotFoundException)
         {
-            //TODO: Include type in error response?
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 

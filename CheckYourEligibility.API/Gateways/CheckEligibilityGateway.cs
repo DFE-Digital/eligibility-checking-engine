@@ -165,7 +165,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && 
-            (type == CheckEligibilityType.None || type == x.Type)); //TODO: Check that this is LINQ safe
+            (type == CheckEligibilityType.None || type == x.Type));
         var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
