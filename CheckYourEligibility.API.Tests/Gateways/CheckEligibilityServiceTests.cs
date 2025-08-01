@@ -1064,6 +1064,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
@@ -1071,7 +1072,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.Should().Be(CheckEligibilityStatus.notFound);
     }
 
-    [Test]
+    [Test] 
     public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
     {
         // Arrange
@@ -1096,7 +1097,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 

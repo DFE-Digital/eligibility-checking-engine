@@ -9,7 +9,6 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -81,11 +80,27 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             item.Updated = DateTime.UtcNow;
 
             item.Status = CheckEligibilityStatus.queuedForProcessing;
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
+            if (item.Type == CheckEligibilityType.WorkingFamilies)
+            {
 
+                var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName);
+                if (wfEvent != null)
+                {
+
+                    checkData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+                    checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+                    checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+                    checkData.LastName = wfEvent.ParentLastName;
+                    checkData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+                }
+
+            }
             var checkHashResult =
-                await _hashGateway.Exists(JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData));
+                await _hashGateway.Exists(checkData);
             if (checkHashResult != null)
             {
+
                 item.Status = checkHashResult.Outcome;
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
                 item.EligibilityCheckHash = checkHashResult;
@@ -130,14 +145,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                {
-                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                }
+                    {
+                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
-                {
-                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
-                }
+                    {
+                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    }
                     break;
             }
 
@@ -382,6 +397,25 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     /// <summary>
+    /// Logic to find a match in Working families events' table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <returns></returns>
+
+    private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth, string eligibilityCode, string nino, string lastName)
+    {
+
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x =>
+         x.EligibilityCode == eligibilityCode &&
+        (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
+        (x.ParentLastName.ToUpper() == lastName || x.PartnerLastName.ToUpper() == lastName) &&
+        x.ChildDateOfBirth == checkDob);
+
+        return wfEvent;
+    }
+    /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
@@ -394,19 +428,17 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         EligibilityCheck? result, CheckProcessData checkData)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
-        DateTime checkDob = DateTime.ParseExact(checkData.DateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
-        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber) &&
-        (x.ParentLastName.ToUpper() == checkData.LastName || x.PartnerLastName.ToUpper() == checkData.LastName) &&
-        x.ChildDateOfBirth == checkDob);
-     
+
+        var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName);
+        var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         if (wfEvent != null)
         {
-            var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
@@ -422,14 +454,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 result.Status = CheckEligibilityStatus.notEligible;
             }
 
-            result.EligibilityCheckHashID =
-                await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
         }
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
         }
 
+        result.EligibilityCheckHashID =
+                    await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
@@ -622,20 +654,20 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
                 {
                     LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length-5, 4),
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length - 5, 4),
                     DateOfBirth = data.DateOfBirth
                 }
             }
         };
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
-        
+
         _logger.LogInformation($"Dwp before getting citizen");
-        
+
         _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
         var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
         _logger.LogInformation($"Dwp after getting citizen");
-        if (guid.Length!=64)
+        if (guid.Length != 64)
         {
             _logger.LogInformation($"Dwp after getting citizen error " + guid);
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
@@ -693,7 +725,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
 
-            if(properties.ApproximateMessagesCount > 0)
+            if (properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
                 foreach (var item in retrievedMessage)

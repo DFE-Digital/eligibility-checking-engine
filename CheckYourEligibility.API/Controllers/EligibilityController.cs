@@ -190,7 +190,7 @@ public class EligibilityCheckController : BaseController
     }
 
     /// <summary>
-    ///     Posts the array of FSM checks
+    ///     Posts the array of WF checks
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
