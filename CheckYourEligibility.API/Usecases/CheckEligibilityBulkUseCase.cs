@@ -70,20 +70,19 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             var result = _validator.Validate(item);
             if (!result.IsValid)
             {
-                string title = string.Empty;
                 for(int i = 0; i < result.Errors.Count; i++ )
                 {
-                     title = string.Join(Environment.NewLine, result.Errors);
+                    Error error = new Error
+                    {
+
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = item.ClientIdentifier
+
+                    };
+                    errors.Add(error);
                 }
-                Error error = new Error
-                {
-
-                    Status = StatusCodes.Status400BadRequest,
-                    Title = title,
-                    Detail = item.ClientIdentifier
-
-                };
-                errors.Add(error);
+                
             }
 
             index++;
