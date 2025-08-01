@@ -15,8 +15,9 @@ public interface IGetEligibilityCheckItemUseCase
     ///     Execute the use case
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
+    /// <param name="type">The type of the eligibility check being retrieved (Optional)</param> 
     /// <returns>Eligibility check item details</returns>
-    Task<CheckEligibilityItemResponse> Execute(string guid);
+    Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type);
 }
 
 public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
@@ -35,11 +36,11 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityItemResponse> Execute(string guid)
+    public async Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var response = await _checkGateway.GetItem<CheckEligibilityItem>(guid);
+        var response = await _checkGateway.GetItem<CheckEligibilityItem>(guid, type);
         if (response == null)
         {
             _logger.LogWarning(
@@ -52,14 +53,20 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
         _logger.LogInformation(
             $"Retrieved eligibility check details for ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
 
+        string typeUrl = "";
+        if (type != CheckEligibilityType.None)
+        {
+            typeUrl = $"{type}/";
+        }
+
         return new CheckEligibilityItemResponse
         {
             Data = response,
             Links = new CheckEligibilityResponseLinks
             {
-                Get_EligibilityCheck = $"{CheckLinks.GetLink}{guid}",
+                Get_EligibilityCheck = $"{CheckLinks.GetLink}{typeUrl}{guid}",
                 Put_EligibilityCheckProcess = $"{CheckLinks.ProcessLink}{guid}",
-                Get_EligibilityCheckStatus = $"{CheckLinks.GetLink}{guid}/Status"
+                Get_EligibilityCheckStatus = $"{CheckLinks.GetLink}{typeUrl}{guid}/Status"
             }
         };
     }

@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Moq;
 using Newtonsoft.Json;
 
@@ -147,6 +148,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        request.Type = CheckEligibilityType.FreeSchoolMeals;
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
 
@@ -191,6 +193,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        request.Type = CheckEligibilityType.FreeSchoolMeals;
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
         var key = string.IsNullOrEmpty(request.NationalInsuranceNumber)
@@ -283,17 +286,17 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     public void Given_InValidRequest_GetStatus_Should_Return_null()
     {
         // Arrange
-        var request = _fixture.Create<Guid>().ToString();
+        var guid = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetStatus(request);
+        var response = _sut.GetStatus(guid, CheckEligibilityType.None);
 
         // Assert
         response.Result.Should().BeNull();
     }
 
     [Test]
-    public void Given_InValidRequest_GetStatus_Should_Return_status()
+    public void Given_ValidRequest_GetStatus_Should_Return_status()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -301,10 +304,44 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = _sut.GetStatus(item.EligibilityCheckID);
+        var response = _sut.GetStatus(item.EligibilityCheckID, CheckEligibilityType.None);
 
         // Assert
-        _ = response.Result.ToString().Should().Be(item.Status.ToString());
+        response.Result.ToString().Should().Be(item.Status.ToString());
+    }
+
+    [Test]
+    public void Given_ValidRequest_DiffType_GetStatus_Should_Return_null()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        var type = CheckEligibilityType.EarlyYearPupilPremium;
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = _sut.GetStatus(item.EligibilityCheckID, type);
+
+        // Assert
+        response.Result.Should().BeNull();
+    }
+
+    [Test]
+    public void Given_ValidRequest_SameType_GetStatus_Should_Return_status()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        var type = CheckEligibilityType.FreeSchoolMeals;
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = _sut.GetStatus(item.EligibilityCheckID, type);
+
+        // Assert
+        response.Result.ToString().Should().Be(item.Status.ToString());
     }
 
     [Test]
@@ -578,7 +615,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -666,7 +703,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -743,7 +780,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
-        item.Type = fsm.Type;
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
@@ -868,10 +905,30 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetItem<CheckEligibilityItem>(request);
+        var response = _sut.GetItem<CheckEligibilityItem>(request, CheckEligibilityType.None);
 
         // Assert
         response.Result.Should().BeNull();
+    }
+
+    [Test]
+    public async Task Given_ValidRequest_DiffType_GetItem_Should_Return_null()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        var type = CheckEligibilityType.TwoYearOffer;
+        var check = _fixture.Create<CheckEligibilityRequestData>();
+        check.DateOfBirth = "1990-01-01";
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
+        // Assert
+        response.Should().BeNull();
     }
 
     [Test]
@@ -888,7 +945,31 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
+        // Assert
+        response.Should().BeOfType<CheckEligibilityItem>();
+        response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
+        response.NationalAsylumSeekerServiceNumber.Should().BeEquivalentTo(check.NationalAsylumSeekerServiceNumber);
+        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
+        response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
+    }
+
+    [Test]
+    public async Task Given_ValidRequest_SameType_GetItem_Should_Return_Item()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        item.Type = type;
+        var check = _fixture.Create<CheckEligibilityRequestData>();
+        check.DateOfBirth = "1990-01-01";
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
@@ -910,7 +991,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID);
+        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.EligibilityCode.Should().BeEquivalentTo(check.EligibilityCode);
