@@ -376,6 +376,44 @@ public class ApplicationServiceTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Given_ArchivedApplication_GetApplications_Should_ExcludeArchivedApplications()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+
+        // Create a normal application
+        var requestNormal = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+        var normalAppResponse = await _sut.PostApplication(requestNormal);
+
+        // Create an archived application
+        var requestArchived = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+        var archivedAppResponse = await _sut.PostApplication(requestArchived);
+        
+        // Archive the second application
+        await _sut.UpdateApplicationStatus(archivedAppResponse.Id, new ApplicationStatusData
+        {
+            Status = ApplicationStatus.Archived
+        });
+
+        var requestSearch = new ApplicationRequestSearch
+        {
+            Data = new ApplicationRequestSearchData
+            {
+                Establishment = Establishment.EstablishmentId
+            }
+        };
+
+        // Act
+        var response = await _sut.GetApplications(requestSearch);
+
+        // Assert
+        response.Data.Should().HaveCount(1);
+        response.Data.First().Id.Should().Be(normalAppResponse.Id);
+        response.Data.Should().NotContain(app => app.Id == archivedAppResponse.Id);
+    }
+
+    [Test]
     public async Task Given_Application_WithUserReturnNewUser()
     {
         // Arrange
@@ -391,6 +429,91 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         // Assert
         response.User.UserID.Should().BeEquivalentTo(User.UserID);
+    }
+
+    [Test]
+    public async Task Given_ArchivedApplication_GetApplication_Should_ReturnNull()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+
+        // Create an application
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+        var appResponse = await _sut.PostApplication(request);
+        
+        // Archive the application
+        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        {
+            Status = ApplicationStatus.Archived
+        });
+
+        // Act
+        var response = await _sut.GetApplication(appResponse.Id);
+
+        // Assert
+        response.Should().BeNull();
+    }
+
+    [Test]
+    public async Task Given_ExplicitSearchForArchivedStatus_GetApplications_Should_ReturnEmpty()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+
+        // Create and archive an application
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+        var appResponse = await _sut.PostApplication(request);
+        
+        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        {
+            Status = ApplicationStatus.Archived
+        });
+
+        var requestSearch = new ApplicationRequestSearch
+        {
+            Data = new ApplicationRequestSearchData
+            {
+                Establishment = Establishment.EstablishmentId,
+                Statuses = new[] { ApplicationStatus.Archived }
+            }
+        };
+
+        // Act
+        var response = await _sut.GetApplications(requestSearch);
+
+        // Assert
+        response.Data.Should().BeEmpty();
+        response.TotalRecords.Should().Be(0);
+    }
+
+    [Test]
+    public async Task Given_ArchivedApplication_UpdateApplicationStatus_Should_UpdateSuccessfully()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateUserEstablishmentAndLa();
+
+        // Create an application
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+        var appResponse = await _sut.PostApplication(request);
+        
+        // Archive the application
+        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        {
+            Status = ApplicationStatus.Archived
+        });
+
+        // Act - Update the archived application status to something else
+        var updateResult = await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        {
+            Status = ApplicationStatus.EvidenceNeeded
+        });
+
+        // Assert
+        updateResult.Should().NotBeNull();
+        updateResult.Data.Status.Should().Be("EvidenceNeeded");
     }
 
     [Test]

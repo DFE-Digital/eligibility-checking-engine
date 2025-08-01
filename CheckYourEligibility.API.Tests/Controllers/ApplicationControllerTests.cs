@@ -27,7 +27,8 @@ public class ApplicationControllerTests : TestBase.TestBase
     private ILogger<ApplicationController> _mockLogger = null!;
     private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase = null!;
     private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
-    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!;
+    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!; 
+    private Mock<IDeleteApplicationUseCase> _mockDeleteApplicationUseCase = null!; 
     private ApplicationController _sut = null!;
 
     [SetUp]
@@ -37,7 +38,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase = new Mock<IGetApplicationUseCase>(MockBehavior.Strict);
         _mockSearchApplicationsUseCase = new Mock<ISearchApplicationsUseCase>(MockBehavior.Strict);
         _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
-        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict);
+        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict); 
+        _mockDeleteApplicationUseCase = new Mock<IDeleteApplicationUseCase>(MockBehavior.Strict); 
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
         _fixture = new Fixture(); // Ensure _fixture is initialized
@@ -59,7 +61,8 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockGetApplicationUseCase.Object,
             _mockSearchApplicationsUseCase.Object,
             _mockUpdateApplicationStatusUseCase.Object,
-            _mockImportApplicationsUseCase.Object,
+            _mockImportApplicationsUseCase.Object, 
+            _mockDeleteApplicationUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -70,7 +73,8 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase.VerifyAll();
         _mockSearchApplicationsUseCase.VerifyAll();
         _mockUpdateApplicationStatusUseCase.VerifyAll();
-        _mockImportApplicationsUseCase.VerifyAll(); // Added
+        _mockImportApplicationsUseCase.VerifyAll();
+        _mockDeleteApplicationUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -776,6 +780,100 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("General error");
+    }
+
+    [Test]
+    public async Task DeleteApplication_ValidRequest_ReturnsNoContent()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DeleteApplication(guid);
+
+        // Assert
+        result.Should().BeOfType<NoContentResult>();
+    }
+
+    [Test]
+    public async Task DeleteApplication_NoLocalAuthorityScope_ReturnsBadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.DeleteApplication(guid);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task DeleteApplication_NotFoundException_ReturnsNotFound()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new NotFoundException("Application not found"));
+
+        // Act
+        var result = await _sut.DeleteApplication(guid);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = result as NotFoundObjectResult;
+        var errorResponse = notFoundResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Application not found");
+    }
+
+    [Test]
+    public async Task DeleteApplication_UnauthorizedAccessException_ReturnsBadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
+
+        // Act
+        var result = await _sut.DeleteApplication(guid);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        var errorResponse = badRequestResult!.Value as ErrorResponse;
+        errorResponse!.Errors!.First().Title.Should().Be("Unauthorized");
+    }
+
+    [Test]
+    public async Task DeleteApplication_GeneralException_ReturnsBadRequest()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
+
+        // Act
+        var result = await _sut.DeleteApplication(guid);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();

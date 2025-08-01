@@ -71,6 +71,12 @@ public interface IApplication
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
-    Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(
-        IEnumerable<string> urns);
+    Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns);
+    
+    /// <summary>
+    /// Deletes an application by GUID
+    /// </summary>
+    /// <param name="guid">Application GUID</param>
+    /// <returns>True if deleted successfully, false if not found</returns>
+    Task<bool> DeleteApplication(string guid);
 }
