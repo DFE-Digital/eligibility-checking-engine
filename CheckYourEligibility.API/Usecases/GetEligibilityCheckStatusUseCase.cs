@@ -16,7 +16,7 @@ public interface IGetEligibilityCheckStatusUseCase
     /// <param name="guid">The ID of the eligibility check</param>
     /// <param name="type">The type of the eligibility check that is being queried</param>
     /// <returns>Eligibility check status</returns>
-    Task<CheckEligibilityStatusResponse> Execute(string guid, CheckEligibilityType type = CheckEligibilityType.None);
+    Task<CheckEligibilityStatusResponse> Execute(string guid, CheckEligibilityType type);
 }
 
 public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCase
@@ -35,7 +35,7 @@ public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCas
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityStatusResponse> Execute(string guid, CheckEligibilityType type = CheckEligibilityType.None)
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, CheckEligibilityType type)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 

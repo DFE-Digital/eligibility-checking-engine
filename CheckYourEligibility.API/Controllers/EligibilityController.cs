@@ -399,7 +399,7 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _getEligibilityCheckStatusUseCase.Execute(guid);
+            var result = await _getEligibilityCheckStatusUseCase.Execute(guid, CheckEligibilityType.None);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
@@ -531,7 +531,7 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _getEligibilityCheckItemUseCase.Execute(guid);
+            var result = await _getEligibilityCheckItemUseCase.Execute(guid, CheckEligibilityType.None);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 

@@ -41,8 +41,11 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
     [TestCase("")]
     public async Task Execute_returns_failure_when_guid_is_null_or_empty(string guid)
     {
+        // Arrange
+        var type = _fixture.Create<CheckEligibilityType>();
+
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid);
+        Func<Task> act = async () => await _sut.Execute(guid, type);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, check ID is required.");
@@ -57,7 +60,7 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s => s.GetStatus(guid, type)).ReturnsAsync((CheckEligibilityStatus?)null);
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid);
+        Func<Task> act = async () => await _sut.Execute(guid, type);
 
         // Assert
         act.Should().ThrowAsync<NotFoundException>().WithMessage($"Bulk upload with ID {guid} not found");
@@ -77,7 +80,7 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(guid);
+        var result = await _sut.Execute(guid, type);
 
         // Assert
         result.Data.Should().NotBeNull();
@@ -90,24 +93,6 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var type = _fixture.Create<CheckEligibilityType>();
-        var statusValue = _fixture.Create<CheckEligibilityStatus>();
-        _mockCheckGateway.Setup(s => s.GetStatus(guid, type)).ReturnsAsync(statusValue);
-
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
-
-        // Act
-        await _sut.Execute(guid);
-
-        // Assert
-        _mockCheckGateway.Verify(s => s.GetStatus(guid, CheckEligibilityType.None), Times.Once);
-    }
-
-    [Test]
-    public async Task Execute_calls_gateway_GetStatus_with_correct_guid_and_type()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var type = CheckEligibilityType.FreeSchoolMeals;
         var statusValue = _fixture.Create<CheckEligibilityStatus>();
         _mockCheckGateway.Setup(s => s.GetStatus(guid, type)).ReturnsAsync(statusValue);
 
