@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
-using System.Text;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -56,7 +55,8 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             throw new ValidationException(null, errorMessage);
         }
 
-        var errors = new StringBuilder();
+        List<Error> errors = new List<Error>();
+
         int index = 1;
 
         foreach (var item in bulkData)
@@ -70,14 +70,26 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             var result = _validator.Validate(item);
             if (!result.IsValid)
             {
-                errors.AppendLine($"Item {index}: {result}");
+                for(int i = 0; i < result.Errors.Count; i++ )
+                {
+                    Error error = new Error
+                    {
+
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = item.ClientIdentifier
+
+                    };
+                    errors.Add(error);
+                }
+                
             }
 
             index++;
         }
 
-        if (errors.Length > 0)
-            throw new ValidationException(null, errors.ToString());
+        if (errors.Count > 0)
+            throw new ValidationException(errors, string.Empty);
 
         var groupId = Guid.NewGuid().ToString();
         await _checkGateway.PostCheck(bulkData, groupId);
