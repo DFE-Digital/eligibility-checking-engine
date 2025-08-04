@@ -407,11 +407,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
 
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x =>
+        var wfEvent = await _db.WorkingFamiliesEvents.Where(x =>
          x.EligibilityCode == eligibilityCode &&
         (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
         (x.ParentLastName.ToUpper() == lastName || x.PartnerLastName.ToUpper() == lastName) &&
-        x.ChildDateOfBirth == checkDob);
+        x.ChildDateOfBirth == checkDob).OrderByDescending(x=> x.SubmissionDate).FirstOrDefaultAsync();
 
         return wfEvent;
     }
