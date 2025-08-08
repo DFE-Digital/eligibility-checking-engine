@@ -178,6 +178,8 @@ builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
+builder.Services.AddScoped<IEligibilityCheckContext, EligibilityCheckContext>();
+
 builder.Services.AddTransient<INotificationClient>(x =>
     new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>
@@ -236,6 +238,15 @@ app.UseSwaggerUI(c =>
 
 // 2.6. Map Controllers
 app.MapControllers();
+
+// 2.7 RateLimiter Middleware
+//app.UseCustomRateLimiter(); //TODO: Move it before the euthentication/authorization?
+//First rate limiter policy
+app.UseWhen(context => context.Request.Path == "/check/working-families"
+|| context.Request.Path == "/bulk-check/working-families", app => app.UseCustomRateLimiter(TimeSpan.FromMinutes(1), 10));
+//Second rate limiter policy
+app.UseWhen(context => context.Request.Path == "/check/working-families", app => app.UseCustomRateLimiter(TimeSpan.FromHours(1), 20));
+//app.MapPost("/check/working-families", RateLimiterExtensions.UseCustomRateLimiter);
 
 app.Run();
 

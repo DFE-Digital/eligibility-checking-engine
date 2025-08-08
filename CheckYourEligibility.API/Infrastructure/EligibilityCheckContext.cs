@@ -24,6 +24,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
     public virtual DbSet<EligibilityCheckHash> EligibilityCheckHashes { get; set; }
+    public virtual DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Audit> Audits { get; set; }
 
@@ -94,6 +95,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<EligibilityCheckHash>()
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
+
+        modelBuilder.Entity<RateLimitEvent>() //TODO: Maybe index by timestamp/partition?
+            .HasIndex(b => b.RateLimitEventId, "idx_RateLimitEventId");
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
