@@ -1,9 +1,12 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using CheckYourEligibility.API.Domain;
-using NetTopologySuite.GeometriesGraph;
-using Newtonsoft.Json;
+using CheckYourEligibility.API.UseCases;
+
+public class RateLimiterMiddlewareOptions
+{
+    public string PartionName { get; set; }
+    public TimeSpan WindowLength { get; set; }
+    public int PermitLimit { get; set; }
+}
 
 public class RateLimiter
 {
@@ -13,21 +16,25 @@ public class RateLimiter
     private TimeSpan _windowLength;
     private int _permitLimit;
 
+    private RateLimiterMiddlewareOptions _options;
+
     public RateLimiter(RequestDelegate next,
-        TimeSpan windowLength,
-        int permitLimit
+        //TimeSpan windowLength,
+        //int permitLimit
+        RateLimiterMiddlewareOptions options
         )
     {
         _next = next;
-        _windowLength = windowLength;
-        _permitLimit = permitLimit;
+        _options = options;
+        //_windowLength = windowLength;
+        //_permitLimit = permitLimit;
     }
 
     private int getCapacity(string partition, DateTime requestTimeStamp)
     {
         int checksInWindow = 0;  //db.RateLimitEvents
-            //.Where(x => x.PartitionName == partition && x.TimeStamp >= requestTimeStamp.Subtract(_windowLength))
-            //.Sum(x => x.QuerySize);
+                                 //.Where(x => x.PartitionName == partition && x.TimeStamp >= requestTimeStamp.Subtract(_windowLength))
+                                 //.Sum(x => x.QuerySize);
         return _permitLimit - checksInWindow;
     }
 
@@ -58,8 +65,9 @@ public class RateLimiter
         return 1;
     }
 
-    public async Task InvokeAsync(HttpContext httpContext, IEligibilityCheckContext db)
+    public async Task InvokeAsync(HttpContext httpContext, ICreateRateLimitEventUseCase rateLimitUseCase)
     {
+        /*
         string partition = getPartition(httpContext);
         int querySize = await getQuerySize(httpContext);
         //Firstly record the event
@@ -71,42 +79,25 @@ public class RateLimiter
             QuerySize = querySize,
             Accepted = false //TODO: Use a different status when we're yet to determine if it's permitted
         };
-        //var checksInWindow = db.RateLimitEvents.Where(x => x.PartitionName == partition).Sum(x => x.QuerySize);
-        //await db.RateLimitEvents.AddAsync(rlEvent);
-        //await db.SaveChangesAsync();
+        await rateLimitUseCase.Execute(rlEvent);
+        */
+        await rateLimitUseCase.Execute(httpContext, _options);
         await _next(httpContext);
-
-        /*
-                //var checksInWindow = db.RateLimitEvents
-                //    .Where(x => x.PartitionName == partition && x.TimeStamp >= rlEvent.TimeStamp.Subtract(_windowLength));
-                //.Sum(x => x.QuerySize);
-
-                //Then determine whether the event was viable
-                if (querySize > getCapacity(partition, rlEvent.TimeStamp))
-                //if (querySize > _permitLimit - checksInWindow)
-                {
-                    rlEvent.Accepted = false;
-                    //await _db.SaveChangesAsync();
-                    //TODO: Maybe log the rejection
-                    //TODO: Set a 429 response and queryRetryTime
-                    httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    return;
-                }
-                else
-                {
-                    rlEvent.Accepted = true;
-                    //await _db.SaveChangesAsync();
-                    await _next(httpContext);
-                }
-                */
     }
 }
 
 public static class RateLimiterExtensions
 {
     public static IApplicationBuilder UseCustomRateLimiter(
-        this IApplicationBuilder builder, TimeSpan windowSize, int permitLimit)
+        this IApplicationBuilder builder, string partitionName, TimeSpan windowLength, int permitLimit)
     {
-        return builder.UseMiddleware<RateLimiter>(windowSize, permitLimit);
+        //return builder.UseMiddleware<RateLimiter>(windowSize, permitLimit);
+        return builder.UseMiddleware<RateLimiter>(new RateLimiterMiddlewareOptions
+            {
+                PartionName = partitionName,
+                WindowLength = windowLength,
+                PermitLimit = permitLimit
+            }
+        );
     }
 }

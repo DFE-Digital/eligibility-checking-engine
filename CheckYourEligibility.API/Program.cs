@@ -175,10 +175,9 @@ builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibili
 builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCheckUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
+builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
-
-builder.Services.AddScoped<IEligibilityCheckContext, EligibilityCheckContext>();
 
 builder.Services.AddTransient<INotificationClient>(x =>
     new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
@@ -243,9 +242,9 @@ app.MapControllers();
 //app.UseCustomRateLimiter(); //TODO: Move it before the euthentication/authorization?
 //First rate limiter policy
 app.UseWhen(context => context.Request.Path == "/check/working-families"
-|| context.Request.Path == "/bulk-check/working-families", app => app.UseCustomRateLimiter(TimeSpan.FromMinutes(1), 10));
+|| context.Request.Path == "/bulk-check/working-families", app => app.UseCustomRateLimiter("Authority-Id-Minute", TimeSpan.FromMinutes(1), 10));
 //Second rate limiter policy
-app.UseWhen(context => context.Request.Path == "/check/working-families", app => app.UseCustomRateLimiter(TimeSpan.FromHours(1), 20));
+app.UseWhen(context => context.Request.Path == "/check/working-families", app => app.UseCustomRateLimiter("Authority-Id-Hour", TimeSpan.FromHours(1), 20));
 //app.MapPost("/check/working-families", RateLimiterExtensions.UseCustomRateLimiter);
 
 app.Run();
