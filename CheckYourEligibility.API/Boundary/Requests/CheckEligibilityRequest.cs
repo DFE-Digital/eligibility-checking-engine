@@ -11,7 +11,6 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     //public int? Sequence { get; set; }
 
     public string DateOfBirth { get; set; }
-    public string LastName { get; set; }
 
     public CheckEligibilityType Type
     {
@@ -38,6 +37,7 @@ public class CheckEligibilityRequestBulkBase
 
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
+    public string LastName { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; } 
 
 }
@@ -59,6 +59,7 @@ public class CheckEligibilityRequestBulk : CheckEligibilityRequestBulkBase
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityRequestDataBase
 {
+    public string? LastName { get; set; }
     public string EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
     public string? ValidityEndDate { get; set; }

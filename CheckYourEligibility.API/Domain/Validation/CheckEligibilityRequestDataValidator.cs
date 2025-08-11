@@ -49,13 +49,17 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).NationalInsuranceNumber)
                .Must(DataValidation.BeAValidNi)
                .WithMessage(ValidationMessages.NI);
-            RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
-                .Must(DataValidation.BeAValidName)
-                .WithMessage(ValidationMessages.LastName);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
                 .WithMessage(ValidationMessages.DOB);
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestWorkingFamiliesData)x).LastName), () =>
+            {
+                RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
+                    .NotNull()
+                    .Must(DataValidation.BeAValidName)
+                    .WithMessage(ValidationMessages.LastNameWf);
+            });
         });
     }
 }
