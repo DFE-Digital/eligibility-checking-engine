@@ -191,16 +191,6 @@ export function invalidDobWorkingFamiliesRequestBody() {
         }
     }
 }
-export function invalidLastNameWorkingFamiliesRequestBody() {
-    return {
-        data: {
-             nationalInsuranceNumber: "BB123456D",
-             dateOfBirth: "2022-06-07",
-             eligibilityCode: "50012345678",
-             lastName: ""
-        }
-    }
-}
 
 //Working Families Bulk requests
 export function validWorkingFamiliesBulkRequestBody() {
@@ -262,18 +252,10 @@ export function invalidDobWorkingFamiliesBulkRequestBody() {
         ]
     }
 }
-export function invalidLastNameWorkingFamiliesBulkRequestBody() {
-    return {
-        data: [
-            validWorkingFamiliesRequestBody().data,
-            invalidLastNameWorkingFamiliesRequestBody().data
-        ]
-    }
-}
 export function invalidMultiChecksWorkingFamiliesBulkRequestBody() {
     return {
         data: [
-            invalidLastNameWorkingFamiliesRequestBody().data,
+            invalidDobWorkingFamiliesRequestBody().data,
             invalidEligiblityCodeRequestBody().data
         ]
     }
