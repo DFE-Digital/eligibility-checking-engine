@@ -9,7 +9,7 @@ public class CheckProcessData
 {
     public string? NationalInsuranceNumber { get; set; }
 
-    public string LastName { get; set; }
+    public string? LastName { get; set; }
 
     public string EligibilityCode { get; set; }
     public string ValidityStartDate { get; set; }

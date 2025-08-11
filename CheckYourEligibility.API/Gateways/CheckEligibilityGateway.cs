@@ -410,7 +410,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         var wfEvent = await _db.WorkingFamiliesEvents.Where(x =>
          x.EligibilityCode == eligibilityCode &&
         (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
-        (x.ParentLastName.ToUpper() == lastName || x.PartnerLastName.ToUpper() == lastName) &&
+        (lastName==null || x.ParentLastName.ToUpper() == lastName || x.PartnerLastName.ToUpper() == lastName) &&
         x.ChildDateOfBirth == checkDob).OrderByDescending(x=> x.SubmissionDate).FirstOrDefaultAsync();
 
         return wfEvent;
