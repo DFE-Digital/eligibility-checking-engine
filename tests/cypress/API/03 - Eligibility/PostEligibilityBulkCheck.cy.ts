@@ -1,8 +1,8 @@
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
 import { invalidEligiblityCodeBulkRequestBody, validLoginRequestBody, validWorkingFamiliesBulkRequestBody,
-    invalidNinoWorkingFamiliesBulkRequestBody, invalidDobWorkingFamiliesBulkRequestBody,
-     invalidLastNameWorkingFamiliesBulkRequestBody, 
-     invalidMultiChecksWorkingFamiliesBulkRequestBody} from '../../support/requestBodies';
+    invalidNinoWorkingFamiliesBulkRequestBody, invalidDobWorkingFamiliesBulkRequestBody, 
+    invalidLastNameWorkingFamiliesBulkRequestBody, invalidMultiChecksWorkingFamiliesBulkRequestBody}
+    from '../../support/requestBodies';
 
 
 describe('Post Eligibility Bulk Check - Valid Requests', () => {
@@ -56,11 +56,11 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
     });
   });
 
-  it('Verify 400 Bad Request response is returned with invalid last name', () => {
+  it('Verify 400 Bad Request response is returned with invalid lastname', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'bulk-check/working-families', invalidLastNameBulkRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'LastName is required');
+        expect(response.body.errors[0]).to.have.property('title', 'LastName contains an invalid character');
       });
     });
   });
@@ -69,7 +69,7 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'bulk-check/working-families', invalidMultiCheckBulkRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'LastName is required');
+        expect(response.body.errors[0]).to.have.property('title', 'Date of birth is required:- (yyyy-mm-dd)');
         expect(response.body.errors[1]).to.have.property('title', 'Eligibility code must be 11 digits long');
       });
     });

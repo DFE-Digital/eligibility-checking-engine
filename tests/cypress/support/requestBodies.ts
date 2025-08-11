@@ -152,6 +152,15 @@ export function validWorkingFamiliesRequestBody() {
         }
     }
 }
+export function validWorkingFamiliesNullLastnameRequestBody() {
+    return {
+        data: {
+             nationalInsuranceNumber: "BB123456D",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "50012345678"
+        }
+    }
+}
 export function invalidEligiblityCodeRequestBody() {
     return {
         data: {
@@ -188,7 +197,7 @@ export function invalidLastNameWorkingFamiliesRequestBody() {
              nationalInsuranceNumber: "BB123456D",
              dateOfBirth: "2022-06-07",
              eligibilityCode: "50012345678",
-             lastName: ""
+             lastName: "Smith1"
         }
     }
 }
@@ -264,7 +273,7 @@ export function invalidLastNameWorkingFamiliesBulkRequestBody() {
 export function invalidMultiChecksWorkingFamiliesBulkRequestBody() {
     return {
         data: [
-            invalidLastNameWorkingFamiliesRequestBody().data,
+            invalidDobWorkingFamiliesRequestBody().data,
             invalidEligiblityCodeRequestBody().data
         ]
     }

@@ -1,6 +1,6 @@
 ///FreeSchoolMeals
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validWorkingFamiliesRequestBody,validLoginRequestBody, validHMRCRequestBody, validHomeOfficeRequestBody, invalidHMRCRequestBody, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody } from '../../support/requestBodies';
+import { validWorkingFamiliesRequestBody,validLoginRequestBody, validHMRCRequestBody, validHomeOfficeRequestBody, invalidHMRCRequestBody, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody, validWorkingFamiliesNullLastnameRequestBody } from '../../support/requestBodies';
 
 
 describe('Post Eligibility Check - Valid Requests', () => {
@@ -8,10 +8,22 @@ describe('Post Eligibility Check - Valid Requests', () => {
   const validHMRCRequest = validHMRCRequestBody();
   const validHomeOfficeRequest = validHomeOfficeRequestBody();
   const validWorkingFamiliesRequest  = validWorkingFamiliesRequestBody();
+  const validWorkingFamiliesNullLastnameRequest = validWorkingFamiliesNullLastnameRequestBody();
 
   it('Verify 202 Accepted response is returned with valid working families data', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'check/working-families', validWorkingFamiliesRequest, token).then((response) => {
+        // Assert the status and statusText
+        cy.verifyApiResponseCode(response, 202)
+        // Assert the response body data
+        cy.verifyPostEligibilityCheckResponse(response)
+      });
+    });
+  });
+
+  it('Verify 202 Accepted response is returned with valid working families data no lastname', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+      cy.apiRequest('POST', 'check/working-families', validWorkingFamiliesNullLastnameRequest, token).then((response) => {
         // Assert the status and statusText
         cy.verifyApiResponseCode(response, 202)
         // Assert the response body data
