@@ -14,5 +14,5 @@ public class RateLimitEvent
 
     public int QuerySize { get; set; }
 
-    [Column(TypeName = "boolean")] public bool Accepted { get; set; }
+    public bool Accepted { get; set; }
 }

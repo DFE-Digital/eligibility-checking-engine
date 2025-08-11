@@ -96,8 +96,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<EligibilityCheckHash>()
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
 
-        modelBuilder.Entity<RateLimitEvent>() //TODO: Maybe index by timestamp/partition?
-            .HasIndex(b => b.RateLimitEventId, "idx_RateLimitEventId");
+        //TODO: Likely need to index the RateLimitEvents by partitionName and timestamp
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
