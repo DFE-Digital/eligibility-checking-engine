@@ -53,6 +53,13 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
                 .WithMessage(ValidationMessages.DOB);
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestWorkingFamiliesData)x).LastName), () =>
+            {
+                RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
+                    .NotNull()
+                    .Must(DataValidation.BeAValidName)
+                    .WithMessage(ValidationMessages.LastNameWf);
+            });
         });
     }
 }

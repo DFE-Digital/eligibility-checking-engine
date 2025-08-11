@@ -1,7 +1,8 @@
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
 import { invalidEligiblityCodeBulkRequestBody, validLoginRequestBody, validWorkingFamiliesBulkRequestBody,
-    invalidNinoWorkingFamiliesBulkRequestBody, invalidDobWorkingFamiliesBulkRequestBody,
-     invalidMultiChecksWorkingFamiliesBulkRequestBody} from '../../support/requestBodies';
+    invalidNinoWorkingFamiliesBulkRequestBody, invalidDobWorkingFamiliesBulkRequestBody, 
+    invalidLastNameWorkingFamiliesBulkRequestBody, invalidMultiChecksWorkingFamiliesBulkRequestBody}
+    from '../../support/requestBodies';
 
 
 describe('Post Eligibility Bulk Check - Valid Requests', () => {
@@ -25,6 +26,7 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
   const invalidEligiblityCodeBulkRequest = invalidEligiblityCodeBulkRequestBody();
   const invalidNinoBulkRequest = invalidNinoWorkingFamiliesBulkRequestBody();
   const invalidDobBulkRequest = invalidDobWorkingFamiliesBulkRequestBody();
+  const invalidLastNameBulkRequest = invalidLastNameWorkingFamiliesBulkRequestBody();
   const invalidMultiCheckBulkRequest = invalidMultiChecksWorkingFamiliesBulkRequestBody();
 
   it('Verify 400 Bad Request response is returned with invalid Eligiblity code', () => {
@@ -50,6 +52,15 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
       cy.apiRequest('POST', 'bulk-check/working-families', invalidDobBulkRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
         expect(response.body.errors[0]).to.have.property('title', 'Date of birth is required:- (yyyy-mm-dd)');
+      });
+    });
+  });
+
+  it('Verify 400 Bad Request response is returned with invalid lastname', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+      cy.apiRequest('POST', 'bulk-check/working-families', invalidLastNameBulkRequest, token).then((response) => {
+        cy.verifyApiResponseCode(response, 400)
+        expect(response.body.errors[0]).to.have.property('title', 'LastName contains an invalid character');
       });
     });
   });
