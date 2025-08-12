@@ -14,25 +14,26 @@ public interface ICreateRateLimitEventUseCase
     /// <summary>
     ///     Execute the use case.
     /// </summary>
-    /// <param name="httpContext"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    Task<bool> Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options);
+    Task<bool> Execute(RateLimiterMiddlewareOptions options);
 
 }
 
 public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
 {
     private readonly IRateLimit _rateLimitGateway;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CreateRateLimitEventUseCase(IRateLimit rateLimitGateway)
+    public CreateRateLimitEventUseCase(IRateLimit rateLimitGateway, IHttpContextAccessor httpContextAccessor)
     {
         _rateLimitGateway = rateLimitGateway;
+        _httpContextAccessor = httpContextAccessor;
     }
-    public async Task<bool> Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options)
+    public async Task<bool> Execute(RateLimiterMiddlewareOptions options)
     {
-        string partition = getPartition(options.PartionName, httpContext);
-        int querySize = await getQuerySize(httpContext);
+        string partition = getPartition(options.PartionName, _httpContextAccessor.HttpContext);
+        int querySize = await getQuerySize(_httpContextAccessor.HttpContext);
 
         RateLimitEvent rlEvent = new RateLimitEvent
         {
@@ -47,7 +48,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         int currentRate = await _rateLimitGateway.GetQueriesInWindow(partition, rlEvent.TimeStamp, options.WindowLength);
         if (querySize > options.PermitLimit - currentRate)
         {
-            httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            _httpContextAccessor.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             return false;
             //TODO: Determine retry period
         }

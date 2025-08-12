@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.UseCases;
 
 public class RateLimiterMiddlewareOptions
@@ -21,7 +19,7 @@ public class RateLimiter
     }
     public async Task InvokeAsync(HttpContext httpContext, ICreateRateLimitEventUseCase rateLimitUseCase)
     {
-        if (await rateLimitUseCase.Execute(httpContext, _options))
+        if (await rateLimitUseCase.Execute(_options))
         {
             await _next(httpContext);
         }
