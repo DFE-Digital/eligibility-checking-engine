@@ -97,13 +97,14 @@ public class ApplicationGateway : BaseGateway, IApplication
     public async Task<ApplicationResponse?> GetApplication(string guid)
     {
         var result = await _db.Applications
+            .Where(x => x.ApplicationID == guid && x.Status != ApplicationStatus.Archived)
             .Include(x => x.Statuses)
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)
             .Include(x => x.User)
             .Include(x => x.EligibilityCheckHash)
             .Include(x => x.Evidence)
-            .FirstOrDefaultAsync(x => x.ApplicationID == guid);
+            .FirstOrDefaultAsync();
         if (result != null)
         {
             var item = _mapper.Map<ApplicationResponse>(result);
@@ -120,9 +121,9 @@ public class ApplicationGateway : BaseGateway, IApplication
         IQueryable<Application> query;
 
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value) && a.Status != ApplicationStatus.Archived);
         else
-            query = _db.Applications;
+            query = _db.Applications.Where(a => a.Status != ApplicationStatus.Archived);
 
         // Apply other filters
         query = ApplyAdditionalFilters(query, model);
@@ -347,6 +348,48 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Deletes an application by GUID
+    /// </summary>
+    /// <param name="guid">Application GUID</param>
+    /// <returns>True if deleted successfully, false if not found</returns>
+    public async Task<bool> DeleteApplication(string guid)
+    {
+        try
+        {
+            var application = await _db.Applications
+                .Include(x => x.Statuses)
+                .Include(x => x.Evidence)
+                .FirstOrDefaultAsync(x => x.ApplicationID == guid);
+
+            if (application == null)
+            {
+                return false;
+            }
+
+            // Remove related status history
+            if (application.Statuses.Any())
+            {
+                _db.ApplicationStatuses.RemoveRange(application.Statuses);
+            }
+
+            // Remove the application
+            _db.Applications.Remove(application);
+            
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
+            TrackMetric("Application Deleted", 1);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting application {guid?.Replace(Environment.NewLine, "")}");
+            throw;
+        }
     }
 
     #region Private
