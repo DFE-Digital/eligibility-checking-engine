@@ -31,7 +31,7 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
       getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         cy.apiRequest('POST', `bulk-check/${endpoint}`, invalidNinoBulkRequest, token).then((response) => {
           cy.verifyApiResponseCode(response, 400)
-          expect(response.body.errors[0]).to.have.property('title', 'Item 1: Invalid National Insurance Number\r\n');
+          expect(response.body.errors[0]).to.have.property('title', 'Invalid National Insurance Number');
         });
       });
     });
@@ -47,7 +47,7 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
       getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         cy.apiRequest('POST', `bulk-check/${endpoint}`, invalidLastNameBulkRequest, token).then((response) => {
           cy.verifyApiResponseCode(response, 400)
-          expect(response.body.errors[0]).to.have.property('title', 'Item 2: LastName is required\r\n');
+          expect(response.body.errors[0]).to.have.property('title', 'LastName is required');
         });
       });
     });
@@ -55,8 +55,9 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
       getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         cy.apiRequest('POST', `bulk-check/${endpoint}`, invalidMultiCheckBulkRequest, token).then((response) => {
           cy.verifyApiResponseCode(response, 400)
-          expect(response.body.errors[0]).to.have.property('title', 
-              'Item 1: LastName is required\r\nItem 2: Invalid National Insurance Number\r\n');
+          expect(response.body.errors[0]).to.have.property('title', 'LastName is required');
+          expect(response.body.errors[1]).to.have.property('title', 'Invalid National Insurance Number');
+
         });
       });
     });
