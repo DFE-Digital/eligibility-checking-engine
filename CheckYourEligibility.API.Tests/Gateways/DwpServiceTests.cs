@@ -48,7 +48,7 @@ public class DwpServiceTests : TestBase.TestBase
             { "Dwp:UniversalCreditThreshhold-1", "616.66" },
             { "Dwp:UniversalCreditThreshhold-2", "1233.33" },
             { "Dwp:UniversalCreditThreshhold-3", "1849.99" },
-            { "Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals", "616.66"},
+            { "Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals", "616.66" },
             { "Dwp:EcsHost", "ecs.education.gov.uk" },
             { "Dwp:EcsServiceVersion", "20170701" },
             { "Dwp:EcsLAId", "999" },
