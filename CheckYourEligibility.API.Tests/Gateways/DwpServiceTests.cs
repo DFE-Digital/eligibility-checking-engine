@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,7 @@ public class DwpServiceTests : TestBase.TestBase
             { "Dwp:UniversalCreditThreshhold-1", "616.66" },
             { "Dwp:UniversalCreditThreshhold-2", "1233.33" },
             { "Dwp:UniversalCreditThreshhold-3", "1849.99" },
+            { "Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals", "616.66"},
             { "Dwp:EcsHost", "ecs.education.gov.uk" },
             { "Dwp:EcsServiceVersion", "20170701" },
             { "Dwp:EcsLAId", "999" },
@@ -146,7 +148,7 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         request.data[0].attributes.endDate = null;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -161,7 +163,7 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
         request.data[0].attributes.status = "not entitled";
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(false);
@@ -177,7 +179,7 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -193,7 +195,7 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -209,7 +211,7 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpGateway.decision_entitled;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -238,7 +240,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(false);
@@ -267,7 +269,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -303,7 +305,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(false);
@@ -338,7 +340,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);
@@ -379,7 +381,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(false);
@@ -420,7 +422,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().Be(true);

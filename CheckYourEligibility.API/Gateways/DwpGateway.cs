@@ -49,7 +49,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly string _DWP_EcsPassword;
     private readonly string _DWP_EcsServiceVersion;
     private readonly string _DWP_EcsSystemId;
-    private readonly double _DWP_UniversalCreditThreshhold_1;
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new Dictionary<CheckEligibilityType, double>();
     private readonly double _DWP_UniversalCreditThreshhold_2;
     private readonly double _DWP_UniversalCreditThreshhold_3;
     private readonly HttpClient _httpClient;
@@ -89,9 +89,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"];
         _DWP_ApiContext = _configuration["Dwp:ApiContext"];
         _DWP_ApiAccessLevel = _configuration["Dwp:ApiAccessLevel"];
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-1"], out _DWP_UniversalCreditThreshhold_1);
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-2"], out _DWP_UniversalCreditThreshhold_2);
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-3"], out _DWP_UniversalCreditThreshhold_3);
+        
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] = Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] = Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] = Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
 
         _DWP_EcsHost = _configuration["Dwp:EcsHost"];
         _DWP_EcsServiceVersion = _configuration["Dwp:EcsServiceVersion"];
@@ -208,7 +209,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
-                if (CheckBenefitEntitlement(guid, claims)) return new OkResult();
+                if (CheckBenefitEntitlement(guid, claims, type)) return new OkResult();
 
                 return new NotFoundResult();
             }
@@ -243,7 +244,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return null;
     }
 
-    public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims)
+    public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
             return true;
@@ -253,16 +254,16 @@ public class DwpGateway : BaseGateway, IDwpGateway
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
             return true;
-        if (CheckUniversalCreditBenefitType(citizenId, claims))
+        if (CheckUniversalCreditBenefitType(citizenId, claims, _DWP_ApiUniversalCreditThreshold[type]))
             return true;
         return false;
     }
 
-    private bool CheckUniversalCreditBenefitType(string citizenId, DwpClaimsResponse claims)
+    private bool CheckUniversalCreditBenefitType(string citizenId, DwpClaimsResponse claims, double threshold)
     {
         var benefit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
-            && x.attributes.status == statusInPayment);
+            );
         if (benefit != null)
         {
             var entitled = false;
@@ -275,17 +276,17 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 if (threshHoldUsed == 1)
                 {
                     takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_1) entitled = true;
+                    if (takeHomePay <= threshold) entitled = true;
                 }
                 else if (threshHoldUsed == 2)
                 {
                     takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_2) entitled = true;
+                    if (takeHomePay <= threshold*2) entitled = true;
                 }
                 else
                 {
                     takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3).Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_3) entitled = true;
+                    if (takeHomePay <= threshold*3) entitled = true;
                 }
 
 
