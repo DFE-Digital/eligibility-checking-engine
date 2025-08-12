@@ -1,17 +1,12 @@
 using System.Security.Claims;
+using System.Text;
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.OpenApi.Writers;
 using Moq;
-using NUnit.Framework.Constraints;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -33,11 +28,19 @@ public class RateLimitUseCaseTests
         _fixture = new Fixture();
     }
 
+    [TearDown]
+    public void Teardown()
+    {
+        _mockRateLimitGateway.VerifyAll();
+        _mockHttpContextAccessor.VerifyAll();
+    }
+
     [Test]
     public async Task Execute_Should_Allow_Request_When_Size_LessThan_Capacity()
     {
         // Arrange
         var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 10;
 
         _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
         _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), true)).Returns(Task.CompletedTask);
@@ -60,5 +63,121 @@ public class RateLimitUseCaseTests
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
+    }
+
+    [Test]
+    public async Task Execute_Should_Deny_Request_When_Size_MoreThan_Capacity()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 1;
+
+        _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
+            .Returns(Task.FromResult(1));
+
+        var context = new DefaultHttpContext();
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority:894")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        var result = await _sut.Execute(options);
+
+        // Assert
+        result.Should().Be(false);
+        _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_Should_Allow_Request_When_Size_EqualTo_Capacity()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 1;
+
+        _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), true)).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
+            .Returns(Task.FromResult(0));
+
+        var context = new DefaultHttpContext();
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority:894")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        var result = await _sut.Execute(options);
+
+        // Assert
+        result.Should().Be(true);
+        _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
+    }
+
+    [Test]
+    public async Task Execute_Should_Deny_Bulk_Request_When_Size_MoreThan_Capacity()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 5;
+
+        _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
+            .Returns(Task.FromResult(1));
+
+        var context = new DefaultHttpContext();
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority:894")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+        var newObjectString = "{\"data\": [1, 2, 3, 4, 5]}";
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(newObjectString));
+        context.Request.Path = "/bulk-check";
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        var result = await _sut.Execute(options);
+
+        // Assert
+        result.Should().Be(false);
+        _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_Should_Allow_Request_When_No_LA_Id()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 1;
+
+        var context = new DefaultHttpContext();
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        var result = await _sut.Execute(options);
+
+        // Assert
+        result.Should().Be(true);
+        _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Never);
+        _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Never);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
     }
 }

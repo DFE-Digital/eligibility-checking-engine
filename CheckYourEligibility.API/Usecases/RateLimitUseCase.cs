@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Nodes;
 using System.Threading.RateLimiting;
 
@@ -32,7 +33,16 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
     }
     public async Task<bool> Execute(RateLimiterMiddlewareOptions options)
     {
-        string partition = getPartition(options.PartionName, _httpContextAccessor.HttpContext);
+        var localAuthorityIds = _httpContextAccessor.HttpContext.User.GetLocalAuthorityIds("local_authority");
+        //Early exit if no LA id
+        if (localAuthorityIds.IsNullOrEmpty() || localAuthorityIds.SequenceEqual([0]))
+        {
+            //TODO: Determine if there's any value in still writing these events to the db
+            //TODO: Determine if null/empty should be handled differently as it signifies an attempt without the correct scope
+            return true;
+        }
+        string partition = $"{options.PartionName}-{localAuthorityIds[0]}"; //Currently just takes the first value, can there be multiple?
+        
         int querySize = await getQuerySize(_httpContextAccessor.HttpContext);
 
         RateLimitEvent rlEvent = new RateLimitEvent
@@ -49,8 +59,9 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         if (querySize > options.PermitLimit - currentRate)
         {
             _httpContextAccessor.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            _httpContextAccessor.HttpContext.Response.Headers.Append("Retry-After", options.WindowLength.TotalSeconds.ToString());
             return false;
-            //TODO: Determine retry period
+            //TODO: Optional determine retry period based on a db query
         }
         else
         {
@@ -58,21 +69,6 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
             await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, true);
             return true;
         }
-    }
-
-    private string getPartition(string partitionName, HttpContext httpContext)
-    {
-        var claimAuthorityIds = httpContext.User.GetLocalAuthorityIds("local_authority"); //TODO: Read this from configuration
-        //TODO: Can a request have multiple authorities? Should we add to a partition for each?
-        int authorityId = claimAuthorityIds[0]; //Currently just gets the first claim
-        return $"{partitionName}-{authorityId}";
-        //TODO: The policy name should be parameterised. Otherwise the query is stored n times, 
-        // where n is the number of policies that are active e.g. 2 times if we have 2 policies for different time periods
-        // Alternatively we would have to be able to chain the policies together, and only write to db once across all policies
-        // If we share partition names for policies that are could be chained e.g. apply several window/limit combos per endpoint,
-        // Then we would need a mechanism to make sure we only write to db at the end of the chain. Also makes it hard to determine 
-        // the retry period accurately as a combination.
-        // TODO: If we can't determine an id e.g. if none was provided, default to using ip address
     }
 
     private async Task<int> getQuerySize(HttpContext httpContext)
