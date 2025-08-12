@@ -22,6 +22,8 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     /// <returns></returns>
     public async Task Create(RateLimitEvent item)
     {
+        //TODO: Should this be async??
+        //TODO: What if event already exists?
         await _db.RateLimitEvents.AddAsync(item);
         await _db.SaveChangesAsync();
         return;
@@ -36,6 +38,7 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     public async Task UpdateStatus(string guid, bool accepted)
     {
         var rateLimitEvent = _db.RateLimitEvents.Find(guid);
+        //TODO: Null handling
         rateLimitEvent.Accepted = accepted;
         _db.RateLimitEvents.Update(rateLimitEvent);
         _db.SaveChanges();
@@ -54,6 +57,6 @@ public class RateLimitGateway : BaseGateway, IRateLimit
         return _db.RateLimitEvents.Where(x => x.PartitionName == partition &&
             x.TimeStamp < eventTimeStamp && 
             x.TimeStamp >= eventTimeStamp.Subtract(windowLength))
-        .Sum(x => x.QuerySize);
+            .Sum(x => x.QuerySize);
     }
 }

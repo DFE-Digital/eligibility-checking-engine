@@ -239,13 +239,24 @@ app.UseSwaggerUI(c =>
 app.MapControllers();
 
 // 2.7 RateLimiter Middleware
-//app.UseCustomRateLimiter(); //TODO: Move it before the euthentication/authorization?
+//TODO: Move it before the euthentication/authorization?
+//TODO: Apply to all check endpoints
 //First rate limiter policy
-app.UseWhen(context => context.Request.Path == "/check/working-families"
-|| context.Request.Path == "/bulk-check/working-families", app => app.UseCustomRateLimiter("Authority-Id-Minute", TimeSpan.FromMinutes(1), 10));
+app.UseWhen(context => context.Request.Path == "/check/working-families" || context.Request.Path == "/bulk-check/working-families",
+    app => app.UseCustomRateLimiter(new RateLimiterMiddlewareOptions
+        {
+            PartionName = "Authority-Id-Minute",
+            WindowLength = TimeSpan.FromMinutes(1),
+            PermitLimit = 1
+        }));
 //Second rate limiter policy
-app.UseWhen(context => context.Request.Path == "/check/working-families", app => app.UseCustomRateLimiter("Authority-Id-Hour", TimeSpan.FromHours(1), 20));
-//app.MapPost("/check/working-families", RateLimiterExtensions.UseCustomRateLimiter);
+app.UseWhen(context => context.Request.Path == "/check/working-families",
+    app => app.UseCustomRateLimiter(new RateLimiterMiddlewareOptions
+        {
+            PartionName = "Authority-Id-Hour",
+            WindowLength = TimeSpan.FromHours(1),
+            PermitLimit = 20
+        }));
 
 app.Run();
 

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.UseCases;
 
 public class RateLimiterMiddlewareOptions
@@ -11,93 +12,29 @@ public class RateLimiterMiddlewareOptions
 public class RateLimiter
 {
     private readonly RequestDelegate _next;
-    private readonly IEligibilityCheckContext _db;
-    //private readonly IHttpContextAccessor _httpContextAccessor;
-    private TimeSpan _windowLength;
-    private int _permitLimit;
-
     private RateLimiterMiddlewareOptions _options;
 
-    public RateLimiter(RequestDelegate next,
-        //TimeSpan windowLength,
-        //int permitLimit
-        RateLimiterMiddlewareOptions options
-        )
+    public RateLimiter(RequestDelegate next, RateLimiterMiddlewareOptions options)
     {
         _next = next;
         _options = options;
-        //_windowLength = windowLength;
-        //_permitLimit = permitLimit;
     }
-
-    private int getCapacity(string partition, DateTime requestTimeStamp)
-    {
-        int checksInWindow = 0;  //db.RateLimitEvents
-                                 //.Where(x => x.PartitionName == partition && x.TimeStamp >= requestTimeStamp.Subtract(_windowLength))
-                                 //.Sum(x => x.QuerySize);
-        return _permitLimit - checksInWindow;
-    }
-
-    private string getPartition(HttpContext httpContext)
-    {
-        var headers = httpContext.Request.Headers; //TODO: Or is this contained within the scope body?
-        int authorityId = 0; //TODO Get authority id from scope in headers
-        return $"authority-id-policy-{authorityId}";
-        //TODO: The policy name should be parameterised. Otherwise the query is stored n times, 
-        // where n is the number of policies that are active e.g. 2 times if we have 2 policies for different time periods
-        // Alternatively we would have to be able to chain the policies together, and only write to db once across all policies
-    }
-
-    private async Task<int> getQuerySize(HttpContext httpContext)
-    {
-        //TODO: Rework with better error/null handling
-        if (httpContext.Request.Path.ToString().Contains("bulk-check"))
-        {
-            httpContext.Request.EnableBuffering();
-            var body = await System.Text.Json.JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body);
-            httpContext.Request.Body.Position = 0;
-            JsonNode data;
-            if (body.TryGetPropertyValue("data", out data))
-            {
-                return data.AsArray().Count;
-            }
-        }
-        return 1;
-    }
-
     public async Task InvokeAsync(HttpContext httpContext, ICreateRateLimitEventUseCase rateLimitUseCase)
     {
-        /*
-        string partition = getPartition(httpContext);
-        int querySize = await getQuerySize(httpContext);
-        //Firstly record the event
-        RateLimitEvent rlEvent = new RateLimitEvent
+        if (await rateLimitUseCase.Execute(httpContext, _options))
         {
-            RateLimitEventId = Guid.NewGuid().ToString(),
-            PartitionName = partition,
-            TimeStamp = DateTime.UtcNow, //TODO: Maybe take from when the http request was received?
-            QuerySize = querySize,
-            Accepted = false //TODO: Use a different status when we're yet to determine if it's permitted
-        };
-        await rateLimitUseCase.Execute(rlEvent);
-        */
-        await rateLimitUseCase.Execute(httpContext, _options);
-        await _next(httpContext);
+            await _next(httpContext);
+        }
+        return;
+        
     }
 }
 
 public static class RateLimiterExtensions
 {
     public static IApplicationBuilder UseCustomRateLimiter(
-        this IApplicationBuilder builder, string partitionName, TimeSpan windowLength, int permitLimit)
+        this IApplicationBuilder builder, RateLimiterMiddlewareOptions options)
     {
-        //return builder.UseMiddleware<RateLimiter>(windowSize, permitLimit);
-        return builder.UseMiddleware<RateLimiter>(new RateLimiterMiddlewareOptions
-            {
-                PartionName = partitionName,
-                WindowLength = windowLength,
-                PermitLimit = permitLimit
-            }
-        );
+        return builder.UseMiddleware<RateLimiter>(options);
     }
 }

@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using System.Text.Json.Nodes;
 using System.Threading.RateLimiting;
@@ -13,10 +14,10 @@ public interface ICreateRateLimitEventUseCase
     /// <summary>
     ///     Execute the use case.
     /// </summary>
-    /// <param name="item"></param>
+    /// <param name="httpContext"></param>
+    /// <param name="options"></param>
     /// <returns></returns>
-    Task Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options);
-    //Task Execute(RateLimitEvent item);
+    Task<bool> Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options);
 
 }
 
@@ -28,17 +29,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
     {
         _rateLimitGateway = rateLimitGateway;
     }
-
-    /*
-        public async Task Execute(RateLimitEvent item)
-        {
-            await _rateLimitGateway.Create(item);
-            return;
-        }
-        */
-
-    //TODO: Create a RateLimiterOptions class and pass through to this method
-    public async Task Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options)
+    public async Task<bool> Execute(HttpContext httpContext, RateLimiterMiddlewareOptions options)
     {
         string partition = getPartition(options.PartionName, httpContext);
         int querySize = await getQuerySize(httpContext);
@@ -53,29 +44,34 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         };
 
         await _rateLimitGateway.Create(rlEvent);
-        //TODO create an options class and pass into this query
         int currentRate = await _rateLimitGateway.GetQueriesInWindow(partition, rlEvent.TimeStamp, options.WindowLength);
         if (querySize > options.PermitLimit - currentRate)
         {
             httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            return;
+            return false;
             //TODO: Determine retry period
         }
         else
         {
-            //TODO: Set the status to accepted
+            // Update the status to accepted
+            await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, true);
+            return true;
         }
-        return;
     }
 
     private string getPartition(string partitionName, HttpContext httpContext)
     {
-        var headers = httpContext.Request.Headers; //TODO: Or is this contained within the scope body?
-        int authorityId = 0; //TODO Get authority id from scope in headers
+        var claimAuthorityIds = httpContext.User.GetLocalAuthorityIds("local_authority"); //TODO: Read this from configuration
+        //TODO: Can a request have multiple authorities? Should we add to a partition for each?
+        int authorityId = claimAuthorityIds[0]; //Currently just gets the first claim
         return $"{partitionName}-{authorityId}";
+        //TODO: The policy name should be parameterised. Otherwise the query is stored n times, 
+        // where n is the number of policies that are active e.g. 2 times if we have 2 policies for different time periods
+        // Alternatively we would have to be able to chain the policies together, and only write to db once across all policies
         // If we share partition names for policies that are could be chained e.g. apply several window/limit combos per endpoint,
         // Then we would need a mechanism to make sure we only write to db at the end of the chain. Also makes it hard to determine 
         // the retry period accurately as a combination.
+        // TODO: If we can't determine an id e.g. if none was provided, default to using ip address
     }
 
     private async Task<int> getQuerySize(HttpContext httpContext)
