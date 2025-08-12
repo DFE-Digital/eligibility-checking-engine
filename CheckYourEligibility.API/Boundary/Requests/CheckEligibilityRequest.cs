@@ -38,8 +38,7 @@ public class CheckEligibilityRequestBulkBase
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string LastName { get; set; }
-    public string? NationalAsylumSeekerServiceNumber { get; set; } 
-
+    public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
 
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData

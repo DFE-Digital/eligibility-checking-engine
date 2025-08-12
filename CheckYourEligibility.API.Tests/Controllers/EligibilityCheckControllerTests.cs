@@ -474,7 +474,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityStatusResponse();
 
-        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ThrowsAsync(new NotFoundException());
+        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
+            .ThrowsAsync(new NotFoundException());
 
         // Act
         var response = await _sut.CheckEligibilityStatus(guid);
@@ -551,7 +552,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
         var executionResult = statusResponse;
 
-        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ReturnsAsync(executionResult);
+        _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
+            .ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.CheckEligibilityStatus(guid);
@@ -744,7 +746,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityItemResponse();
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ThrowsAsync(new NotFoundException());
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
+            .ThrowsAsync(new NotFoundException());
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
@@ -821,7 +824,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
         var executionResult = itemResponse;
 
-        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None)).ReturnsAsync(executionResult);
+        _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
+            .ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.EligibilityCheck(guid);

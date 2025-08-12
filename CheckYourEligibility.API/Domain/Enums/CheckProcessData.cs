@@ -30,25 +30,26 @@ public class CheckProcessData
     public string GetHash()
     {
         string input = $"""
-            {LastName?.ToUpper()}
-            {(NationalInsuranceNumber.IsNullOrEmpty() ?
-                NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
-            {DateOfBirth}
-            {Type}
-            """;
-        switch (this.Type) {
+                        {LastName?.ToUpper()}
+                        {(NationalInsuranceNumber.IsNullOrEmpty() ?
+                            NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
+                        {DateOfBirth}
+                        {Type}
+                        """;
+        switch (this.Type)
+        {
             case CheckEligibilityType.WorkingFamilies:
-               input += $"""           
-            {EligibilityCode}
-            {GracePeriodEndDate}
-            {ValidityStartDate}
-            {ValidityEndDate}
-            {SubmissionDate}
-            """;
-                break;        
+                input += $"""           
+                          {EligibilityCode}
+                          {GracePeriodEndDate}
+                          {ValidityStartDate}
+                          {ValidityEndDate}
+                          {SubmissionDate}
+                          """;
+                break;
         }
 
-     
+
         var inputBytes = Encoding.UTF8.GetBytes(input.Replace(Environment.NewLine, ""));
         var inputHash = SHA256.HashData(inputBytes);
         return Convert.ToHexString(inputHash);

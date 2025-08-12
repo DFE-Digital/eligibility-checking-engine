@@ -47,8 +47,8 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .Must(DataValidation.BeAValidEligibilityCode)
                 .WithMessage(ValidationMessages.EligibilityCode);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).NationalInsuranceNumber)
-               .Must(DataValidation.BeAValidNi)
-               .WithMessage(ValidationMessages.NI);
+                .Must(DataValidation.BeAValidNi)
+                .WithMessage(ValidationMessages.NI);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)

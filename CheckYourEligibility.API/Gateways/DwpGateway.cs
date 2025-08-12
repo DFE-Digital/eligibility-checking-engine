@@ -21,7 +21,10 @@ namespace CheckYourEligibility.API.Gateways;
 public interface IDwpGateway
 {
     public bool UseEcsforChecks { get; }
-    Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate, CheckEligibilityType type);
+
+    Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+        CheckEligibilityType type);
+
     Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
     Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck);
 }
@@ -49,7 +52,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly string _DWP_EcsPassword;
     private readonly string _DWP_EcsServiceVersion;
     private readonly string _DWP_EcsSystemId;
-    private readonly double _DWP_UniversalCreditThreshhold_1;
+
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
+        new Dictionary<CheckEligibilityType, double>();
+
     private readonly double _DWP_UniversalCreditThreshhold_2;
     private readonly double _DWP_UniversalCreditThreshhold_3;
     private readonly HttpClient _httpClient;
@@ -80,7 +86,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             var handler = new HttpClientHandler();
             handler.ClientCertificates.Add(_DWP_ApiCertificate);
             handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
-            
+
             _httpClient = new HttpClient(handler);
         }
 
@@ -89,9 +95,13 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"];
         _DWP_ApiContext = _configuration["Dwp:ApiContext"];
         _DWP_ApiAccessLevel = _configuration["Dwp:ApiAccessLevel"];
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-1"], out _DWP_UniversalCreditThreshhold_1);
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-2"], out _DWP_UniversalCreditThreshhold_2);
-        double.TryParse(_configuration["Dwp:UniversalCreditThreshhold-3"], out _DWP_UniversalCreditThreshhold_3);
+
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
 
         _DWP_EcsHost = _configuration["Dwp:EcsHost"];
         _DWP_EcsServiceVersion = _configuration["Dwp:EcsServiceVersion"];
@@ -99,7 +109,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _DWP_EcsSystemId = _configuration["Dwp:EcsSystemId"];
         _DWP_EcsPassword = _configuration["Dwp:EcsPassword"];
     }
-    
+
     private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
         HttpRequestMessage httpRequestMsg,
         X509Certificate2 certificate,
@@ -180,12 +190,13 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     #region Citizen Api Rest
 
-    public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate, CheckEligibilityType type)
+    public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+        CheckEligibilityType type)
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
         string token = await GetToken();
-        
+
         try
         {
             _logger.LogInformation("Dwp claim before token");
@@ -201,14 +212,14 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _logger.LogInformation("Dwp claim before request");
             var response = await _httpClient.SendAsync(requestMessage);
             _logger.LogInformation("Dwp claim after request");
-            _logger.LogInformation("Dwp "+ response.StatusCode.ToString());
-            _logger.LogInformation("Dwp "+ response.Content.ReadAsStringAsync().Result);
-            
+            _logger.LogInformation("Dwp " + response.StatusCode.ToString());
+            _logger.LogInformation("Dwp " + response.Content.ReadAsStringAsync().Result);
+
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
-                if (CheckBenefitEntitlement(guid, claims)) return new OkResult();
+                if (CheckBenefitEntitlement(guid, claims, type)) return new OkResult();
 
                 return new NotFoundResult();
             }
@@ -232,10 +243,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
         {
             case CheckEligibilityType.FreeSchoolMeals:
                 return "DFE-FSM";
-                
+
             case CheckEligibilityType.EarlyYearPupilPremium:
                 return "DFE-EYPP";
-            
+
             case CheckEligibilityType.TwoYearOffer:
                 return "DFE-2EY";
         }
@@ -243,7 +254,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return null;
     }
 
-    public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims)
+    public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
             return true;
@@ -253,16 +264,16 @@ public class DwpGateway : BaseGateway, IDwpGateway
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
             return true;
-        if (CheckUniversalCreditBenefitType(citizenId, claims))
+        if (CheckUniversalCreditBenefitType(citizenId, claims, _DWP_ApiUniversalCreditThreshold[type]))
             return true;
         return false;
     }
 
-    private bool CheckUniversalCreditBenefitType(string citizenId, DwpClaimsResponse claims)
+    private bool CheckUniversalCreditBenefitType(string citizenId, DwpClaimsResponse claims, double threshold)
     {
         var benefit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
-            && x.attributes.status == statusInPayment);
+        );
         if (benefit != null)
         {
             var entitled = false;
@@ -275,17 +286,18 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 if (threshHoldUsed == 1)
                 {
                     takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_1) entitled = true;
+                    if (takeHomePay <= threshold) entitled = true;
                 }
                 else if (threshHoldUsed == 2)
                 {
                     takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_2) entitled = true;
+                    if (takeHomePay <= threshold * 2) entitled = true;
                 }
                 else
                 {
-                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3).Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= _DWP_UniversalCreditThreshhold_3) entitled = true;
+                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3)
+                        .Sum(x => x.assessmentAttributes.takeHomePay);
+                    if (takeHomePay <= threshold * 3) entitled = true;
                 }
 
 
@@ -318,17 +330,18 @@ public class DwpGateway : BaseGateway, IDwpGateway
     public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
-        
+
         _logger.LogInformation($"Dwp before citizen token");
         string token = await GetToken();
-        _logger.LogInformation($"Dwp token "+token);
-        
+        _logger.LogInformation($"Dwp token " + token);
+
         try
         {
             var requestMessage = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                Content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"),
+                Content =
+                    new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"),
                 RequestUri = new Uri(uri)
             };
 
@@ -337,12 +350,12 @@ public class DwpGateway : BaseGateway, IDwpGateway
             requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
             requestMessage.Headers.Add("context", GetContext(type));
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            
+
             _logger.LogInformation($"Dwp before citizen request");
             var response = await _httpClient.SendAsync(requestMessage);
             _logger.LogInformation($"Dwp after citizen request");
             _logger.LogInformation("Dwp " + response.StatusCode.ToString());
-            _logger.LogInformation($"Dwp response "+response.Content.ReadAsStringAsync().Result);
+            _logger.LogInformation($"Dwp response " + response.Content.ReadAsStringAsync().Result);
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
@@ -373,18 +386,18 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private async Task<string?> GetToken()
     {
         var uri = $"{_DWP_ApiTokenUrl}";
-        
+
         var parameters = new Dictionary<string, string>();
         parameters.Add("client_id", _DWP_ApiClientId);
         parameters.Add("client_secret", _DWP_ApiSecret);
         parameters.Add("grant_type", "client_credentials");
-        
+
         var formData = new FormUrlEncodedContent(parameters);
-        
+
         var response = await _httpClient.PostAsync(uri, formData);
-        
+
         Console.WriteLine(response.Content.ReadAsStringAsync().Result);
-        
+
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
         return responseData.access_token;
