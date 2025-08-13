@@ -22,11 +22,8 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     /// <returns></returns>
     public async Task Create(RateLimitEvent item)
     {
-        //TODO: Should this be async??
-        //TODO: What if event already exists?
-        await _db.RateLimitEvents.AddAsync(item);
+        _db.RateLimitEvents.Add(item);
         await _db.SaveChangesAsync();
-        return;
     }
     
     /// <summary>
@@ -38,11 +35,12 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     public async Task UpdateStatus(string guid, bool accepted)
     {
         var rateLimitEvent = _db.RateLimitEvents.Find(guid);
-        //TODO: Null handling
-        rateLimitEvent.Accepted = accepted;
-        _db.RateLimitEvents.Update(rateLimitEvent);
-        _db.SaveChanges();
-        return;
+        if (rateLimitEvent != null)
+        {
+            rateLimitEvent.Accepted = accepted;
+            _db.RateLimitEvents.Update(rateLimitEvent);
+            _db.SaveChanges();
+        }
     }
 
     /// <summary>

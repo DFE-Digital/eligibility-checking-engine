@@ -60,6 +60,8 @@ public class RateLimitUseCaseTests
 
         // Assert
         result.Should().Be(true);
+        context.Response.StatusCode.Should().NotBe(StatusCodes.Status429TooManyRequests);
+
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
@@ -89,6 +91,8 @@ public class RateLimitUseCaseTests
 
         // Assert
         result.Should().Be(false);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status429TooManyRequests);
+
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
@@ -119,6 +123,8 @@ public class RateLimitUseCaseTests
 
         // Assert
         result.Should().Be(true);
+        context.Response.StatusCode.Should().NotBe(StatusCodes.Status429TooManyRequests);
+
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
@@ -151,6 +157,8 @@ public class RateLimitUseCaseTests
 
         // Assert
         result.Should().Be(false);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status429TooManyRequests);
+
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
@@ -176,6 +184,8 @@ public class RateLimitUseCaseTests
 
         // Assert
         result.Should().Be(true);
+        context.Response.StatusCode.Should().NotBe(StatusCodes.Status429TooManyRequests);
+        
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Never);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Never);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
