@@ -26,11 +26,22 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
     private readonly IRateLimit _rateLimitGateway;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="rateLimitGateway"></param>
+    /// <param name="httpContextAccessor"></param>
     public CreateRateLimitEventUseCase(IRateLimit rateLimitGateway, IHttpContextAccessor httpContextAccessor)
     {
         _rateLimitGateway = rateLimitGateway;
         _httpContextAccessor = httpContextAccessor;
     }
+    
+    /// <summary>
+    ///     Executes logic to determine if a request is permitted for a particular rate limiter based on the RateLimiterMiddlewareOptions
+    /// </summary>
+    /// <param name="options"></param>
+    /// <returns></returns>
     public async Task<bool> Execute(RateLimiterMiddlewareOptions options)
     {
         var localAuthorityIds = _httpContextAccessor.HttpContext?.User.GetLocalAuthorityIds("local_authority");
@@ -39,8 +50,9 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         {
             return true;
         }
-        string partition = $"{options.PartionName}-{localAuthorityIds[0]}"; //TODO: Currently just takes the first value, can there be multiple?
-        
+        //TODO: Currently just takes the first value, can there be multiple?
+        string partition = $"{options.PartionName}-{localAuthorityIds[0]}";
+
         int querySize = await getQuerySize(_httpContextAccessor.HttpContext);
 
         RateLimitEvent rlEvent = new RateLimitEvent
@@ -49,7 +61,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
             PartitionName = partition,
             TimeStamp = DateTime.UtcNow,
             QuerySize = querySize,
-            Accepted = false //TODO: Use a different status when we're yet to determine if it's permitted
+            Accepted = true
         };
 
         await _rateLimitGateway.Create(rlEvent);
@@ -58,11 +70,11 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         {
             _httpContextAccessor.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             _httpContextAccessor.HttpContext.Response.Headers.Append("Retry-After", options.WindowLength.TotalSeconds.ToString());
+            await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, false);
             return false;
         }
         else
         {
-            await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, true);
             return true;
         }
     }

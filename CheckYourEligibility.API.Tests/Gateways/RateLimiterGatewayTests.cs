@@ -36,44 +36,82 @@ public class RateLimiterServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_Create_Should_Return_Pass()
+    public async Task Given_Create_Should_Store_Event()
     {
         // Arrange
-        var request = _fixture.Create<RateLimitEvent>();
+        var guid = _fixture.Create<Guid>().ToString();
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+        checkEvent.RateLimitEventId = guid; 
         // Act
-        await _sut.Create(request);
+        await _sut.Create(checkEvent);
         // Assert
-        Assert.Pass();
+        _fakeInMemoryDb.RateLimitEvents.Find(guid).Should().Be(checkEvent);
     }
 
     [Test]
-    public async Task Given_Existing_Event_Update_Return_Pass()
+    public void Given_Existing_Event_Update_Return_Pass()
     {
-        /*
         // Arrange
-        var request = _fixture.Create<RateLimitEvent>();
+        var guid = _fixture.Create<Guid>().ToString();
+        var mockEvent = _fixture.Create<RateLimitEvent>();
+        mockEvent.RateLimitEventId = guid;
+        mockEvent.Accepted = true;
+        _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
+        _fakeInMemoryDb.SaveChangesAsync();
         // Act
-        await _sut.UpdateStatus(request.RateLimitEventId, true);
+        var response = _sut.UpdateStatus(guid, false);
         // Assert
-        Assert.Pass();
-        */
+        response.Should().Be(Task.CompletedTask);
+        _fakeInMemoryDb.RateLimitEvents.Find(guid)?.Accepted.Should().BeFalse();
     }
 
     [Test]
-    public async Task Given_NonExisting_Event_Update_Throws_Exception()
+    public void Given_NonExisting_Event_Update_Should_Return_Null()
     {
-        //TODO: Implement test logic
+        // Arrange
+        var guid = _fixture.Create<Guid>().ToString();
+
+        // Act
+        var response = _sut.UpdateStatus(guid, false);
+
+        // Assert
+        response.Should().Be(Task.CompletedTask);
+        //TODO: Assert no databaseoperations were performed
+        
     }
 
     [Test]
-    public async Task Given_No_Existing_Event_Get_Query_Size_Is_Zero()
+    public async Task Given_No_Existing_Event_Get_QueriesInWindow_Is_Zero()
     {
-        //TODO: Implement test logic
+        // Act
+        var response = await _sut.GetQueriesInWindow("empty-partition", DateTime.UtcNow, TimeSpan.FromHours(1));
+
+        // Assert
+        response.Should().Be(0);
     }
 
     [Test]
     public async Task Given_No_Existing_Event_Get_Query_Size_Returns_Sum()
     {
-        //TODO: Implement test logic
+        // Arrange
+        string _partitionName = "test-partition";
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+        checkEvent.QuerySize = 1;
+        checkEvent.PartitionName = _partitionName;
+        checkEvent.TimeStamp = DateTime.UtcNow.AddMinutes(-30);
+        var bulkEvent = _fixture.Create<RateLimitEvent>();
+        bulkEvent.QuerySize = 4;
+        bulkEvent.PartitionName = _partitionName;
+        bulkEvent.TimeStamp = DateTime.UtcNow.AddMinutes(-20);
+
+        _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
+        _fakeInMemoryDb.RateLimitEvents.Add(bulkEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetQueriesInWindow(_partitionName, DateTime.UtcNow, TimeSpan.FromHours(1));
+
+        // Assert
+        response.Should().Be(5);
     }
 }

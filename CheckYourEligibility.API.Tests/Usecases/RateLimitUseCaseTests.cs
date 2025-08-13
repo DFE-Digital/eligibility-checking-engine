@@ -43,7 +43,6 @@ public class RateLimitUseCaseTests
         options.PermitLimit = 10;
 
         _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
-        _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), true)).Returns(Task.CompletedTask);
         _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
             .Returns(Task.FromResult(1));
 
@@ -64,7 +63,7 @@ public class RateLimitUseCaseTests
 
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
-        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
     }
 
     [Test]
@@ -75,6 +74,7 @@ public class RateLimitUseCaseTests
         options.PermitLimit = 1;
 
         _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), false)).Returns(Task.CompletedTask);
         _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
             .Returns(Task.FromResult(1));
 
@@ -95,7 +95,7 @@ public class RateLimitUseCaseTests
 
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
-        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), false), Times.Once);
     }
 
     [Test]
@@ -106,7 +106,6 @@ public class RateLimitUseCaseTests
         options.PermitLimit = 1;
 
         _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
-        _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), true)).Returns(Task.CompletedTask);
         _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
             .Returns(Task.FromResult(0));
 
@@ -127,7 +126,7 @@ public class RateLimitUseCaseTests
 
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
-        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Once);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
     }
 
     [Test]
@@ -138,6 +137,7 @@ public class RateLimitUseCaseTests
         options.PermitLimit = 5;
 
         _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>())).Returns(Task.CompletedTask);
+        _mockRateLimitGateway.Setup(s => s.UpdateStatus(It.IsAny<string>(), false)).Returns(Task.CompletedTask);
         _mockRateLimitGateway.Setup(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
             .Returns(Task.FromResult(1));
 
@@ -161,7 +161,7 @@ public class RateLimitUseCaseTests
 
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Once);
         _mockRateLimitGateway.Verify(s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Once);
-        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
+        _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), false), Times.Once);
     }
 
     [Test]
