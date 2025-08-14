@@ -76,8 +76,8 @@ public class RateLimiterServiceTests : TestBase.TestBase
 
         // Assert
         response.Should().Be(Task.CompletedTask);
-        //TODO: Assert no databaseoperations were performed
-        
+        _fakeInMemoryDb.RateLimitEvents.Find(guid).Should().BeNull();
+
     }
 
     [Test]

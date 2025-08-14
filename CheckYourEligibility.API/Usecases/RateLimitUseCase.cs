@@ -25,16 +25,17 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
 {
     private readonly IRateLimit _rateLimitGateway;
     private readonly IHttpContextAccessor _httpContextAccessor;
-
+    private readonly ILogger<CreateRateLimitEventUseCase> _logger;
     /// <summary>
     /// 
     /// </summary>
     /// <param name="rateLimitGateway"></param>
     /// <param name="httpContextAccessor"></param>
-    public CreateRateLimitEventUseCase(IRateLimit rateLimitGateway, IHttpContextAccessor httpContextAccessor)
+    public CreateRateLimitEventUseCase(IRateLimit rateLimitGateway, IHttpContextAccessor httpContextAccessor, ILogger<CreateRateLimitEventUseCase> logger)
     {
         _rateLimitGateway = rateLimitGateway;
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
     }
     
     /// <summary>
@@ -50,7 +51,6 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         {
             return true;
         }
-        //TODO: Currently just takes the first value, can there be multiple?
         string partition = $"{options.PartionName}-{localAuthorityIds[0]}";
 
         int querySize = await getQuerySize(_httpContextAccessor.HttpContext);
@@ -65,12 +65,13 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         };
 
         await _rateLimitGateway.Create(rlEvent);
-        int currentRate = await _rateLimitGateway.GetQueriesInWindow(partition, rlEvent.TimeStamp, options.WindowLength);
+        int currentRate = await _rateLimitGateway.GetQueriesInWindow(rlEvent.PartitionName, rlEvent.TimeStamp, options.WindowLength);
         if (querySize > options.PermitLimit - currentRate)
         {
             _httpContextAccessor.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             _httpContextAccessor.HttpContext.Response.Headers.Append("Retry-After", options.WindowLength.TotalSeconds.ToString());
             await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, false);
+            _logger.LogWarning($"RateLmiter partition {rlEvent.PartitionName} rejected request with size {querySize}");
             return false;
         }
         else

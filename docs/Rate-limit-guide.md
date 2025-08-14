@@ -10,7 +10,9 @@ The rateLimiters are currently applied in sequence in the middleware, meaning th
 ## Implementation details
 ### Policy parameters
 `PartitionName` is the name of the policy, and is used in conjunction with the local authority id to track events that apply to the particular rate limiter and client. It should have a descriptive name of what the policy is checking for
+
 `WindowLength` is the size of the timeframe over which to check for requests that have been received when determining whether the rate limit has been exceeded.
+
 `PermitLimit` is the maximum number of permits that can be used by requests for the policy over the given windowLength. (Note: In this implementation of rate limiting, a request can use multiple permits)
 
 ### Storage and validation
@@ -19,9 +21,10 @@ Each request that matches a policy is written to the RateLimitEvents table, rega
 When an event is received, the RateLimitEvents table is queried to find the sum of all the qurySizes from events in the same partition withing the WindowLength. If the result + the query size of the request currently being processed is less than or equal to the PermitLimit, then the request is allowed to continue processing. Otherwise a 429 response is returned.
 
 ### Middleware ordering
-Typically ratelimiting solutions would occurr before request authorisation so that it can mitigate the risk of malicious use e.g. DoS attacks. In this implementation, the rate limiting occurs after the authentication step because the rate limiter uses the authentication context to determine which partition to separate requests into i.e. it uses the local authority id from the scopes supplied during authentication. There is a suitable rate limiting policiy in Azure that mitigates the risk of DoS attacks instead.
+Typically ratelimiting solutions would occurr before request authorisation so that it can mitigate the risk of malicious use e.g. DoS attacks. In this implementation, the rate limiting occurs after the authentication step because the rate limiter uses the authentication context to determine which partition to separate requests into i.e. it uses the local authority id from the scopes supplied during authentication. There is a suitable rate limiting policy in Azure that mitigates the risk of DoS attacks instead.
 
 ### Possible future extensions
 - Determine retry period via a db query to find when the window has capcaity to handle the request
 - Integrate with the dotnet rate limit framework, using the table that has been created to synchornise across horizontally scaled nodes
 - Create builder methods for ratelimiters so that all rate limiters can be set-up and configured from the definitions in the appsettings
+- Set up suitable indexing of the RateLimitEvents table to optimise queries
