@@ -45,6 +45,7 @@ public static class ProgramExtensions
         services.AddTransient<IUsers, UsersGateway>();
         services.AddTransient<IAudit, AuditGateway>();
         services.AddTransient<IHash, HashGateway>();
+        services.AddTransient<IRateLimit, RateLimitGateway>();
         return services;
     }
 
