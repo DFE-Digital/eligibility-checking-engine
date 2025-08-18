@@ -88,7 +88,7 @@ describe('Post Eligibility Check - Invalid Requests', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', invalidDOBRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'Date of birth is required:- (yyyy-mm-dd)');
+        expect(response.body.errors[0]).to.have.property('title', 'DateOfBirth is required:- (yyyy-mm-dd)');
       });
     });
   });
