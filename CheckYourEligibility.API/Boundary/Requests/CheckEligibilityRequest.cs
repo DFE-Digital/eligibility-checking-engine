@@ -10,7 +10,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
     //public int? Sequence { get; set; }
 
-    public string DateOfBirth { get; set; }
+    public string? DateOfBirth { get; set; }
 
     public CheckEligibilityType Type
     {
@@ -59,7 +59,7 @@ public class CheckEligibilityRequestBulk : CheckEligibilityRequestBulkBase
 public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityRequestDataBase
 {
     public string? LastName { get; set; }
-    public string EligibilityCode { get; set; }
+    public string? EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
     public string? ValidityEndDate { get; set; }
     public string? GracePeriodEndDate { get; set; }

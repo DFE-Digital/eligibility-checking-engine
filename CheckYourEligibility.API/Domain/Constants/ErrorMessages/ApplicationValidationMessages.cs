@@ -7,7 +7,7 @@ public static class ValidationMessages
     public const string NI_and_NASS =
         "National Insurance Number or National Asylum Seeker Service Number is required is required, not both";
 
-    public const string DOB = "Date of birth is required:- (yyyy-mm-dd)";
+    public const string DOB = "DateOfBirth is required:- (yyyy-mm-dd)";
     public const string ChildDOB = "Child Date of birth is required:- (yyyy-mm-dd)";
     public const string LastName = "LastName is required";
     public const string LastNameWf = "LastName contains an invalid character";
