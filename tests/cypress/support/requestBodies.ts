@@ -152,6 +152,16 @@ export function validWorkingFamiliesRequestBody() {
         }
     }
 }
+export function validWorkingFamiliesRequestBodyEligible() {
+    return {
+        data: {
+             nationalInsuranceNumber: "AA123456C",
+             dateOfBirth: "2022-06-07",
+             eligibilityCode: "90012345671",
+             lastName: "TestE"
+        }
+    }
+}
 export function validWorkingFamiliesNullLastnameRequestBody() {
     return {
         data: {
