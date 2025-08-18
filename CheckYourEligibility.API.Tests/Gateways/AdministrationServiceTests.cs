@@ -1,6 +1,7 @@
 // Ignore Spelling: Levenshtein
 
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;
@@ -77,9 +78,15 @@ public class AdministrationServiceTests : TestBase.TestBase
         _fakeInMemoryDb.LocalAuthorities.Add(la);
         _fakeInMemoryDb.Establishments.Add(new Establishment
         {
-            EstablishmentId = existingData.Urn, EstablishmentName = existingData.EstablishmentName, LocalAuthority = la,
-            County = existingData.County, Postcode = existingData.Postcode, Locality = existingData.Locality,
-            Street = existingData.Street, Town = existingData.Town, StatusOpen = true,
+            EstablishmentId = existingData.Urn,
+            EstablishmentName = existingData.EstablishmentName,
+            LocalAuthority = la,
+            County = existingData.County,
+            Postcode = existingData.Postcode,
+            Locality = existingData.Locality,
+            Street = existingData.Street,
+            Town = existingData.Town,
+            StatusOpen = true,
             Type = existingData.Type
         });
 
@@ -130,6 +137,19 @@ public class AdministrationServiceTests : TestBase.TestBase
 
         // Act
         _sut.ImportHMRCData(data);
+
+        // Assert
+        Assert.Pass();
+    }
+    
+    [Test]
+    public async Task Given_ImportWfHMRCData_Should_Return_Pass()
+    {
+        // Arrange
+        var data = _fixture.CreateMany<WorkingFamiliesEvent>();
+
+        // Act
+        await _sut.ImportWfHMRCData(data);
 
         // Assert
         Assert.Pass();
