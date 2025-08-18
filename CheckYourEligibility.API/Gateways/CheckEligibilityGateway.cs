@@ -92,6 +92,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
                     checkData.LastName = wfEvent.ParentLastName;
                     checkData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+                    item.CheckData = JsonConvert.SerializeObject(checkData);
                 }
             }
 
