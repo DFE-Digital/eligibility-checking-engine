@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using Error = CheckYourEligibility.API.Boundary.Responses.Error;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -54,9 +55,25 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
 
         if (modelData.Data != null)
         {
-            var validationResults = _validator.Validate(modelData.Data);
-            if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
+            List<Error> errors = new List<Error>();
+            var result = _validator.Validate(modelData.Data);
+            if (!result.IsValid)
+            {
+                for (int i = 0; i < result.Errors.Count; i++)
+                {
+                    Error error = new Error
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = ""
+                    };
+                    errors.Add(error);
+                }
+            }
 
+            if (errors.Count > 0) {
+                throw new ValidationException(errors, string.Empty);
+            }
             // Execute the check
             var response = await _checkGateway.PostCheck(modelData.Data);
             if (response != null)

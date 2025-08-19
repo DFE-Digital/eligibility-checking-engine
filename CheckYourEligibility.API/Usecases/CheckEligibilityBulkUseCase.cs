@@ -57,7 +57,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
         List<Error> errors = new List<Error>();
 
-        int index = 1;
+        int index = 0;
 
         foreach (var item in bulkData)
         {
@@ -76,7 +76,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
                     {
                         Status = StatusCodes.Status400BadRequest,
                         Title = result.Errors[i].ToString(),
-                        Detail = item.ClientIdentifier
+                        Detail = item.ClientIdentifier ?? $"Data at index {index} has no clientIdentifier"
                     };
                     errors.Add(error);
                 }
