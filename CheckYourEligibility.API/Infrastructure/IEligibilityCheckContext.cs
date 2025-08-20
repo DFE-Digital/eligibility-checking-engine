@@ -12,6 +12,7 @@ public interface IEligibilityCheckContext
     DbSet<Application> Applications { get; set; }
     DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
     DbSet<EligibilityCheckHash> EligibilityCheckHashes { get; set; }
+    DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     DbSet<User> Users { get; set; }
     DbSet<Audit> Audits { get; set; }
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data);
