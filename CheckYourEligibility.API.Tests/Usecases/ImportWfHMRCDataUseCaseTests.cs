@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Text;
 using AutoFixture;
@@ -10,6 +11,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -49,7 +51,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         var act = async () => await _sut.Execute(file);
 
         // Assert
-        act.Should().ThrowExactlyAsync<InvalidDataException>().WithMessage("xlsm file required.");
+        act.Should().ThrowExactlyAsync<InvalidDataException>().Result.WithMessage("Xlsm data file is required.");
     }
 
     [Test]
@@ -63,7 +65,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         var act = async () => await _sut.Execute(fileMock.Object);
 
         // Assert
-        act.Should().ThrowExactlyAsync<InvalidDataException>().WithMessage("xlsm file required.");
+        act.Should().ThrowExactlyAsync<InvalidDataException>().Result.WithMessage("Xlsm data file is required.");
     }
 
     [Test]
@@ -72,6 +74,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         // Arrange
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.ContentType).Returns("text/xml");
+        fileMock.Setup(f => f.FileName).Returns("HMRCManualEligibilityEvent.xlsm");
         var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
         fileMock.Setup(f => f.OpenReadStream())
             .Returns(stream);
@@ -86,9 +89,29 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         // Assert
         _mockGateway.Verify(
             s => s.ImportWfHMRCData(It.Is<List<WorkingFamiliesEvent>>(
-                list => list.Count == 10
+                list => list.Count == 2
                 && list[0].EligibilityCode == "50173110190"
                 && list[1].EligibilityCode == "50173110191")), Times.Once);
+    }
+
+    [Test]
+    public void Execute_InvalidData_Should_Throw_Validation_Exception()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.ContentType).Returns("text/xml");
+        fileMock.Setup(f => f.FileName).Returns("HMRCManualEligibilityEvent_invalid.xlsm");
+        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent_invalid.xlsm");
+        fileMock.Setup(f => f.OpenReadStream())
+            .Returns(stream);
+        string validationMessage = "On row 2: Eligibility code must be 11 digits long, Invalid National Insurance Number, Submission date must not be in the future";
+        string exceptionMessage = $"HMRCManualEligibilityEvent_invalid.xlsm - {JsonConvert.SerializeObject(new WorkingFamiliesEvent())} :- {validationMessage}, ";
+        
+
+        // Act
+        Func<Task> act = async () => await _sut.Execute(fileMock.Object);
+
+        act.Should().ThrowExactlyAsync<InvalidDataException>().Result.WithMessage(exceptionMessage);
     }
 
     [Test]

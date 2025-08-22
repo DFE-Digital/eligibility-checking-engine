@@ -4,7 +4,9 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using FeatureManagement.Domain.Validation;
 using Newtonsoft.Json;
+using FluentValidation;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -30,8 +32,10 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
     public async Task Execute(IFormFile file)
     {
         List<WorkingFamiliesEvent> DataLoad = new();
-        if (file == null || file.ContentType.ToLower() != "text/xml")
-            throw new InvalidDataException($"{Admin.XmlfileRequired}");
+        if (file == null || file.ContentType.ToLower() != "text/xml" || !file.FileName.EndsWith(".xlsm"))
+            throw new InvalidDataException($"{Admin.XlsmfileRequired}");
+            
+        var validator = new WorkingFamiliesEventImportValidator();
         try
         {
             using var fileStream = file.OpenReadStream();
@@ -45,8 +49,8 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             var headerRow = sheetData.Elements<Row>().ElementAt(0);
             var columnHeaders = GetColumnHeaders(headerRow, sharedStrings);
             var eventRows = from row in headerRow.ElementsAfter()
-                     where row.Elements<Cell>().ElementAt(1).CellValue is not null
-                     select row;
+                            where row.Elements<Cell>().ElementAt(1).CellValue is not null
+                            select row;
             foreach (Row row in eventRows)
             {
                 List<string> eventProps = [];
@@ -57,11 +61,11 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                     eventProps.Add(cellValueString);
                 }
                 var wfEvent = ParseWorkingFamiliesEvent(eventProps, columnHeaders);
+                var validationResults = validator.Validate(wfEvent);
+                if (!validationResults.IsValid) throw new ValidationException($"On row {row.RowIndex}: {validationResults.ToString().ReplaceLineEndings(", ")}");
                 DataLoad.Add(wfEvent);
             }
             if (DataLoad == null || DataLoad.Count == 0) throw new InvalidDataException("Invalid file no content.");
-            //Does this need a new db migration for the bulk inserts?
-            //Can it accept non macro-enabled excel files???
         }
         catch (Exception ex)
         {
@@ -115,9 +119,6 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             GracePeriodEndDate = GetGracePeriodEndDate(validityEndDate)
         };
 
-        //Map the row to the event
-        //Determine the DVSD and GPED
-        //Throw exception if can't parse the data
         return wfEvent;
     }
 
