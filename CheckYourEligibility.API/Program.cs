@@ -158,6 +158,7 @@ builder.Services.AddScoped<ICleanUpEligibilityChecksUseCase, CleanUpEligibilityC
 builder.Services.AddScoped<IImportEstablishmentsUseCase, ImportEstablishmentsUseCase>();
 builder.Services.AddScoped<IImportFsmHomeOfficeDataUseCase, ImportFsmHomeOfficeDataUseCase>();
 builder.Services.AddScoped<IImportFsmHMRCDataUseCase, ImportFsmHMRCDataUseCase>();
+builder.Services.AddScoped<IImportWfHMRCDataUseCase, ImportWfHMRCDataUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();

@@ -22,6 +22,7 @@ public class AdministrationController : BaseController
     private readonly IImportEstablishmentsUseCase _importEstablishmentsUseCase;
     private readonly IImportFsmHMRCDataUseCase _importFsmHMRCDataUseCase;
     private readonly IImportFsmHomeOfficeDataUseCase _importFsmHomeOfficeDataUseCase;
+    private readonly IImportWfHMRCDataUseCase _importWfHMRCDataUseCase;
 
     /// <summary>
     ///     Constructor for AdministrationController
@@ -36,12 +37,14 @@ public class AdministrationController : BaseController
         IImportEstablishmentsUseCase importEstablishmentsUseCase,
         IImportFsmHomeOfficeDataUseCase importFsmHomeOfficeDataUseCase,
         IImportFsmHMRCDataUseCase importFsmHMRCDataUseCase,
+        IImportWfHMRCDataUseCase importWfHMRCDataUseCase,
         IAudit audit) : base(audit)
     {
         _cleanUpEligibilityChecksUseCase = cleanUpEligibilityChecksUseCase;
         _importEstablishmentsUseCase = importEstablishmentsUseCase;
         _importFsmHomeOfficeDataUseCase = importFsmHomeOfficeDataUseCase;
         _importFsmHMRCDataUseCase = importFsmHMRCDataUseCase;
+        _importWfHMRCDataUseCase = importWfHMRCDataUseCase;
     }
 
     /// <summary>
@@ -56,7 +59,7 @@ public class AdministrationController : BaseController
     {
         await _cleanUpEligibilityChecksUseCase.Execute();
         return new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
     }
 
     /// <summary>
@@ -75,8 +78,8 @@ public class AdministrationController : BaseController
         {
             await _importEstablishmentsUseCase.Execute(file);
             return new ObjectResult(new MessageResponse
-                    { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
+            { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -100,7 +103,7 @@ public class AdministrationController : BaseController
         {
             await _importFsmHomeOfficeDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HomeOfficeFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -125,7 +128,32 @@ public class AdministrationController : BaseController
         {
             await _importFsmHMRCDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+    
+    /// <summary>
+    ///     Imports a new Working Families data set from macro enabled excel input
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidDataException"></exception>
+    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("multipart/form-data")]
+    [HttpPost("/admin/import-wf-hmrc-data")]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> ImportWfHMRCData(IFormFile file)
+    {
+        try
+        {
+            await _importWfHMRCDataUseCase.Execute(file);
+            return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
+            { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {

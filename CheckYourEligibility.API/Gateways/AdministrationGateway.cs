@@ -122,6 +122,11 @@ public class AdministrationGateway : IAdministration
         _db.BulkInsert_FreeSchoolMealsHO(data);
     }
 
+    public async Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data)
+    {
+        _db.BulkInsert_WorkingFamiliesEvent(data);
+    }
+
     [ExcludeFromCodeCoverage(Justification =
         "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetLaData(LocalAuthority? item)

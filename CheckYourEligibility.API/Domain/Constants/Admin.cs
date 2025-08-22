@@ -10,4 +10,5 @@ public static class Admin
     public const string HomeOfficeFileProcessed = "HomeOffice File Processed.";
     public const string XmlfileRequired = "Xml data file is required.";
     public const string HMRCFileProcessed = "HMRC File Processed.";
+    public const string XlsmfileRequired = "Xlsm data file is required.";
 }
