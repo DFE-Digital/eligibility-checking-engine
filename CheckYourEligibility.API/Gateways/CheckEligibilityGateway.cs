@@ -408,13 +408,25 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName)
     {
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var wfEvent = await _db.WorkingFamiliesEvents.Where(x =>
+        var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
             x.EligibilityCode == eligibilityCode &&
             (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
              x.PartnerLastName.ToUpper() == lastName) &&
-            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).FirstOrDefaultAsync();
+            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
+
+        // If there is more than one record
+        // check if second to last record has not expired yet
+        if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
+        {           
+                wfEvent = wfRecords[1];  
+        }
+        else
+        {
+            wfEvent = wfRecords.FirstOrDefault();
+        }
 
         return wfEvent;
     }
