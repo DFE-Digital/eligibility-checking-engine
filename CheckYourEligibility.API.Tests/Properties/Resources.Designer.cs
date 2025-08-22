@@ -92,13 +92,5 @@ namespace CheckYourEligibility.API.Tests.Properties {
                 return ResourceManager.GetString("small_gis", resourceCulture);
             }
         }
-
-        internal static string exampleWfHMRC
-        {
-            get
-            {
-                return ResourceManager.GetString("HMRC Manual Eligibility Event", resourceCulture);
-            }
-        }
     }
 }

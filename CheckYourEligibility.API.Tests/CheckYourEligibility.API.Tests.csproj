@@ -44,4 +44,8 @@
         </EmbeddedResource>
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent.xlsm"/>
+    </ItemGroup>
+
 </Project>

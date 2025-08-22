@@ -143,13 +143,13 @@ public class AdministrationServiceTests : TestBase.TestBase
     }
     
     [Test]
-    public async Task Given_ImportWfHMRCData_Should_Return_Pass()
+    public void Given_ImportWfHMRCData_Should_Return_Pass()
     {
         // Arrange
         var data = _fixture.CreateMany<WorkingFamiliesEvent>();
 
         // Act
-        await _sut.ImportWfHMRCData(data);
+        _sut.ImportWfHMRCData(data);
 
         // Assert
         Assert.Pass();

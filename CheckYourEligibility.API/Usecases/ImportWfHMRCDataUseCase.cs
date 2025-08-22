@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Xml.Linq;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
@@ -59,13 +57,9 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                     eventProps.Add(cellValueString);
                 }
                 var wfEvent = ParseWorkingFamiliesEvent(eventProps, columnHeaders);
-                //TODO: Put in a try/catch. If an exception is thrown then maintain a list of errors that can be returned
-                // Or just let the outer catch handle it?
                 DataLoad.Add(wfEvent);
             }
             if (DataLoad == null || DataLoad.Count == 0) throw new InvalidDataException("Invalid file no content.");
-            //Check if the event already exists? to avoid duplicates?
-            //Consider renaming functions and endpoint to help distinguish from the FSM HMRC import
             //Does this need a new db migration for the bulk inserts?
             //Can it accept non macro-enabled excel files???
         }
@@ -76,7 +70,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                 $"{file.FileName} - {JsonConvert.SerializeObject(new WorkingFamiliesEvent())} :- {ex.Message}, {ex.InnerException?.Message}");
         }
 
-        //await _gateway.ImportWfHMRCData(DataLoad);
+        await _gateway.ImportWfHMRCData(DataLoad);
         await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 
@@ -96,36 +90,17 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
         return columnHeaders;
     }
 
-/*
-    private static IEnumerable<Row> GetUsedRows(IEnumerable<Row> dataRows)
-    {
-        var result = from obj in dataRows
-                     where obj.ChildElements.ElementAt(1) is not null
-                     select obj;
-        //Iterate all rows except the first one.
-        foreach (Row row in dataRows)
-        {
-            // Check the 'number' index
-            if (row.Elements<Cell>().ElementAt(1).CellValue is not null)
-            {
-                yield return row;
-            }
-            else
-            {
-                return;
-            }
-        }
-    }
-    */
-
     private static WorkingFamiliesEvent ParseWorkingFamiliesEvent(List<string> eventProps, List<string> columnHeaders)
     {
+        var validityStartDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity Start Date")]));
+        var validityEndDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity End Date")]));
+        var submissionDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Submission Date")]));
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
             WorkingFamiliesEventId = Guid.NewGuid().ToString(),
             EligibilityCode = eventProps[columnHeaders.IndexOf("Eligibility Code")],
-            ValidityStartDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity Start Date")])),
-            ValidityEndDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity End Date")])),
+            ValidityStartDate = validityStartDate,
+            ValidityEndDate = validityEndDate,
             ParentNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Parent NINO")],
             ParentFirstName = eventProps[columnHeaders.IndexOf("Parent Forename")],
             ParentLastName = eventProps[columnHeaders.IndexOf("Parent Surname")],
@@ -135,9 +110,9 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             PartnerNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Partner NINO")], //TODO: Do partner details need to be nullable?
             PartnerFirstName = eventProps[columnHeaders.IndexOf("Partner Forename")],
             PartnerLastName = eventProps[columnHeaders.IndexOf("Partner Surname")],
-            SubmissionDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Submission Date")])),
-            DiscretionaryValidityStartDate = DateTime.UtcNow,
-            GracePeriodEndDate = DateTime.UtcNow
+            SubmissionDate = submissionDate,
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(validityStartDate, submissionDate),
+            GracePeriodEndDate = GetGracePeriodEndDate(validityEndDate)
         };
 
         //Map the row to the event
@@ -146,7 +121,50 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
         return wfEvent;
     }
 
-    private string getCellValueString(Cell cell, SharedStringTable sharedStrings, CellFormat[] cellStyles) {
+    private static DateTime GetGracePeriodEndDate(DateTime validityEndDate)
+    {
+        if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 10, 22)) >= 0)
+        {
+            return new DateTime(validityEndDate.Year + 1, 3, 31);
+        }
+        else if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 5, 27)) >= 0)
+        {
+            return new DateTime(validityEndDate.Year, 12, 31);
+        }
+        else if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 2, 11)) >= 0)
+        {
+            return new DateTime(validityEndDate.Year, 8, 31);
+        }
+        else
+        {
+            return new DateTime(validityEndDate.Year, 3, 31);
+        }
+    }
+
+    private static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
+    {
+        var firstTermStart = new DateTime(validityStartDate.Year, 9, 1);
+        var secondTermStart = new DateTime(validityStartDate.Year, 1, 1);
+        var thirdTermStart = new DateTime(validityStartDate.Year, 4, 1);
+        var termDates = new List<DateTime>([firstTermStart, secondTermStart, thirdTermStart]);
+
+        foreach (DateTime termStart in termDates)
+        {
+            if (validityStartDate.CompareTo(termStart) > 0 &&
+                validityStartDate.CompareTo(termStart.AddDays(13)) <= 0 &&
+                submissionDate.CompareTo(termStart) < 0)
+            {
+                //TODO: Should be day before term in only certain conditions?? Only for the contiguous events of the old system?
+                return termStart.AddDays(-1);
+            }
+        }
+        // Else use VSD
+        // TODO: Should be null?
+        return validityStartDate;
+    }
+
+    private string getCellValueString(Cell cell, SharedStringTable sharedStrings, CellFormat[] cellStyles)
+    {
         if (cell.CellValue is null)
             return string.Empty;
         string value = cell.CellValue.InnerText;

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using AutoFixture;
 using CheckYourEligibility.API.Domain;
@@ -70,9 +71,10 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.ContentType).Returns("text/xlsm");
+        fileMock.Setup(f => f.ContentType).Returns("text/xml");
+        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
         fileMock.Setup(f => f.OpenReadStream())
-            .Returns(new MemoryStream(Encoding.UTF8.GetBytes(Resources.exampleWfHMRC)));
+            .Returns(stream);
 
         _mockGateway.Setup(s => s.ImportWfHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
