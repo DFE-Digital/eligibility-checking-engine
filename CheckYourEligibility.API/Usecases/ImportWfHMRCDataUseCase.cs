@@ -154,7 +154,6 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                 validityStartDate.CompareTo(termStart.AddDays(13)) <= 0 &&
                 submissionDate.CompareTo(termStart) < 0)
             {
-                //TODO: Should be day before term in only certain conditions?? Only for the contiguous events of the old system?
                 return termStart.AddDays(-1);
             }
         }

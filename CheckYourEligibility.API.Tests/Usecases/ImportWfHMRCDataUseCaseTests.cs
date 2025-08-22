@@ -84,11 +84,11 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         await _sut.Execute(fileMock.Object);
 
         // Assert
-        //TODO: Reduce the size od the test data file for API tests
         _mockGateway.Verify(
-            s => s.ImportWfHMRCData(It.Is<List<WorkingFamiliesEvent>>(list =>
-                list.Count == 2 && list[0].EligibilityCode == "50173110190" &&
-                list[1].WorkingFamiliesEventId == "50173110191")), Times.Once);
+            s => s.ImportWfHMRCData(It.Is<List<WorkingFamiliesEvent>>(
+                list => list.Count == 10
+                && list[0].EligibilityCode == "50173110190"
+                && list[1].EligibilityCode == "50173110191")), Times.Once);
     }
 
     [Test]
@@ -96,11 +96,10 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.ContentType).Returns("text/xlsm");
-        fileMock.Setup(f => f.FileName).Returns("test.xlsm");
+        fileMock.Setup(f => f.ContentType).Returns("text/xml");
 
         // Create Xlsm without events
-        //TODO: Set up file mock to return an empty xlsm stream
+        fileMock.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
 
         // Act
         var act = async () => await _sut.Execute(fileMock.Object);
