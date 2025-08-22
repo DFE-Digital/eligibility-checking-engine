@@ -111,7 +111,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             ChildFirstName = eventProps[columnHeaders.IndexOf("Child Forename")],
             ChildLastName = eventProps[columnHeaders.IndexOf("Child Surname")],
             ChildDateOfBirth = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Child DOB")])),
-            PartnerNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Partner NINO")], //TODO: Do partner details need to be nullable?
+            PartnerNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Partner NINO")],
             PartnerFirstName = eventProps[columnHeaders.IndexOf("Partner Forename")],
             PartnerLastName = eventProps[columnHeaders.IndexOf("Partner Surname")],
             SubmissionDate = submissionDate,
@@ -159,7 +159,6 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             }
         }
         // Else use VSD
-        // TODO: Should be null?
         return validityStartDate;
     }
 
@@ -177,7 +176,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
             if (style.NumberFormatId == 14)
             {
-                value = DateTime.Parse(value).ToOADate().ToString();
+                value = DateTime.ParseExact(value, "dd/MM/yyyy", null).ToOADate().ToString();
             }
         }
         return value;
