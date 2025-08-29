@@ -278,22 +278,23 @@ public class DwpGateway : BaseGateway, IDwpGateway
         {
             var entitled = false;
             var threshHoldUsed = 0;
-            var liveAwards = benefit.attributes.awards.Where(x => x.status == awardStatusLive);
+            var filterDate = DateTime.Now.AddMonths(-4);
+            var liveAwards = benefit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
             if (liveAwards != null && liveAwards.Count() > 0)
             {
                 var takeHomePay = 0.00;
-                threshHoldUsed = liveAwards.Count();
-                if (threshHoldUsed == 1)
+
+                takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
+                if (takeHomePay <= threshold) entitled = true;
+
+                if (liveAwards.Count() > 1)
                 {
-                    takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= threshold) entitled = true;
-                }
-                else if (threshHoldUsed == 2)
-                {
-                    takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
+                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(2)
+                        .Sum(x => x.assessmentAttributes.takeHomePay);
                     if (takeHomePay <= threshold * 2) entitled = true;
                 }
-                else
+
+                if (liveAwards.Count() > 2)
                 {
                     takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3)
                         .Sum(x => x.assessmentAttributes.takeHomePay);

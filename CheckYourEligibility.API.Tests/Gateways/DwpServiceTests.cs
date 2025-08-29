@@ -232,7 +232,7 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 10000 }
             }
@@ -261,7 +261,7 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-04-29", startDate = "2022-03-30",
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             }
@@ -291,13 +291,13 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-04-29", startDate = "2022-03-30",
+                endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             }
@@ -326,13 +326,13 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-04-29", startDate = "2022-03-30",
+                endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             }
@@ -361,19 +361,19 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-04-29", startDate = "2022-03-30",
+                endDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             }
@@ -402,19 +402,19 @@ public class DwpServiceTests : TestBase.TestBase
         {
             new()
             {
-                endDate = "2022-04-29", startDate = "2022-03-30",
+                endDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             },
             new()
             {
-                endDate = "2022-05-29", startDate = "2022-04-30",
+                endDate = DateTime.Now.ToString("yyyy-MM-d"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpGateway.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             }
