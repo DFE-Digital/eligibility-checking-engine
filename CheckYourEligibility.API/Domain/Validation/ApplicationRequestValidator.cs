@@ -52,7 +52,6 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
             });
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .NotEmpty()
-                .Must(DataValidation.BeAValidNass)
                 .WithMessage(ValidationMessages.NI_or_NASS);
         });
     }

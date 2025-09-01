@@ -42,7 +42,7 @@ export function validHomeOfficeRequestBody () {
             nationalInsuranceNumber: '',
             lastName: Cypress.env('lastName'),
             dateOfBirth: '1990-01-01',
-            nationalAsylumSeekerServiceNumber: 'AB123456C'
+            nationalAsylumSeekerServiceNumber: '111111111'
         }
     }
 };
@@ -53,7 +53,7 @@ export function notEligibleHomeOfficeRequestBody () {
             nationalInsuranceNumber: '',
             lastName: 'Jacob',
             dateOfBirth: '1990-01-01',
-            nationalAsylumSeekerServiceNumber: '111111111'
+            nationalAsylumSeekerServiceNumber: '110211111'
         }
     }
 }
