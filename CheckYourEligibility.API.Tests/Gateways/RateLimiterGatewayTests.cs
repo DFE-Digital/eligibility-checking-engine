@@ -41,7 +41,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
         var checkEvent = _fixture.Create<RateLimitEvent>();
-        checkEvent.RateLimitEventId = guid; 
+        checkEvent.RateLimitEventId = guid;
         // Act
         await _sut.Create(checkEvent);
         // Assert
@@ -113,5 +113,49 @@ public class RateLimiterServiceTests : TestBase.TestBase
 
         // Assert
         response.Should().Be(5);
+    }
+
+    [Test]
+    public async Task Given_CleanUpRateLimitEvents_Should_Return_Pass()
+    {
+        // Arrange
+
+        // Act
+        await _sut.CleanUpRateLimitEvents();
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public async Task Given_CleanUpRateLimitEvents_Should_Remove_Old_Events()
+    {
+        // Arrange
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+        checkEvent.TimeStamp = DateTime.UtcNow.AddDays(-10);
+        _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpRateLimitEvents();
+
+        // Assert
+        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(0);
+    }
+    
+    [Test]
+    public async Task Given_CleanUpRateLimitEvents_Should_Keep_Current_Events()
+    {
+        // Arrange
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+        checkEvent.TimeStamp = DateTime.UtcNow.AddDays(-6);
+        _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpRateLimitEvents();
+
+        // Assert
+        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(1);
     }
 }
