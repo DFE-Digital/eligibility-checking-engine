@@ -7,3 +7,4 @@
 9001234567A,AL123456A,2022-06-07,any,Eligibility code must be 11 digits long,Incorrect format for Eligibility code supplied
 90012345675,AL123456A,07/06/2022,any,Child Date of birth is required:- (yyyy-mm-dd),Incorrect format for Date supplied
 90012345676,QQ123456A,2022-06-07,any,Invalid National Insurance Number,Incorrect format for NINO supplied
+11234567890,AB123456C,2022-06-07,TestTemp,notEligible,Validity Start Date in future

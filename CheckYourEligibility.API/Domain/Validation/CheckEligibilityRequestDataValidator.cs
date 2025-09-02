@@ -14,10 +14,17 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
         // Rules for FSM, EYPP, 2YO
         When(x => x is CheckEligibilityRequestData, () =>
         {
-            RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
-                .Must(DataValidation.BeAValidName)
-                .WithMessage(ValidationMessages.LastName);
-
+            When(x => string.IsNullOrEmpty(((CheckEligibilityRequestData)x).LastName), () =>
+            {
+                RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
+                    .NotEmpty()
+                    .WithMessage(ValidationMessages.LastName);
+            });
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).LastName), () => {
+                RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
+                    .Must(DataValidation.BeAValidName)
+                    .WithMessage(ValidationMessages.LastName);
+            });          
             RuleFor(x => ((CheckEligibilityRequestData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
@@ -47,8 +54,8 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .Must(DataValidation.BeAValidEligibilityCode)
                 .WithMessage(ValidationMessages.EligibilityCode);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).NationalInsuranceNumber)
-               .Must(DataValidation.BeAValidNi)
-               .WithMessage(ValidationMessages.NI);
+                .Must(DataValidation.BeAValidNi)
+                .WithMessage(ValidationMessages.NI);
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
@@ -56,7 +63,6 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
             When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestWorkingFamiliesData)x).LastName), () =>
             {
                 RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).LastName)
-                    .NotNull()
                     .Must(DataValidation.BeAValidName)
                     .WithMessage(ValidationMessages.LastNameWf);
             });

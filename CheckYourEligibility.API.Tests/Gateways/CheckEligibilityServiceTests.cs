@@ -114,7 +114,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act/Assert
@@ -163,7 +164,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -211,7 +213,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -255,7 +258,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -653,7 +657,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -682,7 +687,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status404NotFound);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -711,7 +717,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -1037,7 +1044,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         // Assert
         response.Should().Be(CheckEligibilityStatus.notEligible);
     }
-    
+
     [Test]
     public async Task Given_validRequest_dobNonMatch_Process_Should_Return_updatedStatus_notFound()
     {
@@ -1072,7 +1079,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.Should().Be(CheckEligibilityStatus.notFound);
     }
 
-    [Test] 
+    [Test]
     public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
     {
         // Arrange

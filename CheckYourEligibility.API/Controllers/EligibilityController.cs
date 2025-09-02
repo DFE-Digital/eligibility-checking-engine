@@ -376,7 +376,8 @@ public class EligibilityCheckController : BaseController
         }
         catch (NotFoundException)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
+            return NotFound(new ErrorResponse
+                { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
 
         catch (ValidationException ex)
@@ -575,6 +576,4 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
-
-    
 }

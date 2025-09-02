@@ -42,4 +42,9 @@ internal static class DataValidation
         var res = rg.Match(value);
         return res.Success;
     }
+
+    internal static bool BeAPastDate(DateTime value)
+    {
+        return value.CompareTo(DateTime.UtcNow) <= 0;
+    }
 }
