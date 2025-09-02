@@ -1,5 +1,6 @@
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Domain;
+using System.Data.Common;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -8,11 +9,13 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     private readonly IEligibilityCheckContext _db;
 
     private readonly ILogger _logger;
+    private readonly IConfiguration _configuration;
 
-    public RateLimitGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext)
+    public RateLimitGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IConfiguration configuration)
     {
         _logger = logger.CreateLogger("RateLimitService");
         _db = dbContext;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -25,11 +28,7 @@ public class RateLimitGateway : BaseGateway, IRateLimit
         _db.RateLimitEvents.Add(item);
         await _db.SaveChangesAsync();
     }
-<<<<<<< Updated upstream
-    
-=======
 
->>>>>>> Stashed changes
     /// <summary>
     ///     Sets the status of the rateLimitEvent, reflecting the decision made of whether to permit the request
     /// </summary>
@@ -57,12 +56,6 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     public async Task<int> GetQueriesInWindow(string partition, DateTime eventTimeStamp, TimeSpan windowLength)
     {
         return _db.RateLimitEvents.Where(x => x.PartitionName == partition &&
-<<<<<<< Updated upstream
-            x.TimeStamp < eventTimeStamp && 
-            x.TimeStamp >= eventTimeStamp.Subtract(windowLength))
-            .Sum(x => x.QuerySize);
-    }
-=======
             x.TimeStamp < eventTimeStamp &&
             x.TimeStamp >= eventTimeStamp.Subtract(windowLength))
             .Sum(x => x.QuerySize);
@@ -74,8 +67,10 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     /// <returns></returns>
     public async Task CleanUpRateLimitEvents()
     {
-        var retentionPeriod = TimeSpan.FromDays(7); //Clean out records older than a week //TODO: Determine based on appsettings config
-        //TODO: Implement
+        var retentionCutOff = DateTime.UtcNow.AddDays(-7); //Clean out records older than a week 
+        //TODO: Determine based on appsettings config
+        var items = _db.RateLimitEvents.Where(x => x.TimeStamp < retentionCutOff);
+        _db.RateLimitEvents.RemoveRange(items);
+        await _db.SaveChangesAsync();
     }
->>>>>>> Stashed changes
 }

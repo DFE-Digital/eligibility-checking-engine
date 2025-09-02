@@ -27,7 +27,16 @@ public class RateLimiterServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
-        _sut = new RateLimitGateway(new NullLoggerFactory(), _fakeInMemoryDb);
+        var configForRLCleanUp = new Dictionary<string, string?>
+        {
+            { "RateLimit.Retention_Days", "7" }
+        };
+
+        var _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configForRLCleanUp)
+            .Build();
+
+        _sut = new RateLimitGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
     }
 
     [TearDown]
@@ -142,7 +151,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
         // Assert
         _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(0);
     }
-    
+
     [Test]
     public async Task Given_CleanUpRateLimitEvents_Should_Keep_Current_Events()
     {
@@ -157,5 +166,21 @@ public class RateLimiterServiceTests : TestBase.TestBase
 
         // Assert
         _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(1);
+    }
+    
+    [Test]
+    public async Task Given_CleanUpRateLimitEvents_No_Config_Should_Keep_All()
+    {
+        // Arrange
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+        checkEvent.TimeStamp = DateTime.UtcNow.AddDays(-10);
+        _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpRateLimitEvents();
+
+        // Assert
+        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(0);
     }
 }

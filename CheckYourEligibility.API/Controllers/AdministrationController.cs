@@ -19,6 +19,7 @@ namespace CheckYourEligibility.API.Controllers;
 public class AdministrationController : BaseController
 {
     private readonly ICleanUpEligibilityChecksUseCase _cleanUpEligibilityChecksUseCase;
+    private readonly ICleanUpRateLimitEventsUseCase _cleanUpRateLimitEventsUseCase;
     private readonly IImportEstablishmentsUseCase _importEstablishmentsUseCase;
     private readonly IImportFsmHMRCDataUseCase _importFsmHMRCDataUseCase;
     private readonly IImportFsmHomeOfficeDataUseCase _importFsmHomeOfficeDataUseCase;
@@ -28,12 +29,14 @@ public class AdministrationController : BaseController
     ///     Constructor for AdministrationController
     /// </summary>
     /// <param name="cleanUpEligibilityChecksUseCase"></param>
+    /// <param name="cleanUpRateLimitEventsUseCase"></param>
     /// <param name="importEstablishmentsUseCase"></param>
     /// <param name="importFsmHomeOfficeDataUseCase"></param>
     /// <param name="importFsmHMRCDataUseCase"></param>
     /// <param name="audit"></param>
     public AdministrationController(
         ICleanUpEligibilityChecksUseCase cleanUpEligibilityChecksUseCase,
+        ICleanUpRateLimitEventsUseCase cleanUpRateLimitEventsUseCase,
         IImportEstablishmentsUseCase importEstablishmentsUseCase,
         IImportFsmHomeOfficeDataUseCase importFsmHomeOfficeDataUseCase,
         IImportFsmHMRCDataUseCase importFsmHMRCDataUseCase,
@@ -41,6 +44,7 @@ public class AdministrationController : BaseController
         IAudit audit) : base(audit)
     {
         _cleanUpEligibilityChecksUseCase = cleanUpEligibilityChecksUseCase;
+        _cleanUpRateLimitEventsUseCase = cleanUpRateLimitEventsUseCase;
         _importEstablishmentsUseCase = importEstablishmentsUseCase;
         _importFsmHomeOfficeDataUseCase = importFsmHomeOfficeDataUseCase;
         _importFsmHMRCDataUseCase = importFsmHMRCDataUseCase;
@@ -59,6 +63,21 @@ public class AdministrationController : BaseController
     {
         await _cleanUpEligibilityChecksUseCase.Execute();
         return new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
+        { StatusCode = StatusCodes.Status200OK };
+    }
+
+    /// <summary>
+    ///     Deletes all old Rate Limit Events based on the service configuration
+    /// </summary>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPut("/admin/clean-up-rate-limit-events")]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> CleanUpRateLimitEvents()
+    {
+        await _cleanUpRateLimitEventsUseCase.Execute();
+        return new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
         { StatusCode = StatusCodes.Status200OK };
     }
 
