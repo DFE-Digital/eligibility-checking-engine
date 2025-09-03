@@ -16,6 +16,15 @@ internal static class DataValidation
         return res.Success;
     }
 
+    internal static bool BeAValidNass(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var regexString = @"^[0-9]{2}(0[1-9]|1[0-2])[0-9]{5,6}$";
+        var rg = new Regex(regexString);
+        var res = rg.Match(value);
+        return res.Success;
+    }
+
     internal static bool BeAValidEligibilityCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;

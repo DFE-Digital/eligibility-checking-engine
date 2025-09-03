@@ -17,7 +17,7 @@ public class ApplicationResponse
     public string Status { get; set; }
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }
-    public List<ApplicationEvidence>? Evidence { get; set; }
+    public List<ApplicationEvidenceResponse>? Evidence { get; set; }
 
     public ApplicationHash? CheckOutcome { get; set; }
 
