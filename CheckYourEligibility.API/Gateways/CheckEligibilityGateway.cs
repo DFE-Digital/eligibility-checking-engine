@@ -83,8 +83,15 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
             if (item.Type == CheckEligibilityType.WorkingFamilies)
             {
-                var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+                WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+                if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+                {
+                    wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+                }
+                else {
+                    wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                     checkData.NationalInsuranceNumber, checkData.LastName);
+                }               
                 if (wfEvent != null)
                 {
                     checkData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
@@ -430,7 +437,31 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return wfEvent;
     }
-
+    /// <summary>
+    /// This method is used for generating test data in runtime
+    /// If code starts with 900 it will generate an event record that must return Eligible
+    /// If code starts with 901 it will generate an event record that must return notEligible
+    /// If code starts with 902 it will generate an event record that must return NotFound
+    /// If code starts with 903 it will generate an event record that must return Error
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <returns></returns>
+    private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData) { 
+        string eligibilityCode = checkData.EligibilityCode;
+        bool isEligiblePrefix = eligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible"));
+        DateTime today = DateTime.UtcNow;
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        if (isEligiblePrefix) { 
+            wfEvent.ValidityStartDate = today.AddDays(-1);
+            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-1);
+            wfEvent.ValidityEndDate = today.AddMonths(3);
+            wfEvent.GracePeriodEndDate = today.AddMonths(6);
+            wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
+            wfEvent.PartnerLastName = checkData.LastName ?? "TESTER";
+              
+         }
+        return wfEvent;
+    }
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
@@ -443,10 +474,17 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
         EligibilityCheck? result, CheckProcessData checkData)
     {
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         var source = ProcessEligibilityCheckSource.HMRC;
+        if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+        {
+            wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+        }
+        else {
+            wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+          checkData.NationalInsuranceNumber, checkData.LastName);
 
-        var wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
-            checkData.NationalInsuranceNumber, checkData.LastName);
+        }
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         if (wfEvent != null)
         {
