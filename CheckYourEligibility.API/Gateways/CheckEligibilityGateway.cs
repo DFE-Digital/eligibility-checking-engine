@@ -500,8 +500,30 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
-                    checkResult = await DWP_Check(checkData);
-                    source = ProcessEligibilityCheckSource.DWP;
+                    if (_dwpGateway.UseEcsforChecks=="true")
+                    {
+                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        
+                        source = ProcessEligibilityCheckSource.ECS;
+                    }
+                    else if(_dwpGateway.UseEcsforChecks=="false")
+                    {
+                        
+                        checkResult = await DwpCitizenCheck(checkData, checkResult);
+                        
+                        source = ProcessEligibilityCheckSource.DWP;
+                    }
+                    else
+                    {
+                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        source = ProcessEligibilityCheckSource.DWP;
+
+                        if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
+                        {
+                            source = ProcessEligibilityCheckSource.ECS_CONFLICT;
+                        }
+                        
+                    }
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -607,18 +629,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             .Select(x => x.Surname);
 
         return CheckSurname(data.LastName, checkReults);
-    }
-
-    private async Task<CheckEligibilityStatus> DWP_Check(CheckProcessData data)
-    {
-        var checkResult = CheckEligibilityStatus.parentNotFound;
-        _logger.LogInformation($"Dwp check use ECS service:- {_dwpGateway.UseEcsforChecks}");
-        if (!_dwpGateway.UseEcsforChecks)
-            checkResult = await DwpCitizenCheck(data, checkResult);
-        else
-            checkResult = await DwpEcsFsmCheck(data, checkResult);
-
-        return checkResult;
     }
 
 

@@ -455,7 +455,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -481,7 +481,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -508,7 +508,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -537,7 +537,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "0", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -566,7 +566,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone
             { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -595,7 +595,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
 
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(value: null);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -624,7 +624,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone
             { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -653,7 +653,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -683,7 +683,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status404NotFound);
@@ -713,7 +713,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
@@ -743,7 +743,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.error.ToString());
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
@@ -830,7 +830,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         });
         _fakeInMemoryDb.SaveChangesAsync();
 
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
