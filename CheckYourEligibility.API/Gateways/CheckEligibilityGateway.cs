@@ -476,7 +476,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         var source = ProcessEligibilityCheckSource.HMRC;
-        if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+        string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+        if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+            checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
         {
             wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
         }
