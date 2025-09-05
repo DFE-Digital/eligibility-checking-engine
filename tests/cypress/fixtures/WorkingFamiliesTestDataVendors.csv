@@ -1,9 +1,9 @@
 ﻿Eligibility Code,NINO,DOB,lastname,Expected Result,Notes
 90012345671,AA123456C,2022-06-07,TestE,eligible,Inside Validity Dates 
-90012345672,BB123456C,2022-06-07,TestNonE,notEligible,Grace Period in the past
+90112345672,BB123456C,2022-06-07,TestNonE,notEligible,Grace Period in the past
 90012345673,CC123456A,2022-06-07,TestEinGP,eligible,"Outside Validity Dates, but within Grace Period"
-90012345674,AL123456A,2022-06-07,any,notFound,Record is not found in the system
-90012345677,CC123456A,2022-06-07,any,notFound,Returns Not Found as it is a partial match only. Meaning that not all of the properties given in the request match a record in the sytem.
+90412345674,AL123456A,2022-06-07,any,notFound,Record is not found in the system
+90412345677,CC123456A,2022-06-07,any,notFound,Returns Not Found as it is a partial match only. Meaning that not all of the properties given in the request match a record in the sytem.
 9001234567A,AL123456A,2022-06-07,any,Eligibility code must be 11 digits long,Incorrect format for Eligibility code supplied
 90012345675,AL123456A,07/06/2022,any,Child Date of birth is required:- (yyyy-mm-dd),Incorrect format for Date supplied
 90012345676,QQ123456A,2022-06-07,any,Invalid National Insurance Number,Incorrect format for NINO supplied
