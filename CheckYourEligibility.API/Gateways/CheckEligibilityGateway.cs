@@ -457,7 +457,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfEvent.ValidityEndDate = today.AddMonths(3);
             wfEvent.GracePeriodEndDate = today.AddMonths(6);
             wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
-            wfEvent.PartnerLastName = checkData.LastName ?? "TESTER";
+            wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
               
          }
         return wfEvent;
