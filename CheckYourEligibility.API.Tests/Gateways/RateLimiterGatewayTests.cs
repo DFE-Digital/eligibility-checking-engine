@@ -1,15 +1,11 @@
-using System.Threading.Tasks;
 using AutoFixture;
-using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -22,7 +18,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase("FakeInMemoryDb", new InMemoryDatabaseRoot())
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
@@ -177,10 +173,16 @@ public class RateLimiterServiceTests : TestBase.TestBase
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
         _fakeInMemoryDb.SaveChanges();
 
+        var _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
+
+        _sut = new RateLimitGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
+
         // Act
         await _sut.CleanUpRateLimitEvents();
 
         // Assert
-        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(0);
+        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(1);
     }
 }

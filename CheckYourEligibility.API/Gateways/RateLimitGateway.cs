@@ -67,10 +67,13 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     /// <returns></returns>
     public async Task CleanUpRateLimitEvents()
     {
-        var retentionCutOff = DateTime.UtcNow.AddDays(-7); //Clean out records older than a week 
-        //TODO: Determine based on appsettings config
-        var items = _db.RateLimitEvents.Where(x => x.TimeStamp < retentionCutOff);
-        _db.RateLimitEvents.RemoveRange(items);
-        await _db.SaveChangesAsync();
+        var retentionDays = _configuration.GetValue<int>("RateLimit.Retention_Days");
+        if (retentionDays > 0)
+        {
+            var retentionCutOff = DateTime.UtcNow.AddDays(-retentionDays);
+            var items = _db.RateLimitEvents.Where(x => x.TimeStamp < retentionCutOff);
+            _db.RateLimitEvents.RemoveRange(items);
+            await _db.SaveChangesAsync();
+        }
     }
 }
