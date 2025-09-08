@@ -25,7 +25,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
 
         var configForRLCleanUp = new Dictionary<string, string?>
         {
-            { "RateLimit.Retention_Days", "7" }
+            { "RateLimit:RetentionDays", "7" }
         };
 
         var _configuration = new ConfigurationBuilder()

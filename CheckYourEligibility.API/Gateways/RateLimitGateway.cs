@@ -67,7 +67,7 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     /// <returns></returns>
     public async Task CleanUpRateLimitEvents()
     {
-        var retentionDays = _configuration.GetValue<int>("RateLimit.Retention_Days");
+        var retentionDays = _configuration.GetValue<int>("RateLimit:RetentionDays");
         if (retentionDays > 0)
         {
             var retentionCutOff = DateTime.UtcNow.AddDays(-retentionDays);
