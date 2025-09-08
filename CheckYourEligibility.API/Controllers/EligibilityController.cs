@@ -53,7 +53,7 @@ public class EligibilityCheckController : BaseController
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase,
         IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase
-        )
+    )
         : base(audit)
     {
         _logger = logger;
@@ -172,7 +172,8 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
-    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),typeof(CheckWFModelExample))]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),
+        typeof(CheckWFModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [HttpPost("/check/working-families")]
@@ -183,7 +184,6 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
@@ -192,8 +192,9 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
-    ///     Posts the array of FSM checks
+    ///     Posts the array of WF checks
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
@@ -202,11 +203,12 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestBulk model)
+    public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -229,7 +231,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -237,6 +240,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
     ///     Posts the array of 2YO checks
     /// </summary>
@@ -251,7 +255,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -274,7 +279,8 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium, _bulkUploadRecordCountLimit);
+            var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
+                _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (ValidationException ex)
@@ -282,6 +288,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
     /// <summary>
     ///     Bulk Upload status
     /// </summary>
@@ -373,7 +380,8 @@ public class EligibilityCheckController : BaseController
         }
         catch (NotFoundException)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid, Status = "404" }] });
+            return NotFound(new ErrorResponse
+                { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
 
         catch (ValidationException ex)
@@ -420,7 +428,38 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _getEligibilityCheckStatusUseCase.Execute(guid);
+            var result = await _getEligibilityCheckStatusUseCase.Execute(guid, CheckEligibilityType.None);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Gets an FSM an Eligibility Check status
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityStatusResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check/{type}/{guid}/status")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> CheckEligibilityStatus(CheckEligibilityType type, string guid)
+    {
+        try
+        {
+            var result = await _getEligibilityCheckStatusUseCase.Execute(guid, type);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
@@ -521,7 +560,37 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _getEligibilityCheckItemUseCase.Execute(guid);
+            var result = await _getEligibilityCheckItemUseCase.Execute(guid, CheckEligibilityType.None);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Gets an Eligibility check of the given type using the supplied GUID
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check/{type}/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> EligibilityCheck(CheckEligibilityType type, string guid)
+    {
+        try
+        {
+            var result = await _getEligibilityCheckItemUseCase.Execute(guid, type);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
 

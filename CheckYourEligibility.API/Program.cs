@@ -159,11 +159,13 @@ builder.Services.AddScoped<ICleanUpEligibilityChecksUseCase, CleanUpEligibilityC
 builder.Services.AddScoped<IImportEstablishmentsUseCase, ImportEstablishmentsUseCase>();
 builder.Services.AddScoped<IImportFsmHomeOfficeDataUseCase, ImportFsmHomeOfficeDataUseCase>();
 builder.Services.AddScoped<IImportFsmHMRCDataUseCase, ImportFsmHMRCDataUseCase>();
+builder.Services.AddScoped<IImportWfHMRCDataUseCase, ImportWfHMRCDataUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationStatusUseCase>();
 builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
+builder.Services.AddScoped<IDeleteApplicationUseCase, DeleteApplicationUseCase>();
 builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
@@ -177,10 +179,12 @@ builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCh
 builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
 builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
+builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
-builder.Services.AddTransient<INotificationClient>(x => new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
+builder.Services.AddTransient<INotificationClient>(x =>
+    new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 builder.Services.AddTransient<INotificationClient>(x =>
     new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
 
@@ -237,6 +241,24 @@ app.UseSwaggerUI(c =>
 
 // 2.6. Map Controllers
 app.MapControllers();
+
+// 2.7 RateLimiter Middleware
+app.UseWhen(context => context.Request.Method == RequestMethod.Post.ToString() &&
+    (context.Request.Path.StartsWithSegments("/check") || context.Request.Path.StartsWithSegments("/bulk-check")),
+    app => app.UseCustomRateLimiter(
+        new RateLimiterMiddlewareOptions
+        {
+            PartionName = "Authority-Id-Minute",
+            WindowLength = TimeSpan.FromMinutes(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:WindowLength", 1)),
+            PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:PermitLimit", 250)
+        })
+    .UseCustomRateLimiter(
+        new RateLimiterMiddlewareOptions
+        {
+            PartionName = "Authority-Id-Hour",
+            WindowLength = TimeSpan.FromHours(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:WindowLength", 1)),
+            PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:PermitLimit", 5000)
+        }));
 
 app.Run();
 

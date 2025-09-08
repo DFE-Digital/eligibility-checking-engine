@@ -97,18 +97,19 @@ public class ApplicationGateway : BaseGateway, IApplication
     public async Task<ApplicationResponse?> GetApplication(string guid)
     {
         var result = await _db.Applications
+            .Where(x => x.ApplicationID == guid && x.Status != ApplicationStatus.Archived)
             .Include(x => x.Statuses)
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)
             .Include(x => x.User)
             .Include(x => x.EligibilityCheckHash)
             .Include(x => x.Evidence)
-            .FirstOrDefaultAsync(x => x.ApplicationID == guid);
+            .FirstOrDefaultAsync();
         if (result != null)
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -120,9 +121,9 @@ public class ApplicationGateway : BaseGateway, IApplication
         IQueryable<Application> query;
 
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value) && a.Status != ApplicationStatus.Archived);
         else
-            query = _db.Applications;
+            query = _db.Applications.Where(a => a.Status != ApplicationStatus.Archived);
 
         // Apply other filters
         query = ApplyAdditionalFilters(query, model);
@@ -167,7 +168,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -194,7 +195,9 @@ public class ApplicationGateway : BaseGateway, IApplication
             _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
             throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
         }
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Get the local authority ID based on application ID
     /// </summary>
     /// <param name="applicationId">The application ID</param>
@@ -203,7 +206,6 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         try
         {
-
             var localAuthorityId = await _db.Applications
                 .Where(x => x.ApplicationID == applicationId)
                 .Select(x => x.LocalAuthorityId)
@@ -217,7 +219,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
         }
     }
-    
+
     /// <summary>
     /// Gets establishment information by URN
     /// </summary>
@@ -250,7 +252,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             return (false, 0, 0);
         }
     }
-    
+
     /// <summary>
     /// Bulk imports applications without creating eligibility check hashes
     /// </summary>
@@ -261,7 +263,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         try
         {
             var applicationsList = applications.ToList();
-            
+
             if (!applicationsList.Any())
             {
                 _logger.LogInformation("No applications to import");
@@ -274,10 +276,10 @@ public class ApplicationGateway : BaseGateway, IApplication
             _db.BulkInsert_Applications(applicationsList);
 
             _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
-            
+
             // Track metrics
             TrackMetric("Bulk Applications Imported", applicationsList.Count);
-            
+
             return Task.CompletedTask;
         }
         catch (Exception ex)
@@ -302,13 +304,14 @@ public class ApplicationGateway : BaseGateway, IApplication
         return await _db.Establishments
             .FirstOrDefaultAsync(e => e.EstablishmentId == establishmentId);
     }
-    
+
     /// <summary>
     /// Gets multiple establishment entities by their URNs in bulk
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
-    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns)
+    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(
+        IEnumerable<string> urns)
     {
         if (urns == null || !urns.Any())
         {
@@ -334,7 +337,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
         // Create dictionary mapping original URN string to establishment
         var result = new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
-        
+
         foreach (var validUrn in validUrns)
         {
             var establishment = establishments.FirstOrDefault(e => e.EstablishmentId == validUrn.EstablishmentId);
@@ -345,6 +348,48 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Deletes an application by GUID
+    /// </summary>
+    /// <param name="guid">Application GUID</param>
+    /// <returns>True if deleted successfully, false if not found</returns>
+    public async Task<bool> DeleteApplication(string guid)
+    {
+        try
+        {
+            var application = await _db.Applications
+                .Include(x => x.Statuses)
+                .Include(x => x.Evidence)
+                .FirstOrDefaultAsync(x => x.ApplicationID == guid);
+
+            if (application == null)
+            {
+                return false;
+            }
+
+            // Remove related status history
+            if (application.Statuses.Any())
+            {
+                _db.ApplicationStatuses.RemoveRange(application.Statuses);
+            }
+
+            // Remove the application
+            _db.Applications.Remove(application);
+            
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
+            TrackMetric("Application Deleted", 1);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting application {guid?.Replace(Environment.NewLine, "")}");
+            throw;
+        }
     }
 
     #region Private
@@ -394,7 +439,8 @@ public class ApplicationGateway : BaseGateway, IApplication
                         x.ParentLastName.Contains(keyword) ||
                         x.ParentNationalInsuranceNumber.Contains(keyword) ||
                         x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword) ||
-                        x.ParentEmail.Contains(keyword)
+                        x.ParentEmail.Contains(keyword) ||
+                        x.Establishment.EstablishmentName.Contains(keyword)
                 );
         }
 
@@ -411,7 +457,6 @@ public class ApplicationGateway : BaseGateway, IApplication
         } */
     }
 
-    
 
     /* private string GetReference()
     {
@@ -461,8 +506,8 @@ public class ApplicationGateway : BaseGateway, IApplication
         var hash = CheckEligibilityGateway.GetHash(new CheckProcessData
         {
             DateOfBirth = data.ParentDateOfBirth.ToString("yyyy-MM-dd"),
-            NationalInsuranceNumber = data.ParentNationalAsylumSeekerServiceNumber,
-            NationalAsylumSeekerServiceNumber = data.ParentNationalInsuranceNumber,
+            NationalInsuranceNumber = data.ParentNationalInsuranceNumber,
+            NationalAsylumSeekerServiceNumber = data.ParentNationalAsylumSeekerServiceNumber,
             LastName = data.ParentLastName.ToUpper(),
             Type = type
         });

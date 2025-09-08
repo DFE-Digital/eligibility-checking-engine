@@ -13,6 +13,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public EligibilityCheckContext(DbContextOptions<EligibilityCheckContext> options) : base(options)
     {
     }
+
     public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
@@ -24,6 +25,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
     public virtual DbSet<EligibilityCheckHash> EligibilityCheckHashes { get; set; }
+    public virtual DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Audit> Audits { get; set; }
 
@@ -55,6 +57,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     }
 
     public void BulkInsert_Applications(IEnumerable<Application> data)
+    {
+        this.BulkInsert(data);
+    }
+
+    public void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data)
     {
         this.BulkInsert(data);
     }

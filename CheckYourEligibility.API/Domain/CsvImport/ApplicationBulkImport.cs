@@ -16,11 +16,13 @@ public class ApplicationBulkImportRow
     public string ChildDateOfBirth { get; set; }
     public string ChildSchoolUrn { get; set; }
     public string EligibilityEndDate { get; set; }
+    public string? ApplicationStatus { get; set; } // Optional for bulk import
 }
 
 [ExcludeFromCodeCoverage]
 public class ApplicationBulkImportRowMap : ClassMap<ApplicationBulkImportRow>
-{    public ApplicationBulkImportRowMap()
+{
+    public ApplicationBulkImportRowMap()
     {
         Map(m => m.ParentFirstName).Name("Parent First Name");
         Map(m => m.ParentSurname).Name("Parent Surname");
@@ -32,5 +34,6 @@ public class ApplicationBulkImportRowMap : ClassMap<ApplicationBulkImportRow>
         Map(m => m.ChildDateOfBirth).Name("Child Date of Birth");
         Map(m => m.ChildSchoolUrn).Name("Child School URN");
         Map(m => m.EligibilityEndDate).Name("Eligibility End Date");
+        Map(m => m.ApplicationStatus).Name("Application Status").Optional(); // Optional for bulk import
     }
 }

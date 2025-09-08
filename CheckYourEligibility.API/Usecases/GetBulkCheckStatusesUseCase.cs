@@ -34,13 +34,16 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds)
+    public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority,
+        IList<int> allowedLocalAuthorityIds)
     {
-        if (string.IsNullOrEmpty(localAuthority)) throw new ValidationException(new List<Error>(), "Invalid Request, localAuthority is required.");
+        if (string.IsNullOrEmpty(localAuthority))
+            throw new ValidationException(null, "Invalid Request, localAuthority is required.");
 
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(int.Parse(localAuthority)))
         {
-            throw new UnauthorizedAccessException("You do not have permission to access applications for this establishment's local authority");
+            throw new UnauthorizedAccessException(
+                "You do not have permission to access applications for this establishment's local authority");
         }
 
         var response = await _checkGateway.GetBulkStatuses(localAuthority);

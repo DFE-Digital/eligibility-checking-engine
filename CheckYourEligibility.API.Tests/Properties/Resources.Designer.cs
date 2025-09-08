@@ -9,68 +9,86 @@
 
 namespace CheckYourEligibility.API.Tests.Properties {
     using System;
-    
-    
+
+
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
-        
+    internal class Resources
+    {
+
         private static System.Resources.ResourceManager resourceMan;
-        
+
         private static System.Globalization.CultureInfo resourceCulture;
-        
+
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources() {
+        internal Resources()
+        {
         }
-        
+
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static System.Resources.ResourceManager ResourceManager {
-            get {
-                if (object.Equals(null, resourceMan)) {
+        internal static System.Resources.ResourceManager ResourceManager
+        {
+            get
+            {
+                if (object.Equals(null, resourceMan))
+                {
                     System.Resources.ResourceManager temp = new System.Resources.ResourceManager("CheckYourEligibility.API.Tests.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
-        
+
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static System.Globalization.CultureInfo Culture {
-            get {
+        internal static System.Globalization.CultureInfo Culture
+        {
+            get
+            {
                 return resourceCulture;
             }
-            set {
+            set
+            {
                 resourceCulture = value;
             }
         }
-        
-        internal static string EcsSoapEligible {
-            get {
+
+        internal static string EcsSoapEligible
+        {
+            get
+            {
                 return ResourceManager.GetString("EcsSoapEligible", resourceCulture);
             }
         }
-        
-        internal static string exampleHMRC {
-            get {
+
+        internal static string exampleHMRC
+        {
+            get
+            {
                 return ResourceManager.GetString("exampleHMRC", resourceCulture);
             }
         }
-        
-        internal static string exampleHMRC_empty {
-            get {
+
+        internal static string exampleHMRC_empty
+        {
+            get
+            {
                 return ResourceManager.GetString("exampleHMRC_empty", resourceCulture);
             }
         }
-        
-        internal static string HO_Data_small {
-            get {
+
+        internal static string HO_Data_small
+        {
+            get
+            {
                 return ResourceManager.GetString("HO Data small", resourceCulture);
             }
         }
-        
-        internal static string small_gis {
-            get {
+
+        internal static string small_gis
+        {
+            get
+            {
                 return ResourceManager.GetString("small_gis", resourceCulture);
             }
         }

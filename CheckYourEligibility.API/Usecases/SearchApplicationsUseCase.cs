@@ -37,13 +37,16 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
     {
         _applicationGateway = applicationGateway;
         _auditGateway = auditGateway;
-    }    /// <summary>
-         /// Searches for applications after validating local authority permissions
-         /// </summary>
-         /// <param name="model">The application search request data</param>
-         /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
-         /// <returns>The search results response</returns>
-    public async Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model, List<int> allowedLocalAuthorityIds)
+    }
+
+    /// <summary>
+    /// Searches for applications after validating local authority permissions
+    /// </summary>
+    /// <param name="model">The application search request data</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>The search results response</returns>
+    public async Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model,
+        List<int> allowedLocalAuthorityIds)
     {
         if (model?.Data == null)
         {
@@ -60,9 +63,11 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         if (model.Data.LocalAuthority != null)
         {
             // If not 'all', must match one of the allowed LocalAuthorities
-            if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(model.Data.LocalAuthority.Value))
+            if (!allowedLocalAuthorityIds.Contains(0) &&
+                !allowedLocalAuthorityIds.Contains(model.Data.LocalAuthority.Value))
             {
-                throw new UnauthorizedAccessException("You do not have permission to search applications for this local authority");
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to search applications for this local authority");
             }
         }
 
@@ -70,17 +75,21 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         if (model.Data.Establishment != null)
         {
             // Get the local authority ID for the establishment and check permissions
-            var localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForEstablishment(model.Data.Establishment.Value);
+            var localAuthorityId =
+                await _applicationGateway.GetLocalAuthorityIdForEstablishment(model.Data.Establishment.Value);
 
             // If not 'all', must match one of the allowed LocalAuthorities
             if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
             {
-                throw new UnauthorizedAccessException("You do not have permission to search applications for this establishment's local authority");
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to search applications for this establishment's local authority");
             }
         }
+
         var response = await _applicationGateway.GetApplications(model);
 
-        if (response == null || !response.Data.Any()) return new ApplicationSearchResponse { Data = [], TotalPages = 0, TotalRecords = 0 };
+        if (response == null || !response.Data.Any())
+            return new ApplicationSearchResponse { Data = [], TotalPages = 0, TotalRecords = 0 };
         await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
 
         return response;

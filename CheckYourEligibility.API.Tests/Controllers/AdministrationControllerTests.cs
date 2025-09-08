@@ -19,6 +19,7 @@ public class AdministrationControllerTests : TestBase.TestBase
     private Mock<IImportEstablishmentsUseCase> _mockImportEstablishmentsUseCase;
     private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
     private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
+    private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
     private ILogger<AdministrationController> _mockLogger;
     private AdministrationController _sut;
 
@@ -29,6 +30,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockImportEstablishmentsUseCase = new Mock<IImportEstablishmentsUseCase>(MockBehavior.Strict);
         _mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
         _mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
+        _mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<AdministrationController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new AdministrationController(
@@ -36,6 +38,7 @@ public class AdministrationControllerTests : TestBase.TestBase
             _mockImportEstablishmentsUseCase.Object,
             _mockImportFsmHomeOfficeDataUseCase.Object,
             _mockImportFsmHMRCDataUseCase.Object,
+            _mockImportWfHMRCDataUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -55,7 +58,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockCleanUpEligibilityChecksUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
 
         var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.CleanUpEligibilityChecks();
@@ -85,7 +88,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportEstablishments(file);
@@ -100,7 +103,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+            { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportEstablishmentsUseCase
@@ -135,7 +138,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HomeOfficeFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportFsmHomeOfficeData(file);
@@ -150,7 +153,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+            { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportFsmHomeOfficeDataUseCase
@@ -185,7 +188,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportFsmHMRCData(file);
@@ -200,7 +203,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+            { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportFsmHMRCDataUseCase
@@ -209,6 +212,26 @@ public class AdministrationControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.ImportFsmHMRCData(null);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+    
+    [Test]
+    public async Task Given_ImportWfHMRCData_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var expectedResult =
+            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
+                { StatusCode = StatusCodes.Status400BadRequest };
+
+        // Setup mock to throw InvalidDataException
+        _mockImportWfHMRCDataUseCase
+            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
+            .Throws(new InvalidDataException($"{Admin.XmlfileRequired}"));
+
+        // Act
+        var response = await _sut.ImportWfHMRCData(null);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

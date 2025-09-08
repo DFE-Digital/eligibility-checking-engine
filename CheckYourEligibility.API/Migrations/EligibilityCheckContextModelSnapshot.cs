@@ -409,6 +409,29 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("LocalAuthorities");
                 });
 
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
+                {
+                    b.Property<string>("RateLimitEventId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Accepted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PartitionName")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("QuerySize")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RateLimitEventId");
+
+                    b.ToTable("RateLimitEvents");
+                });
+
             modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
                 {
                     b.Property<string>("UserID")

@@ -23,5 +23,5 @@ public class ApplicationRequestData
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string? UserId { get; set; }
-    public List<ApplicationEvidence>? Evidence { get; set; }
+    public List<ApplicationEvidenceRequest>? Evidence { get; set; }
 }

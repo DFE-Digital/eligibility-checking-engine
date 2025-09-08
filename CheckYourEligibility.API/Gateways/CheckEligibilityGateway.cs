@@ -24,7 +24,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json.Nodes;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -88,10 +87,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             var baseType = data as CheckEligibilityRequestDataBase;
 
-
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;
+
+            // if (data is CheckEligibilityRequestBulkData bulkDataItem)
+            // {
+            //     item.ClientIdentifier = bulkDataItem.ClientIdentifier;
+            // }
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -99,9 +102,31 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             item.Updated = DateTime.UtcNow;
 
             item.Status = CheckEligibilityStatus.queuedForProcessing;
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
+            if (item.Type == CheckEligibilityType.WorkingFamilies)
+            {
+                WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+                if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+                {
+                    wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+                }
+                else {
+                    wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+                    checkData.NationalInsuranceNumber, checkData.LastName);
+                }               
+                if (wfEvent != null)
+                {
+                    checkData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+                    checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+                    checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+                    checkData.LastName = wfEvent.ParentLastName;
+                    checkData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+                    item.CheckData = JsonConvert.SerializeObject(checkData);
+                }
+            }
 
             var checkHashResult =
-                await _hashGateway.Exists(JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData));
+                await _hashGateway.Exists(checkData);
             if (checkHashResult != null)
             {
                 item.Status = checkHashResult.Outcome;
@@ -125,9 +150,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    public async Task<CheckEligibilityStatus?> GetStatus(string guid)
+    public async Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+                                                                           (type == CheckEligibilityType.None ||
+                                                                            type == x.Type));
         if (result != null) return result.Status;
         return null;
     }
@@ -139,22 +166,22 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            /*if (result.Status != CheckEligibilityStatus.queuedForProcessing)
                 throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-
+*/
             switch (result.Type)
             {
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                    {
-                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
-                    {
-                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
             }
 
@@ -219,21 +246,32 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return response;
     }
-    public async Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem
+    public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+                                                                           (type == CheckEligibilityType.None ||
+                                                                            type == x.Type));
         var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
+            if (isBatchRecord)
+            {
+                item.Status = result.Status.ToString();
+                item.Created = result.Created;
+                item.ClientIdentifier = CheckData.ClientIdentifier;
+            }
+
             switch (result.Type)
             {
                 case CheckEligibilityType.WorkingFamilies:
                     item.EligibilityCode = CheckData.EligibilityCode;
-                    item.ParentLastName = CheckData.ParentLastName;
+                    item.LastName = CheckData.LastName;
                     item.ValidityStartDate = CheckData.ValidityStartDate;
                     item.ValidityEndDate = CheckData.ValidityEndDate;
                     item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
+                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
+                    item.DateOfBirth = CheckData.DateOfBirth;
                     break;
                 default:
                     item.DateOfBirth = CheckData.DateOfBirth;
@@ -242,6 +280,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     item.LastName = CheckData.LastName;
                     break;
             }
+
             return (T)item;
         }
 
@@ -252,12 +291,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.Group == guid);
-            
-        // Get bulk check for client identifier
-        // var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.Guid == guid);
-        // var clientIdentifier = bulkCheck?.ClientIdentifier;
-            
+            .Where(x => x.Group == guid).ToList();
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -266,17 +300,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var sequence = 1;
                 foreach (var result in resultList)
                 {
-                    var data = GetCheckProcessData(result.Type, result.CheckData);
-                    items.Add(new CheckEligibilityItem
-                    {
-                        Status = result.Status.ToString(),
-                        Created = result.Created,
-                        NationalInsuranceNumber = data.NationalInsuranceNumber,
-                        LastName = data.LastName,
-                        DateOfBirth = data.DateOfBirth,
-                        NationalAsylumSeekerServiceNumber = data.NationalAsylumSeekerServiceNumber,
-                        ClientIdentifier = data.ClientIdentifier
-                    });
+                    var item = await GetItem<CheckEligibilityItem>(result.EligibilityCheckID, result.Type,
+                        isBatchRecord: true);
+                    items.Add(item);
+
                     sequence++;
                 }
 
@@ -333,7 +360,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             .Include(x => x.EligibilityChecks)
             .ToListAsync();
 
-        // Update status based on child eligibility checks
+        // For each bulk check, ensure status is up to date
+        // (This handles cases where status might not have been updated yet)
         foreach (var bulkCheck in bulkChecks)
         {
             if (bulkCheck.EligibilityChecks.Any())
@@ -341,13 +369,19 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 var statuses = bulkCheck.EligibilityChecks.Select(x => x.Status);
                 var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
                 var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
+                var hasErrors = statuses.Any(s => s == CheckEligibilityStatus.error);
 
-                if (allQueued)
-                    bulkCheck.Status = BulkCheckStatus.InProgress;
-                else if (allCompleted)
-                    bulkCheck.Status = BulkCheckStatus.Completed;
-                else
-                    bulkCheck.Status = BulkCheckStatus.InProgress;
+                // Update status if it doesn't match the current state
+                var expectedStatus = allQueued ? BulkCheckStatus.InProgress :
+                                   allCompleted ? (hasErrors ? BulkCheckStatus.Failed : BulkCheckStatus.Completed) :
+                                   BulkCheckStatus.InProgress;
+
+                if (bulkCheck.Status != expectedStatus)
+                {
+                    bulkCheck.Status = expectedStatus;
+                    // Note: We don't save here to avoid modifying data during a read operation
+                    // The status will be updated during the next ProcessQueue cycle
+                }
             }
         }
 
@@ -383,13 +417,15 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             nass = nass.Substring(2, 2);
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
                 return CheckEligibilityStatus.eligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible"))
+            if (nass == _configuration.GetValue<string>(
+                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return CheckEligibilityStatus.notEligible;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound"))
+            if (nass == _configuration.GetValue<string>(
+                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
                 return CheckEligibilityStatus.parentNotFound;
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error"))
+            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
                 return CheckEligibilityStatus.error;
         }
 
@@ -447,8 +483,65 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         return queueName;
     }
+
     /// <summary>
-    /// Checks if record with the same EligibilityCode-ParentNINO exists in the WorkingFamiliesEvents Table
+    /// Logic to find a match in Working families events' table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <returns></returns>
+    private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
+        string eligibilityCode, string nino, string lastName)
+    {
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode &&
+            (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
+            (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
+             x.PartnerLastName.ToUpper() == lastName) &&
+            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
+
+        // If there is more than one record
+        // check if second to last record has not expired yet
+        if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
+        {           
+                wfEvent = wfRecords[1];  
+        }
+        else
+        {
+            wfEvent = wfRecords.FirstOrDefault();
+        }
+
+        return wfEvent;
+    }
+    /// <summary>
+    /// This method is used for generating test data in runtime
+    /// If code starts with 900 it will generate an event record that must return Eligible
+    /// If code starts with 901 it will generate an event record that must return notEligible
+    /// If code starts with 902 it will generate an event record that must return NotFound
+    /// If code starts with 903 it will generate an event record that must return Error
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <returns></returns>
+    private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData) { 
+        string eligibilityCode = checkData.EligibilityCode;
+        bool isEligiblePrefix = eligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible"));
+        DateTime today = DateTime.UtcNow;
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        if (isEligiblePrefix) { 
+            wfEvent.ValidityStartDate = today.AddDays(-1);
+            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-1);
+            wfEvent.ValidityEndDate = today.AddMonths(3);
+            wfEvent.GracePeriodEndDate = today.AddMonths(6);
+            wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
+            wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
+              
+         }
+        return wfEvent;
+    }
+    /// <summary>
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
     /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
@@ -456,45 +549,60 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
     /// </summary>
     /// <returns></returns>
-    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result, CheckProcessData checkData)
+    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
+        EligibilityCheck? result, CheckProcessData checkData)
     {
-
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         var source = ProcessEligibilityCheckSource.HMRC;
-        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x => x.EligibilityCode == checkData.EligibilityCode &&
-        (x.ParentNationalInsuranceNumber == checkData.NationalInsuranceNumber || x.PartnerNationalInsuranceNumber == checkData.NationalInsuranceNumber));
+        string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+        if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+            checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
+        {
+            wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+        }
+        else
+        {
+            wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+          checkData.NationalInsuranceNumber, checkData.LastName);
+
+        }
+        var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         if (wfEvent != null)
         {
-            var wfCheckData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesData>(result.CheckData);
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.ParentLastName = wfEvent.ParentLastName;
+            wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             //Get current date
             var currentDate = DateTime.UtcNow.Date;
-            
+
             if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
                 (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
             {
-
                 result.Status = CheckEligibilityStatus.eligible;
             }
             else
             {
-
                 result.Status = CheckEligibilityStatus.notEligible;
-
             }
-
-            result.EligibilityCheckHashID =
-                await _hashGateway.Create(checkData, result.Status, source, auditDataTemplate);
-
         }
-        else { result.Status = CheckEligibilityStatus.notFound; }
+        else
+        {
+            result.Status = CheckEligibilityStatus.notFound;
+        }
+
+        result.EligibilityCheckHashID =
+            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+
+        // manually update bulk check
+        await UpdateBulkCheckStatusIfComplete(guid);
     }
+
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
         CheckProcessData checkData)
     {
@@ -514,8 +622,30 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
-                    checkResult = await DWP_Check(checkData);
-                    source = ProcessEligibilityCheckSource.DWP;
+                    if (_dwpGateway.UseEcsforChecks=="true")
+                    {
+                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        
+                        source = ProcessEligibilityCheckSource.ECS;
+                    }
+                    else if(_dwpGateway.UseEcsforChecks=="false")
+                    {
+                        
+                        checkResult = await DwpCitizenCheck(checkData, checkResult);
+                        
+                        source = ProcessEligibilityCheckSource.DWP;
+                    }
+                    else
+                    {
+                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        source = ProcessEligibilityCheckSource.DWP;
+
+                        if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
+                        {
+                            source = ProcessEligibilityCheckSource.ECS_CONFLICT;
+                        }
+                        
+                    }
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -541,6 +671,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
         }
 
+        // manually update bulk check
+        await UpdateBulkCheckStatusIfComplete(guid);
+
         TrackMetric($"FSM Check:-{result.Status}", 1);
         TrackMetric("FSM Check", 1);
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
@@ -556,7 +689,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             case CheckEligibilityType.EarlyYearPupilPremium:
                 return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
             case CheckEligibilityType.WorkingFamilies:
-                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesData>(type, data);
+                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesBulkData>(type, data);
             default:
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
@@ -576,21 +709,22 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ValidityStartDate = checkItem.ValidityStartDate,
                     ValidityEndDate = checkItem.ValidityEndDate,
                     GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    ParentLastName = checkItem.ParentLastName,
+                    LastName = checkItem.LastName?.ToUpper(),
+                    DateOfBirth = checkItem.DateOfBirth,
+                    ClientIdentifier = checkItem.ClientIdentifier,
                     Type = type
                 };
             default:
                 return new CheckProcessData
                 {
                     DateOfBirth = checkItem.DateOfBirth,
-                    LastName = checkItem.LastName.ToUpper(),
+                    LastName = checkItem.LastName?.ToUpper(),
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
                     ClientIdentifier = checkItem.ClientIdentifier
                 };
         }
-
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
@@ -620,18 +754,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             .Select(x => x.Surname);
 
         return CheckSurname(data.LastName, checkReults);
-    }
-
-    private async Task<CheckEligibilityStatus> DWP_Check(CheckProcessData data)
-    {
-        var checkResult = CheckEligibilityStatus.parentNotFound;
-        _logger.LogInformation($"Dwp check use ECS service:- {_dwpGateway.UseEcsforChecks}");
-        if (!_dwpGateway.UseEcsforChecks)
-            checkResult = await DwpCitizenCheck(data, checkResult);
-        else
-            checkResult = await DwpEcsFsmCheck(data, checkResult);
-
-        return checkResult;
     }
 
 
@@ -675,40 +797,53 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var citizenRequest = new CitizenMatchRequest
         {
-            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "2.0" },
+            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
             Data = new CitizenMatchRequest.CitizenMatchRequest_Data
             {
                 Type = "Match",
                 Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
                 {
                     LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber,
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length - 5, 4),
                     DateOfBirth = data.DateOfBirth
                 }
             }
         };
         //check citizen
         // if a guid is not valid ie the request failed then the status is updated
-        var guid = await _dwpGateway.GetCitizen(citizenRequest);
-        if (!Guid.TryParse(guid, out _))
+
+        _logger.LogInformation($"Dwp before getting citizen");
+
+        _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
+        var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type);
+        _logger.LogInformation($"Dwp after getting citizen");
+        if (guid.Length != 64)
+        {
+            _logger.LogInformation($"Dwp after getting citizen error " + guid);
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
+        }
 
         if (!string.IsNullOrEmpty(guid))
         {
+            _logger.LogInformation($"Dwp has valid citizen");
             //check for benefit
-            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MMM-dd"),
-                DateTime.Now.ToString("yyyy-MMM-dd"));
+            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type);
+            _logger.LogInformation($"Dwp after getting claim");
+
             if (result.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;
+                _logger.LogInformation($"Dwp is eligible");
             }
             else if (result.StatusCode == StatusCodes.Status404NotFound)
             {
                 checkResult = CheckEligibilityStatus.notEligible;
+                _logger.LogInformation($"Dwp is not found");
             }
             else
             {
-                _logger.LogError($"Error unknown Response status code:-{result.StatusCode}.");
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.StatusCode}.");
                 checkResult = CheckEligibilityStatus.error;
             }
         }
@@ -740,7 +875,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
 
-            while (properties.ApproximateMessagesCount > 0)
+            if (properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
                 foreach (var item in retrievedMessage)
@@ -770,11 +905,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                                 await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                             }
                         }
-
                         // If status is not queued for Processing, we have a conclusive answer
                         else
                         {
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            
+                            // Update BulkCheck status if this was part of a bulk operation
+                            await UpdateBulkCheckStatusIfComplete(checkData.Guid);
                         }
                     }
                     catch (Exception ex)
@@ -788,6 +925,56 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
                 properties = await queue.GetPropertiesAsync();
             }
+        }
+    }
+
+    /// <summary>
+    /// Updates the BulkCheck status when all EligibilityChecks in a group are completed
+    /// </summary>
+    /// <param name="eligibilityCheckId">The ID of the eligibility check that was just processed</param>
+    private async Task UpdateBulkCheckStatusIfComplete(string eligibilityCheckId)
+    {
+        try
+        {
+            // Get the eligibility check to find its group
+            var eligibilityCheck = await _db.CheckEligibilities
+                .FirstOrDefaultAsync(x => x.EligibilityCheckID == eligibilityCheckId);
+
+            if (eligibilityCheck?.Group == null)
+                return; // Not part of a bulk operation
+
+            // Get the corresponding BulkCheck
+            var bulkCheck = await _db.BulkChecks
+                .Include(x => x.EligibilityChecks)
+                .FirstOrDefaultAsync(x => x.Guid == eligibilityCheck.Group);
+
+            if (bulkCheck == null)
+                return;
+
+            // Check if all eligibility checks in this group are completed
+            var allEligibilityChecks = bulkCheck.EligibilityChecks;
+            var pendingChecks = allEligibilityChecks
+                .Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing)
+                .ToList();
+
+            // If no pending checks, update bulk status to completed
+            if (!pendingChecks.Any())
+            {
+                var hasErrors = allEligibilityChecks.Any(x => x.Status == CheckEligibilityStatus.error);
+                
+                bulkCheck.Status = hasErrors ? BulkCheckStatus.Failed : BulkCheckStatus.Completed;
+                
+                await _db.SaveChangesAsync();
+                
+                _logger.LogInformation("Updated BulkCheck {GroupId} status to {Status}", 
+                    bulkCheck.Guid, bulkCheck.Status);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating BulkCheck status for EligibilityCheck {EligibilityCheckId}", 
+                eligibilityCheckId);
+            // Don't rethrow - we don't want to break the main processing flow
         }
     }
 

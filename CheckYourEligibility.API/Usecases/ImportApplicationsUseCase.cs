@@ -26,7 +26,8 @@ public interface IImportApplicationsUseCase
     /// <param name="request">The bulk import request containing the CSV or JSON file</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>A response containing import results and any errors</returns>
-    Task<ApplicationBulkImportResponse> Execute(ApplicationBulkImportRequest request, List<int> allowedLocalAuthorityIds);
+    Task<ApplicationBulkImportResponse> Execute(ApplicationBulkImportRequest request,
+        List<int> allowedLocalAuthorityIds);
 
     /// <summary>
     /// Executes the bulk import of applications from JSON body data
@@ -34,7 +35,8 @@ public interface IImportApplicationsUseCase
     /// <param name="request">The bulk import request containing application data in JSON format</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>A response containing import results and any errors</returns>
-    Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request, List<int> allowedLocalAuthorityIds);
+    Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request,
+        List<int> allowedLocalAuthorityIds);
 }
 
 /// <summary>
@@ -64,13 +66,16 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         _auditGateway = auditGateway;
         _logger = logger;
         _mapper = mapper;
-    }    /// <summary>
-         /// Executes the bulk import of applications from a CSV or JSON file
-         /// </summary>
-         /// <param name="request">The bulk import request containing the CSV or JSON file</param>
-         /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
-         /// <returns>A response containing import results and any errors</returns>
-    public async Task<ApplicationBulkImportResponse> Execute(ApplicationBulkImportRequest request, List<int> allowedLocalAuthorityIds)
+    }
+
+    /// <summary>
+    /// Executes the bulk import of applications from a CSV or JSON file
+    /// </summary>
+    /// <param name="request">The bulk import request containing the CSV or JSON file</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <returns>A response containing import results and any errors</returns>
+    public async Task<ApplicationBulkImportResponse> Execute(ApplicationBulkImportRequest request,
+        List<int> allowedLocalAuthorityIds)
     {
         var response = new ApplicationBulkImportResponse();
 
@@ -103,6 +108,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             {
                 importData = await ParseJSONFile(request.File);
             }
+
             if (importData == null || importData.Count == 0)
             {
                 response.Message = "Import failed - no valid records found in the file.";
@@ -128,7 +134,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
     /// <param name="request">The bulk import request containing application data in JSON format</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>A response containing import results and any errors</returns>
-    public async Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request, List<int> allowedLocalAuthorityIds)
+    public async Task<ApplicationBulkImportResponse> ExecuteFromJson(ApplicationBulkImportJsonRequest request,
+        List<int> allowedLocalAuthorityIds)
     {
         var response = new ApplicationBulkImportResponse();
 
@@ -138,6 +145,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             response.Errors.Add("Application data required.");
             return response;
         }
+
         // Convert JSON data to import rows (reusing existing logic)
         var importData = request.Applications.Select(ConvertToImportRow).ToList();
 
@@ -151,7 +159,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
     /// <param name="importData">List of application import rows</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>A response containing import results and any errors</returns>
-    private async Task<ApplicationBulkImportResponse> ProcessImportData(List<ApplicationBulkImportRow> importData, List<int> allowedLocalAuthorityIds)
+    private async Task<ApplicationBulkImportResponse> ProcessImportData(List<ApplicationBulkImportRow> importData,
+        List<int> allowedLocalAuthorityIds)
     {
         var response = new ApplicationBulkImportResponse();
 
@@ -203,10 +212,12 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                 }
 
                 // Check local authority permissions - similar to CreateApplicationUseCase
-                if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(establishment.LocalAuthorityId))
+                if (!allowedLocalAuthorityIds.Contains(0) &&
+                    !allowedLocalAuthorityIds.Contains(establishment.LocalAuthorityId))
                 {
                     response.FailedImports++;
-                    response.Errors.Add($"Row {rowNum}: You do not have permission to create applications for this establishment's local authority");
+                    response.Errors.Add(
+                        $"Row {rowNum}: You do not have permission to create applications for this establishment's local authority");
                     continue;
                 }
 
@@ -228,7 +239,10 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     EligibilityEndDate = validationResult.EligibilityEndDate!.Value,
                     Created = DateTime.UtcNow,
                     Updated = DateTime.UtcNow,
-                    Status = ApplicationStatus.SentForReview, // Default status for bulk import
+                    // If ApplicationStatus is not provided, set Status to Receiving else to whatever is provided
+                    Status = string.IsNullOrWhiteSpace(row.ApplicationStatus)
+                        ? ApplicationStatus.Receiving
+                        : Enum.Parse<ApplicationStatus>(row.ApplicationStatus),
                     EligibilityCheckHashID = null // No hash for bulk import
                 };
                 applications.Add(application);
@@ -260,6 +274,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                 return response;
             }
         }
+
         response.TotalRecords = importData.Count;
 
         // Set appropriate message based on results
@@ -273,7 +288,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         }
         else if (response.SuccessfulImports > 0 && response.FailedImports > 0)
         {
-            response.Message = $"Import partially completed - {response.SuccessfulImports} records imported, {response.FailedImports} failed. Please check the errors above.";
+            response.Message =
+                $"Import partially completed - {response.SuccessfulImports} records imported, {response.FailedImports} failed. Please check the errors above.";
         }
         else
         {
@@ -336,7 +352,9 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         }
 
         throw new InvalidOperationException("Unable to parse JSON content as ApplicationBulkImportData");
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Converts ApplicationBulkImportData to ApplicationBulkImportRow
     /// </summary>
     /// <param name="data">The data object to convert</param>
@@ -354,9 +372,12 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             ChildSurname = data.ChildSurname,
             ChildDateOfBirth = data.ChildDateOfBirth,
             ChildSchoolUrn = data.ChildSchoolUrn,
-            EligibilityEndDate = data.EligibilityEndDate
+            EligibilityEndDate = data.EligibilityEndDate,
+            ApplicationStatus = data.ApplicationStatus
         };
-    }    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
+    }
+
+    private ValidationResult ValidateRow(ApplicationBulkImportRow row)
     {
         var result = new ValidationResult { IsValid = true, ErrorMessages = new List<string>() };
 
@@ -410,7 +431,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         }
 
         // Validate dates
-        if (!DateTime.TryParseExact(row.ParentDOB, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parentDob))
+        if (!DateTime.TryParseExact(row.ParentDOB, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None,
+                out var parentDob))
         {
             result.IsValid = false;
             result.ErrorMessages.Add("Parent date of birth must be in format yyyy-MM-dd");
@@ -420,7 +442,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             result.ParentDateOfBirth = parentDob;
         }
 
-        if (!DateTime.TryParseExact(row.ChildDateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var childDob))
+        if (!DateTime.TryParseExact(row.ChildDateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var childDob))
         {
             result.IsValid = false;
             result.ErrorMessages.Add("Child date of birth must be in format yyyy-MM-dd");
@@ -430,7 +453,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             result.ChildDateOfBirth = childDob;
         }
 
-        if (!DateTime.TryParseExact(row.EligibilityEndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var eligibilityEndDate))
+        if (!DateTime.TryParseExact(row.EligibilityEndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var eligibilityEndDate))
         {
             result.IsValid = false;
             result.ErrorMessages.Add("Eligibility End Date must be in format yyyy-MM-dd");
@@ -454,7 +478,9 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         // Generate a simple reference based on timestamp
         var timestamp = DateTime.UtcNow.Ticks.ToString();
         return timestamp.Substring(timestamp.Length - 8);
-    }    private class ValidationResult
+    }
+
+    private class ValidationResult
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;

@@ -5,10 +5,14 @@ declare namespace Cypress {
     saveBearerToken(): Chainable<any>;
     apiRequest(method: string, url: string, requestBody: any, bearerToken?: string | null, failOnStatusCode?: boolean, contentType?: string | null): Chainable<any>;
     verifyPostEligibilityCheckResponse(response: any): Chainable<any>;
+    verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
+    verifyGetEligibilityWFCheckResponseDataNotFound(response: any, requestData: any): Chainable<void>;
+    verifyGetEligibilityWFCheckResponseDataFound(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
     verifyGetEligibilityCheckStatusResponse(response: any): Chainable<void>;
+    createEligibilityBulkCheckAndGetResults(loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityCheckBulkRequestBody: any): Chainable<any>;
     createEligibilityCheckAndGetStatus(loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any): Chainable<any>;
     updateLastName(requestBody: any): Chainable<any>;
     verifyPostApplicationResponse(response: any, requestData: any): Chainable<void>;
@@ -71,6 +75,23 @@ Cypress.Commands.add('verifyPostEligibilityCheckResponse', (response) => {
 
 });
 
+Cypress.Commands.add('verifyPostEligibilityBulkCheckResponse', (response) => {
+  expect(response.body).to.have.property('data');
+  expect(response.body).to.have.property('links');
+  const responseData = response.body.data;
+  const responseLinks = response.body.links;
+
+  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+
+  // Verfiy total number of elements
+  cy.verifyTotalElements(totalElements, 3);
+
+  // Verify response elements
+  expect(response.body.data).to.have.property('status');
+  expect(response.body.links).to.have.property('get_Progress_Check');
+  expect(response.body.links).to.have.property('get_BulkCheck_Results');
+});
+
 Cypress.Commands.add('extractGuid', (response) => {
   let guid;
 
@@ -79,6 +100,11 @@ Cypress.Commands.add('extractGuid', (response) => {
     guid = getEligibilityCheck.substring(getEligibilityCheck.lastIndexOf('/') + 1);
   } else if (response.body.data && response.body.data.id) {
     guid = response.body.data.id;
+  } else if (response.body.links && response.body.links.get_BulkCheck_Results) {
+    const getBulkCheckResults = response.body.links.get_BulkCheck_Results;
+    //remove trailing '/'
+    const trimmedString = getBulkCheckResults.substring(0, getBulkCheckResults.lastIndexOf('/'));
+    guid = trimmedString.substring(trimmedString.lastIndexOf('/') + 1);
   } else {
     throw new Error('No valid GUID found in response');
   }
@@ -102,6 +128,61 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
   expect(responseData).to.have.property('lastName', requestData.data.lastName);
   expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
   expect(responseData).to.have.property('nationalAsylumSeekerServiceNumber', requestData.data.nationalAsylumSeekerServiceNumber);
+  expect(responseData).to.have.property('status');
+  expect(responseData).to.have.property('created');
+  
+
+  // Verify links properties
+  expect(responseLinks).to.have.property('get_EligibilityCheck');
+  expect(responseLinks).to.have.property('put_EligibilityCheckProcess');
+  expect(responseLinks).to.have.property('get_EligibilityCheckStatus');
+});
+
+Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataNotFound', (response, requestData) => {
+  // Verify body has data and links properties
+  expect(response.body).to.have.property('data');
+  expect(response.body).to.have.property('links');
+  const responseData = response.body.data;
+  const responseLinks = response.body.links;
+
+  // Calculate total number of elements in data and links
+  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+  // Verfiy total number of elements
+  cy.verifyTotalElements(totalElements, 9);
+
+  expect(responseData).to.have.property('nationalInsuranceNumber', requestData.data.nationalInsuranceNumber);
+  expect(responseData).to.have.property('lastName', requestData.data.lastName.toUpperCase());
+  expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
+  expect(responseData).to.have.property('eligibilityCode', requestData.data.eligibilityCode);
+  expect(responseData).to.have.property('status', 'notFound');
+  expect(responseData).to.have.property('created');
+  
+
+  // Verify links properties
+  expect(responseLinks).to.have.property('get_EligibilityCheck');
+  expect(responseLinks).to.have.property('put_EligibilityCheckProcess');
+  expect(responseLinks).to.have.property('get_EligibilityCheckStatus');
+});
+
+Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataFound', (response, requestData) => {
+  // Verify body has data and links properties
+  expect(response.body).to.have.property('data');
+  expect(response.body).to.have.property('links');
+  const responseData = response.body.data;
+  const responseLinks = response.body.links;
+
+  // Calculate total number of elements in data and links
+  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+  // Verfiy total number of elements
+  cy.verifyTotalElements(totalElements, 12);
+
+  expect(responseData).to.have.property('nationalInsuranceNumber', requestData.data.nationalInsuranceNumber);
+  expect(responseData).to.have.property('lastName', requestData.data.lastName.toUpperCase());
+  expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
+  expect(responseData).to.have.property('eligibilityCode', requestData.data.eligibilityCode);
+  expect(responseData).to.have.property('validityStartDate');
+  expect(responseData).to.have.property('validityEndDate');
+  expect(responseData).to.have.property('gracePeriodEndDate');
   expect(responseData).to.have.property('status');
   expect(responseData).to.have.property('created');
   
@@ -155,6 +236,26 @@ Cypress.Commands.add('createEligibilityCheckAndGetStatus', (loginUrl: string, lo
           cy.verifyApiResponseCode(newResponse, 200);
           const status = newResponse.body.data.status;
           cy.wrap(status).as('status');
+        });
+      });
+    });
+  });
+});
+
+Cypress.Commands.add('createEligibilityBulkCheckAndGetResults', (loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityBulkCheckRequestBody: any) => {
+  return cy.apiRequest('POST', loginUrl, loginRequestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {
+    cy.verifyApiResponseCode(response, 200);
+    const token = response.body.access_token;
+
+    return cy.apiRequest('POST', eligibilityBulkCheckUrl, eligibilityBulkCheckRequestBody, token).then((response) => {
+      cy.verifyApiResponseCode(response, 202);
+      cy.extractGuid(response);
+      cy.wait(40000);
+      return cy.get('@Guid').then((eligibilityCheckId) => {
+        return cy.apiRequest('GET', `bulk-check/${eligibilityCheckId}`, {}, token).then((newResponse) => {
+          cy.verifyApiResponseCode(newResponse, 200);
+          const data = newResponse.body.data;
+          cy.wrap(data).as('data');
         });
       });
     });

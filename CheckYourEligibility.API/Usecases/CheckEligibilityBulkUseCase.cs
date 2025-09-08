@@ -1,10 +1,8 @@
-using System.Text;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
@@ -16,17 +14,10 @@ namespace CheckYourEligibility.API.UseCases;
 /// </summary>
 public interface ICheckEligibilityBulkUseCase
 {
-    /// <summary>
-    /// Executes a bulk eligibility check operation
-    /// </summary>
-    /// <param name="model">The bulk eligibility check request</param>
-    /// <param name="type">The type of eligibility check to perform</param>
-    /// <param name="recordCountLimit">Maximum number of records allowed in a bulk operation</param>
-    /// <returns>A response containing the bulk check status and links</returns>
-    Task<CheckEligibilityResponseBulk> Execute(
-        CheckEligibilityRequestBulk model,
+    Task<CheckEligibilityResponseBulk> Execute<T>(
+        T model,
         CheckEligibilityType type,
-        int recordCountLimit);
+        int recordCountLimit) where T : CheckEligibilityRequestBulkBase;
 }
 
 /// <summary>
@@ -55,50 +46,57 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Executes a bulk eligibility check operation
-    /// </summary>
-    /// <param name="model">The bulk eligibility check request</param>
-    /// <param name="type">The type of eligibility check to perform</param>
-    /// <param name="recordCountLimit">Maximum number of records allowed in a bulk operation</param>
-    /// <returns>A response containing the bulk check status and links</returns>
-    public async Task<CheckEligibilityResponseBulk> Execute(
-        CheckEligibilityRequestBulk model,
+    public async Task<CheckEligibilityResponseBulk> Execute<T>(
+        T model,
         CheckEligibilityType type,
-        int recordCountLimit)
+        int recordCountLimit) where T : CheckEligibilityRequestBulkBase
     {
-        var modelData = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
+        var modelBulk = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
+        var bulkData = (modelBulk as dynamic).Data;
+        if (modelBulk == null || bulkData == null)
 
-        if (modelData == null || model.Data == null)
-            throw new ValidationException([], "Invalid Request, data is required.");
+            throw new ValidationException(null, "Invalid Request, data is required.");
 
-        if (modelData.Data.Count() > recordCountLimit)
+        if (bulkData.Count > recordCountLimit)
         {
             var errorMessage =
-                $"Invalid Request, data limit of {recordCountLimit} exceeded, {model.Data.Count()} records.";
+                $"Invalid Request, data limit of {recordCountLimit} exceeded, {bulkData.Count} records.";
             _logger.LogWarning(errorMessage);
             throw new ValidationException([], errorMessage);
         }
 
-        var errors = new StringBuilder();
-        int index = 1;
+        List<Error> errors = new List<Error>();
 
-        foreach (var item in modelData.Data)
+        int index = 0;
+
+        foreach (var item in bulkData)
         {
             item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpperInvariant();
-            item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
+            if (type != CheckEligibilityType.WorkingFamilies)
+            {
+                item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
+            }
 
             var result = _validator.Validate(item);
             if (!result.IsValid)
             {
-                errors.AppendLine($"Item {index}: {result}");
+                for (int i = 0; i < result.Errors.Count; i++)
+                {
+                    Error error = new Error
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = item.ClientIdentifier ?? $"Data at index {index} has no clientIdentifier"
+                    };
+                    errors.Add(error);
+                }
             }
 
             index++;
         }
 
-        if (errors.Length > 0)
-            throw new ValidationException([], errors.ToString());
+        if (errors.Count > 0)
+            throw new ValidationException(errors, string.Empty);
 
         var groupId = Guid.NewGuid().ToString();
         
@@ -116,7 +114,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
         await _checkGateway.CreateBulkCheck(bulkCheck);
 
-        await _checkGateway.PostCheck(modelData.Data, groupId);
+        await _checkGateway.PostCheck(bulkData, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 

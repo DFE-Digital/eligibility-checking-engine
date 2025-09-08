@@ -44,6 +44,12 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
                 .WithMessage(ValidationMessages.NI);
         }).Otherwise(() =>
         {
+            When(x => !string.IsNullOrEmpty(x.Data.ParentNationalAsylumSeekerServiceNumber), () =>
+            {
+                RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
+                    .Must(DataValidation.BeAValidNass)
+                    .WithMessage(ValidationMessages.NASS);
+            });
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .NotEmpty()
                 .WithMessage(ValidationMessages.NI_or_NASS);

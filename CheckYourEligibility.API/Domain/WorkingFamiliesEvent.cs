@@ -33,5 +33,26 @@ public class WorkingFamiliesEvent
     public DateTime DiscretionaryValidityStartDate { get; set; }
     public DateTime GracePeriodEndDate { get; set; }
 
+    public string getHash()
+    {
+        //Exclude event Id
+        return $"""
+        {EligibilityCode}
+        {ChildFirstName}
+        {ChildLastName}
+        {ChildDateOfBirth}
+        {ParentFirstName}
+        {ParentLastName}
+        {ParentNationalInsuranceNumber}
+        {PartnerFirstName}
+        {PartnerLastName}
+        {PartnerNationalInsuranceNumber}
+        {SubmissionDate}
+        {ValidityStartDate}
+        {ValidityEndDate}
+        {DiscretionaryValidityStartDate}
+        {GracePeriodEndDate}
+        """.ReplaceLineEndings("");
 
+    }
 }

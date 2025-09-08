@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using Error = CheckYourEligibility.API.Boundary.Responses.Error;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -19,7 +20,8 @@ public interface ICheckEligibilityUseCase
     /// <param name="model">Eligibility check request</param>
     /// <param name="routeType">The type of eligibility check to perform</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType;
+    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType)
+        where T : IEligibilityServiceType;
 }
 
 public class CheckEligibilityUseCase : ICheckEligibilityUseCase
@@ -41,7 +43,8 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType) where T : IEligibilityServiceType
+    public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model,
+        CheckEligibilityType routeType) where T : IEligibilityServiceType
     {
         if (model == null || model.Data == null)
         {
@@ -52,10 +55,25 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
 
         if (modelData.Data != null)
         {
+            List<Error> errors = new List<Error>();
+            var result = _validator.Validate(modelData.Data);
+            if (!result.IsValid)
+            {
+                for (int i = 0; i < result.Errors.Count; i++)
+                {
+                    Error error = new Error
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = ""
+                    };
+                    errors.Add(error);
+                }
+            }
 
-            var validationResults = _validator.Validate(modelData.Data);
-            if (!validationResults.IsValid) throw new ValidationException(null, validationResults.ToString());
-
+            if (errors.Count > 0) {
+                throw new ValidationException(errors, string.Empty);
+            }
             // Execute the check
             var response = await _checkGateway.PostCheck(modelData.Data);
             if (response != null)
@@ -78,5 +96,4 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
         _logger.LogWarning("Response for eligibility check was null.");
         throw new ValidationException(null, "Eligibility check not completed successfully.");
     }
-
 }

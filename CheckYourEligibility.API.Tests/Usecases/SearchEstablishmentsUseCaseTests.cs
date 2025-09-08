@@ -53,7 +53,7 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var query = "test";
-        string la = null;  
+        string la = null;
         var establishments = new List<Establishment>();
 
         _mockEstablishmentSearchGateway.Setup(es => es.Search(query, la)).ReturnsAsync(establishments);

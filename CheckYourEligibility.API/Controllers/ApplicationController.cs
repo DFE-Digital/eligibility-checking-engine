@@ -16,13 +16,17 @@ namespace CheckYourEligibility.API.Controllers;
 [Route("[controller]")]
 [Authorize]
 public class ApplicationController : BaseController
-{    private readonly ICreateApplicationUseCase _createApplicationUseCase;
+{
+    private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
-    private readonly IImportApplicationsUseCase _importApplicationsUseCase;    public ApplicationController(
+    private readonly IImportApplicationsUseCase _importApplicationsUseCase;
+    private readonly IDeleteApplicationUseCase _deleteApplicationUseCase;
+
+    public ApplicationController(
         ILogger<ApplicationController> logger,
         IConfiguration configuration,
         ICreateApplicationUseCase createApplicationUseCase,
@@ -30,6 +34,7 @@ public class ApplicationController : BaseController
         ISearchApplicationsUseCase searchApplicationsUseCase,
         IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
         IImportApplicationsUseCase importApplicationsUseCase,
+        IDeleteApplicationUseCase deleteApplicationUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -40,6 +45,7 @@ public class ApplicationController : BaseController
         _searchApplicationsUseCase = searchApplicationsUseCase;
         _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
         _importApplicationsUseCase = importApplicationsUseCase;
+        _deleteApplicationUseCase = deleteApplicationUseCase;
     }
 
     /// <summary>
@@ -110,7 +116,8 @@ public class ApplicationController : BaseController
             var response = await _getApplicationUseCase.Execute(guid, localAuthorityIds);
 
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
-        }        catch (NotFoundException)
+        }
+        catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
@@ -128,7 +135,8 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ApplicationSearchResponse), (int)HttpStatusCode.OK)]
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
@@ -185,6 +193,7 @@ public class ApplicationController : BaseController
                     Errors = [new Error { Title = "No local authority scope found" }]
                 });
             }
+
             var response = await _updateApplicationStatusUseCase.Execute(guid, model, localAuthorityIds);
             if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
@@ -203,7 +212,8 @@ public class ApplicationController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
+            _logger.LogError(ex,
+                $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
@@ -290,6 +300,49 @@ public class ApplicationController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during bulk import from JSON");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    /// Deletes an application by GUID
+    /// </summary>
+    /// <param name="guid">The application GUID to delete</param>
+    /// <returns>No content if successful</returns>
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [HttpDelete("/application/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> DeleteApplication(string guid)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            await _deleteApplicationUseCase.Execute(guid, localAuthorityIds);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting application {guid?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

@@ -12,9 +12,11 @@ public interface ICheckEligibility
     Task<string> CreateBulkCheck(Domain.BulkCheck bulkCheck);
 
     Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
-    Task<T?> GetItem<T>(string guid) where T : CheckEligibilityItem;
 
-    Task<CheckEligibilityStatus?> GetStatus(string guid);
+    Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false)
+        where T : CheckEligibilityItem;
+
+    Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type);
     Task<BulkStatus?> GetBulkStatus(string guid);
     Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string guid);
 
