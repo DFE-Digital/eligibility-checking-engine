@@ -6,9 +6,12 @@ using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.CsvImport;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -26,7 +29,7 @@ public class AdministrationServiceTests : TestBase.TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase("FakeInMemoryDb", new InMemoryDatabaseRoot())
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
@@ -35,7 +38,8 @@ public class AdministrationServiceTests : TestBase.TestBase
         _mapper = config.CreateMapper();
         var configForSmsApi = new Dictionary<string, string>
         {
-            { "QueueFsmCheckStandard", "notSet" }
+            { $"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.eligible}", "7" },
+            { $"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.parentNotFound}", "3" }
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
@@ -62,6 +66,59 @@ public class AdministrationServiceTests : TestBase.TestBase
 
         // Assert
         Assert.Pass();
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_Should_Remove_Old_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-10);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(0);
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_Should_Keep_Recent_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-1);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(1);
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_NotConfigured_Should_Keep_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-1);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        var _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
+        _sut = new AdministrationGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(1);
     }
 
     [Test]
