@@ -973,7 +973,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating BulkCheck status for EligibilityCheck {EligibilityCheckId}", 
-                eligibilityCheckId);
+                eligibilityCheckId?.Replace(Environment.NewLine, "")?.Replace("\n", "")?.Replace("\r", ""));
             // Don't rethrow - we don't want to break the main processing flow
         }
     }
