@@ -59,6 +59,21 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk"), queueClientGateway);
     }
 
+    public async Task<string> CreateBulkCheck(Domain.BulkCheck bulkCheck)
+    {
+        try
+        {
+            await _db.BulkChecks.AddAsync(bulkCheck);
+            await _db.SaveChangesAsync();
+            return bulkCheck.Guid;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating bulk check with ID: {GroupId}", bulkCheck.Guid);
+            throw;
+        }
+    }
+
     public async Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
@@ -77,13 +92,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;
-
-            if (data is CheckEligibilityRequestBulkData bulkData)
-            {
-                item.ClientIdentifier = bulkData.ClientIdentifier;
-                item.Filename = bulkData.Filename;
-                item.SubmittedBy = bulkData.SubmittedBy;
-            }
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -245,6 +253,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
             .Where(x => x.Group == guid);
+            
+        // Get bulk check for client identifier
+        // var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.Guid == guid);
+        // var clientIdentifier = bulkCheck?.ClientIdentifier;
+            
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -306,45 +319,39 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
+    /// <summary>
+    /// Gets bulk check statuses for a local authority
+    /// </summary>
+    /// <param name="localAuthority">The local authority identifier</param>
+    /// <returns>Collection of bulk checks for the local authority</returns>
+    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthority)
     {
         var minDate = DateTime.Now.AddDays(-7);
 
-        var allChecks = await _db.CheckEligibilities
-            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate && !string.IsNullOrWhiteSpace(x.Group))
+        var bulkChecks = await _db.BulkChecks
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.SubmittedDate > minDate)
+            .Include(x => x.EligibilityChecks)
             .ToListAsync();
 
-        var results = allChecks
-            .GroupBy(b => b.Group)
-            .Select(g =>
+        // Update status based on child eligibility checks
+        foreach (var bulkCheck in bulkChecks)
+        {
+            if (bulkCheck.EligibilityChecks.Any())
             {
-                var statuses = g.Select(x => x.Status);
-
+                var statuses = bulkCheck.EligibilityChecks.Select(x => x.Status);
                 var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
                 var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
 
-                string status;
                 if (allQueued)
-                    status = "NotStarted";
+                    bulkCheck.Status = BulkCheckStatus.InProgress;
                 else if (allCompleted)
-                    status = "Complete";
+                    bulkCheck.Status = BulkCheckStatus.Completed;
                 else
-                    status = "InProgress";
+                    bulkCheck.Status = BulkCheckStatus.InProgress;
+            }
+        }
 
-                var item = g.First();
-
-                return new BulkCheck
-                {
-                    Guid = g.Key,
-                    EligibilityType = item.Type.ToString(),
-                    SubmittedDate = item.Created,
-                    SubmittedBy = item.SubmittedBy ?? string.Empty,
-                    Filename = item.Filename ?? string.Empty,
-                    Status = status
-                };
-            });
-
-        return results;
+        return bulkChecks;
     }
 
     public static string GetHash(CheckProcessData item)

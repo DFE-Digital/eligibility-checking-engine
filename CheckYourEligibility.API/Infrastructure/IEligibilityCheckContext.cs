@@ -5,6 +5,7 @@ public interface IEligibilityCheckContext
 {
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     DbSet<EligibilityCheck> CheckEligibilities { get; set; }
+    DbSet<BulkCheck> BulkChecks { get; set; }
     DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     DbSet<Establishment> Establishments { get; set; }

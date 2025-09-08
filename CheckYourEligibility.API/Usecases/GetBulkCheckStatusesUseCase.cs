@@ -36,7 +36,7 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
 
     public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds)
     {
-        if (string.IsNullOrEmpty(localAuthority)) throw new ValidationException(null, "Invalid Request, localAuthority is required.");
+        if (string.IsNullOrEmpty(localAuthority)) throw new ValidationException(new List<Error>(), "Invalid Request, localAuthority is required.");
 
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(int.Parse(localAuthority)))
         {
@@ -56,7 +56,16 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
 
         return new CheckEligibilityBulkStatusesResponse
         {
-            Checks = response
+            Checks = response.Select(bc => new Boundary.Responses.BulkCheck
+            {
+                Guid = bc.Guid,
+                SubmittedDate = bc.SubmittedDate,
+                EligibilityType = bc.EligibilityType.ToString(),
+                Status = bc.Status.ToString(),
+                Filename = bc.Filename,
+                SubmittedBy = bc.SubmittedBy,
+                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}/results"
+            })
         };
     }
 }
