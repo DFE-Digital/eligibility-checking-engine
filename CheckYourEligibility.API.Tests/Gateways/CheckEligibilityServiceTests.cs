@@ -1286,7 +1286,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
         deleteRespomse.DeletedCount.Should().Be(5);
         deleteRespomse.Error.Should().BeNullOrEmpty();
-        deleteRespomse.Message.Should().BeEquivalentTo("5 record(s) successfully deleted.");
+        deleteRespomse.Message.Should().BeEquivalentTo("5 eligibility check record(s) and associated bulk check successfully deleted.");
     }
 
 

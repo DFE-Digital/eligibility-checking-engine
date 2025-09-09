@@ -207,7 +207,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         try
         {
-            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Attempting to delete EligibilityChecks and BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             var records = await _db.CheckEligibilities
                 .Where(x => x.Group == groupId)
@@ -230,14 +230,28 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 return response;
             }
 
+            // Delete the EligibilityCheck records
             _db.CheckEligibilities.RemoveRange(records);
+            
+            // Also delete the corresponding BulkCheck record
+            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.Guid == groupId);
+            if (bulkCheck != null)
+            {
+                _db.BulkChecks.Remove(bulkCheck);
+                _logger.LogInformation($"Found and marked BulkCheck record for deletion: {groupId?.Replace(Environment.NewLine, "")}");
+            }
+            else
+            {
+                _logger.LogWarning($"BulkCheck record not found for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            }
+            
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             response.Success = true;
             response.DeletedCount = records.Count;
-            response.Message = $"{records.Count} record(s) successfully deleted.";
+            response.Message = $"{records.Count} eligibility check record(s) and associated bulk check successfully deleted.";
         }
         catch (Exception ex)
         {
@@ -435,6 +449,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
 
         return bulkChecks;
+    }
+
+    public async Task<Domain.BulkCheck?> GetBulkCheck(string guid)
+    {
+        var bulkCheck = await _db.BulkChecks
+            .FirstOrDefaultAsync(x => x.Guid == guid);
+        
+        return bulkCheck;
     }
 
     public static string GetHash(CheckProcessData item)
