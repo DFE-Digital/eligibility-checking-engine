@@ -140,6 +140,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 var queue = await SendMessage(item);
             }
+            else
+            {
+                await UpdateBulkCheckStatusIfComplete(item.EligibilityCheckID);
+            }
 
             return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
         }
