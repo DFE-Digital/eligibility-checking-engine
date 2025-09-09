@@ -103,40 +103,38 @@ public class DwpServiceTests : TestBase.TestBase
     }
 
     #region Commenting for build
-    // [Test]
-    // public async Task Given_InvalidValid_EcsFsmCheck_Should_Return_null()
-    // {
-    //     // Arrange
-    //     var request = _fixture.Create<EligibilityCheck>();
+    [Test]
+    public async Task Given_InvalidValid_EcsFsmCheck_Should_Return_null()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        var httpResponse = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.BadRequest,
+            Content = new StringContent(Resources.EcsSoapEligible)
+        };
 
-    //     var handlerMock = new Mock<HttpMessageHandler>();
-    //     var httpResponse = new HttpResponseMessage
-    //     {
-    //         StatusCode = HttpStatusCode.BadRequest,
-    //         Content = new StringContent(Resources.EcsSoapEligible)
-    //     };
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(httpResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+        _sut = new DwpGateway(new NullLoggerFactory(), httpClient, _configuration);
 
-    //     handlerMock
-    //         .Protected()
-    //         .Setup<Task<HttpResponseMessage>>(
-    //             "SendAsync",
-    //             ItExpr.IsAny<HttpRequestMessage>(),
-    //             ItExpr.IsAny<CancellationToken>())
-    //         .ReturnsAsync(httpResponse);
-    //     var httpClient = new HttpClient(handlerMock.Object);
-    //     _sut = new DwpGateway(new NullLoggerFactory(), httpClient, _configuration);
-
-    //     var fsm = _fixture.Create<CheckEligibilityRequestData>();
-    //     fsm.DateOfBirth = "1990-01-01";
-    //     var dataItem = GetCheckProcessData(fsm);
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
 
 
-    //     // Act
-    //     var response = await _sut.EcsFsmCheck(dataItem);
+        // Act
+        var response = await _sut.EcsFsmCheck(dataItem);
 
-    //     // Assert
-    //     response.Should().BeNull();
-    // }
+        // Assert
+        response.Should().BeNull();
+    }
     #endregion
 
 
@@ -434,11 +432,11 @@ public class DwpServiceTests : TestBase.TestBase
     {
         return new CheckProcessData
         {
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = request.Type
         };
     }
 }

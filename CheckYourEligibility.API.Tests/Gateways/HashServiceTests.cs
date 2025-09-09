@@ -42,8 +42,7 @@ public class HashServiceTests : TestBase.TestBase
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
-        var webJobsConnection =
-            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+        
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
     }
@@ -54,62 +53,60 @@ public class HashServiceTests : TestBase.TestBase
     }
 
     #region Commenting for build
-    // [Test]
-    // public async Task Given_validRequest_Create_Exists_Should_Return_Hash()
-    // {
-    //     // Arrange
-    //     var request = _fixture.Create<EligibilityCheck>();
-    //     _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
-    //     var fsm = _fixture.Create<CheckEligibilityRequestData>();
-    //     fsm.DateOfBirth = "1990-01-01";
-    //     var dataItem = GetCheckProcessData(fsm);
+    [Test]
+    public async Task Given_validRequest_Create_Exists_Should_Return_Hash()
+    {
+        // Arrange
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
 
-    //     // Act
-    //     var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
-    //         new AuditData());
-    //     await _fakeInMemoryDb.SaveChangesAsync();
+        // Act
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+            new AuditData());
+        await _fakeInMemoryDb.SaveChangesAsync();
 
-    //     var response = await _sut.Exists(dataItem);
+        var response = await _sut.Exists(dataItem);
 
-    //     // Assert
-    //     response.Should().BeOfType<EligibilityCheckHash>();
-    // }
+        // Assert
+        response.Should().BeOfType<EligibilityCheckHash>();
+    }
 
-    // [Test]
-    // public async Task Given_HashIsOld_Exists_Should_Return_null()
-    // {
-    //     // Arrange
-    //     var request = _fixture.Create<EligibilityCheck>();
-    //     _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
-    //     var fsm = _fixture.Create<CheckEligibilityRequestData>();
-    //     fsm.DateOfBirth = "1990-01-01";
-    //     var dataItem = GetCheckProcessData(fsm);
+    [Test]
+    public async Task Given_HashIsOld_Exists_Should_Return_null()
+    {
+        // Arrange
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
 
 
-    //     var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
-    //         new AuditData());
-    //     await _fakeInMemoryDb.SaveChangesAsync();
-    //     var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
-    //     hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDays + 1));
-    //     await _fakeInMemoryDb.SaveChangesAsync();
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+            new AuditData());
+        await _fakeInMemoryDb.SaveChangesAsync();
+        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
+        hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDays + 1));
+        await _fakeInMemoryDb.SaveChangesAsync();
 
-    //     // Act
-    //     var response = await _sut.Exists(dataItem);
+        // Act
+        var response = await _sut.Exists(dataItem);
 
-    //     // Assert
-    //     response.Should().BeNull();
-    // }
+        // Assert
+        response.Should().BeNull();
+    }
     #endregion
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
         {
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = request.Type
         };
     }
 }
