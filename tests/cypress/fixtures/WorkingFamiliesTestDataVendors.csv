@@ -1,7 +1,7 @@
 ﻿Eligibility Code,NINO,DOB,lastname,Expected Result,Notes
 90012345671,AA123456C,2022-06-07,TestE,eligible,Inside Validity Dates 
 11234567891,BB123456C,2022-06-07,TestNonE,notEligible,Grace Period in the past
-90012345673,CC123456A,2022-06-07,TestEinGP,eligible,"Outside Validity Dates, but within Grace Period"
+11234567892,CC123456A,2022-06-07,TestEinGP,eligible,"Outside Validity Dates, but within Grace Period"
 90412345674,AL123456A,2022-06-07,any,notFound,Record is not found in the system
 90412345677,CC123456A,2022-06-07,any,notFound,Returns Not Found as it is a partial match only. Meaning that not all of the properties given in the request match a record in the sytem.
 9001234567A,AL123456A,2022-06-07,any,Eligibility code must be 11 digits long,Incorrect format for Eligibility code supplied
