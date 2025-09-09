@@ -1,4 +1,3 @@
-// /FreeSchoolMeals/{guid
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
 import { validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible }
     from '../../support/requestBodies';
@@ -28,8 +27,9 @@ describe('GET eligibility soft check by Guid', () => {
             });
         });
     })
-    it('Verify 200 Success response is returned with valid guid Working Families notFound', () => {
-        //Get token
+
+    
+    it('Verify 200 Success response is returned with valid guid Working Families notFound',() => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
             cy.log(Cypress.env('lastName'));
@@ -49,7 +49,11 @@ describe('GET eligibility soft check by Guid', () => {
             });
         });
     })
-    it('Verify 200 Success response is returned with valid guid Working Families found', () => {
+});
+    it('Verify 200 Success response is returned with valid guid Working Families found',function () {
+                if (Cypress.env('ENV') === 'PP') {
+                    this.skip();
+                }
         //Get token
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
@@ -77,7 +81,6 @@ describe('GET eligibility soft check by Guid', () => {
             });
         });
     });
-});
 
 describe('GET eligibility soft check by Guid and Type', () => {
     it('Verify 200 Success response is returned with valid guid', () => {

@@ -7,5 +7,7 @@ public enum ProcessEligibilityCheckSource
     HMRC,
     DWP,
     HO,
-    TEST
+    TEST,
+    ECS,
+    ECS_CONFLICT
 }

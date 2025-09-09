@@ -40,6 +40,12 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     .WithMessage(ValidationMessages.NI);
             }).Otherwise(() =>
             {
+                When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber), () =>
+                {
+                    RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
+                        .Must(DataValidation.BeAValidNass)
+                        .WithMessage(ValidationMessages.NASS);
+                });
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                     .NotEmpty()
                     .WithMessage(ValidationMessages.NI_or_NASS);

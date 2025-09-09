@@ -15,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ApplicationEvidence = CheckYourEligibility.API.Boundary.Requests.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
@@ -649,7 +648,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.eligible);
 
-        request.Evidence = new List<ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidenceRequest>
         {
             new()
             {
@@ -684,7 +683,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         await CreateUserEstablishmentAndLa();
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
-        request.Evidence = new List<ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidenceRequest>
         {
             new()
             {
@@ -716,7 +715,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
 
-        request.Evidence = new List<ApplicationEvidence>
+        request.Evidence = new List<ApplicationEvidenceRequest>
         {
             new()
             {

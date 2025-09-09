@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250907213458_CreateBulkCheckTable")]
+    partial class CreateBulkCheckTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,29 +410,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasKey("LocalAuthorityId");
 
                     b.ToTable("LocalAuthorities");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
-                {
-                    b.Property<string>("RateLimitEventId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("Accepted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PartitionName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("QuerySize")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("RateLimitEventId");
-
-                    b.ToTable("RateLimitEvents");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>

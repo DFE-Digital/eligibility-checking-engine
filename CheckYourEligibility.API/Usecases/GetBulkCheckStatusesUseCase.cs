@@ -59,7 +59,16 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
 
         return new CheckEligibilityBulkStatusesResponse
         {
-            Checks = response
+            Checks = response.Select(bc => new Boundary.Responses.BulkCheck
+            {
+                Guid = bc.Guid,
+                SubmittedDate = bc.SubmittedDate,
+                EligibilityType = bc.EligibilityType.ToString(),
+                Status = bc.Status.ToString(),
+                Filename = bc.Filename,
+                SubmittedBy = bc.SubmittedBy,
+                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}/results"
+            })
         };
     }
 }

@@ -28,13 +28,12 @@ export function invalidHMRCRequestBody() {
     return {
         data: {
             nationalInsuranceNumber: 'PPG123456C',
-            lastName: 'Smith',
+            lastName: Cypress.env('lastName'),
             dateOfBirth: '2000-01-01',
             nationalAsylumSeekerServiceNumber: ''
         }
     }
 }
-
 
 export function validHomeOfficeRequestBody () {
     return {
@@ -42,7 +41,7 @@ export function validHomeOfficeRequestBody () {
             nationalInsuranceNumber: '',
             lastName: Cypress.env('lastName'),
             dateOfBirth: '1990-01-01',
-            nationalAsylumSeekerServiceNumber: 'AB123456C'
+            nationalAsylumSeekerServiceNumber: '111111111'
         }
     }
 };
@@ -53,7 +52,7 @@ export function notEligibleHomeOfficeRequestBody () {
             nationalInsuranceNumber: '',
             lastName: 'Jacob',
             dateOfBirth: '1990-01-01',
-            nationalAsylumSeekerServiceNumber: '111111111'
+            nationalAsylumSeekerServiceNumber: '110211111'
         }
     }
 }
@@ -95,6 +94,7 @@ export function validApplicationSupportRequestBody() {
         data: {
             nationalInsuranceNumber: 'NN668767B',
             lastName: Cypress.env('lastName'),
+            // lastName: "TESTER",
             dateOfBirth: '1967-03-07',
             nationalAsylumSeekerServiceNumber: ''
         }
@@ -117,6 +117,7 @@ export function validApplicationRequestBody() {
             Establishment: 123456,
             ParentFirstName: "Lebb",
             ParentLastName: Cypress.env('lastName'),
+            // ParentLastName: "TESTER",
             ParentNationalInsuranceNumber: "NN668767B",
             ParentNationalAsylumSeekerServiceNumber: null,
             ParentDateOfBirth: "1967-03-07",
@@ -211,6 +212,58 @@ export function invalidLastNameWorkingFamiliesRequestBody() {
         }
     }
 }
+//  bulk check requests
+export function validBulkRequestBody() {
+    return {
+        data: [
+            validHMRCRequestBody().data,
+            validHomeOfficeRequestBody().data
+        ]
+    }
+}
+export function invalidNinoRequestBody() {
+    return {
+        data: {
+            nationalInsuranceNumber: 'QQ123456A',
+            lastName: Cypress.env('lastName'),
+            dateOfBirth: '2000-01-01',
+            nationalAsylumSeekerServiceNumber: ''
+        }
+    }
+}
+export function invalidMultiChecksBulkRequestBody() {
+    return {
+        data: [
+            invalidLastNameRequestBody().data,
+            invalidNinoRequestBody().data
+        ]
+    }
+}
+export function invalidDateOfBirthBulkCheckRequestBody() {
+    return {
+        data: [
+            validHMRCRequestBody().data,
+            invalidDOBRequestBody().data
+        ]
+    }
+}
+export function invalidLastNameBulkCheckRequestBody() {
+    return {
+        data: [
+            validHMRCRequestBody().data,
+            invalidLastNameRequestBody().data
+        ]
+    }
+}   
+export function invalidNinoBulkRequestBody() {
+    return {
+        data: [
+            invalidNinoRequestBody().data,
+            validHMRCRequestBody().data
+
+        ]
+    }
+}
 
 //Working Families Bulk requests
 export function validWorkingFamiliesBulkRequestBody() {
@@ -247,23 +300,6 @@ export function validWorkingFamiliesBulkRequestBody() {
         ]
     }
 }
-
-export function invalidEligiblityCodeBulkRequestBody() {
-    return {
-        data: [
-            validWorkingFamiliesRequestBody().data,
-            invalidEligiblityCodeRequestBody().data
-        ]
-    }
-}
-export function invalidNinoWorkingFamiliesBulkRequestBody() {
-    return {
-        data: [
-            invalidNinoWorkingFamiliesRequestBody().data,
-            validWorkingFamiliesRequestBody().data
-        ]
-    }
-}
 export function invalidDobWorkingFamiliesBulkRequestBody() {
     return {
         data: [
@@ -285,6 +321,22 @@ export function invalidMultiChecksWorkingFamiliesBulkRequestBody() {
         data: [
             invalidDobWorkingFamiliesRequestBody().data,
             invalidEligiblityCodeRequestBody().data
+        ]
+    }
+}
+export function invalidEligiblityCodeBulkRequestBody() {
+    return {
+        data: [
+            validWorkingFamiliesRequestBody().data,
+            invalidEligiblityCodeRequestBody().data
+        ]
+    }
+}
+export function invalidNinoWorkingFamiliesBulkRequestBody() {
+    return {
+        data: [
+            invalidNinoWorkingFamiliesRequestBody().data,
+            validWorkingFamiliesRequestBody().data
         ]
     }
 }

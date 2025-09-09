@@ -106,6 +106,7 @@ stages:
                     export CYPRESS_API_HOST="$(CYPRESS_API_HOST_CYPRESS)"
                     export CYPRESS_JWT_USERNAME=$(JWT_USERNAME_DEV)
                     export CYPRESS_JWT_PASSWORD='$(JWT_PASSWORD_DEV)'
+                    export CYPRESS_ENV='DEV'
                     npm run e2e:electron
               - task: Bash@3
                 condition: always()

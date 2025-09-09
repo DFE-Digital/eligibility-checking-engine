@@ -38,8 +38,9 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
+        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(databaseName)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
@@ -71,6 +72,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     [TearDown]
     public void Teardown()
     {
+        ((EligibilityCheckContext)_fakeInMemoryDb).Database.EnsureDeleted();
     }
 
     [Test]
@@ -362,14 +364,22 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_InValidRequest_GetBulkStatus_Should_Return_status()
+    public void Given_ValidRequest_GetBulkStatus_Should_Return_status()
     {
         // Arrange
         var items = _fixture.CreateMany<EligibilityCheck>();
         var guid = _fixture.Create<string>();
-        foreach (var item in items) item.Group = guid;
+        foreach (var item in items) 
+        {
+            item.Group = guid;
+            item.EligibilityCheckID = Guid.NewGuid().ToString();
+            // Set navigation properties to null to avoid creating additional entities
+            item.EligibilityCheckHash = null;
+            item.EligibilityCheckHashID = null;
+            item.BulkCheck = null;
+        }
         _fakeInMemoryDb.CheckEligibilities.AddRange(items);
-        _fakeInMemoryDb.SaveChangesAsync();
+        _fakeInMemoryDb.SaveChanges();
         var results = _fakeInMemoryDb.CheckEligibilities
             .Where(x => x.Group == guid)
             .GroupBy(n => n.Status)
@@ -455,7 +465,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -472,16 +482,23 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+        // Set navigation properties to null to avoid creating additional entities
+        item.EligibilityCheckHash = null;
+        item.EligibilityCheckHashID = null;
+        item.BulkCheck = null;
+        
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals; // Force FSM type for this test
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _fakeInMemoryDb.SaveChanges();
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -508,7 +525,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -537,7 +554,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "0", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -566,7 +583,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone
             { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -595,7 +612,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
 
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(value: null);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -624,7 +641,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(true);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapFsmCheckRespone
             { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -653,7 +670,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -683,7 +700,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status404NotFound);
@@ -713,7 +730,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
@@ -738,15 +755,17 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals;
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.error.ToString());
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -830,7 +849,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         });
         _fakeInMemoryDb.SaveChangesAsync();
 
-        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns(false);
+        _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -847,14 +866,21 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        // Set navigation properties to null to avoid creating additional entities
+        item.EligibilityCheckHash = null;
+        item.EligibilityCheckHashID = null;
+        item.BulkCheck = null;
+        
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals; // Force FSM type for this test
         var surnamevalid = "simpson";
         fsm.LastName = surnamevalid;
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.FreeSchoolMealsHMRC.Add(new FreeSchoolMealsHMRC
@@ -966,14 +992,21 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
-        var type = _fixture.Create<CheckEligibilityType>();
+        var type = CheckEligibilityType.FreeSchoolMeals; // Use FSM instead of random type
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         item.Type = type;
+        // Set navigation properties to null to avoid creating additional entities
+        item.EligibilityCheckHash = null;
+        item.EligibilityCheckHashID = null;
+        item.BulkCheck = null;
+        
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
+        check.Type = type; // Ensure both have the same type
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
@@ -1126,27 +1159,41 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_ValidRequest_GetBulkCheckResults_Should_Return_Items()
+    public async Task Given_ValidRequest_GetBulkCheckResults_Should_Return_Items()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
+        var eligibilityCheckId = Guid.NewGuid().ToString();
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = eligibilityCheckId;
         item.Group = groupId;
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData =
             """{"nationalInsuranceNumber": "AB123456C", "lastName": "Something", "dateOfBirth": "2000-01-01", "nationalAsylumSeekerServiceNumber": null}""";
+        // Set navigation properties to null to avoid creating additional entities
+        item.EligibilityCheckHash = null;
+        item.EligibilityCheckHashID = null;
+        item.BulkCheck = null;
+        
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        
+        var changeCount = await _fakeInMemoryDb.SaveChangesAsync();
+        changeCount.Should().Be(1);
+
+        // Verify data was saved
+        var savedItems = _fakeInMemoryDb.CheckEligibilities.Where(x => x.Group == groupId).ToList();
+        savedItems.Count.Should().Be(1);
 
         // Act
-        var response = _sut.GetBulkCheckResults<IList<CheckEligibilityItem>>(groupId);
+        var response = await _sut.GetBulkCheckResults<IList<CheckEligibilityItem>>(groupId);
 
         // Assert
-        response.Result.Should().BeOfType<List<CheckEligibilityItem>>();
-        response.Result.First().DateOfBirth.Should().Contain("2000-01-01");
-        response.Result.First().NationalInsuranceNumber.Should().Contain("AB123456C");
-        response.Result.First().LastName.Should().Contain("SOMETHING");
-        response.Result.First().NationalAsylumSeekerServiceNumber.Should().BeNull();
+        response.Should().NotBeNull();
+        response.Should().BeOfType<List<CheckEligibilityItem>>();
+        response.First().DateOfBirth.Should().Contain("2000-01-01");
+        response.First().NationalInsuranceNumber.Should().Contain("AB123456C");
+        response.First().LastName.Should().Contain("SOMETHING");
+        response.First().NationalAsylumSeekerServiceNumber.Should().BeNull();
     }
 
     [Test]
@@ -1181,15 +1228,136 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         statusUpdate.Data.Status.Should().BeEquivalentTo(requestUpdateStatus.Status.ToString());
     }
 
+    [Test]
+    public async Task Given_InvalidRequest_DeleteBulkEligibilityChecks_Should_Return_ErrorMessage()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        Func<Task> act = async () => await _sut.DeleteByGroup(string.Empty);
+
+        // Assert
+
+        act.Should().ThrowExactlyAsync<ValidationException>();
+    }
+
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With5Records_Should_Delete5Records()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();        
+
+        for(var i = 0; i < 5; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.EligibilityCheckID = Guid.NewGuid().ToString();
+            item.Group = groupId;
+            // Set navigation properties to null to avoid creating additional entities
+            item.EligibilityCheckHash = null;
+            item.EligibilityCheckHashID = null;
+            item.BulkCheck = null;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+        }
+
+        var item2 = _fixture.Create<EligibilityCheck>();
+        item2.EligibilityCheckID = Guid.NewGuid().ToString();
+        // Different group to ensure it's not deleted
+        item2.Group = Guid.NewGuid().ToString();
+        // Set navigation properties to null to avoid creating additional entities
+        item2.EligibilityCheckHash = null;
+        item2.EligibilityCheckHashID = null;
+        item2.BulkCheck = null;
+        _fakeInMemoryDb.CheckEligibilities.Add(item2);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+
+        // Assert
+        deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
+        deleteRespomse.DeletedCount.Should().Be(5);
+        deleteRespomse.Error.Should().BeNullOrEmpty();
+        deleteRespomse.Message.Should().BeEquivalentTo("5 record(s) successfully deleted.");
+    }
+
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With0Records_Should_Delete0Records()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.Group = groupId;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+            await _fakeInMemoryDb.SaveChangesAsync();
+        }
+
+        var item2 = _fixture.Create<EligibilityCheck>();
+        _fakeInMemoryDb.CheckEligibilities.Add(item2);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        Func<Task> act = async () => await _sut.DeleteByGroup(Guid.NewGuid().ToString());
+
+        // Assert
+        act.Should().ThrowExactlyAsync<ValidationException>();        
+    }
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_WithMoreThan250Records_Should_Return_ErrorMessage()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+
+        for (var i = 0; i < 300; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.EligibilityCheckID = Guid.NewGuid().ToString();
+            item.Group = groupId;
+            // Set navigation properties to null to avoid creating additional entities
+            item.EligibilityCheckHash = null;
+            item.EligibilityCheckHashID = null;
+            item.BulkCheck = null;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+        }
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+
+        // Assert
+        deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
+        deleteRespomse.DeletedCount.Should().Be(0);
+        deleteRespomse.Error.Should().BeEquivalentTo("Too many records (300) matched. Max allowed per bulk group is 250.");
+    }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
         {
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = request.Type
         };
     }
 

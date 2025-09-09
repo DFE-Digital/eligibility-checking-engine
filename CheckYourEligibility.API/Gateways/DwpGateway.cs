@@ -20,7 +20,7 @@ namespace CheckYourEligibility.API.Gateways;
 
 public interface IDwpGateway
 {
-    public bool UseEcsforChecks { get; }
+    public string UseEcsforChecks { get; }
 
     Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type);
@@ -61,14 +61,14 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly HttpClient _httpClient;
 
     private readonly ILogger _logger;
-    private readonly bool _UseEcsforChecks;
+    private readonly string _UseEcsforChecks;
     private bool _ran;
 
     public DwpGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;
-        bool.TryParse(_configuration["Dwp:UseEcsforChecks"], out _UseEcsforChecks);
+        _UseEcsforChecks = _configuration["Dwp:UseEcsforChecks"];
 
         _DWP_ApiHost = _configuration["Dwp:ApiHost"];
         _DWP_ApiTokenUrl = _configuration["Dwp:ApiTokenUrl"];
@@ -77,7 +77,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
         _httpClient = httpClient;
 
-        if (!_UseEcsforChecks)
+        if (_UseEcsforChecks!="true")
         {
             var privateKeyBytes = Convert.FromBase64String(_configuration["Dwp:ApiCertificate"]);
             _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, (string)null,
@@ -119,7 +119,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return true;
     }
 
-    bool IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
+    string IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
 
 
     #region ECS API Soap

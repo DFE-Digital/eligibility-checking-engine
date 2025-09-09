@@ -43,6 +43,8 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy { get; set; }
 }
 
 public class CheckEligibilityRequestBulk : CheckEligibilityRequestBulkBase
@@ -72,6 +74,8 @@ public class CheckEligibilityRequestWorkingFamiliesBulk : CheckEligibilityReques
 public class CheckEligibilityRequestWorkingFamiliesBulkData : CheckEligibilityRequestWorkingFamiliesData
 {
     public string? ClientIdentifier { get; set; }
+    public string? Filename { get; set; }
+    public string? SubmittedBy { get; set; }
 }
 
 #endregion
@@ -180,6 +184,8 @@ public static class EligibilityBulkModelFactory
         {
             if (item.Type != routeType)
                 item.Type = routeType;
+            item.Filename = model.Filename;
+            item.SubmittedBy = model.SubmittedBy;
         }
 
         return model;
