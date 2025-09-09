@@ -52,7 +52,6 @@ public class HashServiceTests : TestBase.TestBase
     {
     }
 
-    #region Commenting for build
     [Test]
     public async Task Given_validRequest_Create_Exists_Should_Return_Hash()
     {
@@ -96,7 +95,6 @@ public class HashServiceTests : TestBase.TestBase
         // Assert
         response.Should().BeNull();
     }
-    #endregion
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {

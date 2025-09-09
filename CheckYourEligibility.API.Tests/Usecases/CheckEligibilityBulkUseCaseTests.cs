@@ -98,7 +98,6 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         act.Should().ThrowAsync<ValidationException>();
     }
 
-    #region Commenting for build
     [Test]
     public async Task Execute_calls_gateways_with_correct_parameters_when_valid_WF()
     {
@@ -219,7 +218,6 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
             d => d.First().NationalInsuranceNumber == "AB123456C"), It.IsAny<string>()), Times.Once);
     }
-    #endregion
 
     [Test]
     public async Task Execute_returns_failure_when_model_type_is_not_expected()

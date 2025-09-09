@@ -102,7 +102,6 @@ public class DwpServiceTests : TestBase.TestBase
         response.Should().BeOfType<SoapFsmCheckRespone>();
     }
 
-    #region Commenting for build
     [Test]
     public async Task Given_InvalidValid_EcsFsmCheck_Should_Return_null()
     {
@@ -135,7 +134,6 @@ public class DwpServiceTests : TestBase.TestBase
         // Assert
         response.Should().BeNull();
     }
-    #endregion
 
 
     [Test]
