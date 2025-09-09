@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250618120803_AddNewBulkFileFieldsToEligibilityCheck")]
+    partial class AddNewBulkFileFieldsToEligibilityCheck
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,9 +45,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("EligibilityCheckHashID")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("EligibilityEndDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("EstablishmentId")
                         .HasColumnType("int");
@@ -181,7 +181,7 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.Property<string>("scope")
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("source")
                         .IsRequired()
@@ -200,39 +200,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("Audits");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
-                {
-                    b.Property<string>("Guid")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ClientIdentifier")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("EligibilityType")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("Filename")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("SubmittedBy")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTime>("SubmittedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Guid");
-
-                    b.ToTable("BulkChecks");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
                 {
                     b.Property<string>("EligibilityCheckID")
@@ -242,18 +209,27 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ClientIdentifier")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EligibilityCheckHashID")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Filename")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Group")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SubmittedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -265,8 +241,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasKey("EligibilityCheckID");
 
                     b.HasIndex("EligibilityCheckHashID");
-
-                    b.HasIndex("Group");
 
                     b.ToTable("EligibilityCheck", (string)null);
                 });
@@ -409,29 +383,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("LocalAuthorities");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
-                {
-                    b.Property<string>("RateLimitEventId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("Accepted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PartitionName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("QuerySize")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("RateLimitEventId");
-
-                    b.ToTable("RateLimitEvents");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
                 {
                     b.Property<string>("UserID")
@@ -451,68 +402,6 @@ namespace CheckYourEligibility.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.WorkingFamiliesEvent", b =>
-                {
-                    b.Property<string>("WorkingFamiliesEventId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("ChildDateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ChildFirstName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ChildLastName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTime>("DiscretionaryValidityStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EligibilityCode")
-                        .IsRequired()
-                        .HasColumnType("nchar(11)");
-
-                    b.Property<DateTime>("GracePeriodEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ParentFirstName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ParentLastName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ParentNationalInsuranceNumber")
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<string>("PartnerFirstName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PartnerLastName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PartnerNationalInsuranceNumber")
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<DateTime>("SubmissionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ValidityEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ValidityStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("WorkingFamiliesEventId");
-
-                    b.ToTable("WorkingFamiliesEvents");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
@@ -566,12 +455,6 @@ namespace CheckYourEligibility.API.Migrations
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID");
 
-                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
-                        .WithMany("EligibilityChecks")
-                        .HasForeignKey("Group");
-
-                    b.Navigation("BulkCheck");
-
                     b.Navigation("EligibilityCheckHash");
                 });
 
@@ -591,11 +474,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("Evidence");
 
                     b.Navigation("Statuses");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
-                {
-                    b.Navigation("EligibilityChecks");
                 });
 #pragma warning restore 612, 618
         }

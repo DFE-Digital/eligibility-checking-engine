@@ -17,6 +17,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
+    public virtual DbSet<BulkCheck> BulkChecks { get; set; }
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     public virtual DbSet<Establishment> Establishments { get; set; }
@@ -78,6 +79,28 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasConversion(
                 v => v.ToString(),
                 v => (CheckEligibilityType)Enum.Parse(typeof(CheckEligibilityType), v));
+
+        // BulkCheck configuration
+        modelBuilder.Entity<BulkCheck>()
+            .HasKey(b => b.Guid);
+        modelBuilder.Entity<BulkCheck>()
+            .Property(p => p.EligibilityType)
+            .HasConversion(
+                v => v.ToString(),
+                v => (CheckEligibilityType)Enum.Parse(typeof(CheckEligibilityType), v));
+        modelBuilder.Entity<BulkCheck>()
+            .Property(p => p.Status)
+            .HasConversion(
+                v => v.ToString(),
+                v => (BulkCheckStatus)Enum.Parse(typeof(BulkCheckStatus), v));
+
+        // EligibilityCheck to BulkCheck relationship
+        modelBuilder.Entity<EligibilityCheck>()
+            .HasOne(e => e.BulkCheck)
+            .WithMany(b => b.EligibilityChecks)
+            .HasForeignKey(e => e.Group)
+            .HasPrincipalKey(b => b.Guid)
+            .IsRequired(false);
 
         modelBuilder.Entity<Establishment>()
             .HasOne(e => e.LocalAuthority);

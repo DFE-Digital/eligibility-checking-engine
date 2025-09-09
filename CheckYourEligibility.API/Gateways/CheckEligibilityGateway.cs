@@ -1,5 +1,10 @@
 ﻿// Ignore Spelling: Fsm
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using AutoMapper;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
@@ -9,9 +14,11 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Index.HPRtree;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -51,6 +58,21 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk"), queueClientGateway);
     }
 
+    public async Task<string> CreateBulkCheck(Domain.BulkCheck bulkCheck)
+    {
+        try
+        {
+            await _db.BulkChecks.AddAsync(bulkCheck);
+            await _db.SaveChangesAsync();
+            return bulkCheck.Guid;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating bulk check with ID: {GroupId}", bulkCheck.Guid);
+            throw;
+        }
+    }
+
     public async Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
@@ -69,10 +91,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.Type = baseType.Type;
 
-            if (data is CheckEligibilityRequestBulkData bulkDataItem)
-            {
-                item.ClientIdentifier = bulkDataItem.ClientIdentifier;
-            }
+            // if (data is CheckEligibilityRequestBulkData bulkDataItem)
+            // {
+            //     item.ClientIdentifier = bulkDataItem.ClientIdentifier;
+            // }
 
             item.Group = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -169,8 +191,62 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false)
-        where T : CheckEligibilityItem
+    public async Task<CheckEligibilityBulkDeleteResponse> DeleteByGroup(string groupId)
+    {
+        if (string.IsNullOrEmpty(groupId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
+
+        var response = new CheckEligibilityBulkDeleteResponse
+        {
+            GroupId = groupId,
+            Timestamp = DateTime.UtcNow
+        };
+
+        try
+        {
+            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+
+            var records = await _db.CheckEligibilities
+                .Where(x => x.Group == groupId)
+                .ToListAsync();
+
+            if (!records.Any())
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+                throw new NotFoundException(groupId);
+            }
+            
+            if (records.Count > 250)
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding 250 max — operation aborted.");
+                response.Success = false;
+                response.DeletedCount = 0;
+                response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is 250.";
+                return response;
+            }
+
+            _db.CheckEligibilities.RemoveRange(records);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+
+            response.Success = true;
+            response.DeletedCount = records.Count;
+            response.Message = $"{records.Count} record(s) successfully deleted.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+
+            response.Success = false;
+            response.DeletedCount = 0;
+            response.Error = $"Error during deletion: {ex.Message}";
+        }
+
+        return response;
+    }
+    public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            (type == CheckEligibilityType.None ||
@@ -270,44 +346,46 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<IEnumerable<BulkCheck>> GetBulkStatuses(string localAuthority)
+    /// <summary>
+    /// Gets bulk check statuses for a local authority
+    /// </summary>
+    /// <param name="localAuthority">The local authority identifier</param>
+    /// <returns>Collection of bulk checks for the local authority</returns>
+    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthority)
     {
         var minDate = DateTime.Now.AddDays(-7);
 
-        var allChecks = await _db.CheckEligibilities
-            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.Created > minDate &&
-                        !string.IsNullOrWhiteSpace(x.Group))
+        var bulkChecks = await _db.BulkChecks
+            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.SubmittedDate > minDate)
+            .Include(x => x.EligibilityChecks)
             .ToListAsync();
 
-        var results = allChecks
-            .GroupBy(b => b.Group)
-            .Select(g =>
+        // For each bulk check, ensure status is up to date
+        // (This handles cases where status might not have been updated yet)
+        foreach (var bulkCheck in bulkChecks)
+        {
+            if (bulkCheck.EligibilityChecks.Any())
             {
-                var statuses = g.Select(x => x.Status);
-
+                var statuses = bulkCheck.EligibilityChecks.Select(x => x.Status);
                 var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
                 var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
+                var hasErrors = statuses.Any(s => s == CheckEligibilityStatus.error);
 
-                string status;
-                if (allQueued)
-                    status = "NotStarted";
-                else if (allCompleted)
-                    status = "Complete";
-                else
-                    status = "InProgress";
+                // Update status if it doesn't match the current state
+                var expectedStatus = allQueued ? BulkCheckStatus.InProgress :
+                                   allCompleted ? (hasErrors ? BulkCheckStatus.Failed : BulkCheckStatus.Completed) :
+                                   BulkCheckStatus.InProgress;
 
-                var any = g.First();
-
-                return new BulkCheck
+                if (bulkCheck.Status != expectedStatus)
                 {
-                    Guid = g.Key,
-                    EligibilityType = any.Type.ToString(),
-                    SubmittedDate = any.Created,
-                    Status = status
-                };
-            });
+                    bulkCheck.Status = expectedStatus;
+                    // Note: We don't save here to avoid modifying data during a read operation
+                    // The status will be updated during the next ProcessQueue cycle
+                }
+            }
+        }
 
-        return results;
+        return bulkChecks;
     }
 
     public static string GetHash(CheckProcessData item)
@@ -482,7 +560,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
         }
-        else {
+        else
+        {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
           checkData.NationalInsuranceNumber, checkData.LastName);
 
@@ -519,6 +598,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+
+        // manually update bulk check
+        await UpdateBulkCheckStatusIfComplete(guid);
     }
 
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
@@ -588,6 +670,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
             await _db.SaveChangesAsync();
         }
+
+        // manually update bulk check
+        await UpdateBulkCheckStatusIfComplete(guid);
 
         TrackMetric($"FSM Check:-{result.Status}", 1);
         TrackMetric("FSM Check", 1);
@@ -824,6 +909,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         else
                         {
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            
+                            // Update BulkCheck status if this was part of a bulk operation
+                            await UpdateBulkCheckStatusIfComplete(checkData.Guid);
                         }
                     }
                     catch (Exception ex)
@@ -837,6 +925,56 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
                 properties = await queue.GetPropertiesAsync();
             }
+        }
+    }
+
+    /// <summary>
+    /// Updates the BulkCheck status when all EligibilityChecks in a group are completed
+    /// </summary>
+    /// <param name="eligibilityCheckId">The ID of the eligibility check that was just processed</param>
+    private async Task UpdateBulkCheckStatusIfComplete(string eligibilityCheckId)
+    {
+        try
+        {
+            // Get the eligibility check to find its group
+            var eligibilityCheck = await _db.CheckEligibilities
+                .FirstOrDefaultAsync(x => x.EligibilityCheckID == eligibilityCheckId);
+
+            if (eligibilityCheck?.Group == null)
+                return; // Not part of a bulk operation
+
+            // Get the corresponding BulkCheck
+            var bulkCheck = await _db.BulkChecks
+                .Include(x => x.EligibilityChecks)
+                .FirstOrDefaultAsync(x => x.Guid == eligibilityCheck.Group);
+
+            if (bulkCheck == null)
+                return;
+
+            // Check if all eligibility checks in this group are completed
+            var allEligibilityChecks = bulkCheck.EligibilityChecks;
+            var pendingChecks = allEligibilityChecks
+                .Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing)
+                .ToList();
+
+            // If no pending checks, update bulk status to completed
+            if (!pendingChecks.Any())
+            {
+                var hasErrors = allEligibilityChecks.Any(x => x.Status == CheckEligibilityStatus.error);
+                
+                bulkCheck.Status = hasErrors ? BulkCheckStatus.Failed : BulkCheckStatus.Completed;
+                
+                await _db.SaveChangesAsync();
+                
+                _logger.LogInformation("Updated BulkCheck {GroupId} status to {Status}", 
+                    bulkCheck.Guid, bulkCheck.Status);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating BulkCheck status for EligibilityCheck {EligibilityCheckId}", 
+                eligibilityCheckId?.Replace(Environment.NewLine, "")?.Replace("\n", "")?.Replace("\r", ""));
+            // Don't rethrow - we don't want to break the main processing flow
         }
     }
 

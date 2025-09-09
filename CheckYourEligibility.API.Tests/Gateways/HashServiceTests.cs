@@ -42,8 +42,7 @@ public class HashServiceTests : TestBase.TestBase
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
-        var webJobsConnection =
-            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+        
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
     }
@@ -57,7 +56,6 @@ public class HashServiceTests : TestBase.TestBase
     public async Task Given_validRequest_Create_Exists_Should_Return_Hash()
     {
         // Arrange
-        var request = _fixture.Create<EligibilityCheck>();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -78,7 +76,6 @@ public class HashServiceTests : TestBase.TestBase
     public async Task Given_HashIsOld_Exists_Should_Return_null()
     {
         // Arrange
-        var request = _fixture.Create<EligibilityCheck>();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -103,11 +100,11 @@ public class HashServiceTests : TestBase.TestBase
     {
         return new CheckProcessData
         {
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = request.Type
         };
     }
 }
