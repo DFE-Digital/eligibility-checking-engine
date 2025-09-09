@@ -460,6 +460,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
               
          }
+        else
+        {
+            wfEvent = null;
+        }
         return wfEvent;
     }
     /// <summary>
