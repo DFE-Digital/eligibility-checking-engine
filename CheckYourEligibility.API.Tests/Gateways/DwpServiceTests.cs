@@ -106,8 +106,6 @@ public class DwpServiceTests : TestBase.TestBase
     public async Task Given_InvalidValid_EcsFsmCheck_Should_Return_null()
     {
         // Arrange
-        var request = _fixture.Create<EligibilityCheck>();
-
         var handlerMock = new Mock<HttpMessageHandler>();
         var httpResponse = new HttpResponseMessage
         {
@@ -432,11 +430,11 @@ public class DwpServiceTests : TestBase.TestBase
     {
         return new CheckProcessData
         {
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = new CheckEligibilityRequestData().Type
+            Type = request.Type
         };
     }
 }

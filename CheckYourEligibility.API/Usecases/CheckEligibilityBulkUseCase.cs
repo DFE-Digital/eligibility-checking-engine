@@ -2,12 +2,16 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
 
+/// <summary>
+/// Interface for bulk eligibility checking operations
+/// </summary>
 public interface ICheckEligibilityBulkUseCase
 {
     Task<CheckEligibilityResponseBulk> Execute<T>(
@@ -16,6 +20,9 @@ public interface ICheckEligibilityBulkUseCase
         int recordCountLimit) where T : CheckEligibilityRequestBulkBase;
 }
 
+/// <summary>
+/// Use case implementation for bulk eligibility checking operations
+/// </summary>
 public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
 {
@@ -24,6 +31,9 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
     private readonly ICheckEligibility _checkGateway;
     private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
 
+    /// <summary>
+    /// Use case for bulk eligibility checking operations
+    /// </summary>
     public CheckEligibilityBulkUseCase(
         IValidator<IEligibilityServiceType> validator,
         ICheckEligibility checkGateway,
@@ -52,7 +62,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             var errorMessage =
                 $"Invalid Request, data limit of {recordCountLimit} exceeded, {bulkData.Count} records.";
             _logger.LogWarning(errorMessage);
-            throw new ValidationException(null, errorMessage);
+            throw new ValidationException([], errorMessage);
         }
 
         List<Error> errors = new List<Error>();
@@ -89,6 +99,21 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             throw new ValidationException(errors, string.Empty);
 
         var groupId = Guid.NewGuid().ToString();
+        
+        // Create BulkCheck record via gateway
+        var bulkCheck = new Domain.BulkCheck
+        {
+            Guid = groupId,
+            ClientIdentifier = model.ClientIdentifier ?? string.Empty,
+            Filename = model.Filename ?? string.Empty,
+            SubmittedBy = model.SubmittedBy ?? string.Empty,
+            EligibilityType = type,
+            Status = BulkCheckStatus.InProgress,
+            SubmittedDate = DateTime.UtcNow
+        };
+
+        await _checkGateway.CreateBulkCheck(bulkCheck);
+
         await _checkGateway.PostCheck(bulkData, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);

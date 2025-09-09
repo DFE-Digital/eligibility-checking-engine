@@ -94,6 +94,7 @@ export function validApplicationSupportRequestBody() {
         data: {
             nationalInsuranceNumber: 'NN668767B',
             lastName: Cypress.env('lastName'),
+            // lastName: "TESTER",
             dateOfBirth: '1967-03-07',
             nationalAsylumSeekerServiceNumber: ''
         }
@@ -116,6 +117,7 @@ export function validApplicationRequestBody() {
             Establishment: 123456,
             ParentFirstName: "Lebb",
             ParentLastName: Cypress.env('lastName'),
+            // ParentLastName: "TESTER",
             ParentNationalInsuranceNumber: "NN668767B",
             ParentNationalAsylumSeekerServiceNumber: null,
             ParentDateOfBirth: "1967-03-07",

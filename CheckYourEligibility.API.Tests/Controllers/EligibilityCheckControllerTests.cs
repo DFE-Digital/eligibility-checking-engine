@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private Mock<IProcessEligibilityCheckUseCase> _mockProcessEligibilityCheckUseCase;
     private Mock<IProcessQueueMessagesUseCase> _mockProcessQueueMessagesUseCase;
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
+    private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
+
     private EligibilityCheckController _sut;
 
     [SetUp]
@@ -47,7 +50,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockUpdateEligibilityCheckStatusUseCase = new Mock<IUpdateEligibilityCheckStatusUseCase>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
-
+;        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckController>>();
 
@@ -72,7 +75,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockGetEligibilityCheckStatusUseCase.Object,
             _mockUpdateEligibilityCheckStatusUseCase.Object,
             _mockProcessEligibilityCheckUseCase.Object,
-            _mockGetEligibilityCheckItemUseCase.Object
+            _mockGetEligibilityCheckItemUseCase.Object,
+            _mockDeleteBulkCheckUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest

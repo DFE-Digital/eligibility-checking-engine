@@ -1,5 +1,6 @@
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -26,7 +27,6 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
             _mockCheckGateway.Object,
             _mockAuditGateway.Object,
             _mockLogger.Object);
-        _fixture = new Fixture();
         _recordCountLimit = 100;
     }
 
@@ -43,7 +43,6 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<CheckEligibilityBulkUseCase>> _mockLogger;
     private CheckEligibilityBulkUseCase _sut;
-    private Fixture _fixture;
     private int _recordCountLimit;
 
     [Test]
@@ -118,6 +117,8 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
 
+        _mockCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
+            .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
@@ -134,6 +135,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         result.Links.Get_Progress_Check.Should().Contain(CheckLinks.BulkCheckProgress);
         result.Links.Get_BulkCheck_Results.Should().Contain(CheckLinks.BulkCheckResults);
 
+        _mockCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
             s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Once);
@@ -157,6 +159,8 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
 
+        _mockCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
+            .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
@@ -173,6 +177,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         result.Links.Get_Progress_Check.Should().Contain(CheckLinks.BulkCheckProgress);
         result.Links.Get_BulkCheck_Results.Should().Contain(CheckLinks.BulkCheckResults);
 
+        _mockCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
             s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Once);
@@ -197,6 +202,8 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
 
+        _mockCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
+            .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
                 d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
@@ -207,6 +214,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         await _sut.Execute(model, Domain.Enums.CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
 
         // Assert
+        _mockCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
             d => d.First().NationalInsuranceNumber == "AB123456C"), It.IsAny<string>()), Times.Once);
     }
