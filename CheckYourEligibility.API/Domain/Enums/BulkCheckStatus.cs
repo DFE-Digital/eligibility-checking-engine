@@ -23,5 +23,10 @@ public enum BulkCheckStatus
     /// <summary>
     /// The bulk check has been cancelled
     /// </summary>
-    Cancelled
+    Cancelled,
+    
+    /// <summary>
+    /// The bulk check has been deleted (soft delete)
+    /// </summary>
+    Deleted
 }
