@@ -36,6 +36,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private Mock<IProcessQueueMessagesUseCase> _mockProcessQueueMessagesUseCase;
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
+    private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
 
     private EligibilityCheckController _sut;
 
@@ -52,7 +53,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockUpdateEligibilityCheckStatusUseCase = new Mock<IUpdateEligibilityCheckStatusUseCase>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
-;        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
+        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
+        _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckController>>();
 
@@ -78,7 +80,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockUpdateEligibilityCheckStatusUseCase.Object,
             _mockProcessEligibilityCheckUseCase.Object,
             _mockGetEligibilityCheckItemUseCase.Object,
-            _mockDeleteBulkCheckUseCase.Object
+            _mockDeleteBulkCheckUseCase.Object,
+            _mockGetAllBulkChecksUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest
@@ -99,12 +102,15 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockProcessQueueMessagesUseCase.VerifyAll();
         _mockCheckEligibilityUseCase.VerifyAll();
         _mockCheckEligibilityBulkUseCase.VerifyAll();
+        _mockGetBulkCheckStatusesUseCase.VerifyAll();
         _mockGetBulkUploadProgressUseCase.VerifyAll();
         _mockGetBulkUploadResultsUseCase.VerifyAll();
         _mockGetEligibilityCheckStatusUseCase.VerifyAll();
         _mockUpdateEligibilityCheckStatusUseCase.VerifyAll();
         _mockProcessEligibilityCheckUseCase.VerifyAll();
         _mockGetEligibilityCheckItemUseCase.VerifyAll();
+        _mockDeleteBulkCheckUseCase.VerifyAll();
+        _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
