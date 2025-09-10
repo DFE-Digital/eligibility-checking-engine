@@ -18,7 +18,7 @@ public interface ICheckEligibility
 
     Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type);
     Task<BulkStatus?> GetBulkStatus(string guid);
-    Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds);
+    Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true);
     Task<Domain.BulkCheck?> GetBulkCheck(string guid);
 
     Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditItem);

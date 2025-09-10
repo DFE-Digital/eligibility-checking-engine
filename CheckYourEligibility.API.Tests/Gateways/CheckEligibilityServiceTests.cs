@@ -36,7 +36,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     private CheckEligibilityGateway _sut;
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
         var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
@@ -44,6 +44,12 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+        
+        // Ensure database is created and clean
+        var context = (EligibilityCheckContext)_fakeInMemoryDb;
+        await context.Database.EnsureCreatedAsync();
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
@@ -70,9 +76,10 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [TearDown]
-    public void Teardown()
+    public async Task Teardown()
     {
-        ((EligibilityCheckContext)_fakeInMemoryDb).Database.EnsureDeleted();
+        var context = (EligibilityCheckContext)_fakeInMemoryDb;
+        await context.Database.EnsureDeletedAsync();
     }
 
     [Test]
@@ -302,18 +309,19 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_ValidRequest_GetStatus_Should_Return_status()
+    public async Task Given_ValidRequest_GetStatus_Should_Return_status()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
+        item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = _sut.GetStatus(item.EligibilityCheckID, CheckEligibilityType.None);
+        var response = await _sut.GetStatus(item.EligibilityCheckID, CheckEligibilityType.None);
 
         // Assert
-        response.Result.ToString().Should().Be(item.Status.ToString());
+        response.ToString().Should().Be(item.Status.ToString());
     }
 
     [Test]
@@ -1258,6 +1266,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.Group = groupId;
+            item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
             item.EligibilityCheckHashID = null;
@@ -1269,6 +1278,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item2.EligibilityCheckID = Guid.NewGuid().ToString();
         // Different group to ensure it's not deleted
         item2.Group = Guid.NewGuid().ToString();
+        item2.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
         // Set navigation properties to null to avoid creating additional entities
         item2.EligibilityCheckHash = null;
         item2.EligibilityCheckHashID = null;
@@ -1276,6 +1286,10 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item2);
 
         await _fakeInMemoryDb.SaveChangesAsync();
+        
+        // Verify records were actually saved
+        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted);
+        savedCount.Should().Be(5, "All 5 records should be saved before deletion");
 
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
@@ -1329,6 +1343,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.Group = groupId;
+            item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
             item.EligibilityCheckHashID = null;
@@ -1337,6 +1352,10 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         }
 
         await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Verify records were actually saved
+        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted);
+        savedCount.Should().Be(300, "All 300 records should be saved before deletion");
 
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 

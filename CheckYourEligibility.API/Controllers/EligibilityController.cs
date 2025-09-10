@@ -30,6 +30,7 @@ public class EligibilityCheckController : BaseController
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
     private readonly IGetEligibilityCheckStatusUseCase _getEligibilityCheckStatusUseCase;
     private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
+    private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
@@ -52,7 +53,8 @@ public class EligibilityCheckController : BaseController
         IUpdateEligibilityCheckStatusUseCase updateEligibilityCheckStatusUseCase,
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase,
         IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase,
-        IDeleteBulkCheckUseCase deleteBulkUploadUseCase
+        IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
+        IGetAllBulkChecksUseCase getAllBulkChecksUseCase
     )
         : base(audit)
     {
@@ -72,6 +74,7 @@ public class EligibilityCheckController : BaseController
         _processEligibilityCheckUseCase = processEligibilityCheckUseCase;
         _getEligibilityCheckItemUseCase = getEligibilityCheckItemUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
+        _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
     }
 
     /// <summary>
@@ -453,6 +456,50 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Gets all bulk checks the user has access to
+    /// </summary>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityBulkStatusesResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.Unauthorized)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/bulk-check")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    public async Task<ActionResult> GetAllBulkChecks()
+    {
+        try
+        {
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorResponse 
+            { 
+                Errors = [new Error { Title = ex.Message }] 
+            });
+        }
         catch (FluentValidation.ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });

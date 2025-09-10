@@ -376,12 +376,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// </summary>
     /// <param name="localAuthorityId">The local authority identifier to filter by</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user (0 means admin access to all)</param>
+    /// <param name="includeLast7DaysOnly">If true, only returns bulk checks from the last 7 days. If false, returns all non-deleted bulk checks.</param>
     /// <returns>Collection of bulk checks for the requested local authority (if user has permission)</returns>
-    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds)
+    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true)
     {
-        // Use UTC for consistency and better index performance
-        var minDate = DateTime.UtcNow.AddDays(-7);
-        
         // Parse the requested local authority ID
         if (!int.TryParse(localAuthorityId, out var requestedLAId))
         {
@@ -390,13 +388,31 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         // Build optimized query with compound filtering
         IQueryable<Domain.BulkCheck> query = _db.BulkChecks
-            .Where(x => x.SubmittedDate > minDate && x.Status != BulkCheckStatus.Deleted); // This should use an index on SubmittedDate and exclude deleted records
+            .Where(x => x.Status != BulkCheckStatus.Deleted); // Exclude deleted records
+        
+        // Apply date filter only if requested (for backward compatibility)
+        if (includeLast7DaysOnly)
+        {
+            var minDate = DateTime.UtcNow.AddDays(-7);
+            query = query.Where(x => x.SubmittedDate > minDate);
+        }
 
-        // Apply local authority filtering - always filter by the requested LA ID
+        // Apply local authority filtering
         if (allowedLocalAuthorityIds.Contains(0))
         {
-            // Admin user - can access any LA, but should still filter by the requested LA ID
-            query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+            // Admin user
+            if (requestedLAId == 0)
+            {
+                // Special case: when requestedLAId is 0, admin wants ALL bulk checks across all local authorities
+                // This is used by the new /bulk-check endpoint
+                // No additional filtering needed - they can see everything
+            }
+            else
+            {
+                // Admin user requesting a specific local authority (e.g., /bulk-check/status/201)
+                // Filter by the specific local authority requested
+                query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+            }
         }
         else
         {
