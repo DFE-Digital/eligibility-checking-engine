@@ -140,6 +140,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 var queue = await SendMessage(item);
             }
+            else
+            {
+                await UpdateBulkCheckStatusIfComplete(item.EligibilityCheckID);
+            }
 
             return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
         }
@@ -203,7 +207,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         try
         {
-            _logger.LogInformation($"Attempting to delete EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Attempting to delete EligibilityChecks and BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             var records = await _db.CheckEligibilities
                 .Where(x => x.Group == groupId)
@@ -226,14 +230,28 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 return response;
             }
 
+            // Delete the EligibilityCheck records
             _db.CheckEligibilities.RemoveRange(records);
+            
+            // Also delete the corresponding BulkCheck record
+            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.Guid == groupId);
+            if (bulkCheck != null)
+            {
+                _db.BulkChecks.Remove(bulkCheck);
+                _logger.LogInformation($"Found and marked BulkCheck record for deletion: {groupId?.Replace(Environment.NewLine, "")}");
+            }
+            else
+            {
+                _logger.LogWarning($"BulkCheck record not found for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            }
+            
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
 
             response.Success = true;
             response.DeletedCount = records.Count;
-            response.Message = $"{records.Count} record(s) successfully deleted.";
+            response.Message = $"{records.Count} eligibility check record(s) and associated bulk check successfully deleted.";
         }
         catch (Exception ex)
         {
@@ -347,45 +365,98 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     /// <summary>
-    /// Gets bulk check statuses for a local authority
+    /// Gets bulk check statuses for a specific local authority (optimized version)
     /// </summary>
-    /// <param name="localAuthority">The local authority identifier</param>
-    /// <returns>Collection of bulk checks for the local authority</returns>
-    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthority)
+    /// <param name="localAuthorityId">The local authority identifier to filter by</param>
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user (0 means admin access to all)</param>
+    /// <returns>Collection of bulk checks for the requested local authority (if user has permission)</returns>
+    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds)
     {
-        var minDate = DateTime.Now.AddDays(-7);
+        // Use UTC for consistency and better index performance
+        var minDate = DateTime.UtcNow.AddDays(-7);
+        
+        // Parse the requested local authority ID
+        if (!int.TryParse(localAuthorityId, out var requestedLAId))
+        {
+            return new List<Domain.BulkCheck>();
+        }
 
-        var bulkChecks = await _db.BulkChecks
-            .Where(x => string.Equals(x.ClientIdentifier, localAuthority) && x.SubmittedDate > minDate)
+        // Build optimized query with compound filtering
+        IQueryable<Domain.BulkCheck> query = _db.BulkChecks
+            .Where(x => x.SubmittedDate > minDate); // This should use an index on SubmittedDate
+
+        // Apply local authority filtering - always filter by the requested LA ID
+        if (allowedLocalAuthorityIds.Contains(0))
+        {
+            // Admin user - can access any LA, but should still filter by the requested LA ID
+            query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+        }
+        else
+        {
+            // Regular user - check if they have permission for the requested LA
+            if (allowedLocalAuthorityIds.Contains(requestedLAId))
+            {
+                // User has access to the specific requested local authority
+                query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+            }
+            else
+            {
+                // User doesn't have access to the requested local authority - early return
+                return new List<Domain.BulkCheck>();
+            }
+        }
+
+        // Execute query with optimized includes and projections
+        var bulkChecks = await query
             .Include(x => x.EligibilityChecks)
+            .OrderByDescending(x => x.SubmittedDate) // Add ordering for consistent results and better UX
             .ToListAsync();
 
-        // For each bulk check, ensure status is up to date
-        // (This handles cases where status might not have been updated yet)
+        // Optimize status calculation using LINQ for better performance
         foreach (var bulkCheck in bulkChecks)
         {
-            if (bulkCheck.EligibilityChecks.Any())
+            if (bulkCheck.EligibilityChecks?.Any() == true)
             {
-                var statuses = bulkCheck.EligibilityChecks.Select(x => x.Status);
-                var allQueued = statuses.All(s => s == CheckEligibilityStatus.queuedForProcessing);
-                var allCompleted = statuses.All(s => s != CheckEligibilityStatus.queuedForProcessing);
-                var hasErrors = statuses.Any(s => s == CheckEligibilityStatus.error);
+                var eligibilityStatuses = bulkCheck.EligibilityChecks.Select(x => x.Status).ToList();
+                
+                // Use more efficient status checking
+                var queuedCount = eligibilityStatuses.Count(s => s == CheckEligibilityStatus.queuedForProcessing);
+                var errorCount = eligibilityStatuses.Count(s => s == CheckEligibilityStatus.error);
+                var totalCount = eligibilityStatuses.Count;
 
-                // Update status if it doesn't match the current state
-                var expectedStatus = allQueued ? BulkCheckStatus.InProgress :
-                                   allCompleted ? (hasErrors ? BulkCheckStatus.Failed : BulkCheckStatus.Completed) :
-                                   BulkCheckStatus.InProgress;
+                // Calculate expected status more efficiently
+                BulkCheckStatus expectedStatus;
+                if (queuedCount == totalCount)
+                {
+                    expectedStatus = BulkCheckStatus.InProgress; // All queued
+                }
+                else if (queuedCount == 0)
+                {
+                    expectedStatus = errorCount > 0 ? BulkCheckStatus.Failed : BulkCheckStatus.Completed; // All completed
+                }
+                else
+                {
+                    expectedStatus = BulkCheckStatus.InProgress; // Partially completed
+                }
 
+                // Update status if needed (but don't save to avoid side effects during read)
                 if (bulkCheck.Status != expectedStatus)
                 {
                     bulkCheck.Status = expectedStatus;
-                    // Note: We don't save here to avoid modifying data during a read operation
-                    // The status will be updated during the next ProcessQueue cycle
+                    // Note: Status will be persisted during the next ProcessQueue cycle
                 }
             }
         }
 
         return bulkChecks;
+    }
+
+    public async Task<Domain.BulkCheck?> GetBulkCheck(string guid)
+    {
+        var bulkCheck = await _db.BulkChecks
+            .FirstOrDefaultAsync(x => x.Guid == guid);
+        
+        return bulkCheck;
     }
 
     public static string GetHash(CheckProcessData item)

@@ -31,6 +31,7 @@ public class CheckEligibilityRequestBulkBase
     public string? ClientIdentifier { get; set; }
     public string? Filename { get; set; }
     public string? SubmittedBy { get; set; }
+    public int? LocalAuthorityId { get; set; }
 }
 
 #region FreeSchoolMeals,  EarlyYearPupilPremium, TwoYearOffer type

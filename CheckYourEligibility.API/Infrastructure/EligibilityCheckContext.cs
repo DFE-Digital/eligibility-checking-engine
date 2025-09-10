@@ -94,6 +94,13 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                 v => v.ToString(),
                 v => (BulkCheckStatus)Enum.Parse(typeof(BulkCheckStatus), v));
 
+        // BulkCheck to LocalAuthority relationship
+        modelBuilder.Entity<BulkCheck>()
+            .HasOne(b => b.LocalAuthority)
+            .WithMany()
+            .HasForeignKey(b => b.LocalAuthorityId)
+            .IsRequired(false);
+
         // EligibilityCheck to BulkCheck relationship
         modelBuilder.Entity<EligibilityCheck>()
             .HasOne(e => e.BulkCheck)

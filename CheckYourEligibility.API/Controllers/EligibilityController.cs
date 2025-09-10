@@ -1,4 +1,4 @@
-﻿using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
@@ -113,6 +113,10 @@ public class EligibilityCheckController : BaseController
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -137,6 +141,10 @@ public class EligibilityCheckController : BaseController
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.TwoYearOffer);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -160,6 +168,10 @@ public class EligibilityCheckController : BaseController
         {
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -187,6 +199,10 @@ public class EligibilityCheckController : BaseController
             var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -207,9 +223,29 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            // Extract local authority IDs from user claims
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            // Set LocalAuthorityId if not provided and user has access to only one LA
+            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            {
+                model.LocalAuthorityId = localAuthorityIds[0];
+            }
+
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -231,9 +267,29 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            // Extract local authority IDs from user claims
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            // Set LocalAuthorityId if not provided and user has access to only one LA
+            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            {
+                model.LocalAuthorityId = localAuthorityIds[0];
+            }
+
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -255,9 +311,29 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            // Extract local authority IDs from user claims
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            // Set LocalAuthorityId if not provided and user has access to only one LA
+            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            {
+                model.LocalAuthorityId = localAuthorityIds[0];
+            }
+
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -279,9 +355,29 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
+            // Extract local authority IDs from user claims
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            // Set LocalAuthorityId if not provided and user has access to only one LA
+            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            {
+                model.LocalAuthorityId = localAuthorityIds[0];
+            }
+
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -313,6 +409,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -353,6 +453,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -384,6 +488,10 @@ public class EligibilityCheckController : BaseController
                 { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -404,10 +512,27 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var result = await _deleteBulkUploadUseCase.Execute(guid);
+            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await _deleteBulkUploadUseCase.Execute(guid, localAuthorityIds);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
-        }    
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -438,6 +563,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -469,6 +598,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -500,6 +633,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -530,6 +667,10 @@ public class EligibilityCheckController : BaseController
         catch (NotFoundException)
         {
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -569,6 +710,10 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
@@ -599,9 +744,15 @@ public class EligibilityCheckController : BaseController
             return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
 }
+
+

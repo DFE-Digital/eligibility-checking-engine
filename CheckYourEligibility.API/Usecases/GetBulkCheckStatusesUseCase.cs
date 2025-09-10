@@ -46,7 +46,7 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
                 "You do not have permission to access applications for this establishment's local authority");
         }
 
-        var response = await _checkGateway.GetBulkStatuses(localAuthority);
+        var response = await _checkGateway.GetBulkStatuses(localAuthority, allowedLocalAuthorityIds);
         if (response == null)
         {
             _logger.LogWarning(
