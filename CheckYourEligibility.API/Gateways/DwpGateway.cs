@@ -21,12 +21,14 @@ namespace CheckYourEligibility.API.Gateways;
 public interface IDwpGateway
 {
     public string UseEcsforChecks { get; }
+    public string UseEcsforChecksWF { get; }
 
     Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type);
 
     Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
     Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck);
+    Task<SoapFsmCheckRespone?> EcsWFCheck(CheckProcessData eligibilityCheck);
 }
 
 [ExcludeFromCodeCoverage]
@@ -62,6 +64,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     private readonly ILogger _logger;
     private readonly string _UseEcsforChecks;
+    private readonly string _UseEcsforChecksWF;
     private bool _ran;
 
     public DwpGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
@@ -69,6 +72,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;
         _UseEcsforChecks = _configuration["Dwp:UseEcsforChecks"];
+        _UseEcsforChecksWF = _configuration["Dwp:UseEcsforChecksWF"];
 
         _DWP_ApiHost = _configuration["Dwp:ApiHost"];
         _DWP_ApiTokenUrl = _configuration["Dwp:ApiTokenUrl"];
@@ -121,6 +125,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     string IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
 
+    string IDwpGateway.UseEcsforChecksWF => _UseEcsforChecksWF;
+
 
     #region ECS API Soap
 
@@ -146,6 +152,72 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
             var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
             var soapResponse = new SoapFsmCheckRespone();
+            try
+            {
+                if (!_ran)
+                {
+                    _httpClient.DefaultRequestHeaders.Add("SOAPAction",
+                        "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
+                    _ran = true;
+                }
+
+                var response = await _httpClient.PostAsync(uri, content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
+                    var namespacePrefix = doc.Root.GetNamespaceOfPrefix("s");
+                    var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
+                    var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
+                    soapResponse.Status = xElement.Value;
+                    xElement = elements.First(x => x.Name.LocalName == "ErrorCode");
+                    soapResponse.ErrorCode = xElement.Value;
+                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "Qualifier");
+                    soapResponse.Qualifier = xElement.Value;
+                    return soapResponse;
+                }
+
+                _logger.LogError(
+                    $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ECS check failed.");
+        }
+
+        return null;
+    }
+
+    //TODO: Update the response type as well
+    public async Task<SoapFsmCheckRespone?> EcsWFCheck(CheckProcessData eligibilityCheck)
+    {
+        try
+        {
+            var uri = _DWP_EcsHost;
+            if (!uri.Contains("https"))
+                uri = $"https://{_DWP_EcsHost}/fsm.lawebservice/20170701/OnlineQueryGateway.svc";
+
+            var soapMessage = Resources.EcsSoapWF;
+            soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
+            soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
+            soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
+            soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
+            soapMessage = soapMessage.Replace("{{DateOfBirth}}", eligibilityCheck.DateOfBirth);
+            soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);
+            soapMessage = soapMessage.Replace("{{EligibilityCode}}", eligibilityCheck.EligibilityCode);
+
+            //SURNAME IS OPTIONAL
+            soapMessage = soapMessage.Replace("{{LastName}}", eligibilityCheck.LastName);
+            //This case if leaving blank causes issues
+            //soapMessage = soapMessage.Replace("<ns:Surname/>",
+            //    $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
+
+            var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
+            var soapResponse = new SoapFsmCheckRespone(); //TODO: Replace with WF specifics EligibilityCode, Child DOB
             try
             {
                 if (!_ran)

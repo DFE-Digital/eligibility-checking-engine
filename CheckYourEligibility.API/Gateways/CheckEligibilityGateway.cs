@@ -592,6 +592,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
+            //If Configured to call ECS
+            if (_dwpGateway.UseEcsforChecksWF == "true") //TODO: Make this a boolean rather than a string
+            {
+                //  Perform ECS check and return response
+                //  Set the source to ECS
+                result.Status =  await DwpEcsWFCheck(checkData);
+                source = ProcessEligibilityCheckSource.ECS;
+            }
         }
 
         result.EligibilityCheckHashID =
@@ -624,7 +632,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 {
                     if (_dwpGateway.UseEcsforChecks=="true")
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        checkResult = await DwpEcsFsmCheck(checkData);
                         
                         source = ProcessEligibilityCheckSource.ECS;
                     }
@@ -637,7 +645,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     }
                     else
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        checkResult = await DwpEcsFsmCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
 
                         if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
@@ -757,7 +765,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
 
-    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data, CheckEligibilityStatus checkResult)
+    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data)
     {
         //check for benefit
         var result = await _dwpGateway.EcsFsmCheck(data);
@@ -765,30 +773,60 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             if (result.Status == "1")
             {
-                checkResult = CheckEligibilityStatus.eligible;
+                return CheckEligibilityStatus.eligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.IsNullOrEmpty())
             {
-                checkResult = CheckEligibilityStatus.notEligible;
+                return CheckEligibilityStatus.notEligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier == "No Trace - Check data")
             {
-                checkResult = CheckEligibilityStatus.parentNotFound;
+                return CheckEligibilityStatus.parentNotFound;
             }
             else
             {
                 _logger.LogError(
                     $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
-                checkResult = CheckEligibilityStatus.error;
+                return CheckEligibilityStatus.error;
             }
         }
         else
         {
             _logger.LogError("Error ECS unknown Response of null");
-            checkResult = CheckEligibilityStatus.error;
+            return CheckEligibilityStatus.error;
         }
+    }
 
-        return checkResult;
+    private async Task<CheckEligibilityStatus> DwpEcsWFCheck(CheckProcessData data) //TODO: Reduce redundancy between these two methods. Just take the result
+    {
+        //check for benefit
+        var result = await _dwpGateway.EcsWFCheck(data);
+        if (result != null)
+        {
+            if (result.Status == "1")
+            {
+                return CheckEligibilityStatus.eligible;
+            }
+            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.IsNullOrEmpty())
+            {
+                return CheckEligibilityStatus.notEligible;
+            }
+            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier == "No Trace - Check data")
+            {
+                return CheckEligibilityStatus.parentNotFound;
+            }
+            else
+            {
+                _logger.LogError(
+                    $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
+                return CheckEligibilityStatus.error;
+            }
+        }
+        else
+        {
+            _logger.LogError("Error ECS unknown Response of null");
+            return CheckEligibilityStatus.error;
+        }
     }
 
 

@@ -1104,6 +1104,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
+        _moqDwpGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -1138,6 +1139,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqDwpGateway.Setup(x => x.UseEcsforChecksWF).Returns("false"); //TODO: Create new test where this is configured to true
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
