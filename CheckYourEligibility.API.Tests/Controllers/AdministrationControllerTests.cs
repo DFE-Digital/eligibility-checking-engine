@@ -55,22 +55,6 @@ public class AdministrationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_CleanUpEligibilityChecks_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockCleanUpEligibilityChecksUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
-
-        var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
-        { StatusCode = StatusCodes.Status200OK };
-
-        // Act
-        var response = await _sut.CleanUpEligibilityChecks();
-
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
-
-    [Test]
     public async Task Given_CleanUpRateLimitEvents_Should_Return_Status200OK()
     {
         // Arrange

@@ -52,21 +52,6 @@ public class AdministrationController : BaseController
     }
 
     /// <summary>
-    ///     Deletes all old Eligibility Checks based on the service configuration
-    /// </summary>
-    /// <returns></returns>
-    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPut("/admin/clean-up-eligibility-checks")]
-    [Authorize(Policy = PolicyNames.RequireAdminScope)]
-    public async Task<ActionResult> CleanUpEligibilityChecks()
-    {
-        await _cleanUpEligibilityChecksUseCase.Execute();
-        return new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
-        { StatusCode = StatusCodes.Status200OK };
-    }
-
-    /// <summary>
     ///     Deletes all old Rate Limit Events based on the service configuration
     /// </summary>
     /// <returns></returns>
