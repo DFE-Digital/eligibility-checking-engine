@@ -562,7 +562,7 @@
 &lt;/soapenv:Envelope&gt;</value>
   </data>
     <data name="EcsSoapWF" xml:space="preserve">
-    <value>&lt;soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ns=\"http://www.dcsf.gov.uk/20090308/\"&gt;
+    <value>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.dcsf.gov.uk/20090308/"&gt;
    &lt;soapenv:Header/&gt;
    &lt;soapenv:Body&gt;
       &lt;ns:SubmitSingleQuery&gt;

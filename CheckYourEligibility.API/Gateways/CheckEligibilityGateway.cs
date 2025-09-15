@@ -106,11 +106,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if (item.Type == CheckEligibilityType.WorkingFamilies)
             {
                 WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-                if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+                var wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+                if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+                    checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
                 {
                     wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
                 }
-                else {
+                else
+                {
                     wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                     checkData.NationalInsuranceNumber, checkData.LastName);
                 }               
@@ -526,7 +529,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData) { 
         string eligibilityCode = checkData.EligibilityCode;
-        bool isEligiblePrefix = eligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible"));
+        var prefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
+        bool isEligiblePrefix = !prefix.IsNullOrEmpty() && eligibilityCode.StartsWith(prefix);
         DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         if (isEligiblePrefix) { 
