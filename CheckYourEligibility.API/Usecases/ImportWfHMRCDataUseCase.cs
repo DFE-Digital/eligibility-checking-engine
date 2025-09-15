@@ -32,7 +32,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
     public async Task Execute(IFormFile file)
     {
         List<WorkingFamiliesEvent> DataLoad = new();
-        if (file == null || file.ContentType.ToLower() != "text/xml" || !file.FileName.EndsWith(".xlsm"))
+        if (file == null || (file.ContentType.ToLower() != "text/xml" && !file.FileName.EndsWith(".xlsm")))
             throw new InvalidDataException($"{Admin.XlsmfileRequired}");
             
         var validator = new WorkingFamiliesEventImportValidator();
