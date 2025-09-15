@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
@@ -130,7 +129,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     #region ECS API Soap
 
-    public async Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck)
+    private async Task<SoapCheckResponse?> executeEcsCheck(string request)
     {
         try
         {
@@ -138,19 +137,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             if (!uri.Contains("https"))
                 uri = $"https://{_DWP_EcsHost}/fsm.lawebservice/20170701/OnlineQueryGateway.svc";
 
-            var soapMessage = Resources.EcsSoapFsm;
-            soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
-            soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
-            soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
-            soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
-            soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
-                $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
-            soapMessage = soapMessage.Replace("<ns:DateOfBirth>1967-03-07</ns:DateOfBirth>",
-                $"<ns:DateOfBirth>{eligibilityCheck.DateOfBirth}</ns:DateOfBirth>");
-            soapMessage = soapMessage.Replace("<ns:NiNo>NN668767B</ns:NiNo>",
-                $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
-
-            var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
+            var content = new StringContent(request, Encoding.UTF8, "text/xml");
             var soapResponse = new SoapCheckResponse();
             try
             {
@@ -192,70 +179,42 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return null;
     }
 
-    //TODO: Update the response type as well
+    public async Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck)
+    {
+        var soapMessage = Resources.EcsSoapFsm;
+        soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
+        soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
+        soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
+        soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
+        soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
+            $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
+        soapMessage = soapMessage.Replace("<ns:DateOfBirth>1967-03-07</ns:DateOfBirth>",
+            $"<ns:DateOfBirth>{eligibilityCheck.DateOfBirth}</ns:DateOfBirth>");
+        soapMessage = soapMessage.Replace("<ns:NiNo>NN668767B</ns:NiNo>",
+            $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
+
+        return await executeEcsCheck(soapMessage);
+    }
+
     public async Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck)
     {
-        try
+
+        var soapMessage = Resources.EcsSoapWF;
+        soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
+        soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
+        soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
+        soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
+        soapMessage = soapMessage.Replace("{{DateOfBirth}}", eligibilityCheck.DateOfBirth);
+        soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);
+        soapMessage = soapMessage.Replace("{{EligibilityCode}}", eligibilityCheck.EligibilityCode);
+
+        if (!eligibilityCheck.LastName.IsNullOrEmpty())
         {
-            var uri = _DWP_EcsHost;
-            if (!uri.Contains("https"))
-                uri = $"https://{_DWP_EcsHost}/fsm.lawebservice/20170701/OnlineQueryGateway.svc";
-
-            var soapMessage = Resources.EcsSoapWF;
-            soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
-            soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
-            soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
-            soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
-            soapMessage = soapMessage.Replace("{{DateOfBirth}}", eligibilityCheck.DateOfBirth);
-            soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);
-            soapMessage = soapMessage.Replace("{{EligibilityCode}}", eligibilityCheck.EligibilityCode);
-
-            //SURNAME IS OPTIONAL
-            soapMessage = soapMessage.Replace("{{LastName}}", eligibilityCheck.LastName);
-            //This case if leaving blank causes issues
-            //soapMessage = soapMessage.Replace("<ns:Surname/>",
-            //    $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
-
-            var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
-            var soapResponse = new SoapCheckResponse(); //TODO: Replace with WF specifics EligibilityCode, Child DOB
-            try
-            {
-                if (!_ran)
-                {
-                    _httpClient.DefaultRequestHeaders.Add("SOAPAction",
-                        "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
-                    _ran = true;
-                }
-
-                var response = await _httpClient.PostAsync(uri, content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
-                    var namespacePrefix = doc.Root.GetNamespaceOfPrefix("s");
-                    var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
-                    var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
-                    soapResponse.Status = xElement.Value;
-                    xElement = elements.First(x => x.Name.LocalName == "ErrorCode");
-                    soapResponse.ErrorCode = xElement.Value;
-                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "Qualifier");
-                    soapResponse.Qualifier = xElement.Value;
-                    return soapResponse;
-                }
-
-                _logger.LogError(
-                    $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri}");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ECS check failed.");
+            soapMessage = soapMessage.Replace("<ns:Surname/>",
+                $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
         }
 
-        return null;
+        return await executeEcsCheck(soapMessage);
     }
 
     #endregion

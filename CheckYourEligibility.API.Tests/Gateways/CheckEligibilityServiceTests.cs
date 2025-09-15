@@ -1139,12 +1139,48 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
-        _moqDwpGateway.Setup(x => x.UseEcsforChecksWF).Returns("false"); //TODO: Create new test where this is configured to true
+        _moqDwpGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.notFound);
+    }
+
+    [Test]
+    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligibles()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        wf.DateOfBirth = "2022-01-01";
+        wf.NationalInsuranceNumber = "AB123456C";
+        wf.EligibilityCode = "50012345678";
+        wf.LastName = "smith";
+        var dataItem = GetCheckProcessData(wf);
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
+        wfEvent.EligibilityCode = "50012345678";
+        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
+        wfEvent.ParentLastName = "doe";
+        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
+        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqDwpGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
+        _moqDwpGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Should().Be(CheckEligibilityStatus.eligible);
     }
 
     [Test]

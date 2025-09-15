@@ -574,7 +574,7 @@
             &lt;ns:RequestedServiceVersion&gt;{{ServiceVersion}}&lt;/ns:RequestedServiceVersion&gt;
             &lt;ns:UserToQuery&gt;
                &lt;!--Optional:--&gt;
-               &lt;ns:Surname&gt;{{LastName}}&lt;/ns:Surname&gt;
+               &lt;ns:Surname/&gt;
                &lt;ns:DateOfBirth&gt;{{DateOfBirth}}&lt;/ns:DateOfBirth&gt;
                &lt;!--Optional:--&gt;
                &lt;ns:NiNo&gt;{{NiNo}}&lt;/ns:NiNo&gt;

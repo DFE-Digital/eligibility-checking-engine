@@ -166,7 +166,7 @@ public class DwpServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_InvalidValid_EcsWFCheck_Should_Return_null()
+    public async Task Given_Invalid_EcsWFCheck_Should_Return_null()
     {
         // Arrange
         var handlerMock = new Mock<HttpMessageHandler>();
