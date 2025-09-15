@@ -73,7 +73,7 @@ public class DwpServiceTests : TestBase.TestBase
 
 
     [Test]
-    public async Task Given_Valid_EcsFsmCheck_Should_Return_SoapFsmCheckRespone()
+    public async Task Given_Valid_EcsFsmCheck_Should_Return_SoapCheckResponse()
     {
         // Arrange
         var request = _fixture.Create<CheckProcessData>();
@@ -99,7 +99,7 @@ public class DwpServiceTests : TestBase.TestBase
         var response = await _sut.EcsFsmCheck(request);
 
         // Assert
-        response.Should().BeOfType<SoapFsmCheckRespone>();
+        response.Should().BeOfType<SoapCheckResponse>();
     }
 
     [Test]
@@ -162,7 +162,7 @@ public class DwpServiceTests : TestBase.TestBase
         var response = await _sut.EcsWFCheck(request);
 
         // Assert
-        response.Should().BeOfType<SoapFsmCheckRespone>();
+        response.Should().BeOfType<SoapCheckResponse>();
     }
 
     [Test]

@@ -768,11 +768,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return CheckSurname(data.LastName, checkReults);
     }
 
-
-    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data)
+    private CheckEligibilityStatus convertEcsResultStatus(SoapCheckResponse? result)
     {
-        //check for benefit
-        var result = await _dwpGateway.EcsFsmCheck(data);
         if (result != null)
         {
             if (result.Status == "1")
@@ -801,36 +798,18 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    private async Task<CheckEligibilityStatus> DwpEcsWFCheck(CheckProcessData data) //TODO: Reduce redundancy between these two methods. Just take the result
+    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data)
+    {
+        //check for benefit
+        var result = await _dwpGateway.EcsFsmCheck(data);
+        return convertEcsResultStatus(result);
+    }
+
+    private async Task<CheckEligibilityStatus> DwpEcsWFCheck(CheckProcessData data)
     {
         //check for benefit
         var result = await _dwpGateway.EcsWFCheck(data);
-        if (result != null)
-        {
-            if (result.Status == "1")
-            {
-                return CheckEligibilityStatus.eligible;
-            }
-            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.IsNullOrEmpty())
-            {
-                return CheckEligibilityStatus.notEligible;
-            }
-            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier == "No Trace - Check data")
-            {
-                return CheckEligibilityStatus.parentNotFound;
-            }
-            else
-            {
-                _logger.LogError(
-                    $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
-                return CheckEligibilityStatus.error;
-            }
-        }
-        else
-        {
-            _logger.LogError("Error ECS unknown Response of null");
-            return CheckEligibilityStatus.error;
-        }
+        return convertEcsResultStatus(result);
     }
 
 

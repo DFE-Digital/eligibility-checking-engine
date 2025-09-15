@@ -526,7 +526,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
-        var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "1", ErrorCode = "0", Qualifier = "" };
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
@@ -555,7 +555,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
-        var ecsSoapCheckResponse = new SoapFsmCheckRespone { Status = "0", ErrorCode = "0", Qualifier = "" };
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
@@ -584,7 +584,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
-        var ecsSoapCheckResponse = new SoapFsmCheckRespone
+        var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
@@ -642,7 +642,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqDwpGateway.Setup(x => x.UseEcsforChecks).Returns("true");
-        var ecsSoapCheckResponse = new SoapFsmCheckRespone
+        var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
         _moqDwpGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);

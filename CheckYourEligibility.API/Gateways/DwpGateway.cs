@@ -27,8 +27,8 @@ public interface IDwpGateway
         CheckEligibilityType type);
 
     Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
-    Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck);
-    Task<SoapFsmCheckRespone?> EcsWFCheck(CheckProcessData eligibilityCheck);
+    Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck);
+    Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck);
 }
 
 [ExcludeFromCodeCoverage]
@@ -130,7 +130,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     #region ECS API Soap
 
-    public async Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck)
+    public async Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck)
     {
         try
         {
@@ -151,7 +151,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
 
             var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
-            var soapResponse = new SoapFsmCheckRespone();
+            var soapResponse = new SoapCheckResponse();
             try
             {
                 if (!_ran)
@@ -193,7 +193,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     }
 
     //TODO: Update the response type as well
-    public async Task<SoapFsmCheckRespone?> EcsWFCheck(CheckProcessData eligibilityCheck)
+    public async Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck)
     {
         try
         {
@@ -217,7 +217,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             //    $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
 
             var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
-            var soapResponse = new SoapFsmCheckRespone(); //TODO: Replace with WF specifics EligibilityCode, Child DOB
+            var soapResponse = new SoapCheckResponse(); //TODO: Replace with WF specifics EligibilityCode, Child DOB
             try
             {
                 if (!_ran)
