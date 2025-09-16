@@ -145,7 +145,7 @@ public class DwpServiceTests : TestBase.TestBase
         var httpResponse = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(Resources.EcsSoapEligible) //TODO: Check the response type of this for WF
+            Content = new StringContent(Resources.EcsSoapEligible)
         };
 
         handlerMock
@@ -173,7 +173,7 @@ public class DwpServiceTests : TestBase.TestBase
         var httpResponse = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.BadRequest,
-            Content = new StringContent(Resources.EcsSoapEligible) //TODO: Check the response type of this for WF should not be eligible
+            Content = new StringContent(Resources.EcsSoapEligible)
         };
 
         handlerMock

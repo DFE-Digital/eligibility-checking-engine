@@ -24,10 +24,13 @@ describe('Verify Eligibility Check Statuses', () => {
     cy.createEligibilityBulkCheckAndGetResults('/oauth2/token', validLoginRequestBody, 'bulk-check/working-families', validRequestBody);
     cy.get('@data').then((data: any) => {
       data.forEach((check) => {
-        if (check.eligibilityCode.substring(2, 2) == '91') {
-          expect(check.status).to.equal("eligible");
-        } else if (check.eligibilityCode.substring(2, 2) == '92') {
-          expect(check.status).to.equal("notEligible");
+        if (check.eligibilityCode.substring(0,2) == '90')
+        {
+          if (check.eligibilityCode.substring(0, 3) == '900') {
+            expect(check.status).to.equal("eligible");
+          } else {
+            expect(check.status).to.equal("notEligible");
+        }
         } else {
           expect(check.status).to.equal("notFound");
         }

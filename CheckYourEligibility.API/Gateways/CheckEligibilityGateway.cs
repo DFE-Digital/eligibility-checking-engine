@@ -596,11 +596,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
-            //If Configured to call ECS
-            if (_dwpGateway.UseEcsforChecksWF == "true") //TODO: Make this a boolean rather than a string
+            if (_dwpGateway.UseEcsforChecksWF == "true")
             {
-                //  Perform ECS check and return response
-                //  Set the source to ECS
                 result.Status =  await DwpEcsWFCheck(checkData);
                 source = ProcessEligibilityCheckSource.ECS;
             }
