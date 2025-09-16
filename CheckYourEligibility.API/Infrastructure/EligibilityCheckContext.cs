@@ -21,6 +21,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     public virtual DbSet<Establishment> Establishments { get; set; }
+    public virtual DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
+    public virtual DbSet<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
     public virtual DbSet<LocalAuthority> LocalAuthorities { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -111,6 +113,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<Establishment>()
             .HasOne(e => e.LocalAuthority);
+
+        // MultiAcademyTrustSchool to MultiAcademyTrust relationship
+        // TODO:
+        // MultiAcademyTrustSchool.TrustId (Many) -> (One) MultiAcademyTrust.UID
 
         modelBuilder.Entity<Application>()
             .HasIndex(b => b.Reference, "idx_Reference")

@@ -119,6 +119,21 @@ public class AdministrationGateway : IAdministration
         }
     }
 
+    public async Task ImportMats(IEnumerable<MatRow> data) //TODO: Split out into separate functions?
+    {
+        var multiAcademyTrusts = data
+            .Select(m => new { m.GroupUID, m.GroupName })
+            .Distinct()
+            .Select(x => new MultiAcademyTrust { UID = x.GroupUID, Name = x.GroupName });
+
+        //TODO: Write all of these to db, removing existing records
+
+        var multiAcademyTrustSchools = data
+            .Select(x => new MultiAcademyTrustSchool { TrustId = x.GroupUID, SchoolId = x.AcademyURN });
+
+        //TODO: Write all of these to db, removing existing records
+    }
+
 
     public async Task ImportHMRCData(IEnumerable<FreeSchoolMealsHMRC> data)
     {
