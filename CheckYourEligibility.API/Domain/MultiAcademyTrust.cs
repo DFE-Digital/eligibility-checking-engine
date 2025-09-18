@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -8,4 +9,5 @@ public class MultiAcademyTrust
 {
     [Key] public int UID { get; set; }
     public string Name { get; set; }
+    public virtual Collection<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
 }

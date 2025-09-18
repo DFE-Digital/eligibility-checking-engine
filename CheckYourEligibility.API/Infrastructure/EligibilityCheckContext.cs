@@ -115,8 +115,12 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasOne(e => e.LocalAuthority);
 
         // MultiAcademyTrustSchool to MultiAcademyTrust relationship
-        // TODO:
-        // MultiAcademyTrustSchool.TrustId (Many) -> (One) MultiAcademyTrust.UID
+        modelBuilder.Entity<MultiAcademyTrustSchool>()
+            .HasOne(s => s.MultiAcademyTrust)
+            .WithMany(t => t.MultiAcademyTrustSchools)
+            .HasForeignKey(s => s.TrustId)
+            .HasPrincipalKey(t => t.UID)
+            .IsRequired(true);
 
         modelBuilder.Entity<Application>()
             .HasIndex(b => b.Reference, "idx_Reference")

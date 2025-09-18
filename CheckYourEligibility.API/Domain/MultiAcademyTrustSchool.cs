@@ -10,4 +10,5 @@ public class MultiAcademyTrustSchool
     [Key] public int ID { get; set; } //TODO: AutooGenerated
     public int TrustId { get; set; }
     public int SchoolId { get; set; } //TODO: Should be EstablishmentId???? To keep naming consistent
+    public virtual MultiAcademyTrust MultiAcademyTrust { get; set; }
 }
