@@ -315,7 +315,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 var takeHomePay = 0.00;
 
-                takeHomePay = liveAwards.Sum(x => x.assessmentAttributes.takeHomePay);
+                takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(1).Sum(x => x.assessmentAttributes.takeHomePay);
                 if (takeHomePay <= threshold) entitled = true;
 
                 if (liveAwards.Count() > 1)

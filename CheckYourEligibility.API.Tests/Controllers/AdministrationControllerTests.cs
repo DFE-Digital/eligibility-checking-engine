@@ -16,6 +16,7 @@ public class AdministrationControllerTests : TestBase.TestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICleanUpEligibilityChecksUseCase> _mockCleanUpEligibilityChecksUseCase;
+    private Mock<ICleanUpRateLimitEventsUseCase> _mockCleanUpRateLimitEventsUseCase;
     private Mock<IImportEstablishmentsUseCase> _mockImportEstablishmentsUseCase;
     private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
     private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
@@ -27,6 +28,7 @@ public class AdministrationControllerTests : TestBase.TestBase
     public void Setup()
     {
         _mockCleanUpEligibilityChecksUseCase = new Mock<ICleanUpEligibilityChecksUseCase>(MockBehavior.Strict);
+        _mockCleanUpRateLimitEventsUseCase = new Mock<ICleanUpRateLimitEventsUseCase>(MockBehavior.Strict);
         _mockImportEstablishmentsUseCase = new Mock<IImportEstablishmentsUseCase>(MockBehavior.Strict);
         _mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
         _mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
@@ -35,6 +37,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new AdministrationController(
             _mockCleanUpEligibilityChecksUseCase.Object,
+            _mockCleanUpRateLimitEventsUseCase.Object,
             _mockImportEstablishmentsUseCase.Object,
             _mockImportFsmHomeOfficeDataUseCase.Object,
             _mockImportFsmHMRCDataUseCase.Object,
@@ -52,16 +55,16 @@ public class AdministrationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_CleanUpEligibilityChecks_Should_Return_Status200OK()
+    public async Task Given_CleanUpRateLimitEvents_Should_Return_Status200OK()
     {
         // Arrange
-        _mockCleanUpEligibilityChecksUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
+        _mockCleanUpRateLimitEventsUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
 
-        var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.EligibilityChecksCleanse}" })
+        var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
         { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.CleanUpEligibilityChecks();
+        var response = await _sut.CleanUpRateLimitEvents();
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

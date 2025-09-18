@@ -171,6 +171,7 @@ builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
 
 builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
+builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
 builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
 builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
@@ -180,6 +181,7 @@ builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckI
 builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
+builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEventsUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 

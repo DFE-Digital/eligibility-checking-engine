@@ -25,18 +25,26 @@ public class AdministrationGateway : IAdministration
 
     public async Task CleanUpEligibilityChecks()
     {
-        var checkDate =
-            DateTime.UtcNow.AddDays(
-                -_configuration.GetValue<int>($"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.eligible}"));
-        var items = _db.CheckEligibilities.Where(x => x.Created <= checkDate);
-        _db.CheckEligibilities.RemoveRange(items);
-        await _db.SaveChangesAsync();
+        var eligibileRetentionDays = _configuration.GetValue<int>($"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.eligible}");
+        if (eligibileRetentionDays > 0)
+        {
+            var checkDate =
+                DateTime.UtcNow.AddDays(
+                    -eligibileRetentionDays);
+            var items = _db.CheckEligibilities.Where(x => x.Created <= checkDate);
+            _db.CheckEligibilities.RemoveRange(items);
+            await _db.SaveChangesAsync();
+        }
 
-        checkDate = DateTime.UtcNow.AddDays(
-            -_configuration.GetValue<int>($"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.parentNotFound}"));
-        items = _db.CheckEligibilities.Where(x => x.Created <= checkDate);
-        _db.CheckEligibilities.RemoveRange(items);
-        await _db.SaveChangesAsync();
+        var notFoundRetentionDays = _configuration.GetValue<int>($"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.parentNotFound}");
+        if (notFoundRetentionDays > 0)
+        {
+            var checkDate = DateTime.UtcNow.AddDays(
+                -notFoundRetentionDays);
+            var items = _db.CheckEligibilities.Where(x => x.Created <= checkDate);
+            _db.CheckEligibilities.RemoveRange(items);
+            await _db.SaveChangesAsync();
+        }
     }
 
     [ExcludeFromCodeCoverage(Justification = "Use of bulk operations")]

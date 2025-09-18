@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
+using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -34,6 +36,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     private Mock<IProcessQueueMessagesUseCase> _mockProcessQueueMessagesUseCase;
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
+    private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
 
     private EligibilityCheckController _sut;
 
@@ -50,7 +53,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockUpdateEligibilityCheckStatusUseCase = new Mock<IUpdateEligibilityCheckStatusUseCase>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
-;        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
+        _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
+        _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckController>>();
 
@@ -76,7 +80,8 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
             _mockUpdateEligibilityCheckStatusUseCase.Object,
             _mockProcessEligibilityCheckUseCase.Object,
             _mockGetEligibilityCheckItemUseCase.Object,
-            _mockDeleteBulkCheckUseCase.Object
+            _mockDeleteBulkCheckUseCase.Object,
+            _mockGetAllBulkChecksUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest
@@ -97,13 +102,37 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockProcessQueueMessagesUseCase.VerifyAll();
         _mockCheckEligibilityUseCase.VerifyAll();
         _mockCheckEligibilityBulkUseCase.VerifyAll();
+        _mockGetBulkCheckStatusesUseCase.VerifyAll();
         _mockGetBulkUploadProgressUseCase.VerifyAll();
         _mockGetBulkUploadResultsUseCase.VerifyAll();
         _mockGetEligibilityCheckStatusUseCase.VerifyAll();
         _mockUpdateEligibilityCheckStatusUseCase.VerifyAll();
         _mockProcessEligibilityCheckUseCase.VerifyAll();
         _mockGetEligibilityCheckItemUseCase.VerifyAll();
+        _mockDeleteBulkCheckUseCase.VerifyAll();
+        _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
+    }
+
+    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
+    {
+        // Create mock HttpContext with ClaimsPrincipal
+        var httpContext = new DefaultHttpContext();
+        var claims = new List<Claim>();
+
+        // Add appropriate scope claims based on localAuthorityIds
+        if (localAuthorityIds.Contains(0))
+        {
+            claims.Add(new Claim("scope", "local_authority"));
+        }
+        else
+        {
+            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
+            claims.Add(new Claim("scope", scopeValue));
+        }
+
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Test]
@@ -150,7 +179,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityResponse();
 
         _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.CheckEligibilityFsm(request);
@@ -187,21 +216,15 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
-        var executionResult = new CheckEligibilityResponseBulk();
+        var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
 
-        // Set up HttpContext for bulk check path
-        var httpContext = new DefaultHttpContext();
-        var path = new PathString("/bulk-check/free-school-meals");
-        httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext
-        };
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.CheckEligibilityBulkFsm(request);
@@ -209,7 +232,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
         var badRequestResult = (BadRequestObjectResult)response;
-        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+        ((ErrorResponse)badRequestResult.Value!).Errors.First().Title.Should().Be("Validation error");
     }
 
     [Test]
@@ -219,15 +242,10 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
+        var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
 
-        // Set up HttpContext for bulk check path
-        var httpContext = new DefaultHttpContext();
-        var path = new PathString("/bulk-check/free-school-meals");
-        httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext
-        };
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
@@ -258,7 +276,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
         _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         var response = await _sut.CheckEligibilityWF(request);
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -300,11 +318,22 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulk>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
+        var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         // Set up HttpContext for bulk check path
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/working-families");
         httpContext.Request.Path = path;
+        
+        // Preserve the existing user context and add the path
+        if (_sut.ControllerContext.HttpContext.User != null)
+        {
+            httpContext.User = _sut.ControllerContext.HttpContext.User;
+        }
+        
         _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
@@ -330,12 +359,22 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulk>();
-        var executionResult = new CheckEligibilityResponseBulk();
+        var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         // Set up HttpContext for bulk check path
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/working-families");
         httpContext.Request.Path = path;
+        
+        // Preserve the existing user context and add the path
+        if (_sut.ControllerContext.HttpContext.User != null)
+        {
+            httpContext.User = _sut.ControllerContext.HttpContext.User;
+        }
+        
         _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
@@ -344,7 +383,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
                 _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.CheckEligibilityBulkWF(request);
@@ -352,7 +391,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
         var badRequestResult = (BadRequestObjectResult)response;
-        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
+        ((ErrorResponse)badRequestResult.Value!).Errors.First().Title.Should().Be("Validation error");
     }
 
     #endregion
@@ -383,7 +422,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityBulkStatusResponse();
 
         _mockGetBulkUploadProgressUseCase.Setup(u => u.Execute(guid))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.BulkUploadProgress(guid);
@@ -440,7 +479,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityBulkResponse();
 
         _mockGetBulkUploadResultsUseCase.Setup(u => u.Execute(guid))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.BulkUploadResults(guid);
@@ -517,7 +556,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityStatusResponse();
 
         _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.CheckEligibilityStatus(guid);
@@ -537,7 +576,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityStatusResponse();
 
         _mockGetEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, type))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.CheckEligibilityStatus(type, guid);
@@ -617,7 +656,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityStatusResponse();
 
         _mockUpdateEligibilityCheckStatusUseCase.Setup(u => u.Execute(guid, request))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.EligibilityCheckStatusUpdate(guid, request);
@@ -675,7 +714,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityStatusResponse();
 
         _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.Process(guid);
@@ -789,7 +828,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityItemResponse();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
@@ -809,7 +848,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var executionResult = new CheckEligibilityItemResponse();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type))
-            .ThrowsAsync(new ValidationException(null, "Validation error"));
+            .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
         var response = await _sut.EligibilityCheck(type, guid);

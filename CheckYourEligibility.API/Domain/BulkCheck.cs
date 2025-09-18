@@ -26,5 +26,15 @@ public class BulkCheck
     [Column(TypeName = "varchar(100)")]
     public BulkCheckStatus Status { get; set; }
     
+    /// <summary>
+    /// The Local Authority ID that submitted this bulk check
+    /// </summary>
+    public int? LocalAuthorityId { get; set; }
+    
+    /// <summary>
+    /// Navigation property to the Local Authority
+    /// </summary>
+    public virtual LocalAuthority? LocalAuthority { get; set; }
+    
     public virtual ICollection<EligibilityCheck> EligibilityChecks { get; set; } = new List<EligibilityCheck>();
 }
