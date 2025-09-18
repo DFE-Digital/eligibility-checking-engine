@@ -1,6 +1,3 @@
-pr:
-  - main
-
 pool:
   name: Azure Pipelines
   vmImage: 'windows-latest'
