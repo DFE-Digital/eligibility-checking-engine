@@ -586,8 +586,6 @@ public class EligibilityCheckController : BaseController
         }
     }
 
-    
-
     /// <summary>
     ///     Gets an FSM an Eligibility Check status
     /// </summary>
