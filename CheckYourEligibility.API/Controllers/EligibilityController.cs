@@ -585,6 +585,7 @@ public class EligibilityCheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+    
 
     /// <summary>
     ///     Gets an FSM an Eligibility Check status
