@@ -1,3 +1,7 @@
+trigger:
+  branches:
+    include:
+    - '*'  # This will trigger on pushes to any branch
 pr:
   - main
 
