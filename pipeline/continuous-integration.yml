@@ -1,4 +1,7 @@
-trigger: none
+trigger:
+  branches:
+    include:
+    - '*'
 pool:
   name: Azure Pipelines
   vmImage: 'windows-latest'
