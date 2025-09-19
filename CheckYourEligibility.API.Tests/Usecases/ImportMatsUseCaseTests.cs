@@ -37,14 +37,12 @@ public class ImportMatsUseCaseTests : TestBase.TestBase
     private ImportMatsUseCase _sut;
     private Fixture _fixture;
 
-//TODO: revisit this testing
-    /*
         [Test]
         public async Task Execute_Should_ImportMats_When_File_Is_Valid()
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = Resources.small_gis;
+            var content = Resources.small_mat;
             var fileName = "test.csv";
             var ms = new MemoryStream();
             var writer = new StreamWriter(ms);
@@ -120,7 +118,7 @@ public class ImportMatsUseCaseTests : TestBase.TestBase
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = Resources.small_gis;
+            var content = Resources.small_mat;
             var fileName = "test.csv";
             var ms = new MemoryStream();
             var writer = new StreamWriter(ms);
@@ -141,5 +139,4 @@ public class ImportMatsUseCaseTests : TestBase.TestBase
             // Assert
             act.Should().ThrowAsync<InvalidDataException>().WithMessage($"{fileName} - {{}} :- Test exception, ");
         }
-        */
 }
