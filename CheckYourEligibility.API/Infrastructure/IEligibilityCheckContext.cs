@@ -24,5 +24,5 @@ public interface IEligibilityCheckContext
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
     void BulkInsert_Applications(IEnumerable<Application> data);
     void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data);
-    void BulkInsert_MultiAcademyTrust(IEnumerable<MultiAcademyTrust> data);
+    void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustSchool> schoolData);
 }

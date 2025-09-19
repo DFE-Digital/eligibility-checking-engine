@@ -134,6 +134,14 @@ public class AdministrationGateway : IAdministration
             .Select(x => new MultiAcademyTrustSchool { TrustId = x.GroupUID, SchoolId = x.AcademyURN });
 
         //TODO: Write all of these to db, removing existing records
+
+        //TRUNCATE multiAcademyTrustSchools
+        //TRUNCATE multiAcademyTrusts now that there is no dependency
+        //Import all MultiAcademyTrusts
+        //Import all MultiAcademyTrustSchools
+        //Enable cascade deletion?
+        //MOVED TO DO ALL STEPS WITHIN THE DB CONTEXT. MAY NEED TO SPLIT OUT AGAIN
+        _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustSchools);
     }
 
 
