@@ -127,6 +127,8 @@ public class AdministrationGateway : IAdministration
             .Select(x => new MultiAcademyTrust { UID = x.GroupUID, Name = x.GroupName });
 
         //TODO: Write all of these to db, removing existing records
+        // Do we truncate both tables here?? Will we break a dependency by only truncating one?
+        // If a MAT exists in the table already but doesn't exist in the file being imported do we keep it?
 
         var multiAcademyTrustSchools = data
             .Select(x => new MultiAcademyTrustSchool { TrustId = x.GroupUID, SchoolId = x.AcademyURN });

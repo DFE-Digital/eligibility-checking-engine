@@ -58,7 +58,7 @@ public class ImportMatsUseCase : IImportMatsUseCase
         }
 
         //TODO
-        //await _gateway.Mats(DataLoad);
+        await _gateway.Mats(DataLoad);
         await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }

@@ -68,6 +68,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         this.BulkInsert(data);
     }
 
+    public void BulkInsert_MultiAcademyTrust(IEnumerable<MultiAcademyTrust> data)
+    {
+        this.BulkInsert(data);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");

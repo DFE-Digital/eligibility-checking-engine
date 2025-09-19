@@ -9,6 +9,8 @@ public interface IEligibilityCheckContext
     DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     DbSet<Establishment> Establishments { get; set; }
+    DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
+    DbSet<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
     DbSet<LocalAuthority> LocalAuthorities { get; set; }
     DbSet<Application> Applications { get; set; }
     DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -22,4 +24,5 @@ public interface IEligibilityCheckContext
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
     void BulkInsert_Applications(IEnumerable<Application> data);
     void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data);
+    void BulkInsert_MultiAcademyTrust(IEnumerable<MultiAcademyTrust> data);
 }
