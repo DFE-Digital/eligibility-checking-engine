@@ -34,6 +34,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
 
+    private readonly IEcsGateway _ecsGateway;
     private readonly IDwpGateway _dwpGateway;
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
@@ -44,11 +45,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IDwpGateway dwpGateway, IAudit audit, IHash hashGateway)
+        IConfiguration configuration, IEcsGateway ecsGateway, IDwpGateway dwpGateway, IAudit audit, IHash hashGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
+        _ecsGateway = ecsGateway;
         _dwpGateway = dwpGateway;
         _audit = audit;
         _hashGateway = hashGateway;
@@ -702,9 +704,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
-            if (_dwpGateway.UseEcsforChecksWF == "true")
+            if (_ecsGateway.UseEcsforChecksWF == "true")
             {
-                result.Status =  await DwpEcsWFCheck(checkData);
+                result.Status =  await EcsWFCheck(checkData);
                 source = ProcessEligibilityCheckSource.ECS;
             }
         }
@@ -737,13 +739,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
-                    if (_dwpGateway.UseEcsforChecks=="true")
+                    if (_ecsGateway.UseEcsforChecks=="true")
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData);
+                        checkResult = await EcsFsmCheck(checkData);
                         
                         source = ProcessEligibilityCheckSource.ECS;
                     }
-                    else if(_dwpGateway.UseEcsforChecks=="false")
+                    else if(_ecsGateway.UseEcsforChecks=="false")
                     {
                         
                         checkResult = await DwpCitizenCheck(checkData, checkResult);
@@ -752,7 +754,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     }
                     else
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData);
+                        checkResult = await EcsFsmCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
 
                         if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
@@ -901,17 +903,17 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> EcsFsmCheck(CheckProcessData data)
     {
         //check for benefit
-        var result = await _dwpGateway.EcsFsmCheck(data);
+        var result = await _ecsGateway.EcsFsmCheck(data);
         return convertEcsResultStatus(result);
     }
 
-    private async Task<CheckEligibilityStatus> DwpEcsWFCheck(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> EcsWFCheck(CheckProcessData data)
     {
         //check for benefit
-        var result = await _dwpGateway.EcsWFCheck(data);
+        var result = await _ecsGateway.EcsWFCheck(data);
         return convertEcsResultStatus(result);
     }
 

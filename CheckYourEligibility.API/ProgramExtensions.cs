@@ -41,6 +41,7 @@ public static class ProgramExtensions
         services.AddTransient<IApplication, ApplicationGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();
         services.AddTransient<INotify, NotifyGateway>();
+        services.AddTransient<IEcsGateway, EcsGateway>();
         services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
         services.AddTransient<IUsers, UsersGateway>();
         services.AddTransient<IAudit, AuditGateway>();
