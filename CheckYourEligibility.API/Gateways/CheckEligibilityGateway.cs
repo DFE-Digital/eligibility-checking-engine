@@ -34,6 +34,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
 
+    private readonly IEcsGateway _ecsGateway;
     private readonly IDwpGateway _dwpGateway;
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
@@ -44,11 +45,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IDwpGateway dwpGateway, IAudit audit, IHash hashGateway)
+        IConfiguration configuration, IEcsGateway ecsGateway, IDwpGateway dwpGateway, IAudit audit, IHash hashGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
+        _ecsGateway = ecsGateway;
         _dwpGateway = dwpGateway;
         _audit = audit;
         _hashGateway = hashGateway;
@@ -106,11 +108,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if (item.Type == CheckEligibilityType.WorkingFamilies)
             {
                 WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-                if (checkData.EligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:WFTestCodePrefix")))
+                var wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+                if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+                    checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
                 {
                     wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
                 }
-                else {
+                else
+                {
                     wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                     checkData.NationalInsuranceNumber, checkData.LastName);
                 }               
@@ -628,7 +633,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData) { 
         string eligibilityCode = checkData.EligibilityCode;
-        bool isEligiblePrefix = eligibilityCode.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible"));
+        var prefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
+        bool isEligiblePrefix = !prefix.IsNullOrEmpty() && eligibilityCode.StartsWith(prefix);
         DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         if (isEligiblePrefix) { 
@@ -698,6 +704,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             result.Status = CheckEligibilityStatus.notFound;
+            if (_ecsGateway.UseEcsforChecksWF == "true")
+            {
+                result.Status =  await EcsWFCheck(checkData);
+                source = ProcessEligibilityCheckSource.ECS;
+            }
         }
 
         result.EligibilityCheckHashID =
@@ -728,13 +739,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
-                    if (_dwpGateway.UseEcsforChecks=="true")
+                    if (_ecsGateway.UseEcsforChecks=="true")
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        checkResult = await EcsFsmCheck(checkData);
                         
                         source = ProcessEligibilityCheckSource.ECS;
                     }
-                    else if(_dwpGateway.UseEcsforChecks=="false")
+                    else if(_ecsGateway.UseEcsforChecks=="false")
                     {
                         
                         checkResult = await DwpCitizenCheck(checkData, checkResult);
@@ -743,7 +754,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     }
                     else
                     {
-                        checkResult = await DwpEcsFsmCheck(checkData, checkResult);
+                        checkResult = await EcsFsmCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
 
                         if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
@@ -862,39 +873,48 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return CheckSurname(data.LastName, checkReults);
     }
 
-
-    private async Task<CheckEligibilityStatus> DwpEcsFsmCheck(CheckProcessData data, CheckEligibilityStatus checkResult)
+    private CheckEligibilityStatus convertEcsResultStatus(SoapCheckResponse? result)
     {
-        //check for benefit
-        var result = await _dwpGateway.EcsFsmCheck(data);
         if (result != null)
         {
             if (result.Status == "1")
             {
-                checkResult = CheckEligibilityStatus.eligible;
+                return CheckEligibilityStatus.eligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.IsNullOrEmpty())
             {
-                checkResult = CheckEligibilityStatus.notEligible;
+                return CheckEligibilityStatus.notEligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier == "No Trace - Check data")
             {
-                checkResult = CheckEligibilityStatus.parentNotFound;
+                return CheckEligibilityStatus.parentNotFound;
             }
             else
             {
                 _logger.LogError(
                     $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
-                checkResult = CheckEligibilityStatus.error;
+                return CheckEligibilityStatus.error;
             }
         }
         else
         {
             _logger.LogError("Error ECS unknown Response of null");
-            checkResult = CheckEligibilityStatus.error;
+            return CheckEligibilityStatus.error;
         }
+    }
 
-        return checkResult;
+    private async Task<CheckEligibilityStatus> EcsFsmCheck(CheckProcessData data)
+    {
+        //check for benefit
+        var result = await _ecsGateway.EcsFsmCheck(data);
+        return convertEcsResultStatus(result);
+    }
+
+    private async Task<CheckEligibilityStatus> EcsWFCheck(CheckProcessData data)
+    {
+        //check for benefit
+        var result = await _ecsGateway.EcsWFCheck(data);
+        return convertEcsResultStatus(result);
     }
 
 
