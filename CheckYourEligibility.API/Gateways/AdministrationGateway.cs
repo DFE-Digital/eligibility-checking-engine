@@ -119,28 +119,16 @@ public class AdministrationGateway : IAdministration
         }
     }
 
-    public async Task ImportMats(IEnumerable<MatRow> data) //TODO: Split out into separate functions?
+    public async Task ImportMats(IEnumerable<MatRow> data)
     {
         var multiAcademyTrusts = data
             .Select(m => new { m.GroupUID, m.GroupName })
             .Distinct()
             .Select(x => new MultiAcademyTrust { UID = x.GroupUID, Name = x.GroupName });
 
-        //TODO: Write all of these to db, removing existing records
-        // Do we truncate both tables here?? Will we break a dependency by only truncating one?
-        // If a MAT exists in the table already but doesn't exist in the file being imported do we keep it?
-
         var multiAcademyTrustSchools = data
             .Select(x => new MultiAcademyTrustSchool { TrustId = x.GroupUID, SchoolId = x.AcademyURN });
 
-        //TODO: Write all of these to db, removing existing records
-
-        //TRUNCATE multiAcademyTrustSchools
-        //TRUNCATE multiAcademyTrusts now that there is no dependency
-        //Import all MultiAcademyTrusts
-        //Import all MultiAcademyTrustSchools
-        //Enable cascade deletion?
-        //MOVED TO DO ALL STEPS WITHIN THE DB CONTEXT. MAY NEED TO SPLIT OUT AGAIN
         _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustSchools);
     }
 

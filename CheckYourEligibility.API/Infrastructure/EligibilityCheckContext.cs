@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
@@ -70,10 +71,14 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustSchool> schoolData)
     {
-        this.Truncate<MultiAcademyTrust>();
-        this.Truncate<MultiAcademyTrustSchool>();
-        this.BulkInsert(trustData);
-        this.BulkInsert(schoolData);
+        using (var transaction = base.Database.BeginTransaction())
+        {
+            this.Truncate<MultiAcademyTrustSchool>();
+            this.MultiAcademyTrusts.ExecuteDelete();
+            this.BulkInsert(trustData);
+            this.BulkInsert(schoolData);
+            transaction.Commit();
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
