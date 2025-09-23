@@ -141,7 +141,11 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireNotificationScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:notification"] ?? "notification")));
-        });
+
+            options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
+                policy.RequireAssertion(context =>
+                context.User.HasScope(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
+            });
         return services;
     }
 }

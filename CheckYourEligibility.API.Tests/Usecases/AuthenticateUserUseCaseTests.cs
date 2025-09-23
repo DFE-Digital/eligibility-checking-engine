@@ -776,4 +776,175 @@ public class AuthenticateUserUseCaseTests
         // Assert
         result.Should().BeFalse();
     }
+
+    //MAT tests
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_MultiAcademyTrustWithId_And_AllowedScope_Is_LocalAuthority()
+    {
+        // appsettings has "multi_academy_trust check" and user logs in with "multi_academy_trust:xx"
+
+        // Arrange
+        var requestedScopes = "multi_academy_trust:99 check";
+        var allowedScopes = "multi_academy_trust check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_MultiAcademyTrustWithId_And_AllowedScope_Has_SameId()
+    {
+        // appsettings has "multi_academy_trust:xx check" and user logs in with "multi_academy_trust:xx"
+
+        // Arrange
+        var requestedScopes = "multi_academy_trust:99";
+        var allowedScopes = "multi_academy_trust:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_False_When_RequestedScope_Is_MultiAcademyTrust_And_AllowedScope_Has_SpecificId()
+    {
+        // appsettings has "multi_academy_trust:xx check" and user logs in with "multi_academy_trust"
+
+        // Arrange
+        var requestedScopes = "multi_academy_trust";
+        var allowedScopes = "multi_academy_trust:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void
+        ValidateScopes_Should_Return_True_When_RequestedScope_Is_MultiAcademyTrust_And_AllowedScope_Is_LocalAuthority()
+    {
+        // appsettings has "multi_academy_trust check" and user logs in with "multi_academy_trust"
+
+        // Arrange
+        var requestedScopes = "multi_academy_trust";
+        var allowedScopes = "multi_academy_trust check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Return_False_When_RequestedScope_Is_MultiAcademyTrustWithDifferentId()
+    {
+        // appsettings has "multi_academy_trust:99 check" but user logs in with "multi_academy_trust:88"
+
+        // Arrange
+        var requestedScopes = "multi_academy_trust:88";
+        var allowedScopes = "multi_academy_trust:99 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Handle_Multiple_MultiAcademyTrust_Scopes_Correctly()
+    {
+        // Arrange
+        var requestedScopes = "multi_academy_trust:99 check";
+        var allowedScopes = "multi_academy_trust:99 multi_academy_trust:88 check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void ValidateScopes_Should_Allow_MultiAcademyTrustWithAnyId_When_MultiAcademyTrust_Is_Allowed()
+    {
+        // Arrange
+        var requestedScopes = "multi_academy_trust:123 check";
+        var allowedScopes = "multi_academy_trust check";
+
+        // Act
+        var result = ValidateScopes(requestedScopes, allowedScopes);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsScopeValid_Should_Handle_MultiAcademyTrust_Generic_Scope_Correctly()
+    {
+        // Arrange
+        var requestedScope = "multi_academy_trust";
+        var allowedScopesList = new[] { "multi_academy_trust", "read" };
+
+        // Act
+        var result = IsScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_True_When_Generic_Is_Allowed()
+    {
+        // Arrange
+        var requestedScope = "multi_academy_trust:99";
+        var allowedScopesList = new[] { "multi_academy_trust", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_True_When_Same_Id_Is_Allowed()
+    {
+        // Arrange
+        var requestedScope = "multi_academy_trust:99";
+        var allowedScopesList = new[] { "multi_academy_trust:99", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_False_When_Different_Id_Is_Requested()
+    {
+        // Arrange
+        var requestedScope = "multi_academy_trust:99";
+        var allowedScopesList = new[] { "multi_academy_trust:88", "read" };
+
+        // Act
+        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
 }

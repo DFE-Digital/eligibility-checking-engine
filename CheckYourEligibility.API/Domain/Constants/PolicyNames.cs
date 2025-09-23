@@ -14,4 +14,5 @@ public static class PolicyNames
     public const string RequireUserScope = "RequireUserScope";
     public const string RequireEngineScope = "RequireEngineScope";
     public const string RequireNotificationScope = "RequireNotificationScope";
+    public const string RequireMultiAcademyTrustScope = "RequireMultiAcademyTrustScope";
 }
