@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
@@ -20,13 +19,10 @@ namespace CheckYourEligibility.API.Gateways;
 
 public interface IDwpGateway
 {
-    public string UseEcsforChecks { get; }
-
     Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type);
 
     Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
-    Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck);
 }
 
 [ExcludeFromCodeCoverage]
@@ -47,11 +43,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     private readonly string _DWP_ApiInstigatingUserId;
     private readonly string _DWP_ApiPolicyId;
-    private readonly string _DWP_EcsHost;
-    private readonly string _DWP_EcsLAId;
-    private readonly string _DWP_EcsPassword;
-    private readonly string _DWP_EcsServiceVersion;
-    private readonly string _DWP_EcsSystemId;
 
     private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
         new Dictionary<CheckEligibilityType, double>();
@@ -102,12 +93,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
             Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
         _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
             Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
-
-        _DWP_EcsHost = _configuration["Dwp:EcsHost"];
-        _DWP_EcsServiceVersion = _configuration["Dwp:EcsServiceVersion"];
-        _DWP_EcsLAId = _configuration["Dwp:EcsLAId"];
-        _DWP_EcsSystemId = _configuration["Dwp:EcsSystemId"];
-        _DWP_EcsPassword = _configuration["Dwp:EcsPassword"];
     }
 
     private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
@@ -118,75 +103,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
     {
         return true;
     }
-
-    string IDwpGateway.UseEcsforChecks => _UseEcsforChecks;
-
-
-    #region ECS API Soap
-
-    public async Task<SoapFsmCheckRespone?> EcsFsmCheck(CheckProcessData eligibilityCheck)
-    {
-        try
-        {
-            var uri = _DWP_EcsHost;
-            if (!uri.Contains("https"))
-                uri = $"https://{_DWP_EcsHost}/fsm.lawebservice/20170701/OnlineQueryGateway.svc";
-
-            var soapMessage = Resources.EcsSoapFsm;
-            soapMessage = soapMessage.Replace("{{SystemId}}", _DWP_EcsSystemId);
-            soapMessage = soapMessage.Replace("{{Password}}", _DWP_EcsPassword);
-            soapMessage = soapMessage.Replace("{{LAId}}", _DWP_EcsLAId);
-            soapMessage = soapMessage.Replace("{{ServiceVersion}}", _DWP_EcsServiceVersion);
-            soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
-                $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
-            soapMessage = soapMessage.Replace("<ns:DateOfBirth>1967-03-07</ns:DateOfBirth>",
-                $"<ns:DateOfBirth>{eligibilityCheck.DateOfBirth}</ns:DateOfBirth>");
-            soapMessage = soapMessage.Replace("<ns:NiNo>NN668767B</ns:NiNo>",
-                $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
-
-            var content = new StringContent(soapMessage, Encoding.UTF8, "text/xml");
-            var soapResponse = new SoapFsmCheckRespone();
-            try
-            {
-                if (!_ran)
-                {
-                    _httpClient.DefaultRequestHeaders.Add("SOAPAction",
-                        "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
-                    _ran = true;
-                }
-
-                var response = await _httpClient.PostAsync(uri, content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var doc = XDocument.Parse(response.Content.ReadAsStringAsync().Result);
-                    var namespacePrefix = doc.Root.GetNamespaceOfPrefix("s");
-                    var elements = doc.Descendants(namespacePrefix + "Body").First().Descendants().Elements();
-                    var xElement = elements.First(x => x.Name.LocalName == "EligibilityStatus");
-                    soapResponse.Status = xElement.Value;
-                    xElement = elements.First(x => x.Name.LocalName == "ErrorCode");
-                    soapResponse.ErrorCode = xElement.Value;
-                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "Qualifier");
-                    soapResponse.Qualifier = xElement.Value;
-                    return soapResponse;
-                }
-
-                _logger.LogError(
-                    $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ECS check failed. uri:-{_httpClient.BaseAddress}{uri}");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ECS check failed.");
-        }
-
-        return null;
-    }
-
-    #endregion
 
     #region Citizen Api Rest
 

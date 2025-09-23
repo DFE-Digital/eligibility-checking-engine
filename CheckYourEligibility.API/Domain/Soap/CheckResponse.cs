@@ -1,4 +1,4 @@
-﻿public class SoapFsmCheckRespone
+﻿public class SoapCheckResponse
 {
     public string Status { get; set; }
     public string ErrorCode { get; set; }

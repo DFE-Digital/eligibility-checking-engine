@@ -561,4 +561,36 @@
    &lt;/soapenv:Body&gt;
 &lt;/soapenv:Envelope&gt;</value>
   </data>
+    <data name="EcsSoapWF" xml:space="preserve">
+    <value>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.dcsf.gov.uk/20090308/"&gt;
+   &lt;soapenv:Header/&gt;
+   &lt;soapenv:Body&gt;
+      &lt;ns:SubmitSingleQuery&gt;
+         &lt;!--Optional:--&gt;
+         &lt;ns:requestInput&gt;
+            &lt;ns:SystemId&gt;{{SystemId}}&lt;/ns:SystemId&gt;
+            &lt;ns:Password&gt;{{Password}}&lt;/ns:Password&gt;
+            &lt;ns:LocalAuthorityId&gt;{{LAId}}&lt;/ns:LocalAuthorityId&gt;
+            &lt;ns:RequestedServiceVersion&gt;{{ServiceVersion}}&lt;/ns:RequestedServiceVersion&gt;
+            &lt;ns:UserToQuery&gt;
+               &lt;!--Optional:--&gt;
+               &lt;ns:Surname/&gt;
+               &lt;ns:DateOfBirth&gt;{{DateOfBirth}}&lt;/ns:DateOfBirth&gt;
+               &lt;!--Optional:--&gt;
+               &lt;ns:NiNo&gt;{{NiNo}}&lt;/ns:NiNo&gt;
+               &lt;!--Optional:--&gt;
+               &lt;ns:NASS/&gt;
+               &lt;!--Optional:--&gt;
+               &lt;ns:Subscribers/&gt;
+               &lt;!--Optional:--&gt;
+               &lt;ns:EligibilityCode&gt;{{EligibilityCode}}&lt;/ns:EligibilityCode&gt;
+            &lt;/ns:UserToQuery&gt;
+            &lt;ns:SourceType&gt;CITIZEN&lt;/ns:SourceType&gt;
+            &lt;ns:EligibilityCheckType&gt;30H&lt;/ns:EligibilityCheckType&gt;
+            &lt;ns:ServiceType&gt;SHARED&lt;/ns:ServiceType&gt;
+         &lt;/ns:requestInput&gt;
+      &lt;/ns:SubmitSingleQuery&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</value>
+  </data>
 </root>
