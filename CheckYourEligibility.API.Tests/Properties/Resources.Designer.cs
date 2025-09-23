@@ -92,5 +92,13 @@ namespace CheckYourEligibility.API.Tests.Properties {
                 return ResourceManager.GetString("small_gis", resourceCulture);
             }
         }
+
+        internal static string small_mat
+        {
+            get
+            {
+                return ResourceManager.GetString("small_mat", resourceCulture);
+            }
+        }
     }
 }
