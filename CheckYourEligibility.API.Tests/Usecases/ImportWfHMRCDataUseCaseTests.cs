@@ -60,12 +60,31 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         // Arrange
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.ContentType).Returns("text/plain");
+        fileMock.Setup(f => f.FileName).Returns("test.txt");
 
         // Act
         var act = async () => await _sut.Execute(fileMock.Object);
 
         // Assert
         act.Should().ThrowExactlyAsync<InvalidDataException>().Result.WithMessage("Xlsm data file is required.");
+    }
+
+    [Test]
+    public void Execute_Should_Accept_XML_File()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.ContentType).Returns("text/xml");
+        fileMock.Setup(f => f.FileName).Returns("test.xml");
+        // This will fail later due to invalid XML content, but should pass the file type validation
+        fileMock.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+        // Act
+        var act = async () => await _sut.Execute(fileMock.Object);
+
+        // Assert - should not throw InvalidDataException for file type, but will throw for invalid content
+        act.Should().ThrowExactlyAsync<InvalidDataException>()
+            .WithMessage("Invalid file no content.");
     }
 
     [Test]
