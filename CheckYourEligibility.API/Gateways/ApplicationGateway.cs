@@ -421,16 +421,18 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         query = query.Where(x => x.Type == model.Data.Type);
 
+        // Clause for specific establishment if provided, or for set of establishments if only MAT provided
         if (model.Data?.Establishment != null)
+        {
             query = query.Where(x => x.EstablishmentId == model.Data.Establishment);
-        if (model.Data?.LocalAuthority != null)
-            query = query.Where(x => x.LocalAuthorityId == model.Data.LocalAuthority);
-        //TODO: What if an establishment is provided as well? Do we want to just return the given establishment rather than all establishments in the MAT??
-        if (model.Data?.MultiAcademyTrust != null)
+        }
+        else if (model.Data?.MultiAcademyTrust != null)
         {
             List<int> establishmentIds = GetMatSchoolIds(model.Data.MultiAcademyTrust.Value);
             query = query.Where(x => establishmentIds.Contains(x.EstablishmentId));
         }
+        if (model.Data?.LocalAuthority != null)
+            query = query.Where(x => x.LocalAuthorityId == model.Data.LocalAuthority);
 
         if (!string.IsNullOrEmpty(model.Data?.ParentNationalInsuranceNumber))
             query = query.Where(x => x.ParentNationalInsuranceNumber == model.Data.ParentNationalInsuranceNumber);
