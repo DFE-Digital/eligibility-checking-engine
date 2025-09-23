@@ -141,7 +141,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
         // local_authority:XX pattern
         if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:"))
-            return IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+            return IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
 //TODO: WHAT IS THIS ACTUALLY CHECKING???? DON'T WE RETURN BEFORE HERE IF THE WE HAVE THESE SCOPES?????
         // Check if "local_authority" is requested
@@ -157,8 +157,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return false;
     }
 
-//TODO:Rename method for general case
-    private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
+    private static bool IsSpecificScopeIdValid(string requestedScope, string[] allowedScopesList)
     {
         // check if there's a match with specific local_authority:xx pattern in allowed scopes
         var requestedScopeType = requestedScope.Split(':', 2)[0];

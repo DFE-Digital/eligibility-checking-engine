@@ -531,10 +531,10 @@ public class AuthenticateUserUseCaseTests
                method.Invoke(null, new object[] { requestedScope, allowedScopesList }) is bool result && result;
     }
 
-    // Helper method to test the IsLocalAuthoritySpecificScopeValid method directly
-    private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
+    // Helper method to test the IsSpecificScopeIdValid method directly
+    private static bool IsSpecificScopeIdValid(string requestedScope, string[] allowedScopesList)
     {
-        var method = typeof(AuthenticateUserUseCase).GetMethod("IsLocalAuthoritySpecificScopeValid",
+        var method = typeof(AuthenticateUserUseCase).GetMethod("IsSpecificScopeIdValid",
             BindingFlags.NonPublic | BindingFlags.Static);
 
         return method != null &&
@@ -736,42 +736,42 @@ public class AuthenticateUserUseCaseTests
     }
 
     [Test]
-    public void IsLocalAuthoritySpecificScopeValid_Should_Return_True_When_Generic_Is_Allowed()
+    public void IsSpecificScopeIdValid_Should_Return_True_When_Generic_LA_Is_Allowed()
     {
         // Arrange
         var requestedScope = "local_authority:99";
         var allowedScopesList = new[] { "local_authority", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeTrue();
     }
 
     [Test]
-    public void IsLocalAuthoritySpecificScopeValid_Should_Return_True_When_Same_Id_Is_Allowed()
+    public void IsSpecificScopeIdValid_Should_Return_True_When_Same_Id_LA_Is_Allowed()
     {
         // Arrange
         var requestedScope = "local_authority:99";
         var allowedScopesList = new[] { "local_authority:99", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeTrue();
     }
 
     [Test]
-    public void IsLocalAuthoritySpecificScopeValid_Should_Return_False_When_Different_Id_Is_Requested()
+    public void IsSpecificScopeIdValid_Should_Return_False_When_Different_Id_LA_Is_Requested()
     {
         // Arrange
         var requestedScope = "local_authority:99";
         var allowedScopesList = new[] { "local_authority:88", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeFalse();
@@ -906,42 +906,42 @@ public class AuthenticateUserUseCaseTests
     }
 
     [Test]
-    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_True_When_Generic_Is_Allowed()
+    public void IsSpecificScopeIdValid_Should_Return_True_When_Generic_MAT_Is_Allowed()
     {
         // Arrange
         var requestedScope = "multi_academy_trust:99";
         var allowedScopesList = new[] { "multi_academy_trust", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeTrue();
     }
 
     [Test]
-    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_True_When_Same_Id_Is_Allowed()
+    public void IsSpecificScopeIdValid_Should_Return_True_When_Same_Id_MAT_Is_Allowed()
     {
         // Arrange
         var requestedScope = "multi_academy_trust:99";
         var allowedScopesList = new[] { "multi_academy_trust:99", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeTrue();
     }
 
     [Test]
-    public void IsMultiAcademyTrustSpecificScopeValid_Should_Return_False_When_Different_Id_Is_Requested()
+    public void IsSpecificScopeIdValid_Should_Return_False_When_Different_Id_MAT_Is_Requested()
     {
         // Arrange
         var requestedScope = "multi_academy_trust:99";
         var allowedScopesList = new[] { "multi_academy_trust:88", "read" };
 
         // Act
-        var result = IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
+        var result = IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // Assert
         result.Should().BeFalse();
