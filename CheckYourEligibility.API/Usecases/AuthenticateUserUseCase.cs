@@ -143,6 +143,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:"))
             return IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
 
+//TODO: WHAT IS THIS ACTUALLY CHECKING???? DON'T WE RETURN BEFORE HERE IF THE WE HAVE THESE SCOPES?????
         // Check if "local_authority" is requested
         if (requestedScope == "local_authority")
             // If a client has "local_authority:XX" scope, they should NOT have access to the generic "local_authority" scope
@@ -156,6 +157,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return false;
     }
 
+//TODO:Rename method for general case
     private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
     {
         // check if there's a match with specific local_authority:xx pattern in allowed scopes
@@ -166,8 +168,8 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         List<string> allowedSpecificScopeTypes = ["local_authority", "multi_academy_trust"];
         if (!allowedSpecificScopeTypes.Contains(requestedScopeType)) return false;
 
-            // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope
-            if (allowedScopesList.Contains(requestedScopeType)) return true;
+        // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope
+        if (allowedScopesList.Contains(requestedScopeType)) return true;
 
         foreach (var allowedScope in allowedScopesList)
             if (allowedScope.StartsWith($"{requestedScopeType}:"))

@@ -10,21 +10,21 @@ namespace CheckYourEligibility.API.UseCases;
 /// <summary>
 /// Interface for the search applications use case
 /// </summary>
-public interface ISearchApplicationsUseCase
+public interface ISearchApplicationsMatUseCase
 {
     /// <summary>
     /// Searches for applications after validating local authority permissions
     /// </summary>
     /// <param name="model">The application search request data</param>
-    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <param name="allowedMultiAcademyTrustIds">List of allowed local authority IDs from user claims</param>
     /// <returns>The search results response</returns>
-    Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model, List<int> allowedLocalAuthorityIds);
+    Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model, List<int> allowedMultiAcademyTrustIds);
 }
 
 /// <summary>
 /// Implementation of the search applications use case
 /// </summary>
-public class SearchApplicationsUseCase : ISearchApplicationsUseCase
+public class SearchApplicationsMatUseCase : ISearchApplicationsUseCase
 {
     private readonly IApplication _applicationGateway;
     private readonly IAudit _auditGateway;
@@ -34,7 +34,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
     /// </summary>
     /// <param name="applicationGateway">The application gateway</param>
     /// <param name="auditGateway">The audit gateway</param>
-    public SearchApplicationsUseCase(IApplication applicationGateway, IAudit auditGateway)
+    public SearchApplicationsMatUseCase(IApplication applicationGateway, IAudit auditGateway)
     {
         _applicationGateway = applicationGateway;
         _auditGateway = auditGateway;
@@ -44,31 +44,31 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
     /// Searches for applications after validating local authority permissions
     /// </summary>
     /// <param name="model">The application search request data</param>
-    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
+    /// <param name="allowedMultiAcademyTrustIds">List of allowed local authority IDs from user claims</param>
     /// <returns>The search results response</returns>
     public async Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model,
-        List<int> allowedLocalAuthorityIds)
+        List<int> allowedMultiAcademyTrustIds)
     {
         if (model?.Data == null)
         {
             throw new ArgumentException("Invalid request, data is required");
         }
 
-        // Either LocalAuthority or Establishment or both must be provided
-        if (model.Data.LocalAuthority == null && model.Data.Establishment == null)
+        // Either MultiAcademyTrust or Establishment or both must be provided
+        if (model.Data.MultiAcademyTrust == null && model.Data.Establishment == null)
         {
-            throw new ArgumentException("Either LocalAuthority or Establishment must be specified");
+            throw new ArgumentException("Either MultiAcademyTrust or Establishment must be specified");
         }
 
-        // Validate LocalAuthority if provided
-        if (model.Data.LocalAuthority != null)
+        // Validate MultiAcademyTrust if provided
+        if (model.Data.MultiAcademyTrust != null)
         {
             // If not 'all', must match one of the allowed LocalAuthorities
-            if (!allowedLocalAuthorityIds.Contains(0) &&
-                !allowedLocalAuthorityIds.Contains(model.Data.LocalAuthority.Value))
+            if (!allowedMultiAcademyTrustIds.Contains(0) &&
+                !allowedMultiAcademyTrustIds.Contains(model.Data.MultiAcademyTrust.Value))
             {
                 throw new UnauthorizedAccessException(
-                    "You do not have permission to search applications for this local authority");
+                    "You do not have permission to search applications for this multi academy trust");
             }
         }
 
@@ -76,14 +76,14 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         if (model.Data.Establishment != null)
         {
             // Get the local authority ID for the establishment and check permissions
-            var localAuthorityId =
-                await _applicationGateway.GetLocalAuthorityIdForEstablishment(model.Data.Establishment.Value);
+            var multiAcademyTrustId =
+                await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(model.Data.Establishment.Value);
 
             // If not 'all', must match one of the allowed LocalAuthorities
-            if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
+            if (!allowedMultiAcademyTrustIds.Contains(0) && !allowedMultiAcademyTrustIds.Contains(multiAcademyTrustId))
             {
                 throw new UnauthorizedAccessException(
-                    "You do not have permission to search applications for this establishment's local authority");
+                    "You do not have permission to search applications for this establishment's multi academy trust");
             }
         }
 

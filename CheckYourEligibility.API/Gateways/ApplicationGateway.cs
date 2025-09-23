@@ -198,6 +198,28 @@ public class ApplicationGateway : BaseGateway, IApplication
     }
 
     /// <summary>
+    /// Gets the multi academy trust ID for an establishment
+    /// </summary>
+    /// <param name="establishmentId">The establishment ID</param>
+    /// <returns>The multi academy trust ID</returns>
+    public async Task<int> GetMultiAcademyTrustIdForEstablishment(int establishmentId)
+    {
+        try
+        {
+            var multiAcademyTrustId = await _db.MultiAcademyTrustSchools
+                .Where(x => x.SchoolId == establishmentId)
+                .Select(x => x.TrustId)
+                .FirstAsync();
+            return multiAcademyTrustId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Unable to find school:- {establishmentId} in MAT data");
+            throw new Exception($"Unable to find school:- {establishmentId} in MAT data, {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Get the local authority ID based on application ID
     /// </summary>
     /// <param name="applicationId">The application ID</param>
@@ -406,7 +428,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         //TODO: What if an establishment is provided as well? Do we want to just return the given establishment rather than all establishments in the MAT??
         if (model.Data?.MultiAcademyTrust != null)
         {
-            List<int> establishmentIds = GetMatSchoolIds(model.Data.MultiAcademyTrust);
+            List<int> establishmentIds = GetMatSchoolIds(model.Data.MultiAcademyTrust.Value);
             query = query.Where(x => establishmentIds.Contains(x.EstablishmentId));
         }
 
@@ -532,7 +554,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         await _db.ApplicationStatuses.AddAsync(status);
     }
 
-    private List<int> GetMatSchoolIds(int? matId)
+    private List<int> GetMatSchoolIds(int matId)
     {
         return _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matId).Select(x => x.SchoolId).ToList();
     }

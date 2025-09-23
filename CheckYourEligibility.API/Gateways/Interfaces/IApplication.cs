@@ -46,6 +46,13 @@ public interface IApplication
     Task<int> GetLocalAuthorityIdForEstablishment(int establishmentId);
 
     /// <summary>
+    /// Gets the multi academy trust ID for an establishment
+    /// </summary>
+    /// <param name="establishmentId">Establishment ID</param>
+    /// <returns>multi academy trust ID</returns>
+    Task<int> GetMultiAcademyTrustIdForEstablishment(int establishmentId);
+
+    /// <summary>
     /// Gets the local authority ID for an application
     /// </summary>
     /// <param name="applicationId">Application ID</param>
