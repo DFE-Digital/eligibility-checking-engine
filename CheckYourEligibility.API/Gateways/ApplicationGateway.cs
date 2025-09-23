@@ -109,7 +109,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -168,7 +168,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -377,7 +377,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
             // Remove the application
             _db.Applications.Remove(application);
-            
+
             await _db.SaveChangesAsync();
 
             _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
@@ -403,6 +403,12 @@ public class ApplicationGateway : BaseGateway, IApplication
             query = query.Where(x => x.EstablishmentId == model.Data.Establishment);
         if (model.Data?.LocalAuthority != null)
             query = query.Where(x => x.LocalAuthorityId == model.Data.LocalAuthority);
+        //TODO: What if an establishment is provided as well? Do we want to just return the given establishment rather than all establishments in the MAT??
+        if (model.Data?.MultiAcademyTrust != null)
+        {
+            List<int> establishmentIds = GetMatSchoolIds(model.Data.MultiAcademyTrust);
+            query = query.Where(x => establishmentIds.Contains(x.EstablishmentId));
+        }
 
         if (!string.IsNullOrEmpty(model.Data?.ParentNationalInsuranceNumber))
             query = query.Where(x => x.ParentNationalInsuranceNumber == model.Data.ParentNationalInsuranceNumber);
@@ -524,6 +530,11 @@ public class ApplicationGateway : BaseGateway, IApplication
             TimeStamp = DateTime.UtcNow
         };
         await _db.ApplicationStatuses.AddAsync(status);
+    }
+
+    private List<int> GetMatSchoolIds(int? matId)
+    {
+        return _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matId).Select(x => x.SchoolId).ToList();
     }
 
     #endregion

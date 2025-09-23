@@ -30,6 +30,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     private Mock<IAudit> _moqAudit;
     private ApplicationGateway _sut;
     private Establishment Establishment;
+    private MultiAcademyTrust MultiAcademyTrust;
 
     private User User;
 
@@ -564,6 +565,45 @@ public class ApplicationServiceTests : TestBase.TestBase
         response.Data.Count().Should().BeLessOrEqualTo(10); // Ensures correct page size is respected
     }
 
+    [Test]
+    public async Task Given_ValidRequest_WithMAT_GetApplications_AllSearchCritieria_Should_Return_results()
+    {
+        // Arrange
+        await ClearDownData();
+        await CreateMatAndEstablishment();
+
+        var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
+
+        var postApplicationResponse = await _sut.PostApplication(request);
+
+        Enum.TryParse(postApplicationResponse.Status, out ApplicationStatus statusItem);
+
+        var requestSearch = new ApplicationRequestSearch
+        {
+            Data = new ApplicationRequestSearchData
+            {
+                Statuses = new[] { statusItem },
+                Establishment = Establishment.EstablishmentId,
+                LocalAuthority = Establishment.LocalAuthorityId,
+                MultiAcademyTrust = MultiAcademyTrust.UID,
+                ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
+                ParentLastName = postApplicationResponse.ParentLastName,
+                ParentNationalAsylumSeekerServiceNumber =
+                    postApplicationResponse.ParentNationalAsylumSeekerServiceNumber,
+                ParentNationalInsuranceNumber = postApplicationResponse.ParentNationalInsuranceNumber,
+                Reference = postApplicationResponse.Reference,
+                ChildDateOfBirth = postApplicationResponse.ChildDateOfBirth,
+                ChildLastName = postApplicationResponse.ChildLastName
+            }
+        };
+
+        // Act
+        var response = await _sut.GetApplications(requestSearch);
+
+        // Assert
+        response.Data.Should().NotBeEmpty();
+    }
+
     private async Task AddHash(CheckProcessData request,
         CheckEligibilityStatus status = CheckEligibilityStatus.eligible)
     {
@@ -589,6 +629,24 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         _fakeInMemoryDb.LocalAuthorities.Add(la);
         _fakeInMemoryDb.Establishments.Add(Establishment);
+        User = _fixture.Create<User>();
+        _fakeInMemoryDb.Users.Add(User);
+        await _fakeInMemoryDb.SaveChangesAsync();
+    }
+
+    private async Task CreateMatAndEstablishment()
+    {
+        MultiAcademyTrust = _fixture.Create<MultiAcademyTrust>();
+        Establishment = _fixture.Create<Establishment>();
+
+        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustSchool>();
+        multiAcademyTrustSchool.TrustId = MultiAcademyTrust.UID;
+        multiAcademyTrustSchool.SchoolId = Establishment.EstablishmentId;
+        MultiAcademyTrust.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+
+        _fakeInMemoryDb.Establishments.Add(Establishment);
+        _fakeInMemoryDb.MultiAcademyTrusts.Add(MultiAcademyTrust);
+        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
         User = _fixture.Create<User>();
         _fakeInMemoryDb.Users.Add(User);
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -771,6 +829,8 @@ public class ApplicationServiceTests : TestBase.TestBase
         _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
         _fakeInMemoryDb.LocalAuthorities.RemoveRange(_fakeInMemoryDb.LocalAuthorities);
         _fakeInMemoryDb.Users.RemoveRange(_fakeInMemoryDb.Users);
+        _fakeInMemoryDb.MultiAcademyTrusts.RemoveRange(_fakeInMemoryDb.MultiAcademyTrusts);
+        _fakeInMemoryDb.MultiAcademyTrustSchools.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustSchools);
         _fakeInMemoryDb.SaveChanges();
 
         await _fakeInMemoryDb.SaveChangesAsync();
