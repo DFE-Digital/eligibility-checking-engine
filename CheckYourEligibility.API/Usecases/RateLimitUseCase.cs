@@ -45,7 +45,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
     /// <returns></returns>
     public async Task<bool> Execute(RateLimiterMiddlewareOptions options)
     {
-        var localAuthorityIds = _httpContextAccessor.HttpContext?.User.GetLocalAuthorityIds("local_authority");
+        var localAuthorityIds = _httpContextAccessor.HttpContext?.User.GetSpecificScopeIds("local_authority");
         //Early exit if no LA id
         if (localAuthorityIds.IsNullOrEmpty() || localAuthorityIds.SequenceEqual([0]))
         {

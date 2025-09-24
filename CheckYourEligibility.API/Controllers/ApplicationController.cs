@@ -58,12 +58,11 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/application")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> Application([FromBody] ApplicationRequest model)
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -104,7 +103,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -137,11 +136,12 @@ public class ApplicationController : BaseController
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -185,7 +185,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -234,7 +234,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -277,7 +277,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -320,7 +320,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse

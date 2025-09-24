@@ -227,7 +227,7 @@ public class EligibilityCheckController : BaseController
         try
         {
             // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -271,7 +271,7 @@ public class EligibilityCheckController : BaseController
         try
         {
             // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -315,7 +315,7 @@ public class EligibilityCheckController : BaseController
         try
         {
             // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -359,7 +359,7 @@ public class EligibilityCheckController : BaseController
         try
         {
             // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -436,7 +436,7 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -480,7 +480,7 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -559,7 +559,7 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
