@@ -108,6 +108,10 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireLocalAuthorityScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:local_authority"] ?? "local_authority")));
+            
+            options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
 
             options.AddPolicy(PolicyNames.RequireCheckScope, policy =>
                 policy.RequireAssertion(context =>
@@ -141,10 +145,6 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireNotificationScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:notification"] ?? "notification")));
-
-            options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
-                policy.RequireAssertion(context =>
-                context.User.HasScope(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
             });
         return services;
     }
