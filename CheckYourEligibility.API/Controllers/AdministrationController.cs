@@ -103,9 +103,9 @@ public class AdministrationController : BaseController
     [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("multipart/form-data")]
-    [HttpPost("/admin/import-mats")]
+    [HttpPost("/admin/import-multi-academy-trusts")]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
-    public async Task<ActionResult> ImportMats(IFormFile file)
+    public async Task<ActionResult> ImportMultiAcademyTrusts(IFormFile file)
     {
         try
         {

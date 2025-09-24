@@ -148,7 +148,7 @@ public class AdministrationControllerTests : TestBase.TestBase
             { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.ImportMats(file);
+        var response = await _sut.ImportMultiAcademyTrusts(file);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
@@ -168,7 +168,7 @@ public class AdministrationControllerTests : TestBase.TestBase
             .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
 
         // Act
-        var response = await _sut.ImportMats(null);
+        var response = await _sut.ImportMultiAcademyTrusts(null);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

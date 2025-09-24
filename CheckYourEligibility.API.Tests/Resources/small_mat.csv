@@ -1,46 +1,9 @@
 Group UID,Group ID,Group Name,Companies House Number,Group Type (code),Group Type,Closed Date,Open date,Incorporated on (open date),Group Status (code),Group Status,Joined date,Academy URN,Trust Academy Establishment Name,TypeOfEstablishment (code),TypeOfEstablishment (name),PhaseOfEducation (code),PhaseOfEducation (name),LA (code),LA (name)
 17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/05/2011,136730,Shenley Brook End School,34,Academy converter,4,Secondary,826,Milton Keynes
 17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/12/2024,136842,Walton High,34,Academy converter,4,Secondary,826,Milton Keynes
-17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/09/2018,136844,The Hazeley Academy,34,Academy converter,4,Secondary,826,Milton Keynes
-17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/01/2023,149460,Priory Rise School,34,Academy converter,2,Primary,826,Milton Keynes
-17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/12/2024,151371,Emerson Valley School,34,Academy converter,2,Primary,826,Milton Keynes
-17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/12/2024,151372,Merebrook Infant School,34,Academy converter,2,Primary,826,Milton Keynes
 2044,TR00261,ABBEY ACADEMIES TRUST,07318714,06,Multi-academy trust,,,19/07/2010,OPEN,Open,01/12/2010,136354,Bourne Abbey Church of England Primary Academy,34,Academy converter,2,Primary,925,Lincolnshire
 2044,TR00261,ABBEY ACADEMIES TRUST,07318714,06,Multi-academy trust,,,19/07/2010,OPEN,Open,01/09/2014,140214,Bourne Elsea Park Church of England Primary Academy,28,Academy sponsor led,2,Primary,925,Lincolnshire
-2044,TR00261,ABBEY ACADEMIES TRUST,07318714,06,Multi-academy trust,,,19/07/2010,OPEN,Open,01/09/2018,146279,Colsterworth Church of England Primary School,28,Academy sponsor led,2,Primary,925,Lincolnshire
 2045,TR00001,"ABBEY COLLEGE, RAMSEY",07740516,10,Single-academy trust,,,15/08/2011,OPEN,Open,01/09/2011,137377,"Abbey College, Ramsey",34,Academy converter,4,Secondary,873,Cambridgeshire
 2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/03/2015,137036,Lightcliffe Academy,28,Academy sponsor led,4,Secondary,381,Calderdale
 2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/08/2011,137083,Abbey Grange Church of England Academy,34,Academy converter,4,Secondary,383,Leeds
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/05/2017,138824,Manston St James Primary Academy,34,Academy converter,2,Primary,383,Leeds
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/05/2017,140399,"Holy Trinity Church of England Academy, Rothwell",28,Academy sponsor led,2,Primary,383,Leeds
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/11/2014,141521,St Chad's Church of England Primary School,34,Academy converter,2,Primary,383,Leeds
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/05/2017,144809,Bishop Young Church of England Academy,28,Academy sponsor led,4,Secondary,383,Leeds
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/08/2017,144865,Lightcliffe C of E Primary School,34,Academy converter,2,Primary,381,Calderdale
-2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/09/2018,146306,Christ Church Upper Armley Church of England Primary School,28,Academy sponsor led,2,Primary,383,Leeds
 2048,TR00004,ABBOTS HALL PRIMARY ACADEMY,08484553,10,Single-academy trust,,,11/04/2013,OPEN,Open,01/05/2013,139605,Abbots Hall Primary School,34,Academy converter,2,Primary,883,Thurrock
-4417,TR01834,ABINGDON LEARNING TRUST,07931886,06,Multi-academy trust,,,01/02/2012,OPEN,Open,01/03/2012,137920,Rush Common School,34,Academy converter,2,Primary,931,Oxfordshire
-4417,TR01834,ABINGDON LEARNING TRUST,07931886,06,Multi-academy trust,,,01/02/2012,OPEN,Open,01/04/2018,140580,John Mason School,34,Academy converter,4,Secondary,931,Oxfordshire
-4417,TR01834,ABINGDON LEARNING TRUST,07931886,06,Multi-academy trust,,,01/02/2012,OPEN,Open,01/11/2018,146392,Fitzharrys School,34,Academy converter,4,Secondary,931,Oxfordshire
-4417,TR01834,ABINGDON LEARNING TRUST,07931886,06,Multi-academy trust,,,01/02/2012,OPEN,Open,01/12/2024,151280,"St Michael's CofE Primary School, Steventon Village",34,Academy converter,2,Primary,931,Oxfordshire
-2056,TR00010,ACADEMY @ WORDEN,08360915,10,Single-academy trust,,,15/01/2013,OPEN,Open,01/02/2013,139290,Academy@Worden,34,Academy converter,4,Secondary,888,Lancashire
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/08/2012,138540,Jubilee Academy Mossley,34,Academy converter,2,Primary,335,Walsall
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/11/2012,138918,The Nicholas Hamond Academy,28,Academy sponsor led,4,Secondary,926,Norfolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/12/2012,138996,Kingsmoor Academy,28,Academy sponsor led,2,Primary,881,Essex
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/12/2012,139043,Bristnall Hall Academy,34,Academy converter,4,Secondary,333,Sandwell
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/01/2013,139058,Iceni Secondary Academy,28,Academy sponsor led,4,Secondary,926,Norfolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/01/2013,139062,The Dukeries Academy,28,Academy sponsor led,4,Secondary,891,Nottinghamshire
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/01/2013,139063,Sutton Community Academy,28,Academy sponsor led,4,Secondary,891,Nottinghamshire
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/04/2013,139226,"Star Academy, Sandyford",28,Academy sponsor led,2,Primary,861,Stoke-on-Trent
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/02/2013,139288,Westbourne Academy,34,Academy converter,4,Secondary,935,Suffolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/07/2013,139578,The Hathaway Academy,28,Academy sponsor led,4,Secondary,883,Thurrock
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/09/2013,139641,Ravens Academy,28,Academy sponsor led,2,Primary,881,Essex
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/07/2013,139867,Mildenhall College Academy,34,Academy converter,4,Secondary,935,Suffolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/07/2016,139937,The Queen Elizabeth Academy,28,Academy sponsor led,4,Secondary,937,Warwickshire
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/08/2015,142027,Great Heath Academy,28,Academy sponsor led,2,Primary,935,Suffolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/08/2015,142194,Sun Academy Bradwell,34,Academy converter,2,Primary,860,Staffordshire
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/02/2016,142594,Pool Hayes Academy,34,Academy converter,4,Secondary,335,Walsall
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/12/2016,143382,Phoenix Academy,44,Academy special converter,0,Not applicable,335,Walsall
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/01/2017,143904,Caldmore Primary Academy,34,Academy converter,2,Primary,335,Walsall
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/06/2017,144275,Beck Row Primary Academy,28,Academy sponsor led,2,Primary,935,Suffolk
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/04/2016,144499,North Walsall Primary Academy,28,Academy sponsor led,2,Primary,335,Walsall
-2062,TR00015,ACADEMY TRANSFORMATION TRUST,07846852,06,Multi-academy trust,,,14/11/2011,OPEN,Open,01/09/2024,151432,Iceni Primary Academy,28,Academy sponsor led,2,Primary,926,Norfolk
