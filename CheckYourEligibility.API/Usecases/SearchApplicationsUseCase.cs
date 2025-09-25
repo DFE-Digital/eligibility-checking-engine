@@ -69,7 +69,8 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         }
 
         validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
-        await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds);
+        validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
+        await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
 
         var response = await _applicationGateway.GetApplications(model);
 
@@ -95,7 +96,22 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         }
     }
 
-    private async Task validateEstablishment(int? establishmentId, List<int> allowedLocalAuthorityIds)
+    private void validateMultiAcademyTrust(int? multiAcademyTrustId, List<int> allowedMultiAcademyTrustIds)
+    {
+        // Validate MulitAcademyTrust if provided
+        if (multiAcademyTrustId != null)
+        {
+            // If not 'all', must match one of the allowed MultiAcademyTrusts
+            if (!allowedMultiAcademyTrustIds.Contains(0) &&
+                !allowedMultiAcademyTrustIds.Contains(multiAcademyTrustId.Value))
+            {
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to search applications for this multi academy trust");
+            }
+        }
+    }
+
+    private async Task validateEstablishment(int? establishmentId, List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds)
     {
         // Validate Establishment if provided
         if (establishmentId != null)
@@ -103,12 +119,28 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             // Get the local authority ID for the establishment and check permissions
             var localAuthorityId =
                 await _applicationGateway.GetLocalAuthorityIdForEstablishment(establishmentId.Value);
+            var isValidLocalAuthority = allowedLocalAuthorityIds.Contains(0) || allowedLocalAuthorityIds.Contains(localAuthorityId);
 
-            // If not 'all', must match one of the allowed LocalAuthorities
-            if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
+            // Get the multi academy trust ID for the stablishment and check permissions
+            bool isValidMultiAcademyTrust;
+            try
+            {
+                var multiAcademyTrustId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId.Value);
+                isValidMultiAcademyTrust = allowedMultiAcademyTrustIds.Contains(0) || allowedMultiAcademyTrustIds.Contains(multiAcademyTrustId);
+            }
+            catch
+            {
+                // The establishment does not belong to a MAT so should pass permissions
+                // TODO: Might need to refactor to prevent errors being logged repeatedly
+                isValidMultiAcademyTrust = false;
+
+            }
+
+            // Establishment must be part of either the LocalAuthority or MultiAcademyTrust of the user
+            if (!isValidLocalAuthority && !isValidMultiAcademyTrust)
             {
                 throw new UnauthorizedAccessException(
-                    "You do not have permission to search applications for this establishment's local authority");
+                    "You do not have permission to search applications for this establishment's local authority or multi academy trust");
             }
         }
     }

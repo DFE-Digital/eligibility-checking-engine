@@ -154,7 +154,7 @@ public class SearchApplicationsUseCaseTests
     }
 
     [Test]
-    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_Establishment_LocalAuthority_Not_Allowed()
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_Establishment_LocalAuthority_MAT_Not_Allowed()
     {
         // Arrange
         var establishmentId = 123;
@@ -171,40 +171,15 @@ public class SearchApplicationsUseCaseTests
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
             .ReturnsAsync(localAuthorityIdFromEstablishment);
-
-        // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
-            .Should().ThrowAsync<UnauthorizedAccessException>();
-
-        exception.WithMessage(
-            "You do not have permission to search applications for this establishment's local authority");
-    }
-
-    [Test]
-    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_Establishment_MultiAcademyTrust_Not_Allowed()
-    {
-        // Arrange
-        var establishmentId = 123;
-        var multiAcademyTrustIdFromEstablishment = 999; // Not in allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
-            {
-                LocalAuthority = null,
-                Establishment = establishmentId
-            })
-            .Create();
-        var allowedLocalAuthorityIds = new List<int> { }; // Specific authorities only
-        var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 };
-
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
-            .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
+            .ThrowsAsync(new Exception($"Unable to find school:- {establishmentId} in MAT data"));
 
         // Act & Assert
         var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
 
         exception.WithMessage(
-            "You do not have permission to search applications for this establishment's multi academy trust");
+            "You do not have permission to search applications for this establishment's local authority or multi academy trust");
     }
 
     [Test]
@@ -213,6 +188,7 @@ public class SearchApplicationsUseCaseTests
         // Arrange
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 2; // In allowed list
+        var multiAcademyTrustId = 2; // Not in allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
             .With(x => x.Data, new ApplicationRequestSearchData
             {
@@ -226,6 +202,8 @@ public class SearchApplicationsUseCaseTests
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
             .ReturnsAsync(localAuthorityIdFromEstablishment);
+        _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
+            .ReturnsAsync(multiAcademyTrustId);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
@@ -236,6 +214,7 @@ public class SearchApplicationsUseCaseTests
         // Assert
         result.Should().Be(response);
         _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(establishmentId), Times.Once);
+        _mockApplicationGateway.Verify(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetApplications(model), Times.Once);
     }
 
@@ -244,6 +223,7 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var establishmentId = 123;
+        var localAuthorityId = 2; // Not in allowed list
         var multiAcademyTrustIdFromEstablishment = 2; // In allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
             .With(x => x.Data, new ApplicationRequestSearchData
@@ -252,12 +232,14 @@ public class SearchApplicationsUseCaseTests
                 Establishment = establishmentId
             })
             .Create();
-        var allowedLocalAuthorityIds = new List<int> { };
+        var allowedLocalAuthorityIds = new List<int> { 1 };
         var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
+            .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
@@ -267,6 +249,7 @@ public class SearchApplicationsUseCaseTests
 
         // Assert
         result.Should().Be(response);
+        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetApplications(model), Times.Once);
     }
@@ -300,6 +283,7 @@ public class SearchApplicationsUseCaseTests
         // Assert
         result.Should().Be(response);
         _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(establishmentId), Times.Once);
+        _mockApplicationGateway.Verify(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetApplications(model), Times.Once);
     }
 
@@ -308,11 +292,12 @@ public class SearchApplicationsUseCaseTests
     {
         // Arrange
         var establishmentId = 123;
+        var localAuthorityId = 2; // Not inn allowed list
         var multiAcademyTrustIdFromEstablishment = 2; // In allowed list
         var model = _fixture.Build<ApplicationRequestSearch>()
             .With(x => x.Data, new ApplicationRequestSearchData
             {
-                LocalAuthority = 1, // Also in allowed list
+                MultiAcademyTrust = 1, // Also in allowed list
                 Establishment = establishmentId
             })
             .Create();
@@ -320,6 +305,8 @@ public class SearchApplicationsUseCaseTests
         var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
+            .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
