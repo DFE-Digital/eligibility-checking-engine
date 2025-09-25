@@ -21,6 +21,7 @@ public class AdministrationController : BaseController
     private readonly ICleanUpEligibilityChecksUseCase _cleanUpEligibilityChecksUseCase;
     private readonly ICleanUpRateLimitEventsUseCase _cleanUpRateLimitEventsUseCase;
     private readonly IImportEstablishmentsUseCase _importEstablishmentsUseCase;
+    private readonly IImportMatsUseCase _importMatsUseCase;
     private readonly IImportFsmHMRCDataUseCase _importFsmHMRCDataUseCase;
     private readonly IImportFsmHomeOfficeDataUseCase _importFsmHomeOfficeDataUseCase;
     private readonly IImportWfHMRCDataUseCase _importWfHMRCDataUseCase;
@@ -31,6 +32,7 @@ public class AdministrationController : BaseController
     /// <param name="cleanUpEligibilityChecksUseCase"></param>
     /// <param name="cleanUpRateLimitEventsUseCase"></param>
     /// <param name="importEstablishmentsUseCase"></param>
+    /// <param name="importMatsUseCase"></param>
     /// <param name="importFsmHomeOfficeDataUseCase"></param>
     /// <param name="importFsmHMRCDataUseCase"></param>
     /// <param name="audit"></param>
@@ -38,6 +40,7 @@ public class AdministrationController : BaseController
         ICleanUpEligibilityChecksUseCase cleanUpEligibilityChecksUseCase,
         ICleanUpRateLimitEventsUseCase cleanUpRateLimitEventsUseCase,
         IImportEstablishmentsUseCase importEstablishmentsUseCase,
+        IImportMatsUseCase importMatsUseCase,
         IImportFsmHomeOfficeDataUseCase importFsmHomeOfficeDataUseCase,
         IImportFsmHMRCDataUseCase importFsmHMRCDataUseCase,
         IImportWfHMRCDataUseCase importWfHMRCDataUseCase,
@@ -46,6 +49,7 @@ public class AdministrationController : BaseController
         _cleanUpEligibilityChecksUseCase = cleanUpEligibilityChecksUseCase;
         _cleanUpRateLimitEventsUseCase = cleanUpRateLimitEventsUseCase;
         _importEstablishmentsUseCase = importEstablishmentsUseCase;
+        _importMatsUseCase = importMatsUseCase;
         _importFsmHomeOfficeDataUseCase = importFsmHomeOfficeDataUseCase;
         _importFsmHMRCDataUseCase = importFsmHMRCDataUseCase;
         _importWfHMRCDataUseCase = importWfHMRCDataUseCase;
@@ -83,6 +87,31 @@ public class AdministrationController : BaseController
             await _importEstablishmentsUseCase.Execute(file);
             return new ObjectResult(new MessageResponse
             { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
+            { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    ///     Imports MultiAcademyTrust data
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("multipart/form-data")]
+    [HttpPost("/admin/import-multi-academy-trusts")]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> ImportMultiAcademyTrusts(IFormFile file)
+    {
+        try
+        {
+            await _importMatsUseCase.Execute(file);
+            return new ObjectResult(new MessageResponse
+            { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
             { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)

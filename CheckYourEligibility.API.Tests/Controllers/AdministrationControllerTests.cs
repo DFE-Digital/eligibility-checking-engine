@@ -18,6 +18,7 @@ public class AdministrationControllerTests : TestBase.TestBase
     private Mock<ICleanUpEligibilityChecksUseCase> _mockCleanUpEligibilityChecksUseCase;
     private Mock<ICleanUpRateLimitEventsUseCase> _mockCleanUpRateLimitEventsUseCase;
     private Mock<IImportEstablishmentsUseCase> _mockImportEstablishmentsUseCase;
+    private Mock<IImportMatsUseCase> _mockImportMatsUseCase;
     private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
     private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
     private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
@@ -30,6 +31,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockCleanUpEligibilityChecksUseCase = new Mock<ICleanUpEligibilityChecksUseCase>(MockBehavior.Strict);
         _mockCleanUpRateLimitEventsUseCase = new Mock<ICleanUpRateLimitEventsUseCase>(MockBehavior.Strict);
         _mockImportEstablishmentsUseCase = new Mock<IImportEstablishmentsUseCase>(MockBehavior.Strict);
+        _mockImportMatsUseCase = new Mock<IImportMatsUseCase>(MockBehavior.Strict);
         _mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
         _mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
         _mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
@@ -39,6 +41,7 @@ public class AdministrationControllerTests : TestBase.TestBase
             _mockCleanUpEligibilityChecksUseCase.Object,
             _mockCleanUpRateLimitEventsUseCase.Object,
             _mockImportEstablishmentsUseCase.Object,
+            _mockImportMatsUseCase.Object,
             _mockImportFsmHomeOfficeDataUseCase.Object,
             _mockImportFsmHMRCDataUseCase.Object,
             _mockImportWfHMRCDataUseCase.Object,
@@ -50,6 +53,7 @@ public class AdministrationControllerTests : TestBase.TestBase
     {
         _mockCleanUpEligibilityChecksUseCase.VerifyAll();
         _mockImportEstablishmentsUseCase.VerifyAll();
+        _mockImportMatsUseCase.VerifyAll();
         _mockImportFsmHomeOfficeDataUseCase.VerifyAll();
         _mockImportFsmHMRCDataUseCase.VerifyAll();
     }
@@ -115,6 +119,56 @@ public class AdministrationControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.ImportEstablishments(null);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_ImportMats_Should_Return_Status200OK()
+    {
+        // Arrange
+        _mockImportMatsUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+
+        var content = Resources.small_gis;
+        var fileName = "test.csv";
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(content);
+        writer.Flush();
+        stream.Position = 0;
+
+        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/csv"
+        };
+        var expectedResult =
+            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
+            { StatusCode = StatusCodes.Status200OK };
+
+        // Act
+        var response = await _sut.ImportMultiAcademyTrusts(file);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_ImportMats_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var expectedResult =
+            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+            { StatusCode = StatusCodes.Status400BadRequest };
+
+        // Setup mock to throw InvalidDataException
+        _mockImportMatsUseCase
+            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
+            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+
+        // Act
+        var response = await _sut.ImportMultiAcademyTrusts(null);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

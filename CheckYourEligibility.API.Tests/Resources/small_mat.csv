@@ -1,0 +1,9 @@
+Group UID,Group ID,Group Name,Companies House Number,Group Type (code),Group Type,Closed Date,Open date,Incorporated on (open date),Group Status (code),Group Status,Joined date,Academy URN,Trust Academy Establishment Name,TypeOfEstablishment (code),TypeOfEstablishment (name),PhaseOfEducation (code),PhaseOfEducation (name),LA (code),LA (name)
+17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/05/2011,136730,Shenley Brook End School,34,Academy converter,4,Secondary,826,Milton Keynes
+17101,TR01904,5 DIMENSIONS TRUST,07595434,06,Multi-academy trust,,,07/04/2011,OPEN,Open,01/12/2024,136842,Walton High,34,Academy converter,4,Secondary,826,Milton Keynes
+2044,TR00261,ABBEY ACADEMIES TRUST,07318714,06,Multi-academy trust,,,19/07/2010,OPEN,Open,01/12/2010,136354,Bourne Abbey Church of England Primary Academy,34,Academy converter,2,Primary,925,Lincolnshire
+2044,TR00261,ABBEY ACADEMIES TRUST,07318714,06,Multi-academy trust,,,19/07/2010,OPEN,Open,01/09/2014,140214,Bourne Elsea Park Church of England Primary Academy,28,Academy sponsor led,2,Primary,925,Lincolnshire
+2045,TR00001,"ABBEY COLLEGE, RAMSEY",07740516,10,Single-academy trust,,,15/08/2011,OPEN,Open,01/09/2011,137377,"Abbey College, Ramsey",34,Academy converter,4,Secondary,873,Cambridgeshire
+2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/03/2015,137036,Lightcliffe Academy,28,Academy sponsor led,4,Secondary,381,Calderdale
+2046,TR00002,ABBEY MULTI ACADEMY TRUST,07705552,06,Multi-academy trust,,,14/07/2011,OPEN,Open,01/08/2011,137083,Abbey Grange Church of England Academy,34,Academy converter,4,Secondary,383,Leeds
+2048,TR00004,ABBOTS HALL PRIMARY ACADEMY,08484553,10,Single-academy trust,,,11/04/2013,OPEN,Open,01/05/2013,139605,Abbots Hall Primary School,34,Academy converter,2,Primary,883,Thurrock

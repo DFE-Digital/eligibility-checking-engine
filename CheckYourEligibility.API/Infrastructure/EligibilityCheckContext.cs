@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
@@ -21,6 +22,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     public virtual DbSet<Establishment> Establishments { get; set; }
+    public virtual DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
+    public virtual DbSet<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
     public virtual DbSet<LocalAuthority> LocalAuthorities { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -64,6 +67,18 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data)
     {
         this.BulkInsert(data);
+    }
+
+    public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustSchool> schoolData)
+    {
+        using (var transaction = base.Database.BeginTransaction())
+        {
+            this.Truncate<MultiAcademyTrustSchool>();
+            this.MultiAcademyTrusts.ExecuteDelete();
+            this.BulkInsert(trustData);
+            this.BulkInsert(schoolData);
+            transaction.Commit();
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -111,6 +126,14 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<Establishment>()
             .HasOne(e => e.LocalAuthority);
+
+        // MultiAcademyTrustSchool to MultiAcademyTrust relationship
+        modelBuilder.Entity<MultiAcademyTrustSchool>()
+            .HasOne(s => s.MultiAcademyTrust)
+            .WithMany(t => t.MultiAcademyTrustSchools)
+            .HasForeignKey(s => s.TrustId)
+            .HasPrincipalKey(t => t.UID)
+            .IsRequired(true);
 
         modelBuilder.Entity<Application>()
             .HasIndex(b => b.Reference, "idx_Reference")
