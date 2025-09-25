@@ -88,7 +88,7 @@ public class EcsGatewayTests : TestBase.TestBase
         _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
 
         // Act
-        var response = await _sut.EcsFsmCheck(request);
+        var response = await _sut.EcsCheck(request, CheckEligibilityType.FreeSchoolMeals);
 
         // Assert
         response.Should().BeOfType<SoapCheckResponse>();
@@ -122,7 +122,7 @@ public class EcsGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = await _sut.EcsFsmCheck(dataItem);
+        var response = await _sut.EcsCheck(dataItem, CheckEligibilityType.TwoYearOffer);
 
         // Assert
         response.Should().BeNull();

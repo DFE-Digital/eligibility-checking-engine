@@ -20,7 +20,7 @@ public interface IEcsGateway
 {
     public string UseEcsforChecks { get; }
     public string UseEcsforChecksWF { get; }
-    Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck);
+    Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType);
     Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck);
 }
 
@@ -110,7 +110,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
         return null;
     }
 
-    public async Task<SoapCheckResponse?> EcsFsmCheck(CheckProcessData eligibilityCheck)
+    public async Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType)
     {
         var soapMessage = Resources.EcsSoapFsm;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
@@ -123,6 +123,18 @@ public class EcsGateway : BaseGateway, IEcsGateway
             $"<ns:DateOfBirth>{eligibilityCheck.DateOfBirth}</ns:DateOfBirth>");
         soapMessage = soapMessage.Replace("<ns:NiNo>NN668767B</ns:NiNo>",
             $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
+
+        if(eligibilityType==CheckEligibilityType.TwoYearOffer)
+        {
+            soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
+                $"<ns:EligibilityCheckType>EY</ns:EligibilityCheckType>");
+        }
+
+        if(eligibilityType==CheckEligibilityType.EarlyYearPupilPremium)
+        {
+            soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
+                $"<ns:EligibilityCheckType>EYPP</ns:EligibilityCheckType>");
+        }
 
         return await executeEcsCheck(soapMessage);
     }
