@@ -143,16 +143,6 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:"))
             return IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
-//TODO: WHAT IS THIS ACTUALLY CHECKING???? DON'T WE RETURN BEFORE HERE IF THE WE HAVE THESE SCOPES?????
-        // Check if "local_authority" is requested
-        if (requestedScope == "local_authority")
-            // If a client has "local_authority:XX" scope, they should NOT have access to the generic "local_authority" scope
-            // Only allow if specifically the generic "local_authority" is in allowed scopes
-            return allowedScopesList.Contains("local_authority");
-        // Check if "multi_academy_trust" is requested
-        if (requestedScope == "multi_academy_trust")
-            return allowedScopesList.Contains("multi_academy_trust");
-
         // If we got here, the scope is not valid
             return false;
     }

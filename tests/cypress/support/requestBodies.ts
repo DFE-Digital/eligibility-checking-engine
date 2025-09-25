@@ -4,7 +4,7 @@ export const validLoginRequestBody = "client_id=".concat(
     Cypress.env('JWT_USERNAME'),
     "&client_secret=",
     encodeURIComponent(Cypress.env('JWT_PASSWORD')),
-    "&scope=local_authority multi_academy_trust check application admin bulk_check establishment user engine"
+    "&scope=local_authority check application admin bulk_check establishment user engine"
 );
 
 export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
