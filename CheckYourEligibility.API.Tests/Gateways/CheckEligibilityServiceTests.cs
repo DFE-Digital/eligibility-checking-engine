@@ -58,7 +58,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         {
             { "QueueFsmCheckStandard", "notSet" },
             { "QueueFsmCheckBulk", "notSet" },
-            { "HashCheckDays", "7" }
+            { "HashCheckDays", "7" },
+            { "Dwp:UseEcsforChecksWF", "false"}
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
@@ -1074,11 +1075,21 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-
+        
+        
+        var soapResponse = _fixture.Create<SoapCheckResponse>();
+        soapResponse.ParentSurname = "smith";
+        soapResponse.ValidityStartDate = DateTime.Today.AddDays(-2).ToString();
+        soapResponse.ValidityEndDate = DateTime.Today.AddDays(-1).ToString();
+        soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString();
+        
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(soapResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
@@ -1179,12 +1190,13 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         wfEvent.ParentLastName = "doe";
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
-        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
