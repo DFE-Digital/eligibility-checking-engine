@@ -537,7 +537,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
-        _moqEcsGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -566,7 +566,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "" };
-        _moqEcsGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -596,7 +596,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
-        _moqEcsGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -624,7 +624,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
 
-        _moqEcsGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(value: null);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(value: null);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -654,7 +654,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
-        _moqEcsGateway.Setup(x => x.EcsFsmCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");

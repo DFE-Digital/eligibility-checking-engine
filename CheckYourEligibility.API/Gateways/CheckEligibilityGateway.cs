@@ -741,7 +741,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 {
                     if (_ecsGateway.UseEcsforChecks=="true")
                     {
-                        checkResult = await EcsFsmCheck(checkData);
+                        checkResult = await EcsCheck(checkData);
                         
                         source = ProcessEligibilityCheckSource.ECS;
                     }
@@ -754,7 +754,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     }
                     else
                     {
-                        checkResult = await EcsFsmCheck(checkData);
+                        checkResult = await EcsCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
 
                         if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
@@ -903,10 +903,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    private async Task<CheckEligibilityStatus> EcsFsmCheck(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> EcsCheck(CheckProcessData data)
     {
         //check for benefit
-        var result = await _ecsGateway.EcsFsmCheck(data);
+        var result = await _ecsGateway.EcsCheck(data, data.Type);
         return convertEcsResultStatus(result);
     }
 
