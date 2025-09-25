@@ -62,12 +62,6 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new ArgumentException("Either LocalAuthority, Establishment, or MultiAcademyTrust must be specified");
         }
 
-        //TODO: Check whether this is a valid thing to be checking
-        if (model.Data.LocalAuthority != null && model.Data.MultiAcademyTrust != null)
-        {
-            throw new ArgumentException("Can not search for both LocalAuthority and MultiAcademyTrust");
-        }
-
         validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
         validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
         await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
@@ -130,10 +124,8 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             }
             catch
             {
-                // The establishment does not belong to a MAT so should pass permissions
-                // TODO: Might need to refactor to prevent errors being logged repeatedly
+                // The establishment does not belong to a MAT so should fail permissions unless the LA has permissions
                 isValidMultiAcademyTrust = false;
-
             }
 
             // Establishment must be part of either the LocalAuthority or MultiAcademyTrust of the user

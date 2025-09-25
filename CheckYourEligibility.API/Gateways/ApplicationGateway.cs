@@ -214,7 +214,8 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Unable to find school:- {establishmentId} in MAT data");
+            // Some Establishments are not part of MAT so only INFO
+            _logger.LogInformation(ex, $"Unable to find school:- {establishmentId} in MAT data");
             throw new Exception($"Unable to find school:- {establishmentId} in MAT data, {ex.Message}");
         }
     }

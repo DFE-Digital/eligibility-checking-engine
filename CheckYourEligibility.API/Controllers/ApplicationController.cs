@@ -138,9 +138,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    //TODO: Accept either scope
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
