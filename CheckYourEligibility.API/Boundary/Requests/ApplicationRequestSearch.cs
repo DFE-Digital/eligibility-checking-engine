@@ -17,6 +17,7 @@ public class ApplicationRequestSearchData
 {
     public CheckEligibilityType Type { get; set; } = CheckEligibilityType.FreeSchoolMeals;
     public int? LocalAuthority { get; set; }
+    public int? MultiAcademyTrust { get; set; }
     public int? Establishment { get; set; }
     public IEnumerable<ApplicationStatus>? Statuses { get; set; }
     public string? ParentLastName { get; set; }

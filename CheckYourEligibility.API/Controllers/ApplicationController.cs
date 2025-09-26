@@ -20,6 +20,7 @@ public class ApplicationController : BaseController
     private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
+    private readonly string _multiAcademyTrustScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
@@ -40,6 +41,7 @@ public class ApplicationController : BaseController
     {
         _logger = logger;
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scope:multi_academy_trust") ?? "multi_academy_trust";
         _createApplicationUseCase = createApplicationUseCase;
         _getApplicationUseCase = getApplicationUseCase;
         _searchApplicationsUseCase = searchApplicationsUseCase;
@@ -63,7 +65,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -104,7 +106,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -136,21 +138,23 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
+            if ((localAuthorityIds == null || localAuthorityIds.Count == 0) &&
+                (multiAcademyTrustIds == null || multiAcademyTrustIds.Count == 0))
             {
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "No local authority or multi academy trust scope found" }]
                 });
             }
 
-            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds);
+            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds, multiAcademyTrustIds);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
         catch (ArgumentException ex)
@@ -185,7 +189,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -234,7 +238,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -277,7 +281,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse
@@ -320,7 +324,7 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetLocalAuthorityIds(_localAuthorityScopeName);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
                 return BadRequest(new ErrorResponse

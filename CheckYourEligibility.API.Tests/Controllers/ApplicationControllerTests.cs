@@ -106,21 +106,39 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Create mock HttpContext with ClaimsPrincipal
         var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
+        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
 
         httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
         _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+    }
+
+    private void SetupControllerWithLaAndMatIds(List<int> localAuthorityIds, List<int> multiAcademyTrustIds)
+    {
+        // Create mock HttpContext with ClaimsPrincipal
+        var httpContext = new DefaultHttpContext();
+        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
+        claims.AddRange(SetupSpecificScopeIdClaims(multiAcademyTrustIds, "multi_academy_trust"));
+
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+    }
+
+    private List<Claim> SetupSpecificScopeIdClaims(List<int> ids, string scopeName)
+    {
+        var claims = new List<Claim>();
+
+        // Add appropriate scope claims based on ids
+        if (ids.Contains(0))
+        {
+            claims.Add(new Claim("scope", scopeName));
+        }
+        else
+        {
+            var scopeValue = string.Join(" ", ids.Select(id => $"{scopeName}:{id}"));
+            claims.Add(new Claim("scope", scopeValue));
+        }
+
+        return claims;
     }
 
     [Test]
@@ -241,14 +259,15 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_Valid_ApplicationSearch_Should_Return_StatusOk()
+    public async Task Given_Valid_ApplicationSearch_LA_Scope_Should_Return_StatusOk()
     {
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
         var localAuthorityIds = new List<int> { 1 };
+        var multiAcademyTrustIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLaAndMatIds(localAuthorityIds, multiAcademyTrustIds);
 
         // Set the LocalAuthority in the model to match our authorized LocalAuthority
         if (model.Data == null)
@@ -258,7 +277,37 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         model.Data.LocalAuthority = 1; // Match the localAuthorityIds we set up
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds)).ReturnsAsync(expectedResponse);
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds)).ReturnsAsync(expectedResponse);
+        var expectedResult = new ObjectResult(expectedResponse)
+            { StatusCode = StatusCodes.Status200OK };
+
+        // Act
+        var response = await _sut.ApplicationSearch(model);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_Valid_ApplicationSearch_MAT_Scope_Should_Return_StatusOk()
+    {
+        // Arrange
+        var model = _fixture.Create<ApplicationRequestSearch>();
+        var localAuthorityIds = new List<int> { };
+        var multiAcademyTrustIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLaAndMatIds(localAuthorityIds, multiAcademyTrustIds);
+
+        // Set the LocalAuthority in the model to match our authorized LocalAuthority
+        if (model.Data == null)
+        {
+            model.Data = new ApplicationRequestSearchData();
+        }
+
+        model.Data.LocalAuthority = 1; // Match the localAuthorityIds we set up
+        var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
             { StatusCode = StatusCodes.Status200OK };
 
@@ -315,13 +364,13 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ApplicationSearch_Without_LocalAuthority_Should_Return_BadRequest()
+    public async Task Given_ApplicationSearch_Without_LA_Or_MAT_Should_Return_BadRequest()
     {
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
 
         // Setup controller with empty local authority claims
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLaAndMatIds(new List<int>(), new List<int>());
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -331,7 +380,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
-        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority scope found");
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority or multi academy trust scope found");
     }
 
     [Test]
@@ -351,7 +400,7 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Setup mock to throw UnauthorizedAccessException for unauthorized access
         _mockSearchApplicationsUseCase
-            .Setup(cs => cs.Execute(It.IsAny<ApplicationRequestSearch>(), It.IsAny<List<int>>()))
+            .Setup(cs => cs.Execute(It.IsAny<ApplicationRequestSearch>(), It.IsAny<List<int>>(), It.IsAny<List<int>>()))
             .ThrowsAsync(
                 new UnauthorizedAccessException("Local authority scope does not match requested LocalAuthority"));
 
@@ -513,11 +562,12 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
         var localAuthorityIds = new List<int> { 1 };
+        var multiAcademyTrustIds = new List<int> { };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds))
             .ThrowsAsync(new ArgumentException("Invalid request, data is required"));
 
         // Act
@@ -537,11 +587,12 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
         var localAuthorityIds = new List<int> { 1 };
+        var multiAcademyTrustIds = new List<int> { };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds))
             .ThrowsAsync(
                 new UnauthorizedAccessException(
                     "You do not have permission to search applications for this local authority"));
@@ -564,11 +615,12 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Arrange
         var model = _fixture.Create<ApplicationRequestSearch>();
         var localAuthorityIds = new List<int> { 1 };
+        var multiAcademyTrustIds = new List<int> { };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds))
+        _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds))
             .ThrowsAsync(new Exception("Database connection failed"));
 
         // Act

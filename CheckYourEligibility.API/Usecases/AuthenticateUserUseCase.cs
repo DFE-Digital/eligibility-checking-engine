@@ -140,29 +140,28 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (allowedScopesList.Contains(requestedScope)) return true;
 
         // local_authority:XX pattern
-        if (requestedScope.StartsWith("local_authority:"))
-            return IsLocalAuthoritySpecificScopeValid(requestedScope, allowedScopesList);
-
-        // Check if "local_authority" is requested
-        if (requestedScope == "local_authority")
-            // If a client has "local_authority:XX" scope, they should NOT have access to the generic "local_authority" scope
-            // Only allow if specifically the generic "local_authority" is in allowed scopes
-            return allowedScopesList.Contains("local_authority");
+        if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:"))
+            return IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // If we got here, the scope is not valid
-        return false;
+            return false;
     }
 
-    private static bool IsLocalAuthoritySpecificScopeValid(string requestedScope, string[] allowedScopesList)
+    private static bool IsSpecificScopeIdValid(string requestedScope, string[] allowedScopesList)
     {
-        // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope
-        if (allowedScopesList.Contains("local_authority")) return true;
-
-        // Otherwise check if there's a match with specific local_authority:xx pattern in allowed scopes
+        // check if there's a match with specific local_authority:xx pattern in allowed scopes
+        var requestedScopeType = requestedScope.Split(':', 2)[0];
         var requestedAuthority = requestedScope.Split(':', 2)[1];
 
+        // Additional check that the scope type is one that supports specific IDs
+        List<string> allowedSpecificScopeTypes = ["local_authority", "multi_academy_trust"];
+        if (!allowedSpecificScopeTypes.Contains(requestedScopeType)) return false;
+
+        // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope
+        if (allowedScopesList.Contains(requestedScopeType)) return true;
+
         foreach (var allowedScope in allowedScopesList)
-            if (allowedScope.StartsWith("local_authority:"))
+            if (allowedScope.StartsWith($"{requestedScopeType}:"))
             {
                 var allowedAuthority = allowedScope.Split(':', 2)[1];
 

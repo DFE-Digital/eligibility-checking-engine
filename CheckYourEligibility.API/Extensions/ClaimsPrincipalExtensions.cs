@@ -5,10 +5,10 @@ namespace CheckYourEligibility.API.Extensions;
 public static class ClaimsPrincipalExtensions
 {
     /// <summary>
-    /// Gets all local authority ids from the user's claims.
+    /// Gets all specific scope ids from the user's claims.
     /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
     /// </summary>
-    public static List<int> GetLocalAuthorityIds(this ClaimsPrincipal user, string localAuthorityScopeName)
+    public static List<int> GetSpecificScopeIds(this ClaimsPrincipal user, string scopeName)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
         var ids = new List<int>();
@@ -16,14 +16,14 @@ public static class ClaimsPrincipalExtensions
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // If 'all', return [0] immediately
-            if (scopes.Contains(localAuthorityScopeName))
+            if (scopes.Contains(scopeName))
                 return new List<int> { 0 };
             // Add all valid local_authority:xx
             foreach (var s in scopes)
             {
-                if (s.StartsWith($"{localAuthorityScopeName}:"))
+                if (s.StartsWith($"{scopeName}:"))
                 {
-                    var idPart = s.Substring($"{localAuthorityScopeName}:".Length);
+                    var idPart = s.Substring($"{scopeName}:".Length);
                     if (int.TryParse(idPart, out var id))
                         ids.Add(id);
                 }
