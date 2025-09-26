@@ -91,6 +91,14 @@ public class EcsGateway : BaseGateway, IEcsGateway
                     soapResponse.ErrorCode = xElement.Value;
                     xElement = elements.FirstOrDefault(x => x.Name.LocalName == "Qualifier");
                     soapResponse.Qualifier = xElement.Value;
+                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "ValidityStartDate");
+                    soapResponse.ValidityStartDate = xElement.Value;
+                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "ValidityEndDate");
+                    soapResponse.ValidityEndDate = xElement.Value;
+                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "GracePeriodEndDate");
+                    soapResponse.GracePeriodEndDate = xElement.Value;
+                    xElement = elements.FirstOrDefault(x => x.Name.LocalName == "ParentSurname");
+                    soapResponse.ParentSurname = xElement.Value;
                     return soapResponse;
                 }
 
