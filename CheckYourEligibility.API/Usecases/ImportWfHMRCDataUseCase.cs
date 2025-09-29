@@ -56,9 +56,16 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                 List<string> eventProps = [];
                 foreach (Cell cell in row.Elements<Cell>().Skip(1))
                 {
-                    CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
-                    var cellValueString = getCellValueString(cell, sharedStrings, cellStyles);
-                    eventProps.Add(cellValueString);
+                    try
+                    {
+                        CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
+                        var cellValueString = getCellValueString(cell, sharedStrings, cellStyles);
+                        eventProps.Add(cellValueString);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidDataException($"Failed to parse data at {cell.CellReference}:- {ex.Message}");
+                    }
                 }
                 var wfEvent = ParseWorkingFamiliesEvent(eventProps, columnHeaders);
                 var validationResults = validator.Validate(wfEvent);
@@ -166,12 +173,12 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
     {
         if (cell.CellValue is null)
             return string.Empty;
-        string value = cell.CellValue.InnerText;
+        string value = cell.CellValue.InnerText.Trim();
 
         if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
         {
             // Get shared string value
-            value = sharedStrings.ChildElements[int.Parse(value)].InnerText;
+            value = sharedStrings.ChildElements[int.Parse(value)].InnerText.Trim();
             // If the cell is a date field then convert to standard date format OADate
             CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
             if (style.NumberFormatId == 14)
