@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250929105701_RemoveMatTables")]
+    partial class RemoveMatTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -414,41 +417,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("LocalAuthorities");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
-                {
-                    b.Property<int>("UID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("UID");
-
-                    b.ToTable("MultiAcademyTrusts");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustSchool", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<int>("SchoolId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TrustId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("TrustId");
-
-                    b.ToTable("MultiAcademyTrustSchools");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
                 {
                     b.Property<string>("RateLimitEventId")
@@ -635,17 +603,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustSchool", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.MultiAcademyTrust", "MultiAcademyTrust")
-                        .WithMany("MultiAcademyTrustSchools")
-                        .HasForeignKey("TrustId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MultiAcademyTrust");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.Navigation("Evidence");
@@ -656,11 +613,6 @@ namespace CheckYourEligibility.API.Migrations
             modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
                     b.Navigation("EligibilityChecks");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
-                {
-                    b.Navigation("MultiAcademyTrustSchools");
                 });
 #pragma warning restore 612, 618
         }
