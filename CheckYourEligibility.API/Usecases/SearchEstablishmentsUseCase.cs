@@ -7,7 +7,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface ISearchEstablishmentsUseCase
 {
-    Task<IEnumerable<Establishment>> Execute(string query, string? la);
+    Task<IEnumerable<Establishment>> Execute(string query, string? la, string? mat);
 }
 
 public class SearchEstablishmentsUseCase : ISearchEstablishmentsUseCase
@@ -21,12 +21,12 @@ public class SearchEstablishmentsUseCase : ISearchEstablishmentsUseCase
         _auditGateway = auditGateway;
     }
 
-    public async Task<IEnumerable<Establishment>> Execute(string query, string? la)
+    public async Task<IEnumerable<Establishment>> Execute(string query, string? la, string? mat)
     {
         if (query.IsNullOrEmpty()) throw new ArgumentException();
         if (query.Length < 3 || query.Length > int.MaxValue) throw new ArgumentException();
 
-        var results = await _gateway.Search(query, la);
+        var results = await _gateway.Search(query, la, mat);
         await _auditGateway.CreateAuditEntry(AuditType.Establishment, string.Empty);
         return results ?? Enumerable.Empty<Establishment>();
     }

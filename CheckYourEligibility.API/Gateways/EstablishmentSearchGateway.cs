@@ -20,7 +20,7 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
     }
 
     [ExcludeFromCodeCoverage(Justification = "memory only db breaks test in full run, works fine run locally")]
-    public async Task<IEnumerable<Establishment>?> Search(string query, string? la)
+    public async Task<IEnumerable<Establishment>?> Search(string query, string? la, string? mat)
     {
         var results = new List<Establishment>();
 
@@ -53,14 +53,15 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
         }
 
         int.TryParse(la, out int laInt);
-        var allEstablishments = la != null
-            ? _db.Establishments.Where(x => x.StatusOpen
-                                            && x.EstablishmentName.Contains(query)
-                                            && x.LocalAuthorityId.Equals(laInt))
-                .Include(x => x.LocalAuthority)
-            : _db.Establishments.Where(x => x.StatusOpen
-                                            && x.EstablishmentName.Contains(query))
-                .Include(x => x.LocalAuthority);
+        int.TryParse(mat, out int matInt);
+        var matSchools = mat != null ? _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matInt).Select(x => x.SchoolId).ToList() : null;
+
+        var allEstablishments = _db.Establishments
+            .Where(x => x.StatusOpen &&
+                x.EstablishmentName.Contains(query) &&
+                (la == null || x.LocalAuthorityId.Equals(laInt)) &&
+                (matSchools == null || matSchools.Contains(x.EstablishmentId)))
+            .Include(x => x.LocalAuthority);
 
         var queryResult = new List<Domain.Establishment>();
 

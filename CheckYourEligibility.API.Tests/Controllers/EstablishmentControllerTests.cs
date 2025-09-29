@@ -42,13 +42,14 @@ public class EstablishmentControllerTests : TestBase.TestBase
         var query = _fixture.Create<string>();
         var result = _fixture.CreateMany<Establishment>().ToList();
         string la = null;
-        _mockSearchUseCase.Setup(cs => cs.Execute(query, la)).ReturnsAsync(result);
+        string mat = null;
+        _mockSearchUseCase.Setup(cs => cs.Execute(query, la, mat)).ReturnsAsync(result);
 
         var expectedResult = new ObjectResult(new EstablishmentSearchResponse { Data = result })
             { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.Search(query, la);
+        var response = await _sut.Search(query, la, mat);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
@@ -60,9 +61,10 @@ public class EstablishmentControllerTests : TestBase.TestBase
         // Arrange
         var query = "A";
         string la = null;
+        string mat = null;
 
         // Act
-        var response = await _sut.Search(query, la);
+        var response = await _sut.Search(query, la, mat);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -75,13 +77,14 @@ public class EstablishmentControllerTests : TestBase.TestBase
         var query = _fixture.Create<string>();
         var result = Enumerable.Empty<Establishment>();
         string la = null;
-        _mockSearchUseCase.Setup(cs => cs.Execute(query, la)).ReturnsAsync(result);
+        string mat = null;
+        _mockSearchUseCase.Setup(cs => cs.Execute(query, la, mat)).ReturnsAsync(result);
 
         var expectedResult = new ObjectResult(new EstablishmentSearchResponse { Data = result })
             { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.Search(query, la);
+        var response = await _sut.Search(query, la, mat);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

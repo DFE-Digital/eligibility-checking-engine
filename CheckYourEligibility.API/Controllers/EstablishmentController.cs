@@ -31,13 +31,13 @@ public class EstablishmentController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/establishment/search")]
     [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
-    public async Task<ActionResult> Search(string query, string? la)
+    public async Task<ActionResult> Search(string query, string? la, string? mat)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 3)
             return BadRequest(new ErrorResponse
                 { Errors = [new Error { Title = "At least 3 characters are required to query." }] });
 
-        var results = await _searchUseCase.Execute(query, la);
+        var results = await _searchUseCase.Execute(query, la, mat);
 
         return new ObjectResult(new EstablishmentSearchResponse { Data = results })
             { StatusCode = StatusCodes.Status200OK };
