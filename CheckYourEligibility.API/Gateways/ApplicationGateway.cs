@@ -109,7 +109,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -168,7 +168,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -194,6 +194,29 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
             throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Gets the multi academy trust ID for an establishment
+    /// </summary>
+    /// <param name="establishmentId">The establishment ID</param>
+    /// <returns>The multi academy trust ID</returns>
+    public async Task<int> GetMultiAcademyTrustIdForEstablishment(int establishmentId)
+    {
+        try
+        {
+            var multiAcademyTrustId = await _db.MultiAcademyTrustSchools
+                .Where(x => x.SchoolId == establishmentId)
+                .Select(x => x.TrustId)
+                .FirstAsync();
+            return multiAcademyTrustId;
+        }
+        catch (Exception ex)
+        {
+            // Some Establishments are not part of MAT so only INFO
+            _logger.LogInformation(ex, $"Unable to find school:- {establishmentId} in MAT data");
+            throw new Exception($"Unable to find school:- {establishmentId} in MAT data, {ex.Message}");
         }
     }
 
@@ -377,7 +400,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
             // Remove the application
             _db.Applications.Remove(application);
-            
+
             await _db.SaveChangesAsync();
 
             _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
@@ -399,8 +422,16 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         query = query.Where(x => x.Type == model.Data.Type);
 
+        // Clause for specific establishment if provided, or for set of establishments if only MAT provided
         if (model.Data?.Establishment != null)
+        {
             query = query.Where(x => x.EstablishmentId == model.Data.Establishment);
+        }
+        else if (model.Data?.MultiAcademyTrust != null)
+        {
+            List<int> establishmentIds = GetMatSchoolIds(model.Data.MultiAcademyTrust.Value);
+            query = query.Where(x => establishmentIds.Contains(x.EstablishmentId));
+        }
         if (model.Data?.LocalAuthority != null)
             query = query.Where(x => x.LocalAuthorityId == model.Data.LocalAuthority);
 
@@ -524,6 +555,11 @@ public class ApplicationGateway : BaseGateway, IApplication
             TimeStamp = DateTime.UtcNow
         };
         await _db.ApplicationStatuses.AddAsync(status);
+    }
+
+    private List<int> GetMatSchoolIds(int matId)
+    {
+        return _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matId).Select(x => x.SchoolId).ToList();
     }
 
     #endregion
