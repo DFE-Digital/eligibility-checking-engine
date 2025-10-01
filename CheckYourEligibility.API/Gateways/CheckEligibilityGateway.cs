@@ -683,7 +683,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         
         result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
-        if (result.Status != CheckEligibilityStatus.notFound||wfEvent.EligibilityCode != null)
+        if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
         {
             //Get current date
             var currentDate = DateTime.UtcNow.Date;
