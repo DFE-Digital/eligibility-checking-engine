@@ -105,30 +105,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.Status = CheckEligibilityStatus.queuedForProcessing;
             var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
-            if (item.Type == CheckEligibilityType.WorkingFamilies)
-            {
-                WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-                var wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
-                if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
-                    checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
-                {
-                    wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
-                }
-                else
-                {
-                    wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
-                    checkData.NationalInsuranceNumber, checkData.LastName);
-                }               
-                if (wfEvent != null)
-                {
-                    checkData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
-                    checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-                    checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-                    checkData.LastName = wfEvent.ParentLastName;
-                    checkData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
-                    item.CheckData = JsonConvert.SerializeObject(checkData);
-                }
-            }
 
             var checkHashResult =
                 await _hashGateway.Exists(checkData);
@@ -667,16 +643,33 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+        
+        result.Status = CheckEligibilityStatus.notFound;
         if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
             checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
         {
             wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
         }
+        else if (_ecsGateway.UseEcsforChecksWF == "true")
+        {
+            SoapCheckResponse innerResult = await _ecsGateway.EcsWFCheck(checkData);
+
+            result.Status =  convertEcsResultStatus(innerResult);
+            if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
+            {
+                wfEvent.EligibilityCode = checkData.EligibilityCode;
+                wfEvent.ParentLastName = innerResult.ParentSurname;
+                wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+                wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
+                wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
+            }
+
+            source = ProcessEligibilityCheckSource.ECS;
+        }
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
           checkData.NationalInsuranceNumber, checkData.LastName);
-
         }
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         if (wfEvent != null)
@@ -686,28 +679,23 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
             wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
-            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
+        }
+        
+        result.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
+        if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
+        {
             //Get current date
             var currentDate = DateTime.UtcNow.Date;
 
-            if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
-                (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
+            if ((currentDate >= wfEvent.ValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
+                (currentDate >= wfEvent.ValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
             {
                 result.Status = CheckEligibilityStatus.eligible;
             }
             else
             {
                 result.Status = CheckEligibilityStatus.notEligible;
-            }
-        }
-        else
-        {
-            result.Status = CheckEligibilityStatus.notFound;
-            if (_ecsGateway.UseEcsforChecksWF == "true")
-            {
-                result.Status =  await EcsWFCheck(checkData);
-                source = ProcessEligibilityCheckSource.ECS;
             }
         }
 
@@ -907,13 +895,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         //check for benefit
         var result = await _ecsGateway.EcsCheck(data, data.Type);
-        return convertEcsResultStatus(result);
-    }
-
-    private async Task<CheckEligibilityStatus> EcsWFCheck(CheckProcessData data)
-    {
-        //check for benefit
-        var result = await _ecsGateway.EcsWFCheck(data);
         return convertEcsResultStatus(result);
     }
 
