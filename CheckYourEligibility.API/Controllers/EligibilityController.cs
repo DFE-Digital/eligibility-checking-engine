@@ -223,6 +223,8 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
     public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
@@ -268,6 +270,8 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -313,6 +317,8 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/bulk-check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -358,6 +364,8 @@ public class EligibilityCheckController : BaseController
     [HttpPost("/bulk-check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
     {
         try
