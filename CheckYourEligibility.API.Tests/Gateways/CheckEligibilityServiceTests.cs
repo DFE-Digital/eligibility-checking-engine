@@ -123,11 +123,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), Guid.NewGuid().ToString()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act/Assert
@@ -173,11 +173,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -220,18 +220,20 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             Surname = request.LastName,
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+       
+         await _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
         var response = _sut.PostCheck(request);
+        await _fakeInMemoryDb.SaveChangesAsync();
         var process = _sut.ProcessCheck(response.Result.Id, _fixture.Create<AuditData>());
         var item = _fakeInMemoryDb.CheckEligibilities.FirstOrDefault(x => x.EligibilityCheckID == response.Result.Id);
         var hash = CheckEligibilityGateway.GetHash(
@@ -266,12 +268,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
             .ReturnsAsync(Guid.NewGuid().ToString());
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -474,10 +475,9 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -506,11 +506,10 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
-
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChanges();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -682,11 +681,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -712,11 +711,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status404NotFound);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -742,11 +741,11 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>()))
+                It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
@@ -773,7 +772,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(CheckEligibilityStatus.error.ToString());
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -859,9 +858,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
                 DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
         _fakeInMemoryDb.SaveChangesAsync();
-
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(CheckEligibilityStatus.parentNotFound.ToString());
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 

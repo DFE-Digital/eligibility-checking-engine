@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20251002105850_ECSConflicts")]
+    partial class ECSConflicts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -262,9 +265,9 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("EligibilityCheckHashID")
+                    b.Property<string>("HashId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(MAX)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -286,8 +289,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.HasKey("ID");
-
-                    b.HasIndex("EligibilityCheckHashID");
 
                     b.ToTable("ECSConflicts");
                 });
@@ -661,17 +662,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasForeignKey("LocalAuthorityId");
 
                     b.Navigation("LocalAuthority");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.ECSConflict", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
-                        .WithMany()
-                        .HasForeignKey("EligibilityCheckHashID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EligibilityCheckHash");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>

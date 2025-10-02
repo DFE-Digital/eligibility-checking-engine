@@ -731,16 +731,23 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
                         checkResult = await EcsCheck(checkData);
                         source = ProcessEligibilityCheckSource.ECS;
-                        eceCheckResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
-
 
                     }
-                    else
+                    else if (_ecsGateway.UseEcsforChecks == "false")
                     {
 
                         checkResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
                         source = ProcessEligibilityCheckSource.DWP;
                     }
+                    else // do both checks
+                    {
+                        checkResult = await EcsCheck(checkData);
+                        source = ProcessEligibilityCheckSource.DWP;
+                        eceCheckResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                        source = ProcessEligibilityCheckSource.ECS_CONFLICT;
+
+                    }
+
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -761,32 +768,32 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         else
         {
+            result.EligibilityCheckHashID =
+              await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
+
             //If CAPI returns a different result from ECS
             // create a record
-            ECSConflict ecsConflictRecord = new ECSConflict();
-            if (checkResult != eceCheckResult)
+            if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-
-                source = ProcessEligibilityCheckSource.ECS_CONFLICT;
-
                 var organisation = (await _db.Audits.FirstOrDefaultAsync(a => a.typeId == result.EligibilityCheckID)).authentication;
+                ECSConflict ecsConflictRecord = new() {
 
-                ecsConflictRecord.CorrelationId = correlationId;
-                ecsConflictRecord.ECE_Status = eceCheckResult;
-                ecsConflictRecord.ECS_Status = checkResult;
-                ecsConflictRecord.DateOfBirth = checkData.DateOfBirth;
-                ecsConflictRecord.LastName = checkData.LastName;
-                ecsConflictRecord.Nino = checkData.NationalInsuranceNumber;
-                ecsConflictRecord.Type = checkData.Type;
-                ecsConflictRecord.Organisation = organisation;
-                ecsConflictRecord.TimeStamp = DateTime.UtcNow;
+                CorrelationId = correlationId,
+                ECE_Status = eceCheckResult,
+                ECS_Status = checkResult,
+                DateOfBirth = checkData.DateOfBirth,
+                LastName = checkData.LastName,
+                Nino = checkData.NationalInsuranceNumber,
+                Type = checkData.Type,
+                Organisation = organisation,
+                TimeStamp = DateTime.UtcNow,
+                EligibilityCheckHashID = result.EligibilityCheckHashID
+
+            };
+                await _db.ECSConflicts.AddAsync(ecsConflictRecord);
 
             }
-            result.EligibilityCheckHashID =
-                await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
-
-            ecsConflictRecord.HashId = result.EligibilityCheckHashID;
-            await _db.ECSConflicts.AddAsync(ecsConflictRecord);
+          
             await _db.SaveChangesAsync();
         }
 
