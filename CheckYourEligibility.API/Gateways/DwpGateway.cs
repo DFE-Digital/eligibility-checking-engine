@@ -20,9 +20,9 @@ namespace CheckYourEligibility.API.Gateways;
 public interface IDwpGateway
 {
     Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
-        CheckEligibilityType type);
+        CheckEligibilityType type, string correaltionId);
 
-    Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type);
+    Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
 }
 
 [ExcludeFromCodeCoverage]
@@ -243,7 +243,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type)
+    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
 
@@ -263,7 +263,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
             requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
             requestMessage.Headers.Add("policy-id", _DWP_ApiPolicyId);
-            requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
+            requestMessage.Headers.Add("correlation-id", correlationId);
             requestMessage.Headers.Add("context", GetContext(type));
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
