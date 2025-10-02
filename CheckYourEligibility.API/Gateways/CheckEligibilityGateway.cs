@@ -1,10 +1,5 @@
 ﻿// Ignore Spelling: Fsm
 
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using AutoMapper;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
@@ -18,7 +13,6 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NetTopologySuite.Index.HPRtree;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -713,7 +707,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
-
+        // Variables needed for ECS conflict records
+        var eceCheckResult  = CheckEligibilityStatus.parentNotFound;
+        string correlationId = Guid.NewGuid().ToString(); // for CAPI request to track request from DWP side
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
             checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
@@ -724,32 +720,24 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
+
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
                     if (_ecsGateway.UseEcsforChecks=="true")
                     {
+                        
                         checkResult = await EcsCheck(checkData);
-                        
                         source = ProcessEligibilityCheckSource.ECS;
-                    }
-                    else if(_ecsGateway.UseEcsforChecks=="false")
-                    {
+                        eceCheckResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                 
                         
-                        checkResult = await DwpCitizenCheck(checkData, checkResult);
-                        
-                        source = ProcessEligibilityCheckSource.DWP;
                     }
                     else
                     {
-                        checkResult = await EcsCheck(checkData);
-                        source = ProcessEligibilityCheckSource.DWP;
-
-                        if (await DwpCitizenCheck(checkData, checkResult) != checkResult)
-                        {
-                            source = ProcessEligibilityCheckSource.ECS_CONFLICT;
-                        }
                         
+                        checkResult = await DwpCitizenCheck(checkData, checkResult, correlationId);                 
+                        source = ProcessEligibilityCheckSource.DWP;
                     }
                 }
             }
@@ -771,8 +759,28 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         else
         {
+            //If CAPI returns a different result from ECS
+           // create a record
+            ECSConflict ecsConflictRecord = new ECSConflict();
+            if (checkResult != eceCheckResult) {
+               source =  ProcessEligibilityCheckSource.ECS_CONFLICT;
+
+                ecsConflictRecord.CorrelationId = correlationId;
+                ecsConflictRecord.ECE_Status = eceCheckResult;
+                ecsConflictRecord.ECS_Status = checkResult;
+                ecsConflictRecord.DateOfBirth = checkData.DateOfBirth;
+                ecsConflictRecord.LastName = checkData.LastName;
+                ecsConflictRecord.Nino = checkData.NationalInsuranceNumber;
+                ecsConflictRecord.Type = checkData.Type;
+                //ecsConflictRecord.LocalAuthorityId = "no clue",
+                ecsConflictRecord.TimeStamp = DateTime.UtcNow;
+
+            }
             result.EligibilityCheckHashID =
                 await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
+
+            ecsConflictRecord.HashId = result.EligibilityCheckHashID;
+            await _db.ECSConflicts.AddAsync(ecsConflictRecord);
             await _db.SaveChangesAsync();
         }
 
@@ -900,7 +908,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
 
     private async Task<CheckEligibilityStatus> DwpCitizenCheck(CheckProcessData data,
-        CheckEligibilityStatus checkResult)
+        CheckEligibilityStatus checkResult, string correlationId)
     {
         var citizenRequest = new CitizenMatchRequest
         {
@@ -954,7 +962,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = CheckEligibilityStatus.error;
             }
         }
-
+        
         return checkResult;
     }
 

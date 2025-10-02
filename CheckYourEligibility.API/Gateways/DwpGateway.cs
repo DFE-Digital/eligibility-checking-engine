@@ -39,7 +39,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly X509Certificate2 _DWP_ApiCertificate;
     private readonly string _DWP_ApiAccessLevel;
     private readonly string _DWP_ApiContext;
-    private readonly string _DWP_ApiCorrelationId;
+
 
     private readonly string _DWP_ApiInstigatingUserId;
     private readonly string _DWP_ApiPolicyId;
@@ -82,8 +82,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         }
 
         _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"];
-        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];
-        _DWP_ApiCorrelationId = _configuration["Dwp:ApiCorrelationId"];
+        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];      
         _DWP_ApiContext = _configuration["Dwp:ApiContext"];
         _DWP_ApiAccessLevel = _configuration["Dwp:ApiAccessLevel"];
 
@@ -107,7 +106,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     #region Citizen Api Rest
 
     public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
-        CheckEligibilityType type)
+        CheckEligibilityType type, string correlationId)
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
@@ -122,7 +121,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 new AuthenticationHeaderValue("Bearer", token);
             requestMessage.Headers.Add("context", GetContext(type));
             requestMessage.Headers.Add("access-level", _DWP_ApiAccessLevel);
-            requestMessage.Headers.Add("correlation-id", _DWP_ApiCorrelationId);
+            requestMessage.Headers.Add("correlation-id", correlationId);
             requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
 
             _logger.LogInformation("Dwp claim before request");
