@@ -1268,7 +1268,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         item.EligibilityCheckHash = null;
         item.EligibilityCheckHashID = null;
         item.BulkCheck = null;
-        
+        item.Status = CheckEligibilityStatus.eligible;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         
         var changeCount = await _fakeInMemoryDb.SaveChangesAsync();
