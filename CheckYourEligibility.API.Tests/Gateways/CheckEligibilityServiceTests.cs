@@ -1,6 +1,5 @@
 // Ignore Spelling: Levenshtein
 
-using System.Globalization;
 using AutoFixture;
 using AutoMapper;
 using Azure.Storage.Queues;
@@ -13,16 +12,15 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Presentation;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Moq;
 using Newtonsoft.Json;
+using System.Globalization;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -522,39 +520,37 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
     [Test]
     public void Given_ECS_Conflict_Process_Should_Create_Record_InDb() {
-        var item = _fixture.Create<EligibilityCheck>();
-        var audit =  _fixture.Create<Audit>();
-        var auditData = _fixture.Create<AuditData>();
-        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+
         var ecsConflict = _fixture.Create<ECSConflict>();
+        var capiResult = new StatusCodeResult(StatusCodes.Status404NotFound);
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
+
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();  
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
+
+        var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
-
-        auditData.authentication = "TestOrg";
-        auditData.scope = It.IsAny<string>();
-        auditData.source = It.IsAny<string>();
-        auditData.method = "POST";
-        auditData.Type = AuditType.Check;
-        auditData.typeId = item.EligibilityCheckID;
-        auditData.url = It.IsAny<string>();
-        auditData.source = It.IsAny<string>();
-
-        _fakeInMemoryDb.Audits.Add(audit);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var auditData = _fixture.Create<AuditData>();
+        //auditData.typeId = item.EligibilityCheckID;
+
+        var audit = _fixture.Create<Audit>();
+        audit.typeId = item.EligibilityCheckID;
+        _fakeInMemoryDb.Audits.Add(audit);
+
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("validate");
-        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);      
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
      .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
-        var result = new StatusCodeResult(StatusCodes.Status404NotFound);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-            .ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(auditData)).ReturnsAsync(audit.AuditID);
+            .ReturnsAsync(capiResult);
+        _moqAudit.Setup(x => x.AuditAdd(auditData)).ReturnsAsync("");
 
 
         // Act

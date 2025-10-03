@@ -775,7 +775,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             // create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = (await _db.Audits.FirstOrDefaultAsync(a => a.typeId == result.EligibilityCheckID)).authentication;
+                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == guid);
                 ECSConflict ecsConflictRecord = new() {
 
                 CorrelationId = correlationId,
@@ -785,7 +785,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 LastName = checkData.LastName,
                 Nino = checkData.NationalInsuranceNumber,
                 Type = checkData.Type,
-                Organisation = organisation,
+                Organisation = organisation.authentication,
                 TimeStamp = DateTime.UtcNow,
                 EligibilityCheckHashID = result.EligibilityCheckHashID
 

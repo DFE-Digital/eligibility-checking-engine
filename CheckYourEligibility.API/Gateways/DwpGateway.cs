@@ -311,7 +311,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
         var formData = new FormUrlEncodedContent(parameters);
 
         var response = await _httpClient.PostAsync(uri, formData);
-
         Console.WriteLine(response.Content.ReadAsStringAsync().Result);
 
         var responseData =
