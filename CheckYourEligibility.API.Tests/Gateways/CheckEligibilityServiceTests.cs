@@ -519,49 +519,6 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         response.Result.Should().Be(CheckEligibilityStatus.parentNotFound);
     }
     [Test]
-    public void Given_ECS_Conflict_Process_Should_Create_Record_InDb() {
-
-        var ecsConflict = _fixture.Create<ECSConflict>();
-        var capiResult = new StatusCodeResult(StatusCodes.Status404NotFound);
-        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
-
-        var fsm = _fixture.Create<CheckEligibilityRequestData>();  
-        fsm.DateOfBirth = "1990-01-01";
-        var dataItem = GetCheckProcessData(fsm);
-
-        var item = _fixture.Create<EligibilityCheck>();
-        item.Type = CheckEligibilityType.FreeSchoolMeals;
-        item.CheckData = JsonConvert.SerializeObject(dataItem);
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-
-        var auditData = _fixture.Create<AuditData>();
-        //auditData.typeId = item.EligibilityCheckID;
-
-        var audit = _fixture.Create<Audit>();
-        audit.typeId = item.EligibilityCheckID;
-        _fakeInMemoryDb.Audits.Add(audit);
-
-        _fakeInMemoryDb.SaveChangesAsync();
-        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("validate");
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);      
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-            .ReturnsAsync(capiResult);
-        _moqAudit.Setup(x => x.AuditAdd(auditData)).ReturnsAsync("");
-
-
-        // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID,auditData);
-
-        //Assert
-        // Should return ECS result
-        response.Result.Should().Be(CheckEligibilityStatus.eligible);
-    }
-
-    [Test]
     public void Given_validRequest_DWP_Soap_Process_Should_Return_updatedStatus_Eligible()
     {
         // Arrange
@@ -589,7 +546,46 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.eligible);
     }
+    [Test]
+    public async Task Given_ECS_Conflict_Process_Should_Create_Record_InDb()
+    {
 
+        var ecsConflict = _fixture.Create<ECSConflict>();
+        var capiResult = new StatusCodeResult(StatusCodes.Status404NotFound);
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
+
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
+
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var audit = _fixture.Create<Audit>();
+        audit.typeId = item.EligibilityCheckID;
+        _fakeInMemoryDb.Audits.Add(audit);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("validate");
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
+     .ReturnsAsync("abcabcabc1234567abcabcabc1234567abcabcabc1234567abcabcabc1234567");
+        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
+            .ReturnsAsync(capiResult);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+
+
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        //Assert
+        // Should return ECS result
+        response.Should().Be(CheckEligibilityStatus.eligible);
+    }
     [Test]
     public void Given_validRequest_DWP_Soap_Process_Should_Return_updatedStatus_notEligible()
     {
