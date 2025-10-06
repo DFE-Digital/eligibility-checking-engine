@@ -63,6 +63,7 @@ describe('GET eligibility soft check by Guid', () => {
                 cy.verifyApiResponseCode(response, 202);
                 //extract Guid
                 cy.extractGuid(response);
+                cy.wait(5000);
                 //make get request using the guid 
                 cy.get('@Guid').then((Guid) => {
                     cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
