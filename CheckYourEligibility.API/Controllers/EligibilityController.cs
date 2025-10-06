@@ -222,8 +222,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
@@ -268,9 +267,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
-    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -315,8 +312,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -361,8 +357,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -441,7 +436,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/status/{organisationId}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> BulkCheckStatuses(string organisationId)
     {
         try
@@ -532,7 +527,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> BulkUploadResults(string guid)
     {
         try
