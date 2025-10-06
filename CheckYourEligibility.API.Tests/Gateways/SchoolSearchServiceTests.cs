@@ -1,5 +1,6 @@
 // Ignore Spelling: Levenshtein
 
+using System.Threading.Tasks;
 using AutoFixture;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
@@ -11,12 +12,12 @@ namespace CheckYourEligibility.API.Tests;
 
 public class SchoolSearchServiceTests : TestBase.TestBase
 {
-    private IEligibilityCheckContext _fakeInMemoryDb;
+    private EligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;
     private Establishment Establishment;
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase("FakeInMemoryDb")
@@ -26,8 +27,13 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     }
 
     [TearDown]
-    public void Teardown()
+    public async Task Teardown()
     {
+        _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
+        _fakeInMemoryDb.LocalAuthorities.RemoveRange(_fakeInMemoryDb.LocalAuthorities);
+        _fakeInMemoryDb.MultiAcademyTrusts.RemoveRange(_fakeInMemoryDb.MultiAcademyTrusts);
+        _fakeInMemoryDb.MultiAcademyTrustSchools.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustSchools);
+        await _fakeInMemoryDb.SaveChangesAsync();
     }
 
     [Test]
@@ -46,18 +52,18 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         var response = await _sut.Search(expectedResult.EstablishmentName, la, mat);
 
         // Assert
-        if (response != null && response.Any())
-            response.First().Name.Should().BeEquivalentTo(expectedResult.EstablishmentName);
+        response.First().Name.Should().BeEquivalentTo(expectedResult.EstablishmentName);
     }
 
     [Test]
     public async Task Given_Search_Urn_Should_Return_ExpectedResult()
     {
         // Arrange
-        _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
+        //await ClearDownData();
         Establishment = _fixture.Create<Establishment>();
         var urn = 12345;
         Establishment.EstablishmentId = urn;
+        Establishment.StatusOpen = true;
         _fakeInMemoryDb.Establishments.Add(Establishment);
         _fakeInMemoryDb.SaveChanges();
         var expectedResult = _fakeInMemoryDb.Establishments.First();
@@ -68,21 +74,67 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         var response = await _sut.Search(urn.ToString(), la, mat);
 
         // Assert
-        if (response != null && response.Any())
-            response.First().Name.Should().BeEquivalentTo(expectedResult.EstablishmentName);
+        response.First().Name.Should().BeEquivalentTo(expectedResult.EstablishmentName);
     }
 
+    [Test]
+    public async Task Given_Search_Urn_OutsideLA_Should_Not_Return_Result()
+    {
+        // Arrange
+        //await ClearDownData();
+        Establishment = _fixture.Create<Establishment>();
+        var urn = 12345;
+        Establishment.EstablishmentId = urn;
+        Establishment.LocalAuthorityId = 1;
+        _fakeInMemoryDb.Establishments.Add(Establishment);
+        _fakeInMemoryDb.SaveChanges();
+        string la = "2";
+        string mat = null;
+
+        // Act
+        var response = await _sut.Search(urn.ToString(), la, mat);
+
+        // Assert
+        response.Count().Should().Be(0);
+    }
+
+    [Test]
+    public async Task Given_Search_Urn_OutsideMAT_Should_Not_Return_Result()
+    {
+        // Arrange
+        //await ClearDownData();
+        Establishment = _fixture.Create<Establishment>();
+        var urn = 12345;
+        Establishment.EstablishmentId = urn;
+        _fakeInMemoryDb.Establishments.Add(Establishment);
+        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustSchool>();
+        multiAcademyTrustSchool.SchoolId = Establishment.EstablishmentId;
+        multiAcademyTrustSchool.MultiAcademyTrust.UID = 1;
+        multiAcademyTrustSchool.TrustId = 1;
+        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+        _fakeInMemoryDb.SaveChanges();
+        string la = null;
+        string mat = "2";
+
+        // Act
+        var response = await _sut.Search(urn.ToString(), la, mat);
+
+        // Assert
+        response.Count().Should().Be(0);
+    }
+        
     [Test]
     public async Task Given_Search_With_LA_Should_Return_ExpectedResult()
     {
         // Arrange
-        _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
+        //await ClearDownData();
         var primarySchool = _fixture.Create<Establishment>();
         primarySchool.EstablishmentName = "primary school";
-        primarySchool.LocalAuthorityId = 1;
+        primarySchool.LocalAuthority.LocalAuthorityId = 1;
         var secondarySchool = _fixture.Create<Establishment>();
         secondarySchool.EstablishmentName = "secondary school";
-        secondarySchool.LocalAuthorityId = 2;
+        secondarySchool.LocalAuthority.LocalAuthorityId = 2;
+        secondarySchool.StatusOpen = true;
 
         _fakeInMemoryDb.Establishments.Add(primarySchool);
         _fakeInMemoryDb.Establishments.Add(secondarySchool);
@@ -94,27 +146,31 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         var response = await _sut.Search("school", la, mat);
 
         // Assert
-        if (response != null && response.Any())
-            response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
+        response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
     }
 
     [Test]
     public async Task Given_Search_With_MAT_Should_Return_ExpectedResult()
     {
         // Arrange
-        _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
+        //await ClearDownData();
         var primarySchool = _fixture.Create<Establishment>();
         primarySchool.EstablishmentName = "primary school";
-        primarySchool.LocalAuthorityId = 1;
+        primarySchool.LocalAuthority.LocalAuthorityId = 1;
         var secondarySchool = _fixture.Create<Establishment>();
         secondarySchool.EstablishmentName = "secondary school";
-        secondarySchool.LocalAuthorityId = 2;
+        secondarySchool.LocalAuthority.LocalAuthorityId = 2;
+        secondarySchool.StatusOpen = true;
         _fakeInMemoryDb.Establishments.Add(primarySchool);
+        _fakeInMemoryDb.SaveChanges();
         _fakeInMemoryDb.Establishments.Add(secondarySchool);
+        _fakeInMemoryDb.SaveChanges();
 
         var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustSchool>();
         multiAcademyTrustSchool.SchoolId = secondarySchool.EstablishmentId;
+        multiAcademyTrustSchool.MultiAcademyTrust.UID = 1;
         multiAcademyTrustSchool.TrustId = 1;
+        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
 
         _fakeInMemoryDb.SaveChanges();
         string la = null;
@@ -124,7 +180,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         var response = await _sut.Search("school", la, mat);
 
         // Assert
-        if (response != null && response.Any())
-            response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
+        response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
     }
 }
