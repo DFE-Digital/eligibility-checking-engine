@@ -744,8 +744,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         checkResult = await EcsCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
                         eceCheckResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
-                        source = ProcessEligibilityCheckSource.ECS_CONFLICT;
-
+                        if (checkResult != eceCheckResult) {
+                            source = ProcessEligibilityCheckSource.ECS_CONFLICT;
+                        }
+                        
                     }
 
                 }
