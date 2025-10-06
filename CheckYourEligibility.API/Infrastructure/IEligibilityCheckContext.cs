@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IEligibilityCheckContext
 {
+    DbSet<ECSConflict> ECSConflicts { get; set; }
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     DbSet<BulkCheck> BulkChecks { get; set; }
