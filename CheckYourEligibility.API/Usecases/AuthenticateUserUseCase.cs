@@ -6,6 +6,7 @@ using CheckYourEligibility.Api.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 
@@ -132,7 +133,39 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         var requestedScopesList = requestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+        // Validate local_authority scope business rule: either general OR exactly one specific ID
+        if (!ValidateLocalAuthorityScopeRule(requestedScopesList)) return false;
+
         return requestedScopesList.All(requestedScope => IsScopeValid(requestedScope, allowedScopesList));
+    }
+
+    /// <summary>
+    /// Validates the local authority scope business rule: users can have either 
+    /// general "local_authority" scope OR exactly one specific local authority ID,
+    /// but not both and not multiple specific IDs.
+    /// </summary>
+    /// <param name="requestedScopesList">Array of requested scopes</param>
+    /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
+    private static bool ValidateLocalAuthorityScopeRule(string[] requestedScopesList)
+    {
+        // Only validate local authority scope rule if local authority scopes are present
+        var hasLocalAuthorityScopes = requestedScopesList.Any(scope => 
+            scope == "local_authority" || scope.StartsWith("local_authority:"));
+            
+        if (!hasLocalAuthorityScopes)
+            return true; // No local authority scopes present, rule doesn't apply
+        
+        // Create a temporary ClaimsPrincipal to use our existing extension method
+        var claims = new List<Claim>();
+        foreach (var scope in requestedScopesList)
+        {
+            claims.Add(new Claim("scope", scope));
+        }
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+
+        // Use our existing validation logic for consistency
+        return principal.HasSingleScope("local_authority");
     }
 
     private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)
