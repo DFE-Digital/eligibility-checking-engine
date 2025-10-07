@@ -1,6 +1,5 @@
 // Ignore Spelling: Levenshtein
 
-using System.Threading.Tasks;
 using AutoFixture;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
@@ -12,12 +11,12 @@ namespace CheckYourEligibility.API.Tests;
 
 public class SchoolSearchServiceTests : TestBase.TestBase
 {
-    private EligibilityCheckContext _fakeInMemoryDb;
+    private IEligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;
     private Establishment Establishment;
 
     [SetUp]
-    public async Task Setup()
+    public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase("FakeInMemoryDb")
@@ -59,7 +58,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     public async Task Given_Search_Urn_Should_Return_ExpectedResult()
     {
         // Arrange
-        //await ClearDownData();
         Establishment = _fixture.Create<Establishment>();
         var urn = 12345;
         Establishment.EstablishmentId = urn;
@@ -81,7 +79,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     public async Task Given_Search_Urn_OutsideLA_Should_Not_Return_Result()
     {
         // Arrange
-        //await ClearDownData();
         Establishment = _fixture.Create<Establishment>();
         var urn = 12345;
         Establishment.EstablishmentId = urn;
@@ -102,7 +99,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     public async Task Given_Search_Urn_OutsideMAT_Should_Not_Return_Result()
     {
         // Arrange
-        //await ClearDownData();
         Establishment = _fixture.Create<Establishment>();
         var urn = 12345;
         Establishment.EstablishmentId = urn;
@@ -127,7 +123,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     public async Task Given_Search_With_LA_Should_Return_ExpectedResult()
     {
         // Arrange
-        //await ClearDownData();
         var primarySchool = _fixture.Create<Establishment>();
         primarySchool.EstablishmentName = "primary school";
         primarySchool.LocalAuthority.LocalAuthorityId = 1;
@@ -153,7 +148,6 @@ public class SchoolSearchServiceTests : TestBase.TestBase
     public async Task Given_Search_With_MAT_Should_Return_ExpectedResult()
     {
         // Arrange
-        //await ClearDownData();
         var primarySchool = _fixture.Create<Establishment>();
         primarySchool.EstablishmentName = "primary school";
         primarySchool.LocalAuthority.LocalAuthorityId = 1;
