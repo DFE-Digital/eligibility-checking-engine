@@ -624,7 +624,7 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task DeleteBulkUpload_returns_unauthorized_when_use_case_throws_UnauthorizedAccessException()
+    public async Task DeleteBulkUpload_returns_forbidden_when_use_case_throws_UnauthorizedAccessException()
     {
         // Arrange
         var guid = _fixture.Create<string>();
@@ -639,9 +639,10 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
         var response = await _sut.DeleteBulkUpload(guid);
 
         // Assert
-        response.Should().BeOfType<UnauthorizedObjectResult>();
-        var unauthorizedResult = (UnauthorizedObjectResult)response;
-        var errorResponse = (ErrorResponse)unauthorizedResult.Value!;
+        response.Should().BeOfType<ObjectResult>();
+        var forbiddenResult = (ObjectResult)response;
+        forbiddenResult.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        var errorResponse = (ErrorResponse)forbiddenResult.Value!;
         errorResponse.Errors.First().Title.Should().Be("Access denied. You can only delete bulk checks for your assigned local authority.");
     }
 

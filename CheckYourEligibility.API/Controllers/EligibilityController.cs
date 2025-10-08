@@ -608,9 +608,9 @@ public class EligibilityCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
-        catch (AuthenticationException ex)
+        catch (InvalidScopeException ex)
         {
-            return Unauthorized(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return StatusCode(StatusCodes.Status403Forbidden, new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
