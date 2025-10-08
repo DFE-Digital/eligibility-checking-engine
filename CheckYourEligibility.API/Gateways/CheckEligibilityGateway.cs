@@ -185,6 +185,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         try
         {
             _logger.LogInformation($"Attempting to soft delete EligibilityChecks and BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            var bulkCheckLimit = _configuration.GetValue<int>("BulkEligibilityCheckLimit");
 
             var records = await _db.CheckEligibilities
                 .Where(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted)
@@ -197,13 +198,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 throw new NotFoundException(groupId);
             }
 
-            if (records.Count > 250)
+            if (records.Count > bulkCheckLimit)
             {
                 _logger.LogWarning(
-                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding 250 max — operation aborted.");
+                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding {bulkCheckLimit} max — operation aborted.");
                 response.Success = false;
                 response.DeletedCount = 0;
-                response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is 250.";
+                response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is {bulkCheckLimit}.";
                 return response;
             }
 
