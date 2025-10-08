@@ -34,6 +34,7 @@ public class EligibilityCheckController : BaseController
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
+    private readonly string _multiAcademyTrustScopeName;
 
     // Use case services
     private readonly IProcessQueueMessagesUseCase _processQueueMessagesUseCase;
@@ -61,6 +62,7 @@ public class EligibilityCheckController : BaseController
         _logger = logger;
         _bulkUploadRecordCountLimit = configuration.GetValue<int>("BulkEligibilityCheckLimit");
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
@@ -222,7 +224,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
@@ -267,27 +269,34 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
         try
         {
-            // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
-            {
+            string userOrganisationType = User.UserOrgType();
+
+            if (string.IsNullOrEmpty(userOrganisationType)) {
+
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "No multi-academy trust or local authority scope found." }]
                 });
-            }
 
-            // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            }
+            if (userOrganisationType == _localAuthorityScopeName || userOrganisationType == _multiAcademyTrustScopeName)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
-            }
 
+                // Extract local authority IDs from user claims
+                var orgIds = User.GetSpecificScopeIds(userOrganisationType);
+
+                // Set LocalAuthorityId if not provided and user has access to only one LA
+                if (!model.LocalAuthorityId.HasValue && orgIds.Count == 1 && orgIds[0] != 0)
+                {
+                    model.LocalAuthorityId = orgIds[0];
+                }
+
+            }                 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
@@ -300,7 +309,7 @@ public class EligibilityCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
-    }
+    } 
 
     /// <summary>
     ///     Posts the array of 2YO checks
@@ -312,7 +321,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -357,7 +366,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -436,7 +445,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/status/{organisationId}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> BulkCheckStatuses(string organisationId)
     {
         try
@@ -527,7 +536,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> BulkUploadResults(string guid)
     {
         try
@@ -578,7 +587,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpDelete("/bulk-check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> DeleteBulkUpload(string guid)
     {
         try
