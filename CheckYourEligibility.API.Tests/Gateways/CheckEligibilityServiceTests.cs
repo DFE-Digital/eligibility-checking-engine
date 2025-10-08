@@ -55,6 +55,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _mapper = config.CreateMapper();
         var configForSmsApi = new Dictionary<string, string>
         {
+            { "BulkEligibilityCheckLimit", "250" },
             { "QueueFsmCheckStandard", "notSet" },
             { "QueueFsmCheckBulk", "notSet" },
             { "HashCheckDays", "7" },
@@ -1419,7 +1420,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_WithMoreThan250Records_Should_Return_ErrorMessage()
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_WithMoreThanBulkLimitRecords_Should_Return_ErrorMessage()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();

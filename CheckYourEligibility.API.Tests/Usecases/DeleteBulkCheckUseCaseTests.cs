@@ -109,7 +109,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Execute_Should_Throw_ValidationException_When_User_Does_Not_Have_Permission()
+    public async Task Execute_Should_Throw_InvalidScopeExceeption_When_User_Does_Not_Have_Permission()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
@@ -126,7 +126,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIds);
 
         // Assert
-        await act.Should().ThrowExactlyAsync<ValidationException>()
+        await act.Should().ThrowExactlyAsync<InvalidScopeException>()
             .WithMessage("Access denied. You can only delete bulk checks for your assigned local authority.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
@@ -134,7 +134,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Execute_Should_Throw_ValidationException_When_BulkCheck_Has_No_LocalAuthorityId()
+    public async Task Execute_Should_Throw_InvalidScopeException_When_BulkCheck_Has_No_LocalAuthorityId()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
@@ -150,7 +150,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIds);
 
         // Assert
-        await act.Should().ThrowExactlyAsync<ValidationException>()
+        await act.Should().ThrowExactlyAsync<InvalidScopeException>()
             .WithMessage("Access denied. You can only delete bulk checks for your assigned local authority.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);

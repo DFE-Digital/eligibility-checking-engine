@@ -561,6 +561,111 @@ public class EligibilityCheckControllerTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task DeleteBulkUpload_returns_not_found_when_use_case_returns_not_found()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        
+        // Set up controller with local authority context
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid, It.Is<IList<int>>(ids => ids.Contains(201)))).ThrowsAsync(new NotFoundException($"Bulk check with ID {guid} not found."));
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = (NotFoundObjectResult)response;
+        ((ErrorResponse)notFoundResult.Value).Errors.First().Title.Should().Be($"Bulk check with ID {guid} not found.");
+    }
+
+    [Test]
+    public async Task DeleteBulkUpload_returns_bad_request_when_use_case_returns_invalid_result()
+    {
+        // Arrange
+        var guid = "";
+        
+        // Set up controller with local authority context
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid, It.Is<IList<int>>(ids => ids.Contains(201))))
+            .ThrowsAsync(new ValidationException("Invalid Request, group ID is required."));
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Invalid Request, group ID is required.");
+    }
+
+    [Test]
+    public async Task DeleteBulkUpload_returns_ok_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var executionResult = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
+        
+        // Set up controller with local authority context
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid, It.Is<IList<int>>(ids => ids.Contains(201)))).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().Be(executionResult);
+    }
+
+    [Test]
+    public async Task DeleteBulkUpload_returns_forbidden_when_use_case_throws_UnauthorizedAccessException()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        
+        // Set up controller with local authority context
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteBulkCheckUseCase.Setup(u => u.Execute(guid, It.Is<IList<int>>(ids => ids.Contains(201))))
+            .ThrowsAsync(new InvalidScopeException("Access denied. You can only delete bulk checks for your assigned local authority."));
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var forbiddenResult = (ObjectResult)response;
+        forbiddenResult.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        var errorResponse = (ErrorResponse)forbiddenResult.Value!;
+        errorResponse.Errors.First().Title.Should().Be("Access denied. You can only delete bulk checks for your assigned local authority.");
+    }
+
+    [Test]
+    public async Task DeleteBulkUpload_returns_bad_request_when_no_local_authority_scope()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        
+        // Set up controller with NO local authority context (empty scopes)
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var response = await _sut.DeleteBulkUpload(guid);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        var errorResponse = (ErrorResponse)badRequestResult.Value!;
+        errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
     public async Task CheckEligibilityStatus_returns_not_found_when_use_case_returns_not_found()
     {
         // Arrange
