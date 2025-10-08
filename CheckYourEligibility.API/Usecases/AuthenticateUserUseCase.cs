@@ -75,24 +75,24 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             throw new InvalidClientException("The client authentication failed");
         }
 
+        // Get and validate allowed scopes from client configuration
+        var clientSettings = _jwtSettings.Clients[credentials.client_id];
+        string? allowedScopes = clientSettings?.Scope;
+
+        if (string.IsNullOrEmpty(allowedScopes))
+        {
+            _logger.LogError(
+                $"Allowed scopes not found for client: {credentials.client_id.Replace(Environment.NewLine, "")}");
+            throw new InvalidScopeException("Client is not authorized for any scopes");
+        }
+
         var jwtConfig = new JwtConfig
         {
             Key = _jwtSettings.Key,
             Issuer = _jwtSettings.Issuer,
-            ExpectedSecret = secret
-        }; // Get and validate allowed scopes
-        if (!string.IsNullOrEmpty(credentials.client_id) && !string.IsNullOrEmpty(credentials.scope))
-        {
-            var clientSettings = _jwtSettings.Clients[credentials.client_id];
-            if (clientSettings != null) jwtConfig.AllowedScopes = clientSettings.Scope;
-
-            if (string.IsNullOrEmpty(jwtConfig.AllowedScopes))
-            {
-                _logger.LogError(
-                    $"Allowed scopes not found for client: {credentials.client_id.Replace(Environment.NewLine, "")}");
-                throw new InvalidScopeException("Client is not authorized for any scopes");
-            }
-        }
+            ExpectedSecret = secret,
+            AllowedScopes = allowedScopes
+        };
 
         return await ExecuteAuthentication(credentials, jwtConfig);
     }
@@ -136,12 +136,11 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         // Parse allowed scopes (server-controlled)
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         
-        // For empty scope requests, validate against server configuration
+        // For empty scope requests, they are valid if we have server configuration
+        // (The fact that allowedScopes is not null/empty means the server is properly configured)
         if (string.IsNullOrEmpty(normalizedRequestedScopes))
         {
-            // Empty scope request is only valid if server allows it
-            // This ensures we don't bypass validation based on user input
-            return allowedScopesList.Length > 0; // Must have at least one allowed scope configured
+            return true; // Empty scope request is valid for properly configured clients
         }
 
         // Parse and validate requested scopes

@@ -450,7 +450,7 @@ public class AuthenticateUserUseCaseTests
         // This test uses reflection to access the private ValidateScopes method
         // Arrange
         var requestedScopes = ""; // Empty requested scopes
-        string allowedScopes = null; // No allowed scopes
+        string allowedScopes = "read write"; // Properly configured allowed scopes
 
         // Act
         var method = typeof(AuthenticateUserUseCase).GetMethod("ValidateScopes",
@@ -468,7 +468,7 @@ public class AuthenticateUserUseCaseTests
         // This test uses reflection to access the private ValidateScopes method
         // Arrange
         var requestedScopes = "default"; // Default scope
-        string allowedScopes = null; // No allowed scopes
+        string allowedScopes = "read write"; // Properly configured allowed scopes
 
         // Act
         var method = typeof(AuthenticateUserUseCase).GetMethod("ValidateScopes",
