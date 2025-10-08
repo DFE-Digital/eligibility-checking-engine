@@ -148,24 +148,116 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
     private static bool ValidateLocalAuthorityScopeRule(string[] requestedScopesList)
     {
+        // Validate input to prevent security issues
+        if (requestedScopesList == null || requestedScopesList.Length == 0)
+            return true;
+
+        // Sanitize and validate scope format before processing
+        var sanitizedScopes = new List<string>();
+        foreach (var scope in requestedScopesList)
+        {
+            if (string.IsNullOrWhiteSpace(scope))
+                continue;
+                
+            // Only allow alphanumeric characters, underscores, and colons for scope format
+            if (!IsValidScopeFormat(scope))
+                return false;
+                
+            sanitizedScopes.Add(scope.Trim());
+        }
+
         // Only validate local authority scope rule if local authority scopes are present
-        var hasLocalAuthorityScopes = requestedScopesList.Any(scope => 
+        var hasLocalAuthorityScopes = sanitizedScopes.Any(scope => 
             scope == "local_authority" || scope.StartsWith("local_authority:"));
             
         if (!hasLocalAuthorityScopes)
             return true; // No local authority scopes present, rule doesn't apply
-        
-        // Create a temporary ClaimsPrincipal to use our existing extension method
-        var claims = new List<Claim>();
-        foreach (var scope in requestedScopesList)
-        {
-            claims.Add(new Claim("scope", scope));
-        }
-        var identity = new ClaimsIdentity(claims);
-        var principal = new ClaimsPrincipal(identity);
 
-        // Use our existing validation logic for consistency
-        return principal.HasSingleScope("local_authority");
+        // Perform validation using direct logic instead of creating ClaimsPrincipal from user input
+        return ValidateLocalAuthorityScopeLogic(sanitizedScopes);
+    }
+
+    /// <summary>
+    /// Validates that the scope string contains only allowed characters and follows expected format.
+    /// </summary>
+    /// <param name="scope">The scope string to validate</param>
+    /// <returns>True if the scope format is valid, false otherwise</returns>
+    private static bool IsValidScopeFormat(string scope)
+    {
+        if (string.IsNullOrWhiteSpace(scope))
+            return false;
+
+        // Allow only alphanumeric characters, underscores, and colons
+        // This prevents injection of special characters that could affect processing
+        var allowedChars = scope.All(c => char.IsLetterOrDigit(c) || c == '_' || c == ':');
+        if (!allowedChars)
+            return false;
+
+        // Additional validation for specific scope patterns
+        if (scope.Contains(':'))
+        {
+            var parts = scope.Split(':');
+            if (parts.Length != 2)
+                return false;
+
+            var scopeType = parts[0];
+            var scopeId = parts[1];
+
+            // Validate known scope types
+            var validScopeTypes = new[] { "local_authority", "multi_academy_trust" };
+            if (!validScopeTypes.Contains(scopeType))
+                return false;
+
+            // Validate that ID is numeric
+            if (!int.TryParse(scopeId, out var id) || id <= 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Validates the local authority scope business rule using direct logic.
+    /// </summary>
+    /// <param name="sanitizedScopes">List of sanitized scope strings</param>
+    /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
+    private static bool ValidateLocalAuthorityScopeLogic(List<string> sanitizedScopes)
+    {
+        var hasGeneralScope = false;
+        var specificIds = new List<int>();
+        
+        foreach (var scope in sanitizedScopes)
+        {
+            // Check for general local_authority scope
+            if (scope == "local_authority")
+            {
+                hasGeneralScope = true;
+                continue;
+            }
+                
+            // Collect specific local authority IDs
+            if (scope.StartsWith("local_authority:"))
+            {
+                var idPart = scope.Substring("local_authority:".Length);
+                if (int.TryParse(idPart, out var id))
+                    specificIds.Add(id);
+            }
+        }
+        
+        // Valid scenarios:
+        // 1. Has general scope AND no specific IDs
+        // 2. Has exactly one specific ID AND no general scope
+        // Invalid scenarios:
+        // - Both general and specific scopes present
+        // - Multiple specific IDs
+        
+        if (hasGeneralScope && specificIds.Count > 0)
+            return false; // Reject if both general and specific scopes are present
+            
+        if (hasGeneralScope && specificIds.Count == 0)
+            return true; // General scope only
+            
+        return specificIds.Count == 1; // Exactly one specific ID only
     }
 
     private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)
