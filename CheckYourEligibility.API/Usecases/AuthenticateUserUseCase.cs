@@ -125,13 +125,27 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
     private static bool ValidateScopes(string? requestedScopes, string? allowedScopes)
     {
-        // Empty or default scopes are always valid
-        if (string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default") return true;
-
+        // Validate that we have allowed scopes configured (server-side configuration)
         if (string.IsNullOrEmpty(allowedScopes)) return false;
 
-        var requestedScopesList = requestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Normalize user input - treat null/empty/default as empty scope request
+        var normalizedRequestedScopes = string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default" 
+            ? string.Empty 
+            : requestedScopes;
+
+        // Parse allowed scopes (server-controlled)
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        // For empty scope requests, validate against server configuration
+        if (string.IsNullOrEmpty(normalizedRequestedScopes))
+        {
+            // Empty scope request is only valid if server allows it
+            // This ensures we don't bypass validation based on user input
+            return allowedScopesList.Length > 0; // Must have at least one allowed scope configured
+        }
+
+        // Parse and validate requested scopes
+        var requestedScopesList = normalizedRequestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         // Validate local_authority scope business rule: either general OR exactly one specific ID
         if (!ValidateLocalAuthorityScopeRule(requestedScopesList)) return false;
@@ -148,33 +162,54 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
     private static bool ValidateLocalAuthorityScopeRule(string[] requestedScopesList)
     {
-        // Validate input to prevent security issues
-        if (requestedScopesList == null || requestedScopesList.Length == 0)
-            return true;
-
-        // Sanitize and validate scope format before processing
-        var sanitizedScopes = new List<string>();
-        foreach (var scope in requestedScopesList)
-        {
-            if (string.IsNullOrWhiteSpace(scope))
-                continue;
-                
-            // Only allow alphanumeric characters, underscores, and colons for scope format
-            if (!IsValidScopeFormat(scope))
-                return false;
-                
-            sanitizedScopes.Add(scope.Trim());
-        }
-
         // Only validate local authority scope rule if local authority scopes are present
-        var hasLocalAuthorityScopes = sanitizedScopes.Any(scope => 
+        var hasLocalAuthorityScopes = requestedScopesList.Any(scope => 
             scope == "local_authority" || scope.StartsWith("local_authority:"));
             
         if (!hasLocalAuthorityScopes)
             return true; // No local authority scopes present, rule doesn't apply
 
-        // Perform validation using direct logic instead of creating ClaimsPrincipal from user input
-        return ValidateLocalAuthorityScopeLogic(sanitizedScopes);
+        // Validate and sanitize scopes before creating ClaimsPrincipal
+        var sanitizedScopes = ValidateAndSanitizeScopes(requestedScopesList);
+        if (sanitizedScopes == null)
+            return false; // Invalid scopes detected
+
+        // Now safely create ClaimsPrincipal with validated data and reuse existing logic
+        var claims = sanitizedScopes.Select(scope => new Claim("scope", scope));
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+
+        // Use our existing validation logic for consistency
+        return principal.HasSingleScope("local_authority");
+    }
+
+    /// <summary>
+    /// Validates and sanitizes scope strings to ensure they are safe for processing.
+    /// </summary>
+    /// <param name="scopes">Array of scope strings to validate</param>
+    /// <returns>List of sanitized scopes, or null if any scope is invalid</returns>
+    private static List<string>? ValidateAndSanitizeScopes(string[] scopes)
+    {
+        if (scopes == null || scopes.Length == 0)
+            return new List<string>();
+
+        var sanitizedScopes = new List<string>();
+        
+        foreach (var scope in scopes)
+        {
+            if (string.IsNullOrWhiteSpace(scope))
+                continue;
+                
+            var trimmedScope = scope.Trim();
+            
+            // Validate scope format for security
+            if (!IsValidScopeFormat(trimmedScope))
+                return null; // Invalid scope detected
+                
+            sanitizedScopes.Add(trimmedScope);
+        }
+
+        return sanitizedScopes;
     }
 
     /// <summary>
@@ -214,50 +249,6 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// Validates the local authority scope business rule using direct logic.
-    /// </summary>
-    /// <param name="sanitizedScopes">List of sanitized scope strings</param>
-    /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
-    private static bool ValidateLocalAuthorityScopeLogic(List<string> sanitizedScopes)
-    {
-        var hasGeneralScope = false;
-        var specificIds = new List<int>();
-        
-        foreach (var scope in sanitizedScopes)
-        {
-            // Check for general local_authority scope
-            if (scope == "local_authority")
-            {
-                hasGeneralScope = true;
-                continue;
-            }
-                
-            // Collect specific local authority IDs
-            if (scope.StartsWith("local_authority:"))
-            {
-                var idPart = scope.Substring("local_authority:".Length);
-                if (int.TryParse(idPart, out var id))
-                    specificIds.Add(id);
-            }
-        }
-        
-        // Valid scenarios:
-        // 1. Has general scope AND no specific IDs
-        // 2. Has exactly one specific ID AND no general scope
-        // Invalid scenarios:
-        // - Both general and specific scopes present
-        // - Multiple specific IDs
-        
-        if (hasGeneralScope && specificIds.Count > 0)
-            return false; // Reject if both general and specific scopes are present
-            
-        if (hasGeneralScope && specificIds.Count == 0)
-            return true; // General scope only
-            
-        return specificIds.Count == 1; // Exactly one specific ID only
     }
 
     private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)
