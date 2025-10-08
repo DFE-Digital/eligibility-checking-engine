@@ -921,8 +921,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return convertEcsResultStatus(result);
     }
 
-
-    private async Task<CheckEligibilityStatus> DwpCitizenCheck(CheckProcessData data,
+    private async Task<CAPIClaimResponse> DwpCitizenCheck(CheckProcessData data,
         CheckEligibilityStatus checkResult, string correlationId)
     {
         var citizenRequest = new CitizenMatchRequest
@@ -945,11 +944,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _logger.LogInformation($"Dwp before getting citizen");
 
         _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
-        var guid = await _dwpGateway.GetCitizen(citizenRequest, data.Type, correlationId);
+        var citizenResponse = await _dwpGateway.GetCitizen(citizenRequest, data.Type, correlationId);
         _logger.LogInformation($"Dwp after getting citizen");
-        if (guid.Length != 64)
+
+        if (string.IsNullOrEmpty(citizenResponse.Guid))
         {
-            _logger.LogInformation($"Dwp after getting citizen error " + guid);
+            _logger.LogInformation($"Dwp after getting citizen error " + citizenResponse.checkEligibilityStatus );
             return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
         }
 

@@ -22,7 +22,7 @@ public interface IDwpGateway
     Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correaltionId);
 
-    Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
+    Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
 }
 
 [ExcludeFromCodeCoverage]
@@ -243,9 +243,13 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
+    public async Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
+        // ECS_Conflict helper logic to better track conflicts
+        CAPICitizenResponse citizenResponse = new();
+        citizenResponse.Guid = string.Empty;
+        citizenResponse.CAPIEndpoint = "/v2/citizens/match";
 
         _logger.LogInformation($"Dwp before citizen token");
         string token = await GetToken();
@@ -272,30 +276,47 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _logger.LogInformation($"Dwp after citizen request");
             _logger.LogInformation("Dwp " + response.StatusCode.ToString());
             _logger.LogInformation($"Dwp response " + response.Content.ReadAsStringAsync().Result);
+
+            // ECS_Conflict helper logic to better track conflicts
+            citizenResponse.CAPIResponseCode = response.StatusCode;
+          
+
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
                     JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
-                return responseData.Data.Id;
+                citizenResponse.Guid = responseData.Data.Id;
+                return citizenResponse;
             }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
 
-            if (response.StatusCode == HttpStatusCode.NotFound) return CheckEligibilityStatus.parentNotFound.ToString();
-
-            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+                citizenResponse.checkEligibilityStatus = CheckEligibilityStatus.parentNotFound;
+                citizenResponse.Reason = "No Resource Found";
+                return citizenResponse;
+            }
+            else if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
                 _logger.LogInformation("DWP Duplicate matches found");
                 TrackMetric("DWP Duplicate Matches Found", 1);
-                return CheckEligibilityStatus.error.ToString();
+                citizenResponse.checkEligibilityStatus = CheckEligibilityStatus.error;
+                citizenResponse.Reason = "Unprocessable Entity - The request was well-formed but was unable to be performed due to validation/semantic errors.";
+                return citizenResponse;
             }
-
-            _logger.LogInformation(
-                $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            return CheckEligibilityStatus.error.ToString();
+            else {
+                string errorMessage = $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+                _logger.LogInformation(errorMessage);
+                citizenResponse.checkEligibilityStatus = CheckEligibilityStatus.error;
+                citizenResponse.Reason = errorMessage;
+                return citizenResponse;
+            }            
         }
         catch (Exception ex)
-        {
+        {   
             _logger.LogError(ex, $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri}");
-            return CheckEligibilityStatus.error.ToString();
+            citizenResponse.checkEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.Reason = ex.Message;
+            return citizenResponse;
         }
     }
 
