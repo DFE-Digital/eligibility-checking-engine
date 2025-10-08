@@ -4,8 +4,11 @@ namespace CheckYourEligibility.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
+    private static readonly string _localAuthorityScope = "local_authority";
+    private static readonly string _multiAcademyTrust = "multi_academy_trust";
+    private static readonly string _establishment = "establishment";
     /// <summary>
-    /// Gets all specific scope ids from the user's claims.
+    /// Gets all specific scope id s from the user's claims.
     /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
     /// </summary>
     public static List<int> GetSpecificScopeIds(this ClaimsPrincipal user, string scopeName)
@@ -65,5 +68,26 @@ public static class ClaimsPrincipalExtensions
         }
 
         return false;
+    }
+    /// <summary>
+    /// Check user organisation which will be passed in the scope.
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    public static string UserOrgType(this ClaimsPrincipal user) {
+        var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();    
+        string scopes = scopeClaims[0].Value;
+        if (scopes.Contains(_localAuthorityScope))
+        {
+             return _localAuthorityScope;
+        }
+        else if (scopes.Contains(_multiAcademyTrust))
+        {
+             return _multiAcademyTrust;
+        }
+        else
+        {
+             return _establishment;
+        }      
     }
 }

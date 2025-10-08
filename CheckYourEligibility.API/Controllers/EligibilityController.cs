@@ -34,6 +34,7 @@ public class EligibilityCheckController : BaseController
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
+    private readonly string _multiAcademyTrustScopeName;
 
     // Use case services
     private readonly IProcessQueueMessagesUseCase _processQueueMessagesUseCase;
@@ -61,6 +62,7 @@ public class EligibilityCheckController : BaseController
         _logger = logger;
         _bulkUploadRecordCountLimit = configuration.GetValue<int>("BulkEligibilityCheckLimit");
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
@@ -272,22 +274,29 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
-            {
+            string userOrganisationType = User.UserOrgType();
+
+            if (string.IsNullOrEmpty(userOrganisationType)) {
+
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "No multi-academy trust or local authority scope found." }]
                 });
-            }
 
-            // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            }
+            if (userOrganisationType == _localAuthorityScopeName || userOrganisationType == _multiAcademyTrustScopeName)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
-            }
 
+                // Extract local authority IDs from user claims
+                var orgIds = User.GetSpecificScopeIds(userOrganisationType);
+
+                // Set LocalAuthorityId if not provided and user has access to only one LA
+                if (!model.LocalAuthorityId.HasValue && orgIds.Count == 1 && orgIds[0] != 0)
+                {
+                    model.LocalAuthorityId = orgIds[0];
+                }
+
+            }                 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
@@ -300,7 +309,7 @@ public class EligibilityCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
-    }
+    } 
 
     /// <summary>
     ///     Posts the array of 2YO checks

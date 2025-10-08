@@ -138,7 +138,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
     {
         try
@@ -232,7 +232,7 @@ public class ApplicationController : BaseController
     [Consumes("multipart/form-data")]
     [HttpPost("/application/bulk-import")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
     public async Task<ActionResult> BulkImportApplications([FromForm] ApplicationBulkImportRequest request)
     {
@@ -275,7 +275,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json")]
     [HttpPost("/application/bulk-import-json")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
     public async Task<ActionResult> BulkImportApplicationsFromJson([FromBody] ApplicationBulkImportJsonRequest request)
     {
