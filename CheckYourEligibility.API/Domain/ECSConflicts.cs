@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 namespace CheckYourEligibility.API.Domain
 {
@@ -20,6 +21,10 @@ namespace CheckYourEligibility.API.Domain
        public DateTime TimeStamp { get; set; }
        public string EligibilityCheckHashID { get; set; }
        public virtual EligibilityCheckHash EligibilityCheckHash { get; set; }
-   
+       public HttpStatusCode CAPIResponseCode { get; set; }
+       public string CAPIEndpoint { get; set; }
+       public string Reason { get; set; }
+
+
     }
 }

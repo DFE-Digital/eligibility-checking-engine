@@ -709,6 +709,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
+        CAPIClaimResponse capiClaimResponse = new(); 
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
         string correlationId = Guid.NewGuid().ToString(); // for CAPI request to track request from DWP side
@@ -736,18 +737,22 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     else if (_ecsGateway.UseEcsforChecks == "false")
                     {
 
-                        checkResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                        checkResult = capiClaimResponse.CheckEligibilityStatus;
                         source = ProcessEligibilityCheckSource.DWP;
                     }
                     else // do both checks
                     {
                         checkResult = await EcsCheck(checkData);
                         source = ProcessEligibilityCheckSource.DWP;
-                        eceCheckResult = await DwpCitizenCheck(checkData, checkResult, correlationId);
-                        if (checkResult != eceCheckResult) {
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
+
+                        if (checkResult != eceCheckResult)
+                        {
                             source = ProcessEligibilityCheckSource.ECS_CONFLICT;
                         }
-                        
+
                     }
 
                 }
@@ -774,28 +779,33 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
               await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
 
             //If CAPI returns a different result from ECS
-            // create a record
+           // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
                 var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == guid);
-                ECSConflict ecsConflictRecord = new() {
+                ECSConflict ecsConflictRecord = new()
+                {
 
-                CorrelationId = correlationId,
-                ECE_Status = eceCheckResult,
-                ECS_Status = checkResult,
-                DateOfBirth = checkData.DateOfBirth,
-                LastName = checkData.LastName,
-                Nino = checkData.NationalInsuranceNumber,
-                Type = checkData.Type,
-                Organisation = organisation.authentication,
-                TimeStamp = DateTime.UtcNow,
-                EligibilityCheckHashID = result.EligibilityCheckHashID
+                    CorrelationId = correlationId,
+                    ECE_Status = eceCheckResult,
+                    ECS_Status = checkResult,
+                    DateOfBirth = checkData.DateOfBirth,
+                    LastName = checkData.LastName,
+                    Nino = checkData.NationalInsuranceNumber,
+                    Type = checkData.Type,
+                    Organisation = organisation.authentication,
+                    TimeStamp = DateTime.UtcNow,
+                    EligibilityCheckHashID = result.EligibilityCheckHashID,
+                    CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
+                    Reason = capiClaimResponse.Reason,
+                    CAPIResponseCode = capiClaimResponse.CAPIResponseCode
 
-            };
+
+                };
                 await _db.ECSConflicts.AddAsync(ecsConflictRecord);
 
             }
-          
+
             await _db.SaveChangesAsync();
         }
 
@@ -924,6 +934,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private async Task<CAPIClaimResponse> DwpCitizenCheck(CheckProcessData data,
         CheckEligibilityStatus checkResult, string correlationId)
     {
+
+        // ECS_Conflict helper logic to better track conflicts
+        CAPIClaimResponse claimResponse = new();
+
         var citizenRequest = new CitizenMatchRequest
         {
             Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
@@ -939,7 +953,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
         };
         //check citizen
-        // if a guid is not valid ie the request failed then the status is updated
+        // if a guid empty ie the request failed then the status is updated
 
         _logger.LogInformation($"Dwp before getting citizen");
 
@@ -949,36 +963,44 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         if (string.IsNullOrEmpty(citizenResponse.Guid))
         {
-            _logger.LogInformation($"Dwp after getting citizen error " + citizenResponse.checkEligibilityStatus );
-            return (CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), guid);
+            _logger.LogInformation($"Dwp after getting citizen error " + citizenResponse.CheckEligibilityStatus);
+            return citizenResponse;
         }
-
-        if (!string.IsNullOrEmpty(guid))
+        // Guid returned = citizen found
+        else
         {
             _logger.LogInformation($"Dwp has valid citizen");
-            //check for benefit
-            var result = await _dwpGateway.GetCitizenClaims(guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
-            _logger.LogInformation($"Dwp after getting claim");
 
-            if (result.StatusCode == StatusCodes.Status200OK)
+            // Perform a benefit check
+            var result = await _dwpGateway.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+
+            DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
+            _logger.LogInformation($"Dwp after getting claim");
+  
+            if (result.Item1.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;
                 _logger.LogInformation($"Dwp is eligible");
+
             }
-            else if (result.StatusCode == StatusCodes.Status404NotFound)
+            else if (result.Item1.StatusCode == StatusCodes.Status404NotFound)
             {
                 checkResult = CheckEligibilityStatus.notEligible;
+
                 _logger.LogInformation($"Dwp is not found");
             }
             else
-            {
-                _logger.LogError($"Dwp Error unknown Response status code:-{result.StatusCode}.");
+            {  
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.Item1.StatusCode}.");
                 checkResult = CheckEligibilityStatus.error;
             }
-        }
-
-        return checkResult;
+            // ECS_Conflict helper logic to better track conflicts
+            claimResponse.CAPIEndpoint =
+               $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
+            claimResponse.CheckEligibilityStatus = checkResult;
+            claimResponse.Reason = result.Item2; // reason message returned from DWP gateway
+        } 
+        return claimResponse;
     }
 
     private CheckEligibilityStatus CheckSurname(string lastNamePartial, IQueryable<string> validData)
