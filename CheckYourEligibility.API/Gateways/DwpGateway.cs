@@ -19,10 +19,10 @@ namespace CheckYourEligibility.API.Gateways;
 
 public interface IDwpGateway
 {
-    Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+    Task<(StatusCodeResult,string)> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correaltionId);
 
-    Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
+    Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
 }
 
 [ExcludeFromCodeCoverage]
@@ -105,13 +105,13 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     #region Citizen Api Rest
 
-    public async Task<StatusCodeResult> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+    public async Task<(StatusCodeResult, string)> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correlationId)
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
         string token = await GetToken();
-
+        string reason = string.Empty;
         try
         {
             _logger.LogInformation("Dwp claim before token");
@@ -134,21 +134,39 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
-                if (CheckBenefitEntitlement(guid, claims, type)) return new OkResult();
+                if (CheckBenefitEntitlement(guid, claims, type)) {
+                  // ECS_Conflict helper logic to better track conflicts
+                    reason =
+                        "CAPI confirms citizen has benefit of type -" +
+                        "employment_support_allowance_income_based" +
+                        "or income_support, " +
+                        "or job_seekers_allowance_income_based, " +
+                        "or pensions_credit " +
+                        "or universal_credit ";
+                    return (new OkResult(), reason);
 
-                return new NotFoundResult();
+                }
+                // ECS_Conflict helper logic to better track conflicts
+                reason = "CAPI returned status 200, but no benefits found after using business logic.";
+                return (new NotFoundResult(),reason);
             }
 
-            if (response.StatusCode == HttpStatusCode.NotFound) return new NotFoundResult();
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                // ECS_Conflict helper logic to better track conflicts
+                reason = "CAPI did not find any data for this citizen.";
+                return (new NotFoundResult(), reason);
+            }
 
-            _logger.LogInformation(
-                $"Get CheckForBenefit failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            return new InternalServerErrorResult();
+            string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+            _logger.LogInformation(errorMessage);
+            return (new InternalServerErrorResult(), errorMessage);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"CheckForBenefit failed. uri:-{_httpClient.BaseAddress}{uri}");
-            return new InternalServerErrorResult();
+            string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+            _logger.LogError(ex, errorMessage);
+            return (new InternalServerErrorResult(), errorMessage);
         }
     }
 
@@ -243,9 +261,14 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    public async Task<string?> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
+    public async Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
     {
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
+        // ECS_Conflict helper logic to better track conflicts
+        CAPICitizenResponse citizenResponse = new();
+        citizenResponse.CAPIEndpoint = string.Empty;
+        citizenResponse.Guid = string.Empty;
+        citizenResponse.CAPIEndpoint = "/v2/citizens/match";
 
         _logger.LogInformation($"Dwp before citizen token");
         string token = await GetToken();
@@ -272,30 +295,48 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _logger.LogInformation($"Dwp after citizen request");
             _logger.LogInformation("Dwp " + response.StatusCode.ToString());
             _logger.LogInformation($"Dwp response " + response.Content.ReadAsStringAsync().Result);
+
+            // ECS_Conflict helper logic to better track conflicts
+            citizenResponse.CAPIResponseCode = response.StatusCode;
+          
+
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
                     JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
-                return responseData.Data.Id;
+                citizenResponse.Guid = responseData.Data.Id;
+                return citizenResponse;
             }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
 
-            if (response.StatusCode == HttpStatusCode.NotFound) return CheckEligibilityStatus.parentNotFound.ToString();
-
-            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+                citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.parentNotFound;
+                citizenResponse.Reason = "No citizen found";
+                return citizenResponse;
+            }
+            else if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
                 _logger.LogInformation("DWP Duplicate matches found");
                 TrackMetric("DWP Duplicate Matches Found", 1);
-                return CheckEligibilityStatus.error.ToString();
+                citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+                citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
+                return citizenResponse;
             }
-
-            _logger.LogInformation(
-                $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}");
-            return CheckEligibilityStatus.error.ToString();
+            else {
+                string errorMessage = $"CAPI failed getting citizen. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+                _logger.LogInformation(errorMessage);
+                citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+                citizenResponse.Reason = errorMessage;
+                return citizenResponse;
+            }            
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri}");
-            return CheckEligibilityStatus.error.ToString();
+            string errorMessage = $"ECE failed making a requet to GET citizen. uri:-{_httpClient.BaseAddress}{uri}";
+            _logger.LogError(ex, errorMessage);
+            citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.Reason = errorMessage;
+            return citizenResponse;
         }
     }
 
