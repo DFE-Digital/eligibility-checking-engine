@@ -6,6 +6,7 @@ using CheckYourEligibility.Api.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 
@@ -74,24 +75,24 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             throw new InvalidClientException("The client authentication failed");
         }
 
+        // Get and validate allowed scopes from client configuration
+        var clientSettings = _jwtSettings.Clients[credentials.client_id];
+        string? allowedScopes = clientSettings?.Scope;
+
+        if (string.IsNullOrEmpty(allowedScopes))
+        {
+            _logger.LogError(
+                $"Allowed scopes not found for client: {credentials.client_id.Replace(Environment.NewLine, "")}");
+            throw new InvalidScopeException("Client is not authorized for any scopes");
+        }
+
         var jwtConfig = new JwtConfig
         {
             Key = _jwtSettings.Key,
             Issuer = _jwtSettings.Issuer,
-            ExpectedSecret = secret
-        }; // Get and validate allowed scopes
-        if (!string.IsNullOrEmpty(credentials.client_id) && !string.IsNullOrEmpty(credentials.scope))
-        {
-            var clientSettings = _jwtSettings.Clients[credentials.client_id];
-            if (clientSettings != null) jwtConfig.AllowedScopes = clientSettings.Scope;
-
-            if (string.IsNullOrEmpty(jwtConfig.AllowedScopes))
-            {
-                _logger.LogError(
-                    $"Allowed scopes not found for client: {credentials.client_id.Replace(Environment.NewLine, "")}");
-                throw new InvalidScopeException("Client is not authorized for any scopes");
-            }
-        }
+            ExpectedSecret = secret,
+            AllowedScopes = allowedScopes
+        };
 
         return await ExecuteAuthentication(credentials, jwtConfig);
     }
@@ -124,15 +125,129 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
     private static bool ValidateScopes(string? requestedScopes, string? allowedScopes)
     {
-        // Empty or default scopes are always valid
-        if (string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default") return true;
-
+        // Validate that we have allowed scopes configured (server-side configuration)
         if (string.IsNullOrEmpty(allowedScopes)) return false;
 
-        var requestedScopesList = requestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Normalize user input - treat null/empty/default as empty scope request
+        var normalizedRequestedScopes = string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default" 
+            ? string.Empty 
+            : requestedScopes;
+
+        // Parse allowed scopes (server-controlled)
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        // For empty scope requests, they are valid if we have server configuration
+        // (The fact that allowedScopes is not null/empty means the server is properly configured)
+        if (string.IsNullOrEmpty(normalizedRequestedScopes))
+        {
+            return true; // Empty scope request is valid for properly configured clients
+        }
+
+        // Parse and validate requested scopes
+        var requestedScopesList = normalizedRequestedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        // Validate local_authority scope business rule: either general OR exactly one specific ID
+        if (!ValidateLocalAuthorityScopeRule(requestedScopesList)) return false;
 
         return requestedScopesList.All(requestedScope => IsScopeValid(requestedScope, allowedScopesList));
+    }
+
+    /// <summary>
+    /// Validates the local authority scope business rule: users can have either 
+    /// general "local_authority" scope OR exactly one specific local authority ID,
+    /// but not both and not multiple specific IDs.
+    /// </summary>
+    /// <param name="requestedScopesList">Array of requested scopes</param>
+    /// <returns>True if the local authority scope rule is satisfied, false otherwise</returns>
+    private static bool ValidateLocalAuthorityScopeRule(string[] requestedScopesList)
+    {
+        // Only validate local authority scope rule if local authority scopes are present
+        var hasLocalAuthorityScopes = requestedScopesList.Any(scope => 
+            scope == "local_authority" || scope.StartsWith("local_authority:"));
+            
+        if (!hasLocalAuthorityScopes)
+            return true; // No local authority scopes present, rule doesn't apply
+
+        // Validate and sanitize scopes before creating ClaimsPrincipal
+        var sanitizedScopes = ValidateAndSanitizeScopes(requestedScopesList);
+        if (sanitizedScopes == null)
+            return false; // Invalid scopes detected
+
+        // Now safely create ClaimsPrincipal with validated data and reuse existing logic
+        var claims = sanitizedScopes.Select(scope => new Claim("scope", scope));
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+
+        // Use our existing validation logic for consistency
+        return principal.HasSingleScope("local_authority");
+    }
+
+    /// <summary>
+    /// Validates and sanitizes scope strings to ensure they are safe for processing.
+    /// </summary>
+    /// <param name="scopes">Array of scope strings to validate</param>
+    /// <returns>List of sanitized scopes, or null if any scope is invalid</returns>
+    private static List<string>? ValidateAndSanitizeScopes(string[] scopes)
+    {
+        if (scopes == null || scopes.Length == 0)
+            return new List<string>();
+
+        var sanitizedScopes = new List<string>();
+        
+        foreach (var scope in scopes)
+        {
+            if (string.IsNullOrWhiteSpace(scope))
+                continue;
+                
+            var trimmedScope = scope.Trim();
+            
+            // Validate scope format for security
+            if (!IsValidScopeFormat(trimmedScope))
+                return null; // Invalid scope detected
+                
+            sanitizedScopes.Add(trimmedScope);
+        }
+
+        return sanitizedScopes;
+    }
+
+    /// <summary>
+    /// Validates that the scope string contains only allowed characters and follows expected format.
+    /// </summary>
+    /// <param name="scope">The scope string to validate</param>
+    /// <returns>True if the scope format is valid, false otherwise</returns>
+    private static bool IsValidScopeFormat(string scope)
+    {
+        if (string.IsNullOrWhiteSpace(scope))
+            return false;
+
+        // Allow only alphanumeric characters, underscores, and colons
+        // This prevents injection of special characters that could affect processing
+        var allowedChars = scope.All(c => char.IsLetterOrDigit(c) || c == '_' || c == ':');
+        if (!allowedChars)
+            return false;
+
+        // Additional validation for specific scope patterns
+        if (scope.Contains(':'))
+        {
+            var parts = scope.Split(':');
+            if (parts.Length != 2)
+                return false;
+
+            var scopeType = parts[0];
+            var scopeId = parts[1];
+
+            // Validate known scope types
+            var validScopeTypes = new[] { "local_authority", "multi_academy_trust" };
+            if (!validScopeTypes.Contains(scopeType))
+                return false;
+
+            // Validate that ID is numeric
+            if (!int.TryParse(scopeId, out var id) || id <= 0)
+                return false;
+        }
+
+        return true;
     }
 
     private static bool IsScopeValid(string requestedScope, string[] allowedScopesList)

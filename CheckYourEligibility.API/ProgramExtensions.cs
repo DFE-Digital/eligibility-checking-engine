@@ -107,7 +107,7 @@ public static class ProgramExtensions
         {
             options.AddPolicy(PolicyNames.RequireLocalAuthorityScope, policy =>
                 policy.RequireAssertion(context =>
-                    context.User.HasScopeWithColon(configuration["Jwt:Scopes:local_authority"] ?? "local_authority")));
+                    context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority")));
             
             options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
                 policy.RequireAssertion(context =>
