@@ -158,13 +158,13 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 return (new NotFoundResult(), reason);
             }
 
-            string errorMessage = $"Get CheckForBenefit failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+            string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
             _logger.LogInformation(errorMessage);
             return (new InternalServerErrorResult(), errorMessage);
         }
         catch (Exception ex)
         {
-            string errorMessage = $"CheckForBenefit failed. uri:-{_httpClient.BaseAddress}{uri}";
+            string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
             _logger.LogError(ex, errorMessage);
             return (new InternalServerErrorResult(), errorMessage);
         }
@@ -266,6 +266,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
         var uri = $"{_DWP_ApiHost}/v2/citizens/match";
         // ECS_Conflict helper logic to better track conflicts
         CAPICitizenResponse citizenResponse = new();
+        citizenResponse.CAPIEndpoint = string.Empty;
         citizenResponse.Guid = string.Empty;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
 
@@ -310,7 +311,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             {
 
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.parentNotFound;
-                citizenResponse.Reason = "No Resource Found";
+                citizenResponse.Reason = "No citizen found";
                 return citizenResponse;
             }
             else if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
@@ -318,11 +319,11 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 _logger.LogInformation("DWP Duplicate matches found");
                 TrackMetric("DWP Duplicate Matches Found", 1);
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-                citizenResponse.Reason = "Unprocessable Entity - The request was well-formed but was unable to be performed due to validation/semantic errors.";
+                citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
                 return citizenResponse;
             }
             else {
-                string errorMessage = $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+                string errorMessage = $"CAPI failed getting citizen. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
                 _logger.LogInformation(errorMessage);
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
                 citizenResponse.Reason = errorMessage;
@@ -330,10 +331,11 @@ public class DwpGateway : BaseGateway, IDwpGateway
             }            
         }
         catch (Exception ex)
-        {   
-            _logger.LogError(ex, $"Get Citizen failed. uri:-{_httpClient.BaseAddress}{uri}");
+        {
+            string errorMessage = $"ECE failed making a requet to GET citizen. uri:-{_httpClient.BaseAddress}{uri}";
+            _logger.LogError(ex, errorMessage);
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-            citizenResponse.Reason = ex.Message;
+            citizenResponse.Reason = errorMessage;
             return citizenResponse;
         }
     }

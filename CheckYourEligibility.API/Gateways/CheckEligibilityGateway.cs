@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -931,7 +932,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return convertEcsResultStatus(result);
     }
 
-    private async Task<CAPIClaimResponse> DwpCitizenCheck(CheckProcessData data,
+    public async Task<CAPIClaimResponse> DwpCitizenCheck(CheckProcessData data,
         CheckEligibilityStatus checkResult, string correlationId)
     {
 
@@ -973,7 +974,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             // Perform a benefit check
             var result = await _dwpGateway.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-
             DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
             _logger.LogInformation($"Dwp after getting claim");
   
@@ -999,6 +999,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
             claimResponse.CheckEligibilityStatus = checkResult;
             claimResponse.Reason = result.Item2; // reason message returned from DWP gateway
+            claimResponse.CAPIResponseCode = (HttpStatusCode)result.Item1.StatusCode;
         } 
         return claimResponse;
     }
