@@ -578,7 +578,7 @@ public class EligibilityCheckController : BaseController
     }
 
     /// <summary>
-    ///     Loads results of bulk loads given a group Id
+    ///     Soft deletes bulk check given a group Id
     /// </summary>
     /// <param name="guid"></param>
     /// <returns></returns>
@@ -616,6 +616,10 @@ public class EligibilityCheckController : BaseController
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+        catch (InvalidScopeException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
