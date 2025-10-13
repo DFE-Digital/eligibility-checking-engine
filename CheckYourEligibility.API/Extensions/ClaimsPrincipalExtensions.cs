@@ -74,21 +74,23 @@ public static class ClaimsPrincipalExtensions
     /// </summary>
     /// <param name="user"></param>
     /// <returns></returns>
-    public static string UserOrgType(this ClaimsPrincipal user) {
-        var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();    
+    public static string UserOrgType(this ClaimsPrincipal user)
+    {
+        var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
         string scopes = scopeClaims[0].Value;
         if (scopes.Contains(_localAuthorityScope))
         {
-             return _localAuthorityScope;
+            return _localAuthorityScope;
         }
         else if (scopes.Contains(_multiAcademyTrust))
         {
-             return _multiAcademyTrust;
+            return _multiAcademyTrust;
         }
         else
         {
-             return _establishment;
-        }      
+            return _establishment;
+        }
+    }
 
     /// <summary>
     /// Checks if the user has either general scope OR exactly one specific scope ID, but not both.
