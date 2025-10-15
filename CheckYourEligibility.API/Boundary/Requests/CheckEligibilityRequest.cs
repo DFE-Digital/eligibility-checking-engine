@@ -156,7 +156,44 @@ public class CheckFSMModelExample : IExamplesProvider<CheckEligibilityRequest<Ch
                 NationalInsuranceNumber = "AB123456C",
                 NationalAsylumSeekerServiceNumber = "AB123456C",
                 LastName = "Smith",
-                DateOfBirth = "2024-01-01"
+                DateOfBirth = "2024-01-01",
+                Type = CheckEligibilityType.FreeSchoolMeals,
+            }
+        };
+    }
+}
+
+public class CheckEYPPModelExample : IExamplesProvider<CheckEligibilityRequest<CheckEligibilityRequestData>>
+{
+    public CheckEligibilityRequest<CheckEligibilityRequestData> GetExamples()
+    {
+        return new CheckEligibilityRequest<CheckEligibilityRequestData>
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = "AB123456C",
+                LastName = "Smith",
+                DateOfBirth = "2024-01-01",
+                Type = CheckEligibilityType.EarlyYearPupilPremium,
+            }
+        };
+    }
+}
+
+public class Check2YOModelExample : IExamplesProvider<CheckEligibilityRequest<CheckEligibilityRequestData>>
+{
+    public CheckEligibilityRequest<CheckEligibilityRequestData> GetExamples()
+    {
+        return new CheckEligibilityRequest<CheckEligibilityRequestData>
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                NationalInsuranceNumber = "AB123456C",
+                NationalAsylumSeekerServiceNumber = "AB123456C",
+                LastName = "Smith",
+                DateOfBirth = "2024-01-01",
+                Type = CheckEligibilityType.TwoYearOffer,
             }
         };
     }
