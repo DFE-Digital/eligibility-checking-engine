@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Extensions;
@@ -8,7 +9,7 @@ public static class ClaimsPrincipalExtensions
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
     /// <summary>
-    /// Gets all specific scope id s from the user's claims.
+    /// Gets all specific scope ids from the user's claims.
     /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
     /// </summary>
     public static List<int> GetSpecificScopeIds(this ClaimsPrincipal user, string scopeName)
@@ -86,7 +87,7 @@ public static class ClaimsPrincipalExtensions
         {
             return _multiAcademyTrust;
         }
-        else
+        else 
         {
             return _establishment;
         }

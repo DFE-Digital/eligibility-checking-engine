@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
@@ -35,6 +36,7 @@ public class EligibilityCheckController : BaseController
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly string _multiAcademyTrustScopeName;
+    private readonly string _establishmentScopeName;
 
     // Use case services
     private readonly IProcessQueueMessagesUseCase _processQueueMessagesUseCase;
@@ -62,7 +64,8 @@ public class EligibilityCheckController : BaseController
         _logger = logger;
         _bulkUploadRecordCountLimit = configuration.GetValue<int>("BulkEligibilityCheckLimit");
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
-        _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
+        _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        _establishmentScopeName = configuration.GetValue<string>("Jwt:Scopes:establishment") ?? "establishment";
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
@@ -274,21 +277,14 @@ public class EligibilityCheckController : BaseController
     {
         try
         {
-            string userOrganisationType = User.UserOrgType();
+            bool hasLAId = User.HasScopeWithColon(_localAuthorityScopeName);
+            bool hasMatId = User.HasScopeWithColon(_multiAcademyTrustScopeName);
+            bool hasSchoolId = User.HasScopeWithColon(_establishmentScopeName);
 
-            if (string.IsNullOrEmpty(userOrganisationType)) {
-
-                return BadRequest(new ErrorResponse
-                {
-                    Errors = [new Error { Title = "No multi-academy trust or local authority scope found." }]
-                });
-
-            }
-            if (userOrganisationType == _localAuthorityScopeName || userOrganisationType == _multiAcademyTrustScopeName)
+            if (hasLAId)
             {
-
                 // Extract local authority IDs from user claims
-                var orgIds = User.GetSpecificScopeIds(userOrganisationType);
+                var orgIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
 
                 // Set LocalAuthorityId if not provided and user has access to only one LA
                 if (!model.LocalAuthorityId.HasValue && orgIds.Count == 1 && orgIds[0] != 0)
@@ -296,7 +292,35 @@ public class EligibilityCheckController : BaseController
                     model.LocalAuthorityId = orgIds[0];
                 }
 
-            }                 
+            }
+            else if (hasMatId)
+            {
+
+                // Extract local authority IDs from user claims
+                var orgIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
+                // Set LocalAuthorityId if not provided and user has access to only one LA
+                if (!model.LocalAuthorityId.HasValue && orgIds.Count == 1 && orgIds[0] != 0)
+                {
+                    model.LocalAuthorityId = orgIds[0];
+                }
+            }
+            else if (hasSchoolId)
+            {
+                // Extract local authority IDs from user claims
+                var orgIds = User.GetSpecificScopeIds(_establishmentScopeName);
+                // Set LocalAuthorityId if not provided and user has access to only one LA
+                if (!model.LocalAuthorityId.HasValue && orgIds.Count == 1 && orgIds[0] != 0)
+                {
+                    model.LocalAuthorityId = orgIds[0];
+                }
+            }
+            else {
+
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No organisasion Id passed in the scope" }]
+                });
+            }
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
                 _bulkUploadRecordCountLimit);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };

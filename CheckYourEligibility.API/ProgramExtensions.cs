@@ -119,9 +119,9 @@ public static class ProgramExtensions
                         context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
             options.AddPolicy(PolicyNames.RequireLaOrMatOrSchoolScope, policy =>
                 policy.RequireAssertion(context =>
-                    context.User.HasScopeWithColon(configuration["Jwt:Scopes:local_authority"] ?? "local_authority") ||
-                        context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
-                         context.User.HasScopeWithColon(configuration["Jwt:Scopes:establishment"] ?? "establishment")));
+                    context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority") ||
+                        context.User.HasSingleScope(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
+                         context.User.HasSingleScope(configuration["Jwt:Scopes:establishment"] ?? "establishment")));
             options.AddPolicy(PolicyNames.RequireCheckScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:check"] ?? "check")));
