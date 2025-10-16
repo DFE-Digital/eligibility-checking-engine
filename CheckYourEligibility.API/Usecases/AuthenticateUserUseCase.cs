@@ -238,7 +238,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             var scopeId = parts[1];
 
             // Validate known scope types
-            var validScopeTypes = new[] { "local_authority", "multi_academy_trust" };
+            var validScopeTypes = new[] { "local_authority", "multi_academy_trust", "establishment" };
             if (!validScopeTypes.Contains(scopeType))
                 return false;
 
@@ -255,7 +255,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (allowedScopesList.Contains(requestedScope)) return true;
 
         // local_authority:XX pattern
-        if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:"))
+        if (requestedScope.StartsWith("local_authority:") || requestedScope.StartsWith("multi_academy_trust:") || requestedScope.StartsWith("establishment:"))
             return IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // If we got here, the scope is not valid
@@ -269,7 +269,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         var requestedAuthority = requestedScope.Split(':', 2)[1];
 
         // Additional check that the scope type is one that supports specific IDs
-        List<string> allowedSpecificScopeTypes = ["local_authority", "multi_academy_trust"];
+        List<string> allowedSpecificScopeTypes = ["local_authority", "multi_academy_trust", "establishment"];
         if (!allowedSpecificScopeTypes.Contains(requestedScopeType)) return false;
 
         // If a client has "local_authority" scope, they should have access to any "local_authority:XX" specific scope

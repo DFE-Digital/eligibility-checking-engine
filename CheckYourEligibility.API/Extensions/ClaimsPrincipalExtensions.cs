@@ -48,7 +48,7 @@ public static class ClaimsPrincipalExtensions
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (scopes.Any(s => s == scopeValue || s.StartsWith($"{scopeValue}:"))) return true;
+            if (scopes.Any(s => s == scopeValue && s.StartsWith($"{scopeValue}:"))) return true;
         }
 
         return false;
@@ -70,29 +70,6 @@ public static class ClaimsPrincipalExtensions
 
         return false;
     }
-    /// <summary>
-    /// Check user organisation which will be passed in the scope.
-    /// </summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
-    public static string UserOrgType(this ClaimsPrincipal user)
-    {
-        var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
-        string scopes = scopeClaims[0].Value;
-        if (scopes.Contains(_localAuthorityScope))
-        {
-            return _localAuthorityScope;
-        }
-        else if (scopes.Contains(_multiAcademyTrust))
-        {
-            return _multiAcademyTrust;
-        }
-        else 
-        {
-            return _establishment;
-        }
-    }
-
     /// <summary>
     /// Checks if the user has either general scope OR exactly one specific scope ID, but not both.
     /// Returns false if user has multiple specific scope IDs or if both general and specific scopes are present.
