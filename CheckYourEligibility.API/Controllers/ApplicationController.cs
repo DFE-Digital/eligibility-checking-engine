@@ -183,7 +183,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> ApplicationStatusUpdate(string guid,
         [FromBody] ApplicationStatusUpdateRequest model)
     {
@@ -318,7 +318,7 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [HttpDelete("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
     public async Task<ActionResult> DeleteApplication(string guid)
     {
