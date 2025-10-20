@@ -135,6 +135,7 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(Check2YOModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
@@ -163,6 +164,7 @@ public class EligibilityCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(CheckEYPPModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
