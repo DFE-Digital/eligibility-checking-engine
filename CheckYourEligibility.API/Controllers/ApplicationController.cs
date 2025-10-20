@@ -318,7 +318,7 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [HttpDelete("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
     public async Task<ActionResult> DeleteApplication(string guid)
     {
