@@ -266,7 +266,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     {
         // check if there's a match with specific local_authority:xx pattern in allowed scopes
         var requestedScopeType = requestedScope.Split(':', 2)[0];
-        var requestedAuthority = requestedScope.Split(':', 2)[1];
+        var requestedAuthorityId = requestedScope.Split(':', 2)[1];
 
         // Additional check that the scope type is one that supports specific IDs
         List<string> allowedSpecificScopeTypes = ["local_authority", "multi_academy_trust", "establishment"];
@@ -280,7 +280,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             {
                 var allowedAuthority = allowedScope.Split(':', 2)[1];
 
-                if (requestedAuthority == allowedAuthority) return true;
+                if (requestedAuthorityId == allowedAuthority) return true;
             }
 
         return false;

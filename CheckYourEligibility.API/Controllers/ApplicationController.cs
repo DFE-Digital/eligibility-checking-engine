@@ -183,7 +183,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> ApplicationStatusUpdate(string guid,
         [FromBody] ApplicationStatusUpdateRequest model)
     {

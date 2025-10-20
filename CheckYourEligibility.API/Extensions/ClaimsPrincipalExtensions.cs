@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Extensions;
@@ -48,7 +47,7 @@ public static class ClaimsPrincipalExtensions
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (scopes.Any(s => s == scopeValue || s.StartsWith($"{scopeValue}:"))) return true;
+            if (scopes.Any(s => s.StartsWith($"{scopeValue}:"))) return true;
         }
 
         return false;
