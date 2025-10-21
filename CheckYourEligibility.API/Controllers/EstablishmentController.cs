@@ -30,7 +30,7 @@ public class EstablishmentController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/establishment/search")]
-    [Authorize(Policy = PolicyNames.RequireEstablishmentScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> Search(string query, string? la, string? mat)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 3)
