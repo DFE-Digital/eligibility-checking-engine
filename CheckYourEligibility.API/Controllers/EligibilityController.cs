@@ -281,29 +281,29 @@ public class EligibilityCheckController : BaseController
         {
             // Extract local authority IDs from user claims
             var localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
-            var matId = User.GetSingleScopeId(_multiAcademyTrustScopeName);
-            var schoolId = User.GetSingleScopeId(_establishmentScopeName);
+            //   var matId = User.GetSingleScopeId(_multiAcademyTrustScopeName);
+           // var schoolId = User.GetSingleScopeId(_establishmentScopeName);
 
             // If schoolId or matId is not null it means there is an id as the policy enforces an ID if either of the scopes is provided
             // we will check school first as it is the lowest form of org
             // NOTE: Bulk check column in DB will change from LocalAuthorityID to OrganisationId and Organisaion Type in next piece of work
             // to accommodate orgs better.
-            if (schoolId != null)
-            {
-              // placeholder
-              //  model.OrganisationId = schoolId;
-              //  model.OrganisationType = OrganisationType.Establishment
-            }
-            else if (matId != null)
-            {    // placeholder
-                //  model.OrganisationId = schoolId;
-                //  model.OrganisationType = OrganisationType.Establishment
-            }
+            //if (schoolId != null)
+            //{
+            //  // placeholder
+            //  //  model.OrganisationId = schoolId;
+            //  // model.OrganisationType = OrganisationType.Establishment
+            //}
+            //else if (matId != null)
+            //{    // placeholder
+            //    //  model.OrganisationId = schoolId;
+            //    //  model.OrganisationType = OrganisationType.Establishment
+            //}
 
             // NOTE: To not disturb current business rules around local authoriy we also allow generic local_authoriy scope to be passed here
             // If no school or mat scope found then we record the Id of the local_authority if one is passed
             // else do not pass anything as this was the logic previously.
-            else if (!model.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
+             if (!model.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
             {
                 model.LocalAuthorityId = localAuthorityId;
             }
