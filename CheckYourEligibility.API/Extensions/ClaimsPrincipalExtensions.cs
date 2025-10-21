@@ -4,6 +4,9 @@ namespace CheckYourEligibility.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
+    private static readonly string _localAuthorityScope = "local_authority";
+    private static readonly string _multiAcademyTrust = "multi_academy_trust";
+    private static readonly string _establishment = "establishment";
     /// <summary>
     /// Gets all specific scope ids from the user's claims.
     /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
@@ -44,7 +47,7 @@ public static class ClaimsPrincipalExtensions
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (scopes.Any(s => s == scopeValue || s.StartsWith($"{scopeValue}:"))) return true;
+            if (scopes.Any(s => s.StartsWith($"{scopeValue}:"))) return true;
         }
 
         return false;
@@ -66,7 +69,6 @@ public static class ClaimsPrincipalExtensions
 
         return false;
     }
-
     /// <summary>
     /// Checks if the user has either general scope OR exactly one specific scope ID, but not both.
     /// Returns false if user has multiple specific scope IDs or if both general and specific scopes are present.

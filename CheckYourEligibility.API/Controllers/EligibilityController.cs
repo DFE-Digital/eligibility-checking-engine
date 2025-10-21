@@ -34,6 +34,8 @@ public class EligibilityCheckController : BaseController
     private readonly ILogger<EligibilityCheckController> _logger;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private readonly string _localAuthorityScopeName;
+    private readonly string _multiAcademyTrustScopeName;
+    private readonly string _establishmentScopeName;
 
     // Use case services
     private readonly IProcessQueueMessagesUseCase _processQueueMessagesUseCase;
@@ -61,6 +63,8 @@ public class EligibilityCheckController : BaseController
         _logger = logger;
         _bulkUploadRecordCountLimit = configuration.GetValue<int>("BulkEligibilityCheckLimit");
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
+        _establishmentScopeName = configuration.GetValue<string>("Jwt:Scopes:establishment") ?? "establishment";
 
         // Initialize use cases
         _processQueueMessagesUseCase = processQueueMessagesUseCase;
@@ -224,7 +228,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/working-families")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkWF([FromBody] CheckEligibilityRequestWorkingFamiliesBulk model)
     {
         try
@@ -263,31 +267,45 @@ public class EligibilityCheckController : BaseController
     ///     Posts the array of FSM checks
     /// </summary>
     /// <param name="model"></param>
+    /// PolicyNames.RequireLaOrMatOrSchoolScope ensures at least one org with id is found in scope, unless it is local_authority
     /// <returns></returns>
     [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)] 
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
         try
         {
             // Extract local authority IDs from user claims
-            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Errors = [new Error { Title = "No local authority scope found" }]
-                });
-            }
+            var localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            //   var matId = User.GetSingleScopeId(_multiAcademyTrustScopeName);
+           // var schoolId = User.GetSingleScopeId(_establishmentScopeName);
 
-            // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            // If schoolId or matId is not null it means there is an id as the policy enforces an ID if either of the scopes is provided
+            // we will check school first as it is the lowest form of org
+            // NOTE: Bulk check column in DB will change from LocalAuthorityID to OrganisationId and Organisaion Type in next piece of work
+            // to accommodate orgs better.
+            //if (schoolId != null)
+            //{
+            //  // placeholder
+            //  //  model.OrganisationId = schoolId;
+            //  // model.OrganisationType = OrganisationType.Establishment
+            //}
+            //else if (matId != null)
+            //{    // placeholder
+            //    //  model.OrganisationId = schoolId;
+            //    //  model.OrganisationType = OrganisationType.Establishment
+            //}
+
+            // NOTE: To not disturb current business rules around local authoriy we also allow generic local_authoriy scope to be passed here
+            // If no school or mat scope found then we record the Id of the local_authority if one is passed
+            // else do not pass anything as this was the logic previously.
+             if (!model.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.LocalAuthorityId = localAuthorityId;
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
@@ -302,7 +320,7 @@ public class EligibilityCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
-    }
+    } 
 
     /// <summary>
     ///     Posts the array of 2YO checks
@@ -314,12 +332,13 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/two-year-offer")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
     {
         try
         {
-            // Extract local authority IDs from user claims
+            // Check which org and extract local authority IDs from user claims
+            // If result is 0 that means that only general scope is used.
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
@@ -328,8 +347,9 @@ public class EligibilityCheckController : BaseController
                     Errors = [new Error { Title = "No local authority scope found" }]
                 });
             }
-
-            // Set LocalAuthorityId if not provided and user has access to only one LA
+            // 
+            // Set LocalAuthorityId if not provided and if only one id is found.
+            // lili: (there should never be a case where more the one id is found according to the business rules in auth use case )
             if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
                 model.LocalAuthorityId = localAuthorityIds[0];
@@ -359,7 +379,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/early-year-pupil-premium")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -438,7 +458,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/status/{organisationId}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> BulkCheckStatuses(string organisationId)
     {
         try
@@ -529,7 +549,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/bulk-check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> BulkUploadResults(string guid)
     {
         try
@@ -580,7 +600,7 @@ public class EligibilityCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpDelete("/bulk-check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> DeleteBulkUpload(string guid)
     {
         try

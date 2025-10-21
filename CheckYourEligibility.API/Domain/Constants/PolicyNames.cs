@@ -16,4 +16,5 @@ public static class PolicyNames
     public const string RequireNotificationScope = "RequireNotificationScope";
     public const string RequireMultiAcademyTrustScope = "RequireMultiAcademyTrustScope";
     public const string RequireLaOrMatScope = "RequireLaOrMatScope";
+    public const string RequireLaOrMatOrSchoolScope = "RequireLaOrMatOrSchoolScope";
 }
