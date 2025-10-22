@@ -1,27 +1,17 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Xml.Linq;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Responses.DWP;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Properties;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Xml.Linq;
 
 namespace CheckYourEligibility.API.Gateways;
 public interface IEcsGateway
 {
     public string UseEcsforChecks { get; }
     public string UseEcsforChecksWF { get; }
-    Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType);
-    Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck);
+    Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType, string laId);
+    Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck, string laId);
 }
 
 [ExcludeFromCodeCoverage]
@@ -118,12 +108,13 @@ public class EcsGateway : BaseGateway, IEcsGateway
         return null;
     }
 
-    public async Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType)
+    public async Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType, string LaId)
     {
+        
         var soapMessage = Resources.EcsSoapFsm;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
         soapMessage = soapMessage.Replace("{{Password}}", EcsPassword);
-        soapMessage = soapMessage.Replace("{{LAId}}", EcsLAId);
+        soapMessage = soapMessage.Replace("{{LAId}}", LaId ?? EcsLAId);
         soapMessage = soapMessage.Replace("{{ServiceVersion}}", EcsServiceVersion);
         soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
             $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
@@ -147,13 +138,13 @@ public class EcsGateway : BaseGateway, IEcsGateway
         return await executeEcsCheck(soapMessage);
     }
 
-    public async Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck)
+    public async Task<SoapCheckResponse?> EcsWFCheck(CheckProcessData eligibilityCheck, string laId)
     {
 
         var soapMessage = Resources.EcsSoapWF;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
         soapMessage = soapMessage.Replace("{{Password}}", EcsPassword);
-        soapMessage = soapMessage.Replace("{{LAId}}", EcsLAId);
+        soapMessage = soapMessage.Replace("{{LAId}}", laId ?? EcsLAId);
         soapMessage = soapMessage.Replace("{{ServiceVersion}}", EcsServiceVersion);
         soapMessage = soapMessage.Replace("{{DateOfBirth}}", eligibilityCheck.DateOfBirth);
         soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);

@@ -11,14 +11,20 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office.CustomXsn;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Operation.Distance;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -114,7 +120,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
             if (checkHashResult == null)
             {
-                var queue = await SendMessage(item);
+               var queue = await SendMessage(item);
             }
             else
             {
@@ -650,7 +656,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         else if (_ecsGateway.UseEcsforChecksWF == "true")
         {
-            SoapCheckResponse innerResult = await _ecsGateway.EcsWFCheck(checkData);
+            //To ensure correct LA ID is passed when using ECS for checks
+            string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
+            SoapCheckResponse innerResult = await _ecsGateway.EcsWFCheck(checkData, laId);
 
             result.Status = convertEcsResultStatus(innerResult);
             if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
@@ -705,7 +713,33 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         // manually update bulk check
         await UpdateBulkCheckStatusIfComplete(guid);
     }
+    /// <summary>
+    /// Extract LA Id from scope if it exists
+    /// else return an empty string.
+    /// </summary>
+    /// <param name="scope"></param>
+    /// <returns></returns>
+    private string ExtractLAIdFromScope(string scope) {
 
+        string laId = string.Empty;
+        if (!string.IsNullOrEmpty(scope))
+        {   
+            int LaIdStartIndex = scope.IndexOf($"local_authority:") + "local_authority:".Length;
+            if (LaIdStartIndex >= 0)
+            {
+                var LaIdendIndex = scope.IndexOf(" ", LaIdStartIndex);
+                if (LaIdendIndex == -1)
+                {
+                    laId = scope.Substring(LaIdStartIndex).Trim();
+                }
+                else
+                {
+                    laId = scope.Substring(LaIdStartIndex, LaIdendIndex - LaIdStartIndex).Trim();
+                }
+            }
+        }
+        return laId;
+    }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
         CheckProcessData checkData)
     {
@@ -725,14 +759,15 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
-
+                //To ensure correct LA ID is passed when using ECS for checks
+                string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
                     if (_ecsGateway.UseEcsforChecks == "true")
                     {
 
-                        checkResult = await EcsCheck(checkData);
+                        checkResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.ECS;
 
                     }
@@ -745,7 +780,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     }
                     else // do both checks
                     {
-                        checkResult = await EcsCheck(checkData);
+                        checkResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.DWP;
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
                         eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
@@ -926,10 +961,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
     }
 
-    private async Task<CheckEligibilityStatus> EcsCheck(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> EcsCheck(CheckProcessData data, string LaId)
     {
         //check for benefit
-        var result = await _ecsGateway.EcsCheck(data, data.Type);
+        var result = await _ecsGateway.EcsCheck(data, data.Type, LaId);
         return convertEcsResultStatus(result);
     }
 
@@ -1038,6 +1073,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
+                        var postCheckAudit= await _db.Audits.FirstOrDefaultAsync(a => a.typeId == checkData.Guid && a.Type == AuditType.Check && a.method == "POST");
+                        string scope = string.Empty; 
+                        if (postCheckAudit != null && postCheckAudit.scope != null) scope = postCheckAudit.scope;
+
                         var result = await ProcessCheck(checkData.Guid, new AuditData
                         {
                             Type = AuditType.Check,
@@ -1045,7 +1084,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                             authentication = queName,
                             method = "processQue",
                             source = "queueProcess",
-                            url = "."
+                            url = ".",
+                            scope =  scope
                         });
                         // When status is Queued For Processing, i.e. not error
                         if (result == CheckEligibilityStatus.queuedForProcessing)
