@@ -547,7 +547,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -584,7 +584,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse =  _fixture.Create<CAPICitizenResponse>();      
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("validate");
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
      .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -615,7 +615,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "" };
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -645,7 +645,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -673,7 +673,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
 
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(value: null);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(value: null);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -703,7 +703,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
             { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
-        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -1149,7 +1149,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString();
         
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
-        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(soapResponse);
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), _configuration["Dwp:EcsLAId"])).ReturnsAsync(soapResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
@@ -1257,7 +1257,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
-        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>())).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), _configuration["Dwp:EcsLAId"])).ReturnsAsync(ecsSoapCheckResponse);
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
