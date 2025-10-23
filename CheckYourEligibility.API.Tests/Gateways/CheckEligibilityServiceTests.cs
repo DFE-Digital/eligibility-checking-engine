@@ -1149,7 +1149,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString();
         
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
-        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), _configuration["Dwp:EcsLAId"])).ReturnsAsync(soapResponse);
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
@@ -1257,7 +1257,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
-        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), _configuration["Dwp:EcsLAId"])).ReturnsAsync(ecsSoapCheckResponse);
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
