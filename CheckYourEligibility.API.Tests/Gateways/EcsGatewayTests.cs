@@ -88,7 +88,7 @@ public class EcsGatewayTests : TestBase.TestBase
         _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
 
         // Act
-        var response = await _sut.EcsCheck(request, CheckEligibilityType.FreeSchoolMeals);
+        var response = await _sut.EcsCheck(request, CheckEligibilityType.FreeSchoolMeals, _configuration["Dwp:EcsLAId"]);
 
         // Assert
         response.Should().BeOfType<SoapCheckResponse>();
@@ -122,7 +122,7 @@ public class EcsGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = await _sut.EcsCheck(dataItem, CheckEligibilityType.TwoYearOffer);
+        var response = await _sut.EcsCheck(dataItem, CheckEligibilityType.TwoYearOffer, _configuration["Dwp:EcsLAId"]);
 
         // Assert
         response.Should().BeNull();
@@ -152,7 +152,7 @@ public class EcsGatewayTests : TestBase.TestBase
         _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
 
         // Act
-        var response = await _sut.EcsWFCheck(request);
+        var response = await _sut.EcsWFCheck(request, _configuration["Dwp:EcsLAId"]);
 
         // Assert
         response.Should().BeOfType<SoapCheckResponse>();
@@ -186,7 +186,7 @@ public class EcsGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = await _sut.EcsWFCheck(dataItem);
+        var response = await _sut.EcsWFCheck(dataItem, "999");
 
         // Assert
         response.Should().BeNull();
