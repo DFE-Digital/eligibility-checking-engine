@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Properties;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Xml.Linq;
@@ -89,6 +90,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
                     soapResponse.GracePeriodEndDate = xElement.Value;
                     xElement = elements.FirstOrDefault(x => x.Name.LocalName == "ParentSurname");
                     soapResponse.ParentSurname = xElement.Value;
+                    _logger.LogInformation($"ECS soap response: {JsonConvert.SerializeObject(soapResponse)}");
                     return soapResponse;
                 }
 
@@ -114,7 +116,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
         var soapMessage = Resources.EcsSoapFsm;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
         soapMessage = soapMessage.Replace("{{Password}}", EcsPassword);
-        soapMessage = soapMessage.Replace("{{LAId}}", LaId ?? EcsLAId);
+        soapMessage = soapMessage.Replace("{{LAId}}", string.IsNullOrEmpty(LaId) ? EcsLAId: LaId);
         soapMessage = soapMessage.Replace("{{ServiceVersion}}", EcsServiceVersion);
         soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
             $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
@@ -134,7 +136,8 @@ public class EcsGateway : BaseGateway, IEcsGateway
             soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
                 $"<ns:EligibilityCheckType>EYPP</ns:EligibilityCheckType>");
         }
-
+        string logSoapMessage = soapMessage.Replace("{{Password}}", "RemovedFromLogs");
+        _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
         return await executeEcsCheck(soapMessage);
     }
 
@@ -144,7 +147,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
         var soapMessage = Resources.EcsSoapWF;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
         soapMessage = soapMessage.Replace("{{Password}}", EcsPassword);
-        soapMessage = soapMessage.Replace("{{LAId}}", laId ?? EcsLAId);
+        soapMessage = soapMessage.Replace("{{LAId}}", string.IsNullOrEmpty(laId) ? EcsLAId : laId);
         soapMessage = soapMessage.Replace("{{ServiceVersion}}", EcsServiceVersion);
         soapMessage = soapMessage.Replace("{{DateOfBirth}}", eligibilityCheck.DateOfBirth);
         soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);
@@ -155,7 +158,8 @@ public class EcsGateway : BaseGateway, IEcsGateway
             soapMessage = soapMessage.Replace("<ns:Surname/>",
                 $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
         }
-
+        string logSoapMessage = soapMessage.Replace("{{Password}}", "RemovedFromLogs");
+        _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
         return await executeEcsCheck(soapMessage);
     }
 }
