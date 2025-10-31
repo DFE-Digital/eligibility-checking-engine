@@ -114,7 +114,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
             if (checkHashResult == null)
             {
-               var queue = await SendMessage(item);
+                var queue = await SendMessage(item);
             }
             else
             {
@@ -586,11 +586,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         // set the event to the second record that is still valid
         // and get set ValidityEndDate and the GracePeriodEndDate of the future record
         if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
-        {           
-           wfEvent = wfRecords[1];
+        {
+            wfEvent = wfRecords[1];
 
-           wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
-           wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
+            wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
+            wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
         }
         else
         {
@@ -718,24 +718,24 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// </summary>
     /// <param name="scope"></param>
     /// <returns></returns>
-    private string ExtractLAIdFromScope(string scope) {
-
+    private string ExtractLAIdFromScope(string scope)
+    {
+        string laWithIdSyntax = "local_authority:";
         string laId = string.Empty;
-        if (!string.IsNullOrEmpty(scope))
-        {   
-            int LaIdStartIndex = scope.IndexOf($"local_authority:") + "local_authority:".Length;
-            if (LaIdStartIndex >= 0)
+
+        if (!string.IsNullOrEmpty(scope) && scope.Contains(laWithIdSyntax))
+        {
+            int LaIdStartIndex = scope.IndexOf(laWithIdSyntax) + laWithIdSyntax.Length;
+            var LaIdendIndex = scope.IndexOf(" ", LaIdStartIndex);
+            if (LaIdendIndex == -1)
             {
-                var LaIdendIndex = scope.IndexOf(" ", LaIdStartIndex);
-                if (LaIdendIndex == -1)
-                {
-                    laId = scope.Substring(LaIdStartIndex).Trim();
-                }
-                else
-                {
-                    laId = scope.Substring(LaIdStartIndex, LaIdendIndex - LaIdStartIndex).Trim();
-                }
+                laId = scope.Substring(LaIdStartIndex).Trim();
             }
+            else
+            {
+                laId = scope.Substring(LaIdStartIndex, LaIdendIndex - LaIdStartIndex).Trim();
+            }
+
         }
         return laId;
     }
@@ -744,7 +744,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
-        CAPIClaimResponse capiClaimResponse = new(); 
+        CAPIClaimResponse capiClaimResponse = new();
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
         string correlationId = Guid.NewGuid().ToString(); // for CAPI request to track request from DWP side
@@ -815,7 +815,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
               await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
 
             //If CAPI returns a different result from ECS
-           // Create a record
+            // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
                 var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == guid);
@@ -1011,7 +1011,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var result = await _dwpGateway.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
             DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
             _logger.LogInformation($"Dwp after getting claim");
-  
+
             if (result.Item1.StatusCode == StatusCodes.Status200OK)
             {
                 checkResult = CheckEligibilityStatus.eligible;
@@ -1025,7 +1025,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 _logger.LogInformation($"Dwp is not found");
             }
             else
-            {  
+            {
                 _logger.LogError($"Dwp Error unknown Response status code:-{result.Item1.StatusCode}.");
                 checkResult = CheckEligibilityStatus.error;
             }
@@ -1035,7 +1035,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             claimResponse.CheckEligibilityStatus = checkResult;
             claimResponse.Reason = result.Item2; // reason message returned from DWP gateway
             claimResponse.CAPIResponseCode = (HttpStatusCode)result.Item1.StatusCode;
-        } 
+        }
         return claimResponse;
     }
 
@@ -1072,8 +1072,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
-                        var postCheckAudit= await _db.Audits.FirstOrDefaultAsync(a => a.typeId == checkData.Guid && a.Type == AuditType.Check && a.method == "POST");
-                        string scope = string.Empty; 
+                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == checkData.Guid && a.Type == AuditType.Check && a.method == "POST");
+                        string scope = string.Empty;
                         if (postCheckAudit != null && postCheckAudit.scope != null) scope = postCheckAudit.scope;
 
                         var result = await ProcessCheck(checkData.Guid, new AuditData
@@ -1084,7 +1084,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                             method = "processQue",
                             source = "queueProcess",
                             url = ".",
-                            scope =  scope
+                            scope = scope
                         });
                         // When status is Queued For Processing, i.e. not error
                         if (result == CheckEligibilityStatus.queuedForProcessing)
