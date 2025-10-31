@@ -11,20 +11,14 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Office.CustomXsn;
-using DocumentFormat.OpenXml.Wordprocessing;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NetTopologySuite.Operation.Distance;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -589,9 +583,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         // If there is more than one record
         // check if second to last record has not expired yet
+        // set the event to the second record that is still valid
+        // and get set ValidityEndDate and the GracePeriodEndDate of the future record
         if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
-        {
-            wfEvent = wfRecords[1];
+        {           
+           wfEvent = wfRecords[1];
+
+           wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
+           wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
         }
         else
         {
