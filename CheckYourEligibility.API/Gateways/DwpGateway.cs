@@ -189,16 +189,28 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
+        if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
+            return true;
+
+        if (CheckUniversalCreditBenefitType(citizenId, claims, _DWP_ApiUniversalCreditThreshold[type]))
+            return true;
+
+        var benefit = claims.data.FirstOrDefault(x =>
+            x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
+        );
+        
+        if (benefit == null)
+        {
+            return false;
+        }
+            
+        if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
+            return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.income_support))
             return true;
-        if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
-            return true;
-        if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
-            return true;
-        if (CheckUniversalCreditBenefitType(citizenId, claims, _DWP_ApiUniversalCreditThreshold[type]))
-            return true;
+        
         return false;
     }
 
@@ -255,7 +267,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
         {
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");
             TrackMetric($"Dwp {benefitType} entitled", 1);
-            return true;
+
+            if(benefit.amount>0) return true;
         }
 
         return false;
