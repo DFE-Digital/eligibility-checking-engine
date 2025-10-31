@@ -11,20 +11,14 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Office.CustomXsn;
-using DocumentFormat.OpenXml.Wordprocessing;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NetTopologySuite.Operation.Distance;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -43,6 +37,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
+    public static bool _enableQueueForProcessing { get; private set; }
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         QueueServiceClient queueClientGateway,
@@ -1064,6 +1059,17 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
 
+            // Get count of post requests in the last 5 seconds.
+            DateTime now = DateTime.UtcNow;
+            var checksCount = await _db.Audits.Where(a => a.method == "POST" && a.Type == AuditType.Check && 
+             a.TimeStamp >= now.AddSeconds(-5) && a.TimeStamp <= now ).CountAsync();
+            if (checksCount < 20)
+            {
+                _enableQueueForProcessing = false;
+            }
+            else {
+                _enableQueueForProcessing = true;
+            }
             if (properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
