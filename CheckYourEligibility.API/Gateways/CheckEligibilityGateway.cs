@@ -11,6 +11,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -113,6 +114,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             await _db.CheckEligibilities.AddAsync(item);
             await _db.SaveChangesAsync();
+            switch (_enableQueueForProcessing) {
+                case false:
+                    
+                    break;
+                case true:
+                    break;
+            }
             if (checkHashResult == null)
             {
                var queue = await SendMessage(item);
