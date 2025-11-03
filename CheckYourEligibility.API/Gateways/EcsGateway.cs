@@ -136,7 +136,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
             soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
                 $"<ns:EligibilityCheckType>EYPP</ns:EligibilityCheckType>");
         }
-        string logSoapMessage = soapMessage.Replace("{{Password}}", "RemovedFromLogs");
+        string logSoapMessage = soapMessage.Replace(EcsPassword, "RemovedFromLogs");
         _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
         return await executeEcsCheck(soapMessage);
     }
@@ -158,7 +158,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
             soapMessage = soapMessage.Replace("<ns:Surname/>",
                 $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
         }
-        string logSoapMessage = soapMessage.Replace("{{Password}}", "RemovedFromLogs");
+        string logSoapMessage = soapMessage.Replace(EcsPassword, "RemovedFromLogs");
         _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
         return await executeEcsCheck(soapMessage);
     }
