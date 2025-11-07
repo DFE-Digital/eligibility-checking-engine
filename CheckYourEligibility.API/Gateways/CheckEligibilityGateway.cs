@@ -123,7 +123,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
             if (checkHashResult == null)
             {
-               // var queue = await SendMessage(item);
+                var queue = await SendMessage(item);
             }
             else
             {
