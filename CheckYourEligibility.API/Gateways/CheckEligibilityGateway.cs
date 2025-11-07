@@ -97,7 +97,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
-
             item.Status = CheckEligibilityStatus.queuedForProcessing;
             var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
 
@@ -105,9 +104,19 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 await _hashGateway.Exists(checkData);
             if (checkHashResult != null)
             {
-                item.Status = checkHashResult.Outcome;
+                CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
+                item.Status = hashedStatus;
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
                 item.EligibilityCheckHash = checkHashResult;
+
+                // If hash is found for eligible or not eligible
+                // get the first valid check and apply correct CheckData to latest check record
+                // to make sure correct data is returned
+                if (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible) {
+
+                    var firstValidCheck = await _db.CheckEligibilities.Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID && x.Status == hashedStatus).OrderBy(x => x.Created).FirstAsync();
+                    item.CheckData = firstValidCheck.CheckData;
+                }               
             }
 
             await _db.CheckEligibilities.AddAsync(item);
@@ -253,6 +262,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                                                                            (type == CheckEligibilityType.None ||
                                                                             type == x.Type) &&
                                                                            x.Status != CheckEligibilityStatus.deleted);
+
+
         var item = _mapper.Map<CheckEligibilityItem>(result);
         if (result != null)
         {
@@ -648,11 +659,15 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
         result.Status = CheckEligibilityStatus.notFound;
+
+        // Get event for test record
         if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
             checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
         {
             wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
         }
+
+        // Get event for ecs record
         else if (_ecsGateway.UseEcsforChecksWF == "true")
         {
             //To ensure correct LA ID is passed when using ECS for checks
@@ -671,30 +686,23 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             source = ProcessEligibilityCheckSource.ECS;
         }
+
+        // Get event for ECE record
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
           checkData.NationalInsuranceNumber, checkData.LastName);
         }
+
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
-        if (wfEvent != null)
-        {
-            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
-            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.LastName = wfEvent.ParentLastName;
-            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
-        }
-
-        result.CheckData = JsonConvert.SerializeObject(wfCheckData);
-
+        
+        // If event is returned inititiate business logic. 
         if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
         {
-            //Get current date
+            //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
             var currentDate = DateTime.UtcNow.Date;
 
-            if ((currentDate >= wfEvent.ValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
-                (currentDate >= wfEvent.ValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
+            if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
             {
                 result.Status = CheckEligibilityStatus.eligible;
             }
@@ -703,9 +711,24 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 result.Status = CheckEligibilityStatus.notEligible;
             }
         }
-
+        // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+           await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+
+        // Now update the check data in the EligibilityCheckTable with all the neccessary fields
+        // that needs to be returned on the GET request.
+        if (wfEvent != null)
+        {
+            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+
+            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
+            _db.CheckEligibilities.Update(result);
+        }
+
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
