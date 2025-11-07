@@ -699,11 +699,10 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         // If event is returned inititiate business logic. 
         if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
         {
-            //Get current date and ensure it is between the DiscretionaryValidityStartDate and ValidityEndDate
+            //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
             var currentDate = DateTime.UtcNow.Date;
 
-            if ((currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.ValidityEndDate) ||
-                (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate))
+            if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
             {
                 result.Status = CheckEligibilityStatus.eligible;
             }
