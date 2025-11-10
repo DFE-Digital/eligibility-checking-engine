@@ -8,4 +8,9 @@ public class SystemUser
 
     public string client_id { get; set; }
     public string client_secret { get; set; }
+
+    public string safe_client_id()
+    {
+        return client_id.Split(':')[0];
+    }
 }

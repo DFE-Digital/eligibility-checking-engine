@@ -67,7 +67,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
         // Get client secret from configuration
         string? secret = null;
-        if (_jwtSettings.Clients.TryGetValue(credentials.client_id, out var value)) secret = value?.Secret;
+        if (_jwtSettings.Clients.TryGetValue(credentials.safe_client_id(), out var value)) secret = value?.Secret;
         if (secret == null)
         {
             _logger.LogError(
@@ -76,7 +76,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         }
 
         // Get and validate allowed scopes from client configuration
-        var clientSettings = _jwtSettings.Clients[credentials.client_id];
+        var clientSettings = _jwtSettings.Clients[credentials.safe_client_id()];
         string? allowedScopes = clientSettings?.Scope;
 
         if (string.IsNullOrEmpty(allowedScopes))
