@@ -361,6 +361,208 @@ public class DwpServiceTests : TestBase.TestBase
         response.Should().Be(true);
     }
 
+    /// <summary>
+    ///     Ended pension credit
+    ///     UC1 616.66 One instance of an award with status live below threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_have_Ended_pensions_credit_and_universal_credit_CheckBenefitEntitlement_1_Should_Return_true()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //PC
+        request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
+        request.data[0].attributes.endDate = DateTime.Now.ToString("yyyy-MM-dd");
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = DwpGateway.awardStatusLive,
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(true);
+    }
+
+    /// <summary>
+    ///     Ended pension credit
+    ///     UC1 616.66 One instance of an award with status live above threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_have_Ended_pensions_credit_and_universal_credit_CheckBenefitEntitlement_1_Should_Return_false()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //PC
+        request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
+        request.data[0].attributes.endDate = DateTime.Now.ToString("yyyy-MM-dd");
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = DwpGateway.awardStatusLive,
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(false);
+    }
+
+    /// <summary>
+    ///     JSA not ended
+    ///     UC1 616.66 One instance of an award with status superseded above threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_no_live_universal_credit_JSA_Should_Return_true()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //JSA
+        request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
+        request.data[0].attributes.endDate = null;
+        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = "superseded",
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(true);
+    }
+
+    /// <summary>
+    ///     ESA not ended
+    ///     UC1 616.66 One instance of an award with status superseded above threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_no_live_universal_credit_ESA_Should_Return_true()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //JSA
+        request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
+        request.data[0].attributes.endDate = null;
+        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = "superseded",
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(true);
+    }
+
+    /// <summary>
+    ///     Income Support not ended
+    ///     UC1 616.66 One instance of an award with status superseded above threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_no_live_universal_credit_Income_Support_Should_Return_true()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //IS
+        request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
+        request.data[0].attributes.endDate = null;
+        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = "superseded",
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(true);
+    }
+
+    /// <summary>
+    ///     Income Support not ended
+    ///     UC1 616.66 One instance of an award with status live above threshold
+    /// </summary>
+    [Test]
+    public void Given_Claims_universal_credit_above_threshold_JSA_Should_Return_false()
+    {
+        // Arrange
+        var citizenGuid = Guid.NewGuid().ToString();
+        var request = _fixture.Create<DwpClaimsResponse>();
+        //IS
+        request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
+        request.data[0].attributes.endDate = null;
+        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        //UC
+        request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
+        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.awards = new List<Award>
+        {
+            new()
+            {
+                endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
+                status = DwpGateway.awardStatusLive,
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+            }
+        };
+
+        // Act
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+
+        // Assert
+        response.Should().Be(false);
+    }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
