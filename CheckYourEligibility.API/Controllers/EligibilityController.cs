@@ -244,9 +244,9 @@ public class EligibilityCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
@@ -303,9 +303,9 @@ public class EligibilityCheckController : BaseController
             // NOTE: To not disturb current business rules around local authoriy we also allow generic local_authoriy scope to be passed here
             // If no school or mat scope found then we record the Id of the local_authority if one is passed
             // else do not pass anything as this was the logic previously.
-             if (!model.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
+             if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
             {
-                model.LocalAuthorityId = localAuthorityId;
+                model.Meta.LocalAuthorityId = localAuthorityId;
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,

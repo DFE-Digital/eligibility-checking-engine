@@ -112,7 +112,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
                 NationalInsuranceNumber = "AB123456C"
             }
         };
-        var model = new CheckEligibilityRequestWorkingFamiliesBulk { Data = data };
+        var model = new CheckEligibilityRequestWorkingFamiliesBulk { Data = data, Meta = {}};
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .Returns(new FluentValidation.Results.ValidationResult());
@@ -147,7 +147,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         // Arrange
         var data = new List<CheckEligibilityRequestBulkData>
         {
-            new()
+            new() 
             {
                 LastName = "Smith",
                 DateOfBirth = "1990-01-01",
@@ -188,16 +188,17 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var nino = "ab123456c";
-        var data = new List<CheckEligibilityRequestBulkData>
+        var model = new CheckEligibilityRequestBulk
         {
-            new()
+            Data = new List<CheckEligibilityRequestBulkData>()
             {
-                LastName = "Smith",
-                DateOfBirth = "1990-01-01",
-                NationalInsuranceNumber = nino
+                new() {
+                    LastName = "Smith",
+                    DateOfBirth = "1990-01-01",
+                    NationalInsuranceNumber = nino
+                }
             }
         };
-        var model = new CheckEligibilityRequestBulk { Data = data };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new FluentValidation.Results.ValidationResult());

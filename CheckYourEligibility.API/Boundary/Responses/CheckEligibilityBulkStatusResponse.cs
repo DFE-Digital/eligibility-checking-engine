@@ -8,6 +8,12 @@ public class CheckEligibilityBulkStatusResponse
     public BulkCheckResponseLinks Links { get; set; }
 }
 
+
+public class CheckEligibilityBulkItemResponse
+{
+    public IEnumerable<BulkCheck> Data { get; set; }
+}
+
 public class BulkCheckResponseLinks
 {
     public string Get_BulkCheck_Results { get; set; }
