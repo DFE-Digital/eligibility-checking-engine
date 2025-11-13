@@ -962,11 +962,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 return CheckEligibilityStatus.eligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" &&
-                (result.Qualifier.IsNullOrEmpty() || result.Qualifier == "Pending - Keep checking" || result.Qualifier == "Manual process"))
+                (result.Qualifier.IsNullOrEmpty() || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
             {
                 return CheckEligibilityStatus.notEligible;
             }
-            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier == "No Trace - Check data")
+            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA")
             {
                 return CheckEligibilityStatus.parentNotFound;
             }
