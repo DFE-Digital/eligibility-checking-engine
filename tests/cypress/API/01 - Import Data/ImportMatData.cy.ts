@@ -6,7 +6,7 @@ describe('Testing the API', function () {
         // Declarations
         const fileName = 'MAT and Acadmies - Group Data.csv'; // File name including extension
         const method = 'POST';
-        const url = Cypress.config('baseUrl') + 'admin/import-mats';
+        const url = Cypress.config('baseUrl') + 'admin/import-multi-academy-trusts';
         const fileType = 'text/csv'; // CSV file type     
         const expectedAnswer = '{"data":"MAT and Acadmies - Group Data.csv - MAT File Processed."}';
 
