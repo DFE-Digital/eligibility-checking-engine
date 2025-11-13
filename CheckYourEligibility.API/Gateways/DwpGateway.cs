@@ -189,21 +189,10 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
-        //If they have pensions credit
-        //And there is no end date
+        //If they have pensions credit and there is no end date
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
             return true;
 
-        //Check they have UC
-        // If award is > 0
-        //Check thp against thresholds
-        // results in eligible/ notEligible ... Should be able to return false TODO: Check this is the case
-
-        //REFACTORING
-        // Check whether there is UC
-        // TODO: Check that there is an award > 0 CLARIFY: What does this mean? At least one live award? There is no award value
-        // TODO: Make new method to combine the two above
-        // Then check whether THP meets thresholds using existing methods. But return true/false to represent eligible/notEligible. Don't continue if false
         var universalCredit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
         );
@@ -220,7 +209,8 @@ public class DwpGateway : BaseGateway, IDwpGateway
             }
         }
         
-        // Then check if any of the other claims are live
+        // No pensions credit + (no UC or no live award within last 3 months)
+        // Then check if any of the other claims are live and have no end date
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
