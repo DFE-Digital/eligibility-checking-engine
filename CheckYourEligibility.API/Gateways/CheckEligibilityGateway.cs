@@ -194,7 +194,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             var bulkCheckLimit = _configuration.GetValue<int>("BulkEligibilityCheckLimit");
 
             var records = await _db.CheckEligibilities
-                .Where(x => x.BulkCheckID == bulkCheckId && x.Status != CheckEligibilityStatus.deleted)
+                .Where(x => x.BulkCheckID == bulkCheckId)
                 .ToListAsync();
 
             if (!records.Any())
@@ -222,7 +222,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
 
             // Also soft delete the corresponding BulkCheck record
-            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId && x.Status != BulkCheckStatus.Deleted);
+            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
             if (bulkCheck != null)
             {
                 bulkCheck.Status = BulkCheckStatus.Deleted;
