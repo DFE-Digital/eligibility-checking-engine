@@ -629,6 +629,60 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     }
 
     [Test]
+    public void Given_validRequest_DWP_Soap_Pending_Keep_Checking_Process_Should_Return_updatedStatus_notEligible()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Pending - Keep checking" };
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
+        var result = new StatusCodeResult(StatusCodes.Status200OK);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+
+        // Act
+        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Result.Should().Be(CheckEligibilityStatus.notEligible);
+    }
+
+    [Test]
+    public void Given_validRequest_DWP_Soap_Manual_Process_Process_Should_Return_updatedStatus_notEligible()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        var dataItem = GetCheckProcessData(fsm);
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
+        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Manual process" };
+        _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
+        var result = new StatusCodeResult(StatusCodes.Status200OK);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+
+        // Act
+        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Result.Should().Be(CheckEligibilityStatus.notEligible);
+    }
+
+    [Test]
     public void Given_validRequest_DWP_Soap_Process_Should_Return_updatedStatus_parentNotFound()
     {
         // Arrange
@@ -644,7 +698,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
-            { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
+        { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
@@ -665,6 +719,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals;
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
@@ -1040,8 +1095,10 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
+        check.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
