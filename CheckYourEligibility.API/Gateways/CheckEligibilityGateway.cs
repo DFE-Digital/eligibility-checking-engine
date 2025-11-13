@@ -463,7 +463,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<BulkCheck?> GetBulkCheck(string guid)
     {
         var bulkCheck = await _db.BulkChecks
-            .FirstOrDefaultAsync(x => x.BulkCheckID == guid && x.Status != BulkCheckStatus.Deleted);
+            .FirstOrDefaultAsync(x => x.BulkCheckID == guid);
 
         return bulkCheck;
     }
@@ -946,7 +946,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 return CheckEligibilityStatus.eligible;
             }
             else if (result.Status == "0" && result.ErrorCode == "0" &&
-                (result.Qualifier.IsNullOrEmpty() || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
+                     (result.Qualifier.IsNullOrEmpty() || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
             {
                 return CheckEligibilityStatus.notEligible;
             }
