@@ -189,21 +189,35 @@ public class DwpGateway : BaseGateway, IDwpGateway
 
     public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
+        //If they have pensions credit
+        //And there is no end date - Check this TODO: What if endDate is somehow in the future??????
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
             return true;
 
-        if (CheckUniversalCreditBenefitType(citizenId, claims, _DWP_ApiUniversalCreditThreshold[type]))
-            return true;
+        //Check they have UC
+        //If award is > 0
+        //Check thp against thresholds
+        // results in eligible/ notEligible ... Should be able to return false TODO: Check this is the case
 
-        var benefit = claims.data.FirstOrDefault(x =>
+        //REFACTORING
+        // Check whether there is UC
+        // TODO: Check that there is an award > 0 CLARIFY: What does this mean? At least one live award? There is no award value
+        // TODO: Make new method to combine the two above
+        // Then check whether THP meets thresholds using existing methods. But return true/false to represent eligible/notEligible. Don't continue if false
+        var universalCredit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
         );
-        
-        if (benefit == null)
+        if (universalCredit != null)
         {
-            return false;
+            var filterDate = DateTime.Now.AddMonths(-4);
+            var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
+            if (liveAwards != null && liveAwards.Count() > 0)
+            {
+                return CheckUniversalCreditBenefitType(citizenId, universalCredit, _DWP_ApiUniversalCreditThreshold[type]);
+            }
         }
-            
+        
+        // Then check if any of the other claims are live 
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
@@ -214,45 +228,37 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    private bool CheckUniversalCreditBenefitType(string citizenId, DwpClaimsResponse claims, double threshold)
+    private bool CheckUniversalCreditBenefitType(string citizenId, Datum universalCredit, double threshold)
     {
-        var benefit = claims.data.FirstOrDefault(x =>
-            x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
-        );
-        if (benefit != null)
+        var entitled = false;
+        var filterDate = DateTime.Now.AddMonths(-4);
+        var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
+        if (liveAwards != null && liveAwards.Count() > 0)
         {
-            var entitled = false;
-            var threshHoldUsed = 0;
-            var filterDate = DateTime.Now.AddMonths(-4);
-            var liveAwards = benefit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
-            if (liveAwards != null && liveAwards.Count() > 0)
+            var takeHomePay = 0.00;
+
+            takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(1).Sum(x => x.assessmentAttributes.takeHomePay);
+            if (takeHomePay <= threshold) entitled = true;
+
+            if (liveAwards.Count() > 1)
             {
-                var takeHomePay = 0.00;
+                takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(2)
+                    .Sum(x => x.assessmentAttributes.takeHomePay);
+                if (takeHomePay <= threshold * 2) entitled = true;
+            }
 
-                takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(1).Sum(x => x.assessmentAttributes.takeHomePay);
-                if (takeHomePay <= threshold) entitled = true;
+            if (liveAwards.Count() > 2)
+            {
+                takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3)
+                    .Sum(x => x.assessmentAttributes.takeHomePay);
+                if (takeHomePay <= threshold * 3) entitled = true;
+            }
 
-                if (liveAwards.Count() > 1)
-                {
-                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(2)
-                        .Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= threshold * 2) entitled = true;
-                }
-
-                if (liveAwards.Count() > 2)
-                {
-                    takeHomePay = liveAwards.OrderByDescending(w => w.startDate).Take(3)
-                        .Sum(x => x.assessmentAttributes.takeHomePay);
-                    if (takeHomePay <= threshold * 3) entitled = true;
-                }
-
-
-                if (entitled)
-                {
-                    _logger.LogInformation($"Dwp {DwpBenefitType.universal_credit} found for CitizenId:-{citizenId}");
-                    TrackMetric($"Dwp {DwpBenefitType.universal_credit} entitled", 1);
-                    return true;
-                }
+            if (entitled)
+            {
+                _logger.LogInformation($"Dwp {DwpBenefitType.universal_credit} found for CitizenId:-{citizenId}");
+                TrackMetric($"Dwp {DwpBenefitType.universal_credit} entitled", 1);
+                return true;
             }
         }
 
@@ -268,7 +274,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");
             TrackMetric($"Dwp {benefitType} entitled", 1);
 
-            if(benefit.amount>0) return true;
+            return true;
         }
 
         return false;
