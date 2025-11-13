@@ -190,12 +190,12 @@ public class DwpGateway : BaseGateway, IDwpGateway
     public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
     {
         //If they have pensions credit
-        //And there is no end date - Check this TODO: What if endDate is somehow in the future??????
+        //And there is no end date
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
             return true;
 
         //Check they have UC
-        //If award is > 0
+        // If award is > 0
         //Check thp against thresholds
         // results in eligible/ notEligible ... Should be able to return false TODO: Check this is the case
 
@@ -207,17 +207,20 @@ public class DwpGateway : BaseGateway, IDwpGateway
         var universalCredit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
         );
+        // Check if there is UC entitlement
         if (universalCredit != null)
         {
+            // Check there is at least 1 live UC award in the last 3 months
             var filterDate = DateTime.Now.AddMonths(-4);
             var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
             if (liveAwards != null && liveAwards.Count() > 0)
             {
-                return CheckUniversalCreditBenefitType(citizenId, universalCredit, _DWP_ApiUniversalCreditThreshold[type]);
+                // Determine eligibility based on take home pay thresholds
+                return CheckUniversalCreditBenefitType(citizenId, liveAwards, _DWP_ApiUniversalCreditThreshold[type]);
             }
         }
         
-        // Then check if any of the other claims are live 
+        // Then check if any of the other claims are live
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
             return true;
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
@@ -228,11 +231,9 @@ public class DwpGateway : BaseGateway, IDwpGateway
         return false;
     }
 
-    private bool CheckUniversalCreditBenefitType(string citizenId, Datum universalCredit, double threshold)
+    private bool CheckUniversalCreditBenefitType(string citizenId, IEnumerable<Award> liveAwards, double threshold)
     {
         var entitled = false;
-        var filterDate = DateTime.Now.AddMonths(-4);
-        var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
         if (liveAwards != null && liveAwards.Count() > 0)
         {
             var takeHomePay = 0.00;
