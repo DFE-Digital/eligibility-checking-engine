@@ -247,21 +247,21 @@ app.MapControllers();
 
 // 2.7 RateLimiter Middleware
 app.UseWhen(context => context.Request.Method == RequestMethod.Post.ToString() &&
-    (context.Request.Path.StartsWithSegments("/check") || context.Request.Path.StartsWithSegments("/bulk-check")),
+                       (context.Request.Path.StartsWithSegments("/check") || context.Request.Path.StartsWithSegments("/bulk-check")),
     app => app.UseCustomRateLimiter(
-        new RateLimiterMiddlewareOptions
-        {
-            PartionName = "Authority-Id-Minute",
-            WindowLength = TimeSpan.FromMinutes(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:WindowLength", 1)),
-            PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:PermitLimit", 250)
-        })
-    .UseCustomRateLimiter(
-        new RateLimiterMiddlewareOptions
-        {
-            PartionName = "Authority-Id-Hour",
-            WindowLength = TimeSpan.FromHours(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:WindowLength", 1)),
-            PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:PermitLimit", 5000)
-        }));
+            new RateLimiterMiddlewareOptions
+            {
+                PartionName = "Authority-Id-Minute",
+                WindowLength = TimeSpan.FromMinutes(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:WindowLength", 1)),
+                PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Minute:PermitLimit", 250)
+            })
+        .UseCustomRateLimiter(
+            new RateLimiterMiddlewareOptions
+            {
+                PartionName = "Authority-Id-Hour",
+                WindowLength = TimeSpan.FromHours(builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:WindowLength", 1)),
+                PermitLimit = builder.Configuration.GetValue("RateLimit:Policies:Authority-Id-Hour:PermitLimit", 5000)
+            }));
 
 app.Run();
 

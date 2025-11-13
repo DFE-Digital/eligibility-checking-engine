@@ -1,4 +1,3 @@
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;

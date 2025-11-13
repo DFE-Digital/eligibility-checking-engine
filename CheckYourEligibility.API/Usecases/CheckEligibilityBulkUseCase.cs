@@ -2,9 +2,9 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -101,7 +101,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         var groupId = Guid.NewGuid().ToString();
         
         // Create BulkCheck record via gateway
-        var bulkCheck = new Domain.BulkCheck
+        var bulkCheck = new BulkCheck
         {
             BulkCheckID = groupId,
             Filename = model.Meta?.Filename ?? string.Empty,

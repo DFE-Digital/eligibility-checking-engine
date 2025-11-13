@@ -1,5 +1,7 @@
 // Ignore Spelling: Levenshtein
 
+using System.Globalization;
+using System.Net;
 using AutoFixture;
 using AutoMapper;
 using Azure.Storage.Queues;
@@ -20,8 +22,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
-using System.Globalization;
-using System.Net;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -225,7 +225,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
        
-         await _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
             .ReturnsAsync(citizenResponse);
@@ -586,7 +586,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("validate");
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((capiResult, string.Empty));
@@ -1292,7 +1292,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         // Act
         CAPIClaimResponse response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId);
         // Assert
@@ -1315,7 +1315,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         // Act
         CAPIClaimResponse response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId);
         // Assert
@@ -1338,7 +1338,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         // Act
         CAPIClaimResponse response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId);
         // Assert
@@ -1361,7 +1361,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-     .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         // Act
         CAPIClaimResponse response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId);
         // Assert
@@ -1379,7 +1379,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         string reason = "ECE failed to POST to CAPI.";
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-    .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((new InternalServerErrorResult(), reason));
@@ -1402,7 +1402,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         string reason = "Get CAPI citizen claim failed.";
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-    .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((new InternalServerErrorResult(), reason));
@@ -1424,7 +1424,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         string reason = "CAPI returned status 200, but no benefits found after using business logic.";
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-    .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((new NotFoundResult(), reason));
@@ -1446,7 +1446,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         string reason = "CAPI did not find any data for this citizen";
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-    .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((new NotFoundResult(), reason));
@@ -1466,15 +1466,15 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         string correlationId = Guid.NewGuid().ToString();
         string reason =
-        "CAPI confirms citizen has benefit of type -" +
-        "employment_support_allowance_income_based" +
-        "or income_support, " +
-        "or job_seekers_allowance_income_based, " +
-        "or pensions_credit " +
-        "or universal_credit ";
+            "CAPI confirms citizen has benefit of type -" +
+            "employment_support_allowance_income_based" +
+            "or income_support, " +
+            "or job_seekers_allowance_income_based, " +
+            "or pensions_credit " +
+            "or universal_credit ";
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
-    .ReturnsAsync(citizenResponse);
+            .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((new OkResult(), reason));

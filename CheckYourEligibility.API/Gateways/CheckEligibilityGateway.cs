@@ -1,5 +1,10 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using AutoMapper;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
@@ -14,11 +19,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
+using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -55,7 +56,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk"), queueClientGateway);
     }
 
-    public async Task<string> CreateBulkCheck(Domain.BulkCheck bulkCheck)
+    public async Task<string> CreateBulkCheck(BulkCheck bulkCheck)
     {
         try
         {
@@ -161,14 +162,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                    {
-                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
-                    {
-                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
-                    }
+                {
+                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                }
                     break;
             }
 
@@ -362,16 +363,16 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user (0 means admin access to all)</param>
     /// <param name="includeLast7DaysOnly">If true, only returns bulk checks from the last 7 days. If false, returns all non-deleted bulk checks.</param>
     /// <returns>Collection of bulk checks for the requested local authority (if user has permission)</returns>
-    public async Task<IEnumerable<Domain.BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true)
+    public async Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true)
     {
         // Parse the requested local authority ID
         if (!int.TryParse(localAuthorityId, out var requestedLAId))
         {
-            return new List<Domain.BulkCheck>();
+            return new List<BulkCheck>();
         }
 
         // Build optimized query with compound filtering
-        IQueryable<Domain.BulkCheck> query = _db.BulkChecks
+        IQueryable<BulkCheck> query = _db.BulkChecks
             .Where(x => x.Status != BulkCheckStatus.Deleted); // Exclude deleted records
 
         // Apply date filter only if requested (for backward compatibility)
@@ -409,7 +410,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             else
             {
                 // User doesn't have access to the requested local authority - early return
-                return new List<Domain.BulkCheck>();
+                return new List<BulkCheck>();
             }
         }
 
@@ -459,7 +460,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return bulkChecks;
     }
 
-    public async Task<Domain.BulkCheck?> GetBulkCheck(string guid)
+    public async Task<BulkCheck?> GetBulkCheck(string guid)
     {
         var bulkCheck = await _db.BulkChecks
             .FirstOrDefaultAsync(x => x.BulkCheckID == guid && x.Status != BulkCheckStatus.Deleted);
@@ -680,7 +681,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
-          checkData.NationalInsuranceNumber, checkData.LastName);
+                checkData.NationalInsuranceNumber, checkData.LastName);
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
@@ -702,7 +703,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-           await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
 
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request.
@@ -821,7 +822,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         else
         {
             result.EligibilityCheckHashID =
-              await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
+                await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
 
             //If CAPI returns a different result from ECS
             // Create a record
@@ -1015,7 +1016,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             // Perform a benefit check
             var result = await _dwpGateway.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-            DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
             _logger.LogInformation($"Dwp after getting claim");
 
             if (result.Item1.StatusCode == StatusCodes.Status200OK)
@@ -1037,7 +1038,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
             // ECS_Conflict helper logic to better track conflicts
             claimResponse.CAPIEndpoint =
-               $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
+                $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
             claimResponse.CheckEligibilityStatus = checkResult;
             claimResponse.Reason = result.Item2; // reason message returned from DWP gateway
             claimResponse.CAPIResponseCode = (HttpStatusCode)result.Item1.StatusCode;

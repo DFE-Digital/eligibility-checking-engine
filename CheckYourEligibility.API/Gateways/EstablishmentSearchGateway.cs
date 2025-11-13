@@ -33,9 +33,9 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
             var establishmentFromUrn = _db.Establishments
                 .Include(x => x.LocalAuthority)
                 .FirstOrDefault(x => x.StatusOpen &&
-                    x.EstablishmentId == EstablishmentId &&
-                    (la == null || x.LocalAuthorityId.Equals(laInt)) &&
-                    (matSchools == null || matSchools.Contains(x.EstablishmentId)));
+                                     x.EstablishmentId == EstablishmentId &&
+                                     (la == null || x.LocalAuthorityId.Equals(laInt)) &&
+                                     (matSchools == null || matSchools.Contains(x.EstablishmentId)));
 
             if (establishmentFromUrn != null)
             {
@@ -59,9 +59,9 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
 
         var allEstablishments = _db.Establishments
             .Where(x => x.StatusOpen &&
-                x.EstablishmentName.Contains(query) &&
-                (la == null || x.LocalAuthorityId.Equals(laInt)) &&
-                (matSchools == null || matSchools.Contains(x.EstablishmentId)))
+                        x.EstablishmentName.Contains(query) &&
+                        (la == null || x.LocalAuthorityId.Equals(laInt)) &&
+                        (matSchools == null || matSchools.Contains(x.EstablishmentId)))
             .Include(x => x.LocalAuthority);
 
         var queryResult = new List<Domain.Establishment>();

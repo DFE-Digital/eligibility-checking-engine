@@ -1,10 +1,6 @@
-﻿using System;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
-using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Usecases
 {

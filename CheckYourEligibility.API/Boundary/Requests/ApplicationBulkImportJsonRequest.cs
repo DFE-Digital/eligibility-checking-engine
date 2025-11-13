@@ -1,5 +1,3 @@
-using CheckYourEligibility.API.Domain.Enums;
-
 namespace CheckYourEligibility.API.Boundary.Requests;
 
 /// <summary>

@@ -1,13 +1,13 @@
+using System.Security.Claims;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
-using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -32,7 +32,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 .Build();
 
             // Create minimal mocks - only create the ones that are actually needed
-            var mockAudit = new Mock<CheckYourEligibility.API.Gateways.Interfaces.IAudit>();
+            var mockAudit = new Mock<IAudit>();
 
             _controller = new EligibilityCheckController(
                 _mockLogger.Object,

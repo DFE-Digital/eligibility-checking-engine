@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
+using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -109,7 +110,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -168,7 +169,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -317,7 +318,7 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="urn">School URN as string</param>
     /// <returns>Establishment entity or null if not found</returns>
-    public async Task<CheckYourEligibility.API.Domain.Establishment?> GetEstablishmentEntityByUrn(string urn)
+    public async Task<Establishment?> GetEstablishmentEntityByUrn(string urn)
     {
         if (string.IsNullOrWhiteSpace(urn) || !int.TryParse(urn, out var establishmentId))
         {
@@ -333,12 +334,12 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
-    public async Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(
+    public async Task<Dictionary<string, Establishment>> GetEstablishmentEntitiesByUrns(
         IEnumerable<string> urns)
     {
         if (urns == null || !urns.Any())
         {
-            return new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+            return new Dictionary<string, Establishment>();
         }
 
         // Filter out invalid URNs and convert to integers
@@ -349,7 +350,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
         if (!validUrns.Any())
         {
-            return new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+            return new Dictionary<string, Establishment>();
         }
 
         // Get all establishments in a single query
@@ -359,7 +360,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             .ToListAsync();
 
         // Create dictionary mapping original URN string to establishment
-        var result = new Dictionary<string, CheckYourEligibility.API.Domain.Establishment>();
+        var result = new Dictionary<string, Establishment>();
 
         foreach (var validUrn in validUrns)
         {

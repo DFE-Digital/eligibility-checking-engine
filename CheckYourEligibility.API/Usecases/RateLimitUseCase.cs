@@ -1,9 +1,9 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.IdentityModel.Tokens;
-using System.Text.Json.Nodes;
-using System.Threading.RateLimiting;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -85,7 +85,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         if (httpContext.Request.Path.ToString().Contains("bulk-check"))
         {
             httpContext.Request.EnableBuffering();
-            var body = await System.Text.Json.JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body);
+            var body = await JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body);
             httpContext.Request.Body.Position = 0;
             JsonNode data;
             if (body.TryGetPropertyValue("data", out data))

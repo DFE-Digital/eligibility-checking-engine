@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-
-namespace CheckYourEligibility.API.Boundary.Responses;
+﻿namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class CheckEligibilityBulkStatusResponse
 {

@@ -3,13 +3,11 @@ using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.CsvImport;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CsvHelper;
 using CsvHelper.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 

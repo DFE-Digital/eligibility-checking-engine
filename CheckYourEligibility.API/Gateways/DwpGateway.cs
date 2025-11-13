@@ -4,13 +4,11 @@ using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Xml.Linq;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.DWP;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Properties;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -135,7 +133,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
                 if (CheckBenefitEntitlement(guid, claims, type)) {
-                  // ECS_Conflict helper logic to better track conflicts
+                    // ECS_Conflict helper logic to better track conflicts
                     reason =
                         "CAPI confirms citizen has benefit of type -" +
                         "employment_support_allowance_income_based" +

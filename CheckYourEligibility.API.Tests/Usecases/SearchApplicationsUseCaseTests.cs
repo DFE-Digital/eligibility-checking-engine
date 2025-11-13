@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;

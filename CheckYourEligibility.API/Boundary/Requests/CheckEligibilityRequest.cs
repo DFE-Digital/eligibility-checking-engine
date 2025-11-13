@@ -48,7 +48,7 @@ public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 public class CheckEligibilityRequestBulk
 {
     public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
-    public CheckEligibilityRequestBulkBase Meta { get; set; }
+    public CheckEligibilityRequestBulkBase? Meta { get; set; }
 }
 
 #endregion

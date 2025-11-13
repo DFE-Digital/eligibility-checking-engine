@@ -5,8 +5,8 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeatureManagement.Domain.Validation;
-using Newtonsoft.Json;
 using FluentValidation;
+using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -49,8 +49,8 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             var headerRow = sheetData.Elements<Row>().ElementAt(0);
             var columnHeaders = GetColumnHeaders(headerRow, sharedStrings);
             var eventRows = from row in headerRow.ElementsAfter()
-                            where row.Elements<Cell>().ElementAt(1).CellValue is not null
-                            select row;
+                where row.Elements<Cell>().ElementAt(1).CellValue is not null
+                select row;
             foreach (Row row in eventRows)
             {
                 List<string> eventProps = [];

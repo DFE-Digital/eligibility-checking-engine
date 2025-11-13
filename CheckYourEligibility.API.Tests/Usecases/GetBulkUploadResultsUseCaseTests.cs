@@ -7,6 +7,7 @@ using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -55,7 +56,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 };
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 201;
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
@@ -76,7 +77,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 };
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
@@ -101,7 +102,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 };
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
@@ -126,7 +127,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 };
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
@@ -151,7 +152,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 }; // User only has access to LA 201
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 305; // But bulk check belongs to LA 305
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
@@ -171,7 +172,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 0 }; // Admin access (0 means all)
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = 305; // Any local authority
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
@@ -197,7 +198,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var allowedLocalAuthorityIds = new List<int> { 201 }; // User has access to LA 201
-        var bulkCheck = _fixture.Create<Domain.BulkCheck>();
+        var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityId = null; // But bulk check has no local authority set
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))

@@ -1,10 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Xml.Linq;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Properties;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using System.Xml.Linq;
 
 namespace CheckYourEligibility.API.Gateways;
 public interface IEcsGateway
@@ -35,7 +35,7 @@ public class EcsGateway : BaseGateway, IEcsGateway
     string IEcsGateway.UseEcsforChecksWF => _UseEcsforChecksWF;
     private bool _ran;
 
-     public EcsGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
+    public EcsGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;

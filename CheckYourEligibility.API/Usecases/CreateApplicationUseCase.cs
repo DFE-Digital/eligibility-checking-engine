@@ -5,9 +5,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace CheckYourEligibility.API.UseCases;
 

@@ -1,5 +1,5 @@
-﻿using System.Text;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
+using System.Text;
 using CheckYourEligibility.API.Domain.Enums;
 using Microsoft.IdentityModel.Tokens;
 

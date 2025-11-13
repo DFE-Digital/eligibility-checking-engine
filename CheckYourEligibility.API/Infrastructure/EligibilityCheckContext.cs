@@ -1,6 +1,5 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;

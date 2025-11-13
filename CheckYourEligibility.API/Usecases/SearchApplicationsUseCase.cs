@@ -1,10 +1,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using System;
 
 namespace CheckYourEligibility.API.UseCases;
 
