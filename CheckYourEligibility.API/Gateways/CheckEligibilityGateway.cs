@@ -686,7 +686,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         
-        // If event is returned inititiate business logic. 
+        // If event is returned initiate business logic. 
         if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
         {
             //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
