@@ -97,17 +97,12 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         // BulkCheck configuration
         modelBuilder.Entity<BulkCheck>()
-            .HasKey(b => b.Guid);
+            .HasKey(b => b.BulkCheckID);
         modelBuilder.Entity<BulkCheck>()
             .Property(p => p.EligibilityType)
             .HasConversion(
                 v => v.ToString(),
                 v => (CheckEligibilityType)Enum.Parse(typeof(CheckEligibilityType), v));
-        modelBuilder.Entity<BulkCheck>()
-            .Property(p => p.Status)
-            .HasConversion(
-                v => v.ToString(),
-                v => (BulkCheckStatus)Enum.Parse(typeof(BulkCheckStatus), v));
 
         // BulkCheck to LocalAuthority relationship
         modelBuilder.Entity<BulkCheck>()
@@ -120,8 +115,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<EligibilityCheck>()
             .HasOne(e => e.BulkCheck)
             .WithMany(b => b.EligibilityChecks)
-            .HasForeignKey(e => e.Group)
-            .HasPrincipalKey(b => b.Guid)
+            .HasForeignKey(e => e.BulkCheckID)
+            .HasPrincipalKey(b => b.BulkCheckID)
             .IsRequired(false);
 
         modelBuilder.Entity<Establishment>()

@@ -2,7 +2,7 @@
 {
     public class CheckEligibilityBulkDeleteResponse
     {
-        public string GroupId { get; set; }
+        public string Id { get; set; }
         public int DeletedCount { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; }

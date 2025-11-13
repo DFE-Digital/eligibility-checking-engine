@@ -8,7 +8,7 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 public interface ICheckEligibility
 {
     Task<PostCheckResult> PostCheck<T>(T data) where T : IEligibilityServiceType;
-    Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>;
+    Task PostCheck<T>(T data, string bulkCheckId) where T : IEnumerable<IEligibilityServiceType>;
     Task<string> CreateBulkCheck(Domain.BulkCheck bulkCheck);
 
     Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>;
@@ -24,5 +24,5 @@ public interface ICheckEligibility
     Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditItem);
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data);
     Task ProcessQueue(string queue);
-    Task<CheckEligibilityBulkDeleteResponse> DeleteByGroup(string groupId);
+    Task<CheckEligibilityBulkDeleteResponse> DeleteByBulkCheckId(string bulkCheckId);
 }

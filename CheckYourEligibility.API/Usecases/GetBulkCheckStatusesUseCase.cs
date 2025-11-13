@@ -61,13 +61,13 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
         {
             Checks = response.Select(bc => new Boundary.Responses.BulkCheck
             {
-                Guid = bc.Guid,
+                Id = bc.BulkCheckID,
                 SubmittedDate = bc.SubmittedDate,
                 EligibilityType = bc.EligibilityType.ToString(),
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
-                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}/results"
+                Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}/results"
             })
         };
     }

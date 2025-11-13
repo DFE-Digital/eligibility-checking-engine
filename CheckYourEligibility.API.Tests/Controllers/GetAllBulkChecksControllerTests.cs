@@ -54,7 +54,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 {
                     new BulkCheck 
                     { 
-                        Guid = "test-guid-1",
+                        Id = "test-guid-1",
                         SubmittedDate = DateTime.UtcNow,
                         EligibilityType = "FreeSchoolMeals",
                         Status = "Complete",
@@ -96,7 +96,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
 
             var response = (CheckEligibilityBulkStatusesResponse)objectResult.Value!;
             Assert.That(response.Checks.Count(), Is.EqualTo(1));
-            Assert.That(response.Checks.First().Guid, Is.EqualTo("test-guid-1"));
+            Assert.That(response.Checks.First().Id, Is.EqualTo("test-guid-1"));
         }
 
         [Test]

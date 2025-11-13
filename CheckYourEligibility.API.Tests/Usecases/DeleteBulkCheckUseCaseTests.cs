@@ -51,7 +51,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
-        _mockGateway.Setup(s => s.DeleteByGroup(groupId)).ReturnsAsync(response);
+        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
         
         // Act
         var result = await _sut.Execute(groupId, allowedLocalAuthorityIds);
@@ -59,7 +59,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().Be(response);
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
-        _mockGateway.Verify(s => s.DeleteByGroup(groupId), Times.Once);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(groupId), Times.Once);
     }
 
     [Test]
@@ -77,7 +77,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
-        _mockGateway.Setup(s => s.DeleteByGroup(groupId)).ReturnsAsync(response);
+        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
         
         // Act
         var result = await _sut.Execute(groupId, allowedLocalAuthorityIds);
@@ -85,7 +85,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().Be(response);
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
-        _mockGateway.Verify(s => s.DeleteByGroup(groupId), Times.Once);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(groupId), Times.Once);
     }
 
     [Test]
@@ -105,7 +105,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
             .WithMessage($"Bulk check with ID {groupId} not found.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
-        _mockGateway.Verify(s => s.DeleteByGroup(It.IsAny<string>()), Times.Never);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
@@ -130,7 +130,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
             .WithMessage("Access denied. You can only delete bulk checks for your assigned local authority.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
-        _mockGateway.Verify(s => s.DeleteByGroup(It.IsAny<string>()), Times.Never);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
@@ -154,7 +154,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
             .WithMessage("Access denied. You can only delete bulk checks for your assigned local authority.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
-        _mockGateway.Verify(s => s.DeleteByGroup(It.IsAny<string>()), Times.Never);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
@@ -171,7 +171,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
             .WithMessage("Invalid Request, group ID is required.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(It.IsAny<string>()), Times.Never);
-        _mockGateway.Verify(s => s.DeleteByGroup(It.IsAny<string>()), Times.Never);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
     [Test]
@@ -188,7 +188,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
             .WithMessage("Invalid Request, group ID is required.");
         
         _mockGateway.Verify(s => s.GetBulkCheck(It.IsAny<string>()), Times.Never);
-        _mockGateway.Verify(s => s.DeleteByGroup(It.IsAny<string>()), Times.Never);
+        _mockGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
 }

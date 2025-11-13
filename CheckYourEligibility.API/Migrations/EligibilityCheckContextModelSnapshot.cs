@@ -202,12 +202,8 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
-                    b.Property<string>("Guid")
+                    b.Property<string>("BulkCheckID")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ClientIdentifier")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("EligibilityType")
                         .IsRequired()
@@ -220,10 +216,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<int?>("LocalAuthorityId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
                     b.Property<string>("SubmittedBy")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
@@ -231,7 +223,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("SubmittedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Guid");
+                    b.HasKey("BulkCheckID");
 
                     b.HasIndex("LocalAuthorityId");
 
@@ -308,6 +300,9 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("EligibilityCheckID")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("BulkCheckID")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("CheckData")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -316,9 +311,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EligibilityCheckHashID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Group")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Status")
@@ -334,9 +326,9 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("EligibilityCheckID");
 
-                    b.HasIndex("EligibilityCheckHashID");
+                    b.HasIndex("BulkCheckID");
 
-                    b.HasIndex("Group");
+                    b.HasIndex("EligibilityCheckHashID");
 
                     b.ToTable("EligibilityCheck", (string)null);
                 });
@@ -687,13 +679,13 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
                 {
+                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
+                        .WithMany("EligibilityChecks")
+                        .HasForeignKey("BulkCheckID");
+
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID");
-
-                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
-                        .WithMany("EligibilityChecks")
-                        .HasForeignKey("Group");
 
                     b.Navigation("BulkCheck");
 

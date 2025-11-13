@@ -58,7 +58,7 @@ namespace CheckYourEligibility.API.Usecases
             }
 
             _logger.LogInformation($"Deleting EligibilityChecks for GroupId: {groupId?.Replace(Environment.NewLine, "")}");
-            return await _checkGateway.DeleteByGroup(groupId);
+            return await _checkGateway.DeleteByBulkCheckId(groupId);
         }
     }
 }

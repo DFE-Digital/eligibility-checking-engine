@@ -67,13 +67,13 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         {
             Checks = response.Select(bc => new Boundary.Responses.BulkCheck
             {
-                Guid = bc.Guid,
+                Id = bc.BulkCheckID,
                 SubmittedDate = bc.SubmittedDate,
                 EligibilityType = bc.EligibilityType.ToString(),
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
-                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}"
+                Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}"
             }).OrderByDescending(bc => bc.SubmittedDate)
         };
     }
@@ -103,6 +103,6 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         }
 
         // Remove duplicates and return
-        return allBulkChecks.GroupBy(bc => bc.Guid).Select(g => g.First());
+        return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
     }
 }

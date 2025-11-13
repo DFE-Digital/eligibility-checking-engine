@@ -61,11 +61,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             await _db.BulkChecks.AddAsync(bulkCheck);
             await _db.SaveChangesAsync();
-            return bulkCheck.Guid;
+            return bulkCheck.BulkCheckID;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating bulk check with ID: {GroupId}", bulkCheck.Guid);
+            _logger.LogError(ex, "Error creating bulk check with ID: {GroupId}", bulkCheck.BulkCheckID);
             throw;
         }
     }
@@ -93,7 +93,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             //     item.ClientIdentifier = bulkDataItem.ClientIdentifier;
             // }
 
-            item.Group = _groupId;
+            item.BulkCheckID = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
@@ -182,36 +182,36 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<CheckEligibilityBulkDeleteResponse> DeleteByGroup(string groupId)
+    public async Task<CheckEligibilityBulkDeleteResponse> DeleteByBulkCheckId(string bulkCheckId)
     {
-        if (string.IsNullOrEmpty(groupId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
+        if (string.IsNullOrEmpty(bulkCheckId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
 
         var response = new CheckEligibilityBulkDeleteResponse
         {
-            GroupId = groupId,
+            Id = bulkCheckId,
             Timestamp = DateTime.UtcNow
         };
 
         try
         {
-            _logger.LogInformation($"Attempting to soft delete EligibilityChecks and BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Attempting to soft delete EligibilityChecks and BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
             var bulkCheckLimit = _configuration.GetValue<int>("BulkEligibilityCheckLimit");
 
             var records = await _db.CheckEligibilities
-                .Where(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted)
+                .Where(x => x.BulkCheckID == bulkCheckId && x.Status != CheckEligibilityStatus.deleted)
                 .ToListAsync();
 
             if (!records.Any())
             {
                 _logger.LogWarning(
-                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found or already deleted");
-                throw new NotFoundException(groupId);
+                    $"Bulk upload with ID {bulkCheckId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found or already deleted");
+                throw new NotFoundException(bulkCheckId);
             }
 
             if (records.Count > bulkCheckLimit)
             {
                 _logger.LogWarning(
-                    $"Bulk upload with ID {groupId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding {bulkCheckLimit} max — operation aborted.");
+                    $"Bulk upload with ID {bulkCheckId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding {bulkCheckLimit} max — operation aborted.");
                 response.Success = false;
                 response.DeletedCount = 0;
                 response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is {bulkCheckLimit}.";
@@ -226,20 +226,20 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
 
             // Also soft delete the corresponding BulkCheck record
-            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.Guid == groupId && x.Status != BulkCheckStatus.Deleted);
+            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId && x.Status != BulkCheckStatus.Deleted);
             if (bulkCheck != null)
             {
                 bulkCheck.Status = BulkCheckStatus.Deleted;
-                _logger.LogInformation($"Found and marked BulkCheck record for soft deletion: {groupId?.Replace(Environment.NewLine, "")}");
+                _logger.LogInformation($"Found and marked BulkCheck record for soft deletion: {bulkCheckId?.Replace(Environment.NewLine, "")}");
             }
             else
             {
-                _logger.LogWarning($"BulkCheck record not found or already deleted for Group: {groupId?.Replace(Environment.NewLine, "")}");
+                _logger.LogWarning($"BulkCheck record not found or already deleted for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
             }
 
             await _db.SaveChangesAsync();
 
-            _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
 
             response.Success = true;
             response.DeletedCount = records.Count;
@@ -247,7 +247,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {groupId?.Replace(Environment.NewLine, "")}");
+            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
 
             response.Success = false;
             response.DeletedCount = 0;
@@ -304,7 +304,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.Group == guid && x.Status != CheckEligibilityStatus.deleted).ToList();
+            .Where(x => x.BulkCheckID == guid && x.Status != CheckEligibilityStatus.deleted).ToList();
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -347,7 +347,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<BulkStatus?> GetBulkStatus(string guid)
     {
         var results = _db.CheckEligibilities
-            .Where(x => x.Group == guid && x.Status != CheckEligibilityStatus.deleted)
+            .Where(x => x.BulkCheckID == guid && x.Status != CheckEligibilityStatus.deleted)
             .GroupBy(n => n.Status)
             .Select(n => new { Status = n.Key, ct = n.Count() });
         if (results.Any())
@@ -473,7 +473,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     public async Task<Domain.BulkCheck?> GetBulkCheck(string guid)
     {
         var bulkCheck = await _db.BulkChecks
-            .FirstOrDefaultAsync(x => x.Guid == guid && x.Status != BulkCheckStatus.Deleted);
+            .FirstOrDefaultAsync(x => x.BulkCheckID == guid && x.Status != BulkCheckStatus.Deleted);
 
         return bulkCheck;
     }
@@ -542,7 +542,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         var queueName = string.Empty;
         if (_queueClientStandard != null)
         {
-            if (item.Group.IsNullOrEmpty())
+            if (item.BulkCheckID.IsNullOrEmpty())
             {
                 await _queueClientStandard.SendMessageAsync(
                     JsonConvert.SerializeObject(new QueueMessageCheck

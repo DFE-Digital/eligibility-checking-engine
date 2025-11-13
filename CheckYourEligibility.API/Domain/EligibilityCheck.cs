@@ -50,7 +50,7 @@ public class EligibilityCheck
     /// <summary>
     /// The group identifier for bulk operations
     /// </summary>
-    public string? Group { get; set; }
+    public string? BulkCheckID { get; set; }
 
     /// <summary>
     /// The bulk check entity if this is part of a bulk operation

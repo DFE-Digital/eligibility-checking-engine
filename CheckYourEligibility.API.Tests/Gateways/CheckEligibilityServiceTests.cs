@@ -389,7 +389,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         foreach (var item in items) 
         {
             item.Status = CheckEligibilityStatus.queuedForProcessing;
-            item.Group = guid;
+            item.BulkCheckID = guid;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
@@ -399,7 +399,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.AddRange(items);
         _fakeInMemoryDb.SaveChanges();
         var results = _fakeInMemoryDb.CheckEligibilities
-            .Where(x => x.Group == guid)
+            .Where(x => x.BulkCheckID == guid)
             .GroupBy(n => n.Status)
             .Select(n => new { Status = n.Key, ct = n.Count() });
         var total = results.Sum(s => s.ct);
@@ -1496,7 +1496,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var eligibilityCheckId = Guid.NewGuid().ToString();
         var item = _fixture.Create<EligibilityCheck>();
         item.EligibilityCheckID = eligibilityCheckId;
-        item.Group = groupId;
+        item.BulkCheckID = groupId;
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData =
             """{"nationalInsuranceNumber": "AB123456C", "lastName": "Something", "dateOfBirth": "2000-01-01", "nationalAsylumSeekerServiceNumber": null}""";
@@ -1511,7 +1511,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         changeCount.Should().Be(1);
 
         // Verify data was saved
-        var savedItems = _fakeInMemoryDb.CheckEligibilities.Where(x => x.Group == groupId).ToList();
+        var savedItems = _fakeInMemoryDb.CheckEligibilities.Where(x => x.BulkCheckID == groupId).ToList();
         savedItems.Count.Should().Be(1);
 
         // Act
@@ -1570,7 +1570,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
         // Act
-        Func<Task> act = async () => await _sut.DeleteByGroup(string.Empty);
+        Func<Task> act = async () => await _sut.DeleteByBulkCheckId(string.Empty);
 
         // Assert
 
@@ -1588,7 +1588,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         {
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
-            item.Group = groupId;
+            item.BulkCheckID = groupId;
             item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
@@ -1600,7 +1600,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var item2 = _fixture.Create<EligibilityCheck>();
         item2.EligibilityCheckID = Guid.NewGuid().ToString();
         // Different group to ensure it's not deleted
-        item2.Group = Guid.NewGuid().ToString();
+        item2.BulkCheckID = Guid.NewGuid().ToString();
         item2.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
         // Set navigation properties to null to avoid creating additional entities
         item2.EligibilityCheckHash = null;
@@ -1611,13 +1611,13 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
         
         // Verify records were actually saved
-        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted);
+        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
         savedCount.Should().Be(5, "All 5 records should be saved before deletion");
 
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
         // Act
-        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+        var deleteRespomse = await _sut.DeleteByBulkCheckId(groupId);
 
         // Assert
         deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
@@ -1636,7 +1636,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         for (var i = 0; i < 5; i++)
         {
             var item = _fixture.Create<EligibilityCheck>();
-            item.Group = groupId;
+            item.BulkCheckID = groupId;
             _fakeInMemoryDb.CheckEligibilities.Add(item);
             await _fakeInMemoryDb.SaveChangesAsync();
         }
@@ -1649,7 +1649,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
         // Act
-        Func<Task> act = async () => await _sut.DeleteByGroup(Guid.NewGuid().ToString());
+        Func<Task> act = async () => await _sut.DeleteByBulkCheckId(Guid.NewGuid().ToString());
 
         // Assert
         act.Should().ThrowExactlyAsync<ValidationException>();        
@@ -1665,7 +1665,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         {
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
-            item.Group = groupId;
+            item.BulkCheckID = groupId;
             item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
@@ -1677,13 +1677,13 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Verify records were actually saved
-        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.Group == groupId && x.Status != CheckEligibilityStatus.deleted);
+        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
         savedCount.Should().Be(300, "All 300 records should be saved before deletion");
 
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
 
         // Act
-        var deleteRespomse = await _sut.DeleteByGroup(groupId);
+        var deleteRespomse = await _sut.DeleteByBulkCheckId(groupId);
 
         // Assert
         deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
