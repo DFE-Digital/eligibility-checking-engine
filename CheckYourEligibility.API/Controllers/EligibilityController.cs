@@ -350,9 +350,9 @@ public class EligibilityCheckController : BaseController
             // 
             // Set LocalAuthorityId if not provided and if only one id is found.
             // lili: (there should never be a case where more the one id is found according to the business rules in auth use case )
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
@@ -395,9 +395,9 @@ public class EligibilityCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
