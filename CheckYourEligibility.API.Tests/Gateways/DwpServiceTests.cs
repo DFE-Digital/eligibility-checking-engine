@@ -1,12 +1,10 @@
 // Ignore Spelling: Levenshtein
 
-using System.Net;
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
@@ -14,9 +12,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Moq.Protected;
-using Resources = CheckYourEligibility.API.Tests.Properties.Resources;
 
 namespace CheckYourEligibility.API.Tests;
 

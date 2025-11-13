@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using CheckYourEligibility.API.Domain.Constants;
 using CsvHelper.Configuration;
 
 namespace CheckYourEligibility.API.Gateways.CsvImport;

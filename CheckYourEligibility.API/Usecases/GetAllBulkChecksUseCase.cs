@@ -1,6 +1,6 @@
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -37,7 +37,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
             throw new UnauthorizedAccessException("You do not have permission to access bulk checks");
         }
 
-        IEnumerable<Domain.BulkCheck>? response;
+        IEnumerable<BulkCheck>? response;
 
         if (allowedLocalAuthorityIds.Contains(0))
         {
@@ -67,18 +67,18 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         {
             Checks = response.Select(bc => new Boundary.Responses.BulkCheck
             {
-                Guid = bc.Guid,
+                Id = bc.BulkCheckID,
                 SubmittedDate = bc.SubmittedDate,
                 EligibilityType = bc.EligibilityType.ToString(),
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
-                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}"
+                Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}"
             }).OrderByDescending(bc => bc.SubmittedDate)
         };
     }
 
-    private async Task<IEnumerable<Domain.BulkCheck>?> GetAllBulkChecksForAdmin()
+    private async Task<IEnumerable<BulkCheck>?> GetAllBulkChecksForAdmin()
     {
         // For admin users, we need to get all bulk checks across all local authorities
         // We can use a dummy local authority ID since admin permissions (0 in allowedLocalAuthorityIds) 
@@ -87,9 +87,9 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         return await _checkGateway.GetBulkStatuses("0", new List<int> { 0 }, includeLast7DaysOnly: false);
     }
 
-    private async Task<IEnumerable<Domain.BulkCheck>?> GetBulkChecksForLocalAuthorities(IList<int> allowedLocalAuthorityIds)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthorities(IList<int> allowedLocalAuthorityIds)
     {
-        var allBulkChecks = new List<Domain.BulkCheck>();
+        var allBulkChecks = new List<BulkCheck>();
 
         // Get bulk checks for each allowed local authority
         // Pass false to get all bulk checks, not just from last 7 days
@@ -103,6 +103,6 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         }
 
         // Remove duplicates and return
-        return allBulkChecks.GroupBy(bc => bc.Guid).Select(g => g.First());
+        return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
     }
 }

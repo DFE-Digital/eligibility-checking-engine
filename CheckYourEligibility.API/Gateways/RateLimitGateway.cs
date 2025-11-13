@@ -1,6 +1,5 @@
-using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Domain;
-using System.Data.Common;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -56,8 +55,8 @@ public class RateLimitGateway : BaseGateway, IRateLimit
     public async Task<int> GetQueriesInWindow(string partition, DateTime eventTimeStamp, TimeSpan windowLength)
     {
         return _db.RateLimitEvents.Where(x => x.PartitionName == partition &&
-            x.TimeStamp < eventTimeStamp &&
-            x.TimeStamp >= eventTimeStamp.Subtract(windowLength))
+                                              x.TimeStamp < eventTimeStamp &&
+                                              x.TimeStamp >= eventTimeStamp.Subtract(windowLength))
             .Sum(x => x.QuerySize);
     }
 

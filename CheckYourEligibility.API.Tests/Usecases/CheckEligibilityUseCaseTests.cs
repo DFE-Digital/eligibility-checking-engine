@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
@@ -87,7 +88,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             Status = CheckEligibilityStatus.queuedForProcessing
         };
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id))
@@ -123,7 +124,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         IEligibilityServiceType? capturedArg = null;
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
 
         _mockCheckGateway
             .Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
@@ -162,8 +163,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult([
-                new FluentValidation.Results.ValidationFailure("test", "test error")
+            .Returns(new ValidationResult([
+                new ValidationFailure("test", "test error")
             ])); // Act
         Func<Task> act = async () => await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals);
 
@@ -184,7 +185,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .ReturnsAsync(responseData);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
@@ -215,7 +216,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
@@ -246,7 +247,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
 
@@ -266,7 +267,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         // Arrange
         var model = CreateValidCheckRequest();
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
-            .Returns(new FluentValidation.Results.ValidationResult());
+            .Returns(new ValidationResult());
 
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync((PostCheckResult)null!);

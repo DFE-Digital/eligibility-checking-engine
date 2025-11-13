@@ -1,3 +1,4 @@
+using System.Net;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
@@ -10,7 +11,6 @@ using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
-using System.Net;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -244,9 +244,10 @@ public class EligibilityCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
@@ -282,7 +283,7 @@ public class EligibilityCheckController : BaseController
             // Extract local authority IDs from user claims
             var localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
             //   var matId = User.GetSingleScopeId(_multiAcademyTrustScopeName);
-           // var schoolId = User.GetSingleScopeId(_establishmentScopeName);
+            // var schoolId = User.GetSingleScopeId(_establishmentScopeName);
 
             // If schoolId or matId is not null it means there is an id as the policy enforces an ID if either of the scopes is provided
             // we will check school first as it is the lowest form of org
@@ -303,9 +304,10 @@ public class EligibilityCheckController : BaseController
             // NOTE: To not disturb current business rules around local authoriy we also allow generic local_authoriy scope to be passed here
             // If no school or mat scope found then we record the Id of the local_authority if one is passed
             // else do not pass anything as this was the logic previously.
-             if (!model.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
+            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
             {
-                model.LocalAuthorityId = localAuthorityId;
+                model.Meta.LocalAuthorityId = localAuthorityId;
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
@@ -350,9 +352,10 @@ public class EligibilityCheckController : BaseController
             // 
             // Set LocalAuthorityId if not provided and if only one id is found.
             // lili: (there should never be a case where more the one id is found according to the business rules in auth use case )
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
@@ -395,9 +398,10 @@ public class EligibilityCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if (!model.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
+            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
-                model.LocalAuthorityId = localAuthorityIds[0];
+                model.Meta.LocalAuthorityId = localAuthorityIds[0];
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
@@ -851,5 +855,3 @@ public class EligibilityCheckController : BaseController
         }
     }
 }
-
-

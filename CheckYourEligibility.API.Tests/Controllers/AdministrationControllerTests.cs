@@ -65,7 +65,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockCleanUpRateLimitEventsUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
 
         var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
-        { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.CleanUpRateLimitEvents();
@@ -95,7 +95,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportEstablishments(file);
@@ -110,7 +110,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-            { StatusCode = StatusCodes.Status400BadRequest };
+                { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportEstablishmentsUseCase
@@ -145,7 +145,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportMultiAcademyTrusts(file);
@@ -160,7 +160,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-            { StatusCode = StatusCodes.Status400BadRequest };
+                { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportMatsUseCase
@@ -195,7 +195,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HomeOfficeFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportFsmHomeOfficeData(file);
@@ -210,7 +210,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-            { StatusCode = StatusCodes.Status400BadRequest };
+                { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportFsmHomeOfficeDataUseCase
@@ -245,7 +245,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         };
         var expectedResult =
             new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ImportFsmHMRCData(file);
@@ -260,7 +260,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         // Arrange
         var expectedResult =
             new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
-            { StatusCode = StatusCodes.Status400BadRequest };
+                { StatusCode = StatusCodes.Status400BadRequest };
 
         // Setup mock to throw InvalidDataException
         _mockImportFsmHMRCDataUseCase

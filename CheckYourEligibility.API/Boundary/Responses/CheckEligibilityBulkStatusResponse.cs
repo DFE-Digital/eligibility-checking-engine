@@ -1,11 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-
-namespace CheckYourEligibility.API.Boundary.Responses;
+﻿namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class CheckEligibilityBulkStatusResponse
 {
     public BulkStatus Data { get; set; }
     public BulkCheckResponseLinks Links { get; set; }
+}
+
+
+public class CheckEligibilityBulkItemResponse
+{
+    public IEnumerable<BulkCheck> Data { get; set; }
 }
 
 public class BulkCheckResponseLinks
@@ -21,7 +25,7 @@ public class BulkStatus
 
 public class BulkCheck : BulkCheckResponseLinks
 {
-    public string Guid { get; set; } = string.Empty;
+    public string Id { get; set; } = string.Empty;
     public DateTime SubmittedDate { get; set; }
     public string EligibilityType { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;

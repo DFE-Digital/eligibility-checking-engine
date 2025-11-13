@@ -1,13 +1,13 @@
+using System.Security.Claims;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
-using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -32,7 +32,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 .Build();
 
             // Create minimal mocks - only create the ones that are actually needed
-            var mockAudit = new Mock<CheckYourEligibility.API.Gateways.Interfaces.IAudit>();
+            var mockAudit = new Mock<IAudit>();
 
             _controller = new EligibilityCheckController(
                 _mockLogger.Object,
@@ -54,7 +54,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 {
                     new BulkCheck 
                     { 
-                        Guid = "test-guid-1",
+                        Id = "test-guid-1",
                         SubmittedDate = DateTime.UtcNow,
                         EligibilityType = "FreeSchoolMeals",
                         Status = "Complete",
@@ -96,7 +96,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
 
             var response = (CheckEligibilityBulkStatusesResponse)objectResult.Value!;
             Assert.That(response.Checks.Count(), Is.EqualTo(1));
-            Assert.That(response.Checks.First().Guid, Is.EqualTo("test-guid-1"));
+            Assert.That(response.Checks.First().Id, Is.EqualTo("test-guid-1"));
         }
 
         [Test]

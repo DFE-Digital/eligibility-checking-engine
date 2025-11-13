@@ -2,13 +2,14 @@ using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ApplicationStatus = CheckYourEligibility.API.Domain.ApplicationStatus;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
@@ -262,7 +263,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         {
             ApplicationID = Guid.NewGuid().ToString(),
             Reference = _fixture.Create<string>().PadRight(8)[..8], // Limit length
-            Type = Domain.Enums.CheckEligibilityType.FreeSchoolMeals,
+            Type = CheckEligibilityType.FreeSchoolMeals,
             Status = Domain.Enums.ApplicationStatus.Entitled,
             ParentFirstName = _fixture.Create<string>().PadRight(20)[..20],
             ParentLastName = _fixture.Create<string>().PadRight(20)[..20],
@@ -281,9 +282,9 @@ public class ApplicationGatewayTests : TestBase.TestBase
         };
     }
 
-    private CheckYourEligibility.API.Domain.ApplicationStatus CreateTestApplicationStatus(string applicationId)
+    private ApplicationStatus CreateTestApplicationStatus(string applicationId)
     {
-        return new CheckYourEligibility.API.Domain.ApplicationStatus
+        return new ApplicationStatus
         {
             ApplicationStatusID = Guid.NewGuid().ToString(),
             ApplicationID = applicationId,

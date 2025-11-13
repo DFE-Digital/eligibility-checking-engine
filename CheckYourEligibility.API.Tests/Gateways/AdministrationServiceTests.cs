@@ -1,7 +1,6 @@
 // Ignore Spelling: Levenshtein
 
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;

@@ -5,7 +5,6 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Moq;
-using System.Collections.Generic;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 

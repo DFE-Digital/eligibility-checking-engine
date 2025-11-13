@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20251113114411_RemoveClientIdAndRenameGuid")]
+    partial class RemoveClientIdAndRenameGuid
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -202,7 +205,7 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
-                    b.Property<string>("BulkCheckID")
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("EligibilityType")
@@ -216,6 +219,10 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<int?>("LocalAuthorityId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SubmittedBy")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
@@ -223,7 +230,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("SubmittedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("BulkCheckID");
+                    b.HasKey("Id");
 
                     b.HasIndex("LocalAuthorityId");
 
@@ -300,9 +307,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("EligibilityCheckID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("BulkCheckID")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("CheckData")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -311,6 +315,9 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EligibilityCheckHashID")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Group")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Status")
@@ -326,9 +333,9 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("EligibilityCheckID");
 
-                    b.HasIndex("BulkCheckID");
-
                     b.HasIndex("EligibilityCheckHashID");
+
+                    b.HasIndex("Group");
 
                     b.ToTable("EligibilityCheck", (string)null);
                 });
@@ -679,13 +686,13 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
                 {
-                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
-                        .WithMany("EligibilityChecks")
-                        .HasForeignKey("BulkCheckID");
-
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID");
+
+                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
+                        .WithMany("EligibilityChecks")
+                        .HasForeignKey("Group");
 
                     b.Navigation("BulkCheck");
 

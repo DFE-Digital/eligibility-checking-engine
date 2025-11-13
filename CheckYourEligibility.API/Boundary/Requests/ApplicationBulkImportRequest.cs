@@ -1,8 +1,5 @@
 // Ignore Spelling: Fsm
 
-using CheckYourEligibility.API.Domain.Enums;
-using Microsoft.AspNetCore.Http;
-
 namespace CheckYourEligibility.API.Boundary.Requests;
 
 /// <summary>

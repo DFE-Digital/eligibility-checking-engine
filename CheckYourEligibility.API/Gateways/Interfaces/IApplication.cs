@@ -1,6 +1,7 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
+using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
 
@@ -71,14 +72,14 @@ public interface IApplication
     /// </summary>
     /// <param name="urn">School URN as string</param>
     /// <returns>Establishment entity or null if not found</returns>
-    Task<CheckYourEligibility.API.Domain.Establishment?> GetEstablishmentEntityByUrn(string urn);
+    Task<Establishment?> GetEstablishmentEntityByUrn(string urn);
 
     /// <summary>
     /// Gets multiple establishment entities by their URNs in bulk
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
-    Task<Dictionary<string, CheckYourEligibility.API.Domain.Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns);
+    Task<Dictionary<string, Establishment>> GetEstablishmentEntitiesByUrns(IEnumerable<string> urns);
     
     /// <summary>
     /// Deletes an application by GUID

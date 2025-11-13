@@ -7,10 +7,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class BulkCheck
 {
-    public string Guid { get; set; } = string.Empty;
-    
-    [Column(TypeName = "varchar(100)")]
-    public string ClientIdentifier { get; set; } = string.Empty;
+    public string BulkCheckID { get; set; } = string.Empty;
     
     [Column(TypeName = "varchar(255)")]
     public string Filename { get; set; } = string.Empty;
@@ -23,7 +20,7 @@ public class BulkCheck
     [Column(TypeName = "varchar(100)")]
     public string SubmittedBy { get; set; } = string.Empty;
     
-    [Column(TypeName = "varchar(100)")]
+    [NotMapped]
     public BulkCheckStatus Status { get; set; }
     
     /// <summary>
