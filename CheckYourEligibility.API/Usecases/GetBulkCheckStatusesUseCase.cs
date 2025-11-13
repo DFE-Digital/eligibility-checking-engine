@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
@@ -59,15 +55,15 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
 
         return new CheckEligibilityBulkStatusesResponse
         {
-            Checks = response.Select(bc => new Boundary.Responses.BulkCheck
+            Checks = response.Select(bc => new BulkCheck
             {
-                Guid = bc.Guid,
+                Id = bc.BulkCheckID,
                 SubmittedDate = bc.SubmittedDate,
                 EligibilityType = bc.EligibilityType.ToString(),
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
-                Get_BulkCheck_Results = $"/bulk-check/{bc.Guid}/results"
+                Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}/results"
             })
         };
     }

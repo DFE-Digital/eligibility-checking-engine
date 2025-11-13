@@ -1,11 +1,8 @@
-using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using System.Text;
 using AutoFixture;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Tests.Properties;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -109,8 +106,8 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         _mockGateway.Verify(
             s => s.ImportWfHMRCData(It.Is<List<WorkingFamiliesEvent>>(
                 list => list.Count == 2
-                && list[0].EligibilityCode == "50173110190"
-                && list[1].EligibilityCode == "50173110191")), Times.Once);
+                        && list[0].EligibilityCode == "50173110190"
+                        && list[1].EligibilityCode == "50173110191")), Times.Once);
     }
 
     [Test]

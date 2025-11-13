@@ -1,7 +1,7 @@
+using System.Text;
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -10,7 +10,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Text;
+using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 using DomainEstablishment = CheckYourEligibility.API.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
@@ -813,7 +813,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
-        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.Receiving);
+        capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
@@ -1665,7 +1665,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.EstablishmentId.Should().Be(123456);
         capturedApplication.LocalAuthorityId.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
-        capturedApplication.Status.Should().Be(Domain.Enums.ApplicationStatus.Receiving);
+        capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));

@@ -28,7 +28,6 @@ public interface IEligibilityServiceType
 
 public class CheckEligibilityRequestBulkBase
 {
-    public string? ClientIdentifier { get; set; }
     public string? Filename { get; set; }
     public string? SubmittedBy { get; set; }
     public int? LocalAuthorityId { get; set; }
@@ -44,13 +43,12 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
-    public string? Filename { get; set; }
-    public string? SubmittedBy { get; set; }
 }
 
-public class CheckEligibilityRequestBulk : CheckEligibilityRequestBulkBase
+public class CheckEligibilityRequestBulk
 {
     public IEnumerable<CheckEligibilityRequestBulkData> Data { get; set; }
+    public CheckEligibilityRequestBulkBase? Meta { get; set; }
 }
 
 #endregion
@@ -67,7 +65,7 @@ public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityReques
     public string? GracePeriodEndDate { get; set; }
 }
 
-public class CheckEligibilityRequestWorkingFamiliesBulk : CheckEligibilityRequestBulkBase
+public class CheckEligibilityRequestWorkingFamiliesBulk : CheckEligibilityRequestBulk
 {
     public IEnumerable<CheckEligibilityRequestWorkingFamiliesBulkData> Data { get; set; }
 }
@@ -214,7 +212,7 @@ public static class EligibilityModelFactory
 public static class EligibilityBulkModelFactory
 {
     public static T CreateBulkFromGeneric<T>(T model, CheckEligibilityType routeType)
-        where T : CheckEligibilityRequestBulkBase
+        where T : CheckEligibilityRequestBulk
     {
         var modelData = (model as dynamic).Data;
 
@@ -222,8 +220,6 @@ public static class EligibilityBulkModelFactory
         {
             if (item.Type != routeType)
                 item.Type = routeType;
-            item.Filename = model.Filename;
-            item.SubmittedBy = model.SubmittedBy;
         }
 
         return model;

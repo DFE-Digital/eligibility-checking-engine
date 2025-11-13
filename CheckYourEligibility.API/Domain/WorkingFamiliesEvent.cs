@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace CheckYourEligibility.API.Domain;
@@ -34,22 +33,22 @@ public class WorkingFamiliesEvent
     {
         //Exclude event Id
         return $"""
-        {EligibilityCode}
-        {ChildFirstName}
-        {ChildLastName}
-        {ChildDateOfBirth}
-        {ParentFirstName}
-        {ParentLastName}
-        {ParentNationalInsuranceNumber}
-        {PartnerFirstName}
-        {PartnerLastName}
-        {PartnerNationalInsuranceNumber}
-        {SubmissionDate}
-        {ValidityStartDate}
-        {ValidityEndDate}
-        {DiscretionaryValidityStartDate}
-        {GracePeriodEndDate}
-        """.ReplaceLineEndings("");
+                {EligibilityCode}
+                {ChildFirstName}
+                {ChildLastName}
+                {ChildDateOfBirth}
+                {ParentFirstName}
+                {ParentLastName}
+                {ParentNationalInsuranceNumber}
+                {PartnerFirstName}
+                {PartnerLastName}
+                {PartnerNationalInsuranceNumber}
+                {SubmissionDate}
+                {ValidityStartDate}
+                {ValidityEndDate}
+                {DiscretionaryValidityStartDate}
+                {GracePeriodEndDate}
+                """.ReplaceLineEndings("");
 
     }
 }

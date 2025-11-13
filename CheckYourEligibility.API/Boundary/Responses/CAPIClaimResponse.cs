@@ -1,5 +1,5 @@
-﻿using CheckYourEligibility.API.Domain.Enums;
-using System.Net;
+﻿using System.Net;
+using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.Boundary.Responses
 {

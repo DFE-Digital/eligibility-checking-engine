@@ -67,7 +67,7 @@ public class AdministrationController : BaseController
     {
         await _cleanUpRateLimitEventsUseCase.Execute();
         return new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
-        { StatusCode = StatusCodes.Status200OK };
+            { StatusCode = StatusCodes.Status200OK };
     }
 
     /// <summary>
@@ -86,8 +86,8 @@ public class AdministrationController : BaseController
         {
             await _importEstablishmentsUseCase.Execute(file);
             return new ObjectResult(new MessageResponse
-            { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                    { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
+                { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -111,8 +111,8 @@ public class AdministrationController : BaseController
         {
             await _importMatsUseCase.Execute(file);
             return new ObjectResult(new MessageResponse
-            { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                    { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
+                { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -136,7 +136,7 @@ public class AdministrationController : BaseController
         {
             await _importFsmHomeOfficeDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HomeOfficeFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -161,7 +161,7 @@ public class AdministrationController : BaseController
         {
             await _importFsmHMRCDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {
@@ -186,7 +186,7 @@ public class AdministrationController : BaseController
         {
             await _importWfHMRCDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-            { StatusCode = StatusCodes.Status200OK };
+                { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
         {

@@ -2,9 +2,9 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -17,7 +17,7 @@ public interface ICheckEligibilityBulkUseCase
     Task<CheckEligibilityResponseBulk> Execute<T>(
         T model,
         CheckEligibilityType type,
-        int recordCountLimit) where T : CheckEligibilityRequestBulkBase;
+        int recordCountLimit) where T : CheckEligibilityRequestBulk;
 }
 
 /// <summary>
@@ -49,7 +49,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
     public async Task<CheckEligibilityResponseBulk> Execute<T>(
         T model,
         CheckEligibilityType type,
-        int recordCountLimit) where T : CheckEligibilityRequestBulkBase
+        int recordCountLimit) where T : CheckEligibilityRequestBulk
     {
         var modelBulk = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
         var bulkData = (modelBulk as dynamic).Data;
@@ -101,16 +101,15 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         var groupId = Guid.NewGuid().ToString();
         
         // Create BulkCheck record via gateway
-        var bulkCheck = new Domain.BulkCheck
+        var bulkCheck = new BulkCheck
         {
-            Guid = groupId,
-            ClientIdentifier = model.ClientIdentifier ?? string.Empty,
-            Filename = model.Filename ?? string.Empty,
-            SubmittedBy = model.SubmittedBy ?? string.Empty,
+            BulkCheckID = groupId,
+            Filename = model.Meta?.Filename ?? string.Empty,
+            SubmittedBy = model.Meta?.SubmittedBy ?? string.Empty,
             EligibilityType = type,
             Status = BulkCheckStatus.InProgress,
             SubmittedDate = DateTime.UtcNow,
-            LocalAuthorityId = model.LocalAuthorityId
+            LocalAuthorityId = model.Meta?.LocalAuthorityId
         };
 
         await _checkGateway.CreateBulkCheck(bulkCheck);

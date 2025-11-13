@@ -43,7 +43,7 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
     /// <returns>Bulk upload results</returns>
     public async Task<CheckEligibilityBulkResponse> Execute(string guid, IList<int> allowedLocalAuthorityIds)
     {
-        if (string.IsNullOrEmpty(guid)) throw new ValidationException(new List<Boundary.Responses.Error>(), "Invalid Request, group ID is required.");
+        if (string.IsNullOrEmpty(guid)) throw new ValidationException(new List<Error>(), "Invalid Request, group ID is required.");
 
         // First, verify the bulk check exists and user has permission to access it
         var bulkCheck = await _checkGateway.GetBulkCheck(guid);

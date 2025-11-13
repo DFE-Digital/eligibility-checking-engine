@@ -1,4 +1,4 @@
-using Azure;
+using System.Net;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.DWP;
@@ -6,8 +6,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Newtonsoft.Json;
-using System.Net;
-using System;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -74,7 +72,7 @@ public class MatchCitizenUseCase : IMatchCitizenUseCase
         {
             var responseData =
                 JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
-              citizenResponse.Guid = responseData.Data.Id;
+            citizenResponse.Guid = responseData.Data.Id;
             citizenResponse.Reason = "CAPI returned an ID. Citizen found.";
 
         }

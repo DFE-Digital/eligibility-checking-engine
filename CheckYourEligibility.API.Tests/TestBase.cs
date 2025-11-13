@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Idioms;
-using AutoFixture.Kernel;
 using Moq;
 
 namespace CheckYourEligibility.TestBase;

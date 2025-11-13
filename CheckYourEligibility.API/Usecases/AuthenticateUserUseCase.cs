@@ -259,7 +259,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return IsSpecificScopeIdValid(requestedScope, allowedScopesList);
 
         // If we got here, the scope is not valid
-            return false;
+        return false;
     }
 
     private static bool IsSpecificScopeIdValid(string requestedScope, string[] allowedScopesList)
