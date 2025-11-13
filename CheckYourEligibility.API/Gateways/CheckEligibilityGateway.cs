@@ -961,7 +961,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 return CheckEligibilityStatus.eligible;
             }
-            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.IsNullOrEmpty())
+            else if (result.Status == "0" && result.ErrorCode == "0" &&
+                (result.Qualifier.IsNullOrEmpty() || result.Qualifier == "Pending - Keep checking" || result.Qualifier == "Manual process"))
             {
                 return CheckEligibilityStatus.notEligible;
             }
