@@ -1111,6 +1111,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         // If we've had exceptions on this item more than retry limit
                         if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                        }
+                        else
+                            await queue.UpdateMessageAsync(
+                                item.MessageId,
+                                item.PopReceipt,
+                                item.Body,
+                                TimeSpan.Zero
+                            );                    
                     }
                 }
 
