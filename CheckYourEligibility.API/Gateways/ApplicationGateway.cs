@@ -117,7 +117,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         return null;
     }
 
-    public async Task<ApplicationSearchResponse> GetApplications(ApplicationRequestSearch model)
+    public async Task<ApplicationSearchResponse> GetApplications(ApplicationSearchRequest model)
     {
         IQueryable<Application> query;
 
@@ -133,10 +133,13 @@ public class ApplicationGateway : BaseGateway, IApplication
         var totalPages = (int)Math.Ceiling((double)totalRecords / model.PageSize);
 
         // Pagination
-        model.PageNumber = model.PageNumber <= 0 ? 1 : model.PageNumber;
+        int pageNumber = model.PageNumber <= 0 ? 1 : model.PageNumber;
+        if(model.Meta?.PageNumber>pageNumber) pageNumber = model.Meta.PageNumber;
+        int pageSize = model.PageSize;
+        if(model.Meta?.PageSize>pageSize) pageSize = model.Meta.PageSize;
         var pagedResults = await query
-            .Skip((model.PageNumber - 1) * model.PageSize)
-            .Take(model.PageSize)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Include(x => x.Statuses)
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)
@@ -419,7 +422,7 @@ public class ApplicationGateway : BaseGateway, IApplication
     #region Private
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,
-        ApplicationRequestSearch model)
+        ApplicationSearchRequest model)
     {
         query = query.Where(x => x.Type == model.Data.Type);
 

@@ -262,7 +262,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_Valid_ApplicationSearch_LA_Scope_Should_Return_StatusOk()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         var localAuthorityIds = new List<int> { 1 };
         var multiAcademyTrustIds = new List<int> { };
 
@@ -272,7 +272,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Set the LocalAuthority in the model to match our authorized LocalAuthority
         if (model.Data == null)
         {
-            model.Data = new ApplicationRequestSearchData();
+            model.Data = new ApplicationSearchRequestData();
         }
 
         model.Data.LocalAuthority = 1; // Match the localAuthorityIds we set up
@@ -292,7 +292,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_Valid_ApplicationSearch_MAT_Scope_Should_Return_StatusOk()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         var localAuthorityIds = new List<int> { };
         var multiAcademyTrustIds = new List<int> { 1 };
 
@@ -302,7 +302,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         // Set the LocalAuthority in the model to match our authorized LocalAuthority
         if (model.Data == null)
         {
-            model.Data = new ApplicationRequestSearchData();
+            model.Data = new ApplicationSearchRequestData();
         }
 
         model.Data.LocalAuthority = 1; // Match the localAuthorityIds we set up
@@ -367,7 +367,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_ApplicationSearch_Without_LA_Or_MAT_Should_Return_BadRequest()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
 
         // Setup controller with empty local authority claims
         SetupControllerWithLaAndMatIds(new List<int>(), new List<int>());
@@ -387,10 +387,10 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_ApplicationSearch_With_NonMatching_LocalAuthority_Should_Return_BadRequest()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         if (model.Data == null)
         {
-            model.Data = new ApplicationRequestSearchData();
+            model.Data = new ApplicationSearchRequestData();
         }
 
         model.Data.LocalAuthority = 5; // A different local authority than we'll authorize
@@ -400,7 +400,7 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         // Setup mock to throw UnauthorizedAccessException for unauthorized access
         _mockSearchApplicationsUseCase
-            .Setup(cs => cs.Execute(It.IsAny<ApplicationRequestSearch>(), It.IsAny<List<int>>(), It.IsAny<List<int>>()))
+            .Setup(cs => cs.Execute(It.IsAny<ApplicationSearchRequest>(), It.IsAny<List<int>>(), It.IsAny<List<int>>()))
             .ThrowsAsync(
                 new UnauthorizedAccessException("Local authority scope does not match requested LocalAuthority"));
 
@@ -560,7 +560,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_ApplicationSearch_With_ArgumentException_Should_Return_BadRequest()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         var localAuthorityIds = new List<int> { 1 };
         var multiAcademyTrustIds = new List<int> { };
 
@@ -585,7 +585,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_ApplicationSearch_With_UnauthorizedAccessException_Should_Return_BadRequest()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         var localAuthorityIds = new List<int> { 1 };
         var multiAcademyTrustIds = new List<int> { };
 
@@ -613,7 +613,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     public async Task Given_ApplicationSearch_With_GeneralException_Should_Return_BadRequest()
     {
         // Arrange
-        var model = _fixture.Create<ApplicationRequestSearch>();
+        var model = _fixture.Create<ApplicationSearchRequest>();
         var localAuthorityIds = new List<int> { 1 };
         var multiAcademyTrustIds = new List<int> { };
 

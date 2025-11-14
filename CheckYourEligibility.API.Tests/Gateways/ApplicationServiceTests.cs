@@ -228,9 +228,9 @@ public class ApplicationServiceTests : TestBase.TestBase
     public void Given_NoResults_GetApplications_Should_Return_null()
     {
         // Arrange
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 ParentDateOfBirth = "1990-01-01",
                 ChildDateOfBirth = "1990-01-01"
@@ -256,9 +256,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         Enum.TryParse(postApplicationResponse.Status, out ApplicationStatus statusItem);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Statuses = new[] { statusItem },
                 Establishment = Establishment.EstablishmentID
@@ -285,9 +285,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         Enum.TryParse(postApplicationResponse.Status, out ApplicationStatus statusItem);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Statuses = new[] { statusItem },
                 Establishment = Establishment.EstablishmentID,
@@ -324,9 +324,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         Enum.TryParse(postApplicationResponse.Status, out ApplicationStatus statusItem);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Statuses = new[] { statusItem },
                 Establishment = Establishment.EstablishmentID,
@@ -360,9 +360,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         await _sut.PostApplication(request);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Establishment = Establishment.EstablishmentID
             }
@@ -396,9 +396,9 @@ public class ApplicationServiceTests : TestBase.TestBase
             Status = ApplicationStatus.Archived
         });
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Establishment = Establishment.EstablishmentID
             }
@@ -471,9 +471,9 @@ public class ApplicationServiceTests : TestBase.TestBase
             Status = ApplicationStatus.Archived
         });
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Establishment = Establishment.EstablishmentID,
                 Statuses = new[] { ApplicationStatus.Archived }
@@ -525,11 +525,11 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         await _sut.PostApplication(request);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
             PageNumber = 0, // Edge case: Zero page number
             PageSize = 10, // Valid page size
-            Data = new ApplicationRequestSearchData()
+            Data = new ApplicationSearchRequestData()
         };
 
         // Act
@@ -550,11 +550,11 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
 
         var postApplicationResponse = await _sut.PostApplication(request);
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
             PageNumber = -1, // Edge case: Negative page number
             PageSize = 10, // Valid page size
-            Data = new ApplicationRequestSearchData()
+            Data = new ApplicationSearchRequestData()
         };
 
         // Act
@@ -578,9 +578,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         Enum.TryParse(postApplicationResponse.Status, out ApplicationStatus statusItem);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Statuses = new[] { statusItem },
                 Establishment = Establishment.EstablishmentID,
@@ -785,9 +785,9 @@ public class ApplicationServiceTests : TestBase.TestBase
 
         await _sut.PostApplication(request);
 
-        var requestSearch = new ApplicationRequestSearch
+        var requestSearch = new ApplicationSearchRequest
         {
-            Data = new ApplicationRequestSearchData
+            Data = new ApplicationSearchRequestData
             {
                 Establishment = Establishment.EstablishmentID
             }

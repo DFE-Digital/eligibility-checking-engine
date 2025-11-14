@@ -51,7 +51,7 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Throw_ArgumentException_When_Model_Data_Is_Null()
     {
         // Arrange
-        var model = new ApplicationRequestSearch { Data = null };
+        var model = new ApplicationSearchRequest { Data = null };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
 
@@ -66,8 +66,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Throw_ArgumentException_When_Neither_LocalAuthority_Nor_Establishment_Nor_MultiAcademyTrust_Are_Provided()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = null,
                 Establishment = null
@@ -87,8 +87,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Throw_UnauthorizedAccessException_When_MultiAcademyTrust_Not_Allowed()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 MultiAcademyTrust = 999, // Not in allowed list
                 Establishment = null
@@ -108,8 +108,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Throw_UnauthorizedAccessException_When_LocalAuthority_Not_Allowed()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 999, // Not in allowed list
                 Establishment = null
@@ -129,8 +129,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Allow_LocalAuthority_When_User_Has_All_Permissions()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 999, // Any local authority should be allowed
                 Establishment = null
@@ -158,8 +158,8 @@ public class SearchApplicationsUseCaseTests
         // Arrange
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 999; // Not in allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = null,
                 Establishment = establishmentId
@@ -188,8 +188,8 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 2; // In allowed list
         var multiAcademyTrustId = 2; // Not in allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = null,
                 Establishment = establishmentId
@@ -224,8 +224,8 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityId = 2; // Not in allowed list
         var multiAcademyTrustIdFromEstablishment = 2; // In allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = null,
                 Establishment = establishmentId
@@ -259,8 +259,8 @@ public class SearchApplicationsUseCaseTests
         // Arrange
         var establishmentId = 123;
         var localAuthorityIdFromEstablishment = 2; // In allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 1, // Also in allowed list
                 Establishment = establishmentId
@@ -293,8 +293,8 @@ public class SearchApplicationsUseCaseTests
         var establishmentId = 123;
         var localAuthorityId = 2; // Not inn allowed list
         var multiAcademyTrustIdFromEstablishment = 2; // In allowed list
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 MultiAcademyTrust = 1, // Also in allowed list
                 Establishment = establishmentId
@@ -325,8 +325,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Return_Empty_Response_When_Gateway_Returns_Null()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 1,
                 Establishment = null
@@ -351,8 +351,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Return_Empty_Response_When_Gateway_Returns_Empty_Data()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 1,
                 Establishment = null
@@ -380,8 +380,8 @@ public class SearchApplicationsUseCaseTests
     public async Task Execute_Should_Return_Response_When_Gateway_Returns_Valid_Data()
     {
         // Arrange
-        var model = _fixture.Build<ApplicationRequestSearch>()
-            .With(x => x.Data, new ApplicationRequestSearchData
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
             {
                 LocalAuthority = 1,
                 Establishment = null

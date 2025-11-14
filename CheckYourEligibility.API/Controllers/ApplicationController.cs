@@ -139,7 +139,7 @@ public class ApplicationController : BaseController
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
-    public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationRequestSearch model)
+    public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationSearchRequest model)
     {
         try
         {

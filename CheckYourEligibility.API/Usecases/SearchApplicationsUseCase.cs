@@ -17,7 +17,7 @@ public interface ISearchApplicationsUseCase
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <param name="allowedMultiAcademyTrustIds">List of allowed multi academy trust IDs from user claims</param>
     /// <returns>The search results response</returns>
-    Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model, List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds);
+    Task<ApplicationSearchResponse> Execute(ApplicationSearchRequest model, List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds);
 }
 
 /// <summary>
@@ -45,7 +45,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
     /// <param name="model">The application search request data</param>
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
     /// <returns>The search results response</returns>
-    public async Task<ApplicationSearchResponse> Execute(ApplicationRequestSearch model,
+    public async Task<ApplicationSearchResponse> Execute(ApplicationSearchRequest model,
         List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds)
     {
         if (model?.Data == null)

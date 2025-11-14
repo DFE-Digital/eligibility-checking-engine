@@ -29,7 +29,7 @@ public interface IApplication
     /// </summary>
     /// <param name="model">Search criteria</param>
     /// <returns>Search results</returns>
-    Task<ApplicationSearchResponse> GetApplications(ApplicationRequestSearch model);
+    Task<ApplicationSearchResponse> GetApplications(ApplicationSearchRequest model);
 
     /// <summary>
     /// Updates the status of an application

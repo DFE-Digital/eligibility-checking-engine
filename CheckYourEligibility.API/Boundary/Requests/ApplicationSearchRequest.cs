@@ -4,16 +4,24 @@ using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.Boundary.Requests;
 
-public class ApplicationRequestSearch
+public class ApplicationSearchRequest
 {
-    public ApplicationRequestSearchData? Data { get; set; }
+    public ApplicationSearchRequestData? Data { get; set; }
 
     // Pagination properties at the request level
     public int PageNumber { get; set; } = 1; // Default to page 1
     public int PageSize { get; set; } = 10; // Default to 10 items per page
+    
+    public ApplicationSearchRequestMeta? Meta { get; set; }
+
 }
 
-public class ApplicationRequestSearchData
+public class ApplicationSearchRequestMeta {
+    public int PageNumber { get; set; } = 1; // Default to page 1
+    public int PageSize { get; set; } = 10; // Default to 10 items per page
+}
+
+public class ApplicationSearchRequestData
 {
     public CheckEligibilityType Type { get; set; } = CheckEligibilityType.FreeSchoolMeals;
     public int? LocalAuthority { get; set; }

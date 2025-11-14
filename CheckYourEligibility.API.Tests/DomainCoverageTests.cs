@@ -31,17 +31,6 @@ public class DomainCoverageTests : TestBase.TestBase
     }
 
     [Test]
-    public void Coverage_EligibilityCheckHashData()
-    {
-        //arrange 
-        // act
-        var item = _fixture.Create<EligibilityCheckHashData>();
-
-        // assert
-        item.Should().BeOfType<EligibilityCheckHashData>();
-    }
-
-    [Test]
     public void Coverage_QueueMessageCheck()
     {
         //arrange 
