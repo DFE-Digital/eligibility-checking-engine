@@ -928,12 +928,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 return CheckEligibilityStatus.notEligible;
             }
-
-            else if (checkType != CheckEligibilityType.WorkingFamilies && result.Status == "-1" && result.ErrorCode == "-10" &&
-                     result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING")
-            {
-                return CheckEligibilityStatus.notEligible;
-            }
             // Since WF checks can only return Qualifier that is empty, or a "Discretionary Start" on Status 1 (eligible)
             // We need to check the type of the check before setting status as notFound/notligible status response from ECS is different between WF and the rest of the checks
             else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier)) {
