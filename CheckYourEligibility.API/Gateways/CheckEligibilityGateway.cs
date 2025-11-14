@@ -817,7 +817,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == guid);
+                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeId == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
 
@@ -828,7 +828,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     LastName = checkData.LastName,
                     Nino = checkData.NationalInsuranceNumber,
                     Type = checkData.Type,
-                    Organisation = organisation.authentication,
+                    Organisation = organisation.Authentication,
                     TimeStamp = DateTime.UtcNow,
                     EligibilityCheckHashID = result.EligibilityCheckHashID,
                     CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
@@ -1090,9 +1090,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
-                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.typeId == checkData.Guid && a.Type == AuditType.Check && a.method == "POST");
+                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.TypeId == checkData.Guid && a.Type == AuditType.Check && a.Method == "POST");
                         string scope = string.Empty;
-                        if (postCheckAudit != null && postCheckAudit.scope != null) scope = postCheckAudit.scope;
+                        if (postCheckAudit != null && postCheckAudit.Scope != null) scope = postCheckAudit.Scope;
 
                         var result = await ProcessCheck(checkData.Guid, new AuditData
                         {

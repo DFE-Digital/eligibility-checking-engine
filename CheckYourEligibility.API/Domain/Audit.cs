@@ -13,17 +13,17 @@ public class Audit
 
     [Column(TypeName = "varchar(100)")] public AuditType Type { get; set; }
 
-    [Column(TypeName = "varchar(200)")] public string typeId { get; set; }
+    [Column(TypeName = "varchar(200)")] public string TypeId { get; set; }
 
-    [Column(TypeName = "varchar(200)")] public string url { get; set; }
+    [Column(TypeName = "varchar(200)")] public string Url { get; set; }
 
-    [Column(TypeName = "varchar(200)")] public string method { get; set; }
+    [Column(TypeName = "varchar(200)")] public string Method { get; set; }
 
-    [Column(TypeName = "varchar(500)")] public string source { get; set; }
+    [Column(TypeName = "varchar(500)")] public string Source { get; set; }
 
-    [Column(TypeName = "varchar(5000)")] public string authentication { get; set; }
+    [Column(TypeName = "varchar(5000)")] public string Authentication { get; set; }
 
-    [Column(TypeName = "varchar(500)")] public string? scope { get; set; }
+    [Column(TypeName = "varchar(500)")] public string? Scope { get; set; }
 
     public DateTime TimeStamp { get; set; }
 }
