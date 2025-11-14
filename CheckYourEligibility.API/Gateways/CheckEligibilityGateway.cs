@@ -372,8 +372,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         }
 
         // Build optimized query with compound filtering
-        IQueryable<BulkCheck> query = _db.BulkChecks
-            .Where(x => x.Status != BulkCheckStatus.Deleted); // Exclude deleted records
+        IQueryable<BulkCheck> query = _db.BulkChecks;
 
         // Apply date filter only if requested (for backward compatibility)
         if (includeLast7DaysOnly)
