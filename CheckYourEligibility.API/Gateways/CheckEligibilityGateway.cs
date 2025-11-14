@@ -205,16 +205,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 throw new NotFoundException(bulkCheckId);
             }
 
-            if (records.Count > bulkCheckLimit)
-            {
-                _logger.LogWarning(
-                    $"Bulk upload with ID {bulkCheckId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} matched {records.Count} records, exceeding {bulkCheckLimit} max — operation aborted.");
-                response.Success = false;
-                response.DeletedCount = 0;
-                response.Error = $"Too many records ({records.Count}) matched. Max allowed per bulk group is {bulkCheckLimit}.";
-                return response;
-            }
-
             // Soft delete the EligibilityCheck records by setting status to deleted
             foreach (var record in records)
             {
