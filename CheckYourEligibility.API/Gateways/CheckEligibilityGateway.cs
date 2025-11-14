@@ -1127,6 +1127,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         _logger.LogError(ex, "Queue processing");
                         // If we've had exceptions on this item more than retry limit
                         if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                        {
+                            await UpdateEligibilityCheckStatus(checkData.Guid,
+                                new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
                             await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
                         }
                         else
