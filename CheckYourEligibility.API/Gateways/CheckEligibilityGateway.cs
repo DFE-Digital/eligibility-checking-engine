@@ -1066,7 +1066,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             if (properties.ApproximateMessagesCount > 0)
             {
-                QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(32);
+                QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
                 foreach (var item in retrievedMessage)
                 {
                     var checkData =
