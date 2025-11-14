@@ -212,18 +212,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 record.Updated = DateTime.UtcNow;
             }
 
-            // Also soft delete the corresponding BulkCheck record
-            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
-            if (bulkCheck != null)
-            {
-                bulkCheck.Status = BulkCheckStatus.Deleted;
-                _logger.LogInformation($"Found and marked BulkCheck record for soft deletion: {bulkCheckId?.Replace(Environment.NewLine, "")}");
-            }
-            else
-            {
-                _logger.LogWarning($"BulkCheck record not found or already deleted for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
-            }
-
             await _db.SaveChangesAsync();
 
             _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
