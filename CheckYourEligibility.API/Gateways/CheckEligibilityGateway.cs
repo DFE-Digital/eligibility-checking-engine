@@ -663,7 +663,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
             SoapCheckResponse innerResult = await _ecsGateway.EcsWFCheck(checkData, laId);
 
-            result.Status = convertEcsResultStatus(innerResult);
+            result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
             if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
             {
                 wfEvent.EligibilityCode = checkData.EligibilityCode;
@@ -685,7 +685,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
         
-        // If event is returned inititiate business logic. 
+        // If event is returned initiate business logic. 
         if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
         {
             //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
@@ -705,8 +705,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
 
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
-        // that needs to be returned on the GET request.
-        if (wfEvent != null)
+        // that needs to be returned on the GET request if a record has been found
+        if (wfEvent != null && result.Status != CheckEligibilityStatus.notFound)
         {
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
@@ -936,7 +936,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return CheckSurname(data.LastName, checkReults);
     }
 
-    private CheckEligibilityStatus convertEcsResultStatus(SoapCheckResponse? result)
+    private CheckEligibilityStatus convertEcsResultStatus(SoapCheckResponse? result, CheckEligibilityType checkType = CheckEligibilityType.None)
     {
         if (result != null)
         {
@@ -944,12 +944,28 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 return CheckEligibilityStatus.eligible;
             }
-            else if (result.Status == "0" && result.ErrorCode == "0" &&
-                     (result.Qualifier.IsNullOrEmpty() || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
+
+            else if (checkType != CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" &&
+                    ( string.IsNullOrEmpty(result.Qualifier) || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
             {
                 return CheckEligibilityStatus.notEligible;
             }
-            else if (result.Status == "0" && result.ErrorCode == "0" && result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA")
+            // Since WF checks can only return Qualifier that is empty, or a "Discretionary Start" on Status 1 (eligible)
+            // We need to check the type of the check before setting status as notFound/notligible status response from ECS is different between WF and the rest of the checks
+            else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier)) {
+
+                if (string.IsNullOrEmpty(result.ValidityStartDate) && string.IsNullOrEmpty(result.ValidityEndDate) && string.IsNullOrEmpty(result.GracePeriodEndDate))
+                {
+                    return CheckEligibilityStatus.notFound;
+                }
+                else 
+                {
+                    return CheckEligibilityStatus.notEligible;
+                }
+                                
+            }
+
+            else if (result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA" && result.Status == "0" && result.ErrorCode == "0")
             {
                 return CheckEligibilityStatus.parentNotFound;
             }
