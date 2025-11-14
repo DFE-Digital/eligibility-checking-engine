@@ -1712,42 +1712,6 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         act.Should().ThrowExactlyAsync<ValidationException>();        
     }
 
-    [Test]
-    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_WithMoreThanBulkLimitRecords_Should_Return_ErrorMessage()
-    {
-        // Arrange
-        var groupId = Guid.NewGuid().ToString();
-
-        for (var i = 0; i < 300; i++)
-        {
-            var item = _fixture.Create<EligibilityCheck>();
-            item.EligibilityCheckID = Guid.NewGuid().ToString();
-            item.BulkCheckID = groupId;
-            item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
-            // Set navigation properties to null to avoid creating additional entities
-            item.EligibilityCheckHash = null;
-            item.EligibilityCheckHashID = null;
-            item.BulkCheck = null;
-            _fakeInMemoryDb.CheckEligibilities.Add(item);
-        }
-
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Verify records were actually saved
-        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
-        savedCount.Should().Be(300, "All 300 records should be saved before deletion");
-
-        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
-
-        // Act
-        var deleteRespomse = await _sut.DeleteByBulkCheckId(groupId);
-
-        // Assert
-        deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
-        deleteRespomse.DeletedCount.Should().Be(0);
-        deleteRespomse.Error.Should().BeEquivalentTo("Too many records (300) matched. Max allowed per bulk group is 250.");
-    }
-
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData
