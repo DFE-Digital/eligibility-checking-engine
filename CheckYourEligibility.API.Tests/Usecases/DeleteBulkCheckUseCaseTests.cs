@@ -48,13 +48,13 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
-        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
+        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response.Data);
         
         // Act
         var result = await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
-        result.Should().Be(response);
+        result.Should().BeEquivalentTo(response);
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
         _mockGateway.Verify(s => s.DeleteByBulkCheckId(groupId), Times.Once);
     }
@@ -74,13 +74,13 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
-        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
+        _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response.Data);
         
         // Act
         var result = await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
-        result.Should().Be(response);
+        result.Should().BeEquivalentTo(response);
         _mockGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
         _mockGateway.Verify(s => s.DeleteByBulkCheckId(groupId), Times.Once);
     }

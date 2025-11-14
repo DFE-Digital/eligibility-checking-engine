@@ -30,14 +30,15 @@ namespace CheckYourEligibility.API.Usecases
             _logger = logger;
         }
 
-        public async Task<CheckEligibilityBulkDeleteResponse> Execute(string groupId, IList<int> allowedLocalAuthorityIds)
+        public async Task<CheckEligibilityBulkDeleteResponse> Execute(string groupId,
+            IList<int> allowedLocalAuthorityIds)
         {
-            if (string.IsNullOrEmpty(groupId)) 
+            if (string.IsNullOrEmpty(groupId))
                 throw new ValidationException(null, "Invalid Request, group ID is required.");
 
             // First, get the bulk check to validate ownership
             var bulkCheck = await _checkGateway.GetBulkCheck(groupId);
-            
+
             if (bulkCheck == null)
             {
                 throw new NotFoundException($"Bulk check with ID {groupId} not found.");
@@ -49,12 +50,14 @@ namespace CheckYourEligibility.API.Usecases
                 if (!bulkCheck.LocalAuthorityID.HasValue ||
                     !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value))
                 {
-                    throw new InvalidScopeException($"Access denied. You can only delete bulk checks for your assigned local authority.");
+                    throw new InvalidScopeException(
+                        $"Access denied. You can only delete bulk checks for your assigned local authority.");
                 }
             }
 
-            _logger.LogInformation($"Deleting EligibilityChecks for GroupId: {groupId?.Replace(Environment.NewLine, "")}");
-            return await _checkGateway.DeleteByBulkCheckId(groupId);
+            _logger.LogInformation(
+                $"Deleting EligibilityChecks for GroupId: {groupId?.Replace(Environment.NewLine, "")}");
+            return new CheckEligibilityBulkDeleteResponse() { Data = await _checkGateway.DeleteByBulkCheckId(groupId) };
         }
     }
 }

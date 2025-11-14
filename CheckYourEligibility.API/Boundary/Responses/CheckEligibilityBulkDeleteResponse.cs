@@ -2,11 +2,12 @@
 {
     public class CheckEligibilityBulkDeleteResponse
     {
+        public CheckEligibilityBulkDeleteResponseData Data { get; set; }
+    }
+    
+    public class CheckEligibilityBulkDeleteResponseData
+    {
         public string Id { get; set; }
-        public int DeletedCount { get; set; }
-        public bool Success { get; set; }
-        public string Message { get; set; }
-        public string Error { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string Status { get; set; }
     }
 }

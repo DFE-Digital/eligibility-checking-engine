@@ -180,14 +180,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return null;
     }
 
-    public async Task<CheckEligibilityBulkDeleteResponse> DeleteByBulkCheckId(string bulkCheckId)
+    public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)
     {
         if (string.IsNullOrEmpty(bulkCheckId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
 
-        var response = new CheckEligibilityBulkDeleteResponse
+        var response = new CheckEligibilityBulkDeleteResponseData
         {
             Id = bulkCheckId,
-            Timestamp = DateTime.UtcNow
         };
 
         try
@@ -217,17 +216,13 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
 
-            response.Success = true;
-            response.DeletedCount = records.Count;
-            response.Message = $"{records.Count} eligibility check record(s) and associated bulk check successfully deleted.";
+            response.Status = "Success";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
 
-            response.Success = false;
-            response.DeletedCount = 0;
-            response.Error = $"Error during deletion: {ex.Message}";
+            response.Status = "Error";
         }
 
         return response;
