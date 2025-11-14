@@ -50,7 +50,7 @@ public class AuditGateway : BaseGateway, IAudit
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext != null)
             {
-                var remoteIpAddress = httpContext.Connection.RemoteIpAddress;
+                var remoteIpAddress = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault(httpContext.Connection?.RemoteIpAddress?.ToString());
                 var host = httpContext.Request.Host;
                 var path = httpContext.Request.Path;
                 var method = httpContext.Request.Method;

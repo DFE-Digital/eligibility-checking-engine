@@ -39,7 +39,7 @@ public class BaseController : Controller
     {
         if (HttpContext != null)
         {
-            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress;
+            var remoteIpAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault(HttpContext.Connection?.RemoteIpAddress?.ToString());
             var host = HttpContext.Request.Host;
             var path = HttpContext.Request.Path;
             var method = HttpContext.Request.Method;
