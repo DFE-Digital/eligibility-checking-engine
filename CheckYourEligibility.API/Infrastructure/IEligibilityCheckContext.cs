@@ -11,7 +11,7 @@ public interface IEligibilityCheckContext
     DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     DbSet<Establishment> Establishments { get; set; }
     DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
-    DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustSchools { get; set; }
+    DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustEstablishments { get; set; }
     DbSet<LocalAuthority> LocalAuthorities { get; set; }
     DbSet<Application> Applications { get; set; }
     DbSet<ApplicationStatus> ApplicationStatuses { get; set; }

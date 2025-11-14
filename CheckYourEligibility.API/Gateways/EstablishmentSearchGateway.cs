@@ -26,7 +26,7 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
 
         int.TryParse(la, out int laInt);
         int.TryParse(mat, out int matInt);
-        var matSchools = mat != null ? _db.MultiAcademyTrustSchools.Where(x => x.MultiAcademyTrustID == matInt).Select(x => x.EstablishmentID).ToList() : null;
+        var matSchools = mat != null ? _db.MultiAcademyTrustEstablishments.Where(x => x.MultiAcademyTrustID == matInt).Select(x => x.EstablishmentID).ToList() : null;
 
         if (int.TryParse(query, out var EstablishmentId))
         {

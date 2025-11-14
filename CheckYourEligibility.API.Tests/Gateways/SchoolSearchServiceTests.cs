@@ -31,7 +31,7 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         _fakeInMemoryDb.Establishments.RemoveRange(_fakeInMemoryDb.Establishments);
         _fakeInMemoryDb.LocalAuthorities.RemoveRange(_fakeInMemoryDb.LocalAuthorities);
         _fakeInMemoryDb.MultiAcademyTrusts.RemoveRange(_fakeInMemoryDb.MultiAcademyTrusts);
-        _fakeInMemoryDb.MultiAcademyTrustSchools.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustSchools);
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustEstablishments);
         await _fakeInMemoryDb.SaveChangesAsync();
     }
 
@@ -103,11 +103,11 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         var urn = 12345;
         Establishment.EstablishmentID = urn;
         _fakeInMemoryDb.Establishments.Add(Establishment);
-        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustEstablishment>();
-        multiAcademyTrustSchool.EstablishmentID = Establishment.EstablishmentID;
-        multiAcademyTrustSchool.MultiAcademyTrust.MultiAcademyTrustID = 1;
-        multiAcademyTrustSchool.MultiAcademyTrustID = 1;
-        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+        var multiAcademyTrustEstablishment = _fixture.Create<MultiAcademyTrustEstablishment>();
+        multiAcademyTrustEstablishment.EstablishmentID = Establishment.EstablishmentID;
+        multiAcademyTrustEstablishment.MultiAcademyTrust.MultiAcademyTrustID = 1;
+        multiAcademyTrustEstablishment.MultiAcademyTrustID = 1;
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(multiAcademyTrustEstablishment);
         _fakeInMemoryDb.SaveChanges();
         string la = null;
         string mat = "2";
@@ -160,11 +160,11 @@ public class SchoolSearchServiceTests : TestBase.TestBase
         _fakeInMemoryDb.Establishments.Add(secondarySchool);
         _fakeInMemoryDb.SaveChanges();
 
-        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustEstablishment>();
-        multiAcademyTrustSchool.EstablishmentID = secondarySchool.EstablishmentID;
-        multiAcademyTrustSchool.MultiAcademyTrust.MultiAcademyTrustID = 1;
-        multiAcademyTrustSchool.MultiAcademyTrustID = 1;
-        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+        var multiAcademyTrustEstablishment = _fixture.Create<MultiAcademyTrustEstablishment>();
+        multiAcademyTrustEstablishment.EstablishmentID = secondarySchool.EstablishmentID;
+        multiAcademyTrustEstablishment.MultiAcademyTrust.MultiAcademyTrustID = 1;
+        multiAcademyTrustEstablishment.MultiAcademyTrustID = 1;
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(multiAcademyTrustEstablishment);
 
         _fakeInMemoryDb.SaveChanges();
         string la = null;

@@ -126,10 +126,10 @@ public class AdministrationGateway : IAdministration
             .Distinct()
             .Select(x => new MultiAcademyTrust { MultiAcademyTrustID = x.GroupUID, Name = x.GroupName });
 
-        var multiAcademyTrustSchools = data
+        var multiAcademyTrustEstablishments = data
             .Select(x => new MultiAcademyTrustEstablishment { MultiAcademyTrustID = x.GroupUID, EstablishmentID = x.AcademyURN });
 
-        _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustSchools);
+        _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustEstablishments);
     }
 
 

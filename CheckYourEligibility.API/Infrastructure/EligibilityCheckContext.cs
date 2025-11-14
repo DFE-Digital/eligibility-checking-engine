@@ -22,7 +22,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     public virtual DbSet<Establishment> Establishments { get; set; }
     public virtual DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
-    public virtual DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustSchools { get; set; }
+    public virtual DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustEstablishments { get; set; }
     public virtual DbSet<LocalAuthority> LocalAuthorities { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }

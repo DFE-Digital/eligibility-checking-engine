@@ -639,14 +639,14 @@ public class ApplicationServiceTests : TestBase.TestBase
         MultiAcademyTrust = _fixture.Create<MultiAcademyTrust>();
         Establishment = _fixture.Create<Establishment>();
 
-        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustEstablishment>();
-        multiAcademyTrustSchool.MultiAcademyTrustID = MultiAcademyTrust.MultiAcademyTrustID;
-        multiAcademyTrustSchool.EstablishmentID = Establishment.EstablishmentID;
-        MultiAcademyTrust.MultiAcademyTrustEstablishments.Add(multiAcademyTrustSchool);
+        var multiAcademyTrustEstablishment = _fixture.Create<MultiAcademyTrustEstablishment>();
+        multiAcademyTrustEstablishment.MultiAcademyTrustID = MultiAcademyTrust.MultiAcademyTrustID;
+        multiAcademyTrustEstablishment.EstablishmentID = Establishment.EstablishmentID;
+        MultiAcademyTrust.MultiAcademyTrustEstablishments.Add(multiAcademyTrustEstablishment);
 
         _fakeInMemoryDb.Establishments.Add(Establishment);
         _fakeInMemoryDb.MultiAcademyTrusts.Add(MultiAcademyTrust);
-        _fakeInMemoryDb.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(multiAcademyTrustEstablishment);
         User = _fixture.Create<User>();
         _fakeInMemoryDb.Users.Add(User);
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -830,7 +830,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         _fakeInMemoryDb.LocalAuthorities.RemoveRange(_fakeInMemoryDb.LocalAuthorities);
         _fakeInMemoryDb.Users.RemoveRange(_fakeInMemoryDb.Users);
         _fakeInMemoryDb.MultiAcademyTrusts.RemoveRange(_fakeInMemoryDb.MultiAcademyTrusts);
-        _fakeInMemoryDb.MultiAcademyTrustSchools.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustSchools);
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.RemoveRange(_fakeInMemoryDb.MultiAcademyTrustEstablishments);
         _fakeInMemoryDb.SaveChanges();
 
         await _fakeInMemoryDb.SaveChangesAsync();

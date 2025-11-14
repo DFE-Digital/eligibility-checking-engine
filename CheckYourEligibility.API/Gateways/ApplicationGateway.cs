@@ -210,7 +210,7 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         try
         {
-            var multiAcademyTrustId = await _db.MultiAcademyTrustSchools
+            var multiAcademyTrustId = await _db.MultiAcademyTrustEstablishments
                 .Where(x => x.EstablishmentID == establishmentId)
                 .Select(x => x.MultiAcademyTrustID)
                 .FirstAsync();
@@ -563,7 +563,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
     private List<int> GetMatSchoolIds(int matId)
     {
-        return _db.MultiAcademyTrustSchools.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();
+        return _db.MultiAcademyTrustEstablishments.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();
     }
 
     #endregion
