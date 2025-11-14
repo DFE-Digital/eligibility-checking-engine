@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
@@ -626,6 +627,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
         result.Status = CheckEligibilityStatus.notFound;
+        
+        var sw = Stopwatch.StartNew();
 
         // Get event for test record
         if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
@@ -652,6 +655,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             }
 
             source = ProcessEligibilityCheckSource.ECS;
+            
+            _logger.LogInformation($"Processing ECS WF check in {sw.ElapsedMilliseconds} ms");
         }
 
         // Get event for ECE record
@@ -659,6 +664,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                 checkData.NationalInsuranceNumber, checkData.LastName);
+            
+            _logger.LogInformation($"Processing ECE WF check in {sw.ElapsedMilliseconds} ms");
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
@@ -750,12 +757,12 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 checkResult = await HMRC_Check(checkData);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
+                    var sw = Stopwatch.StartNew();
                     if (_ecsGateway.UseEcsforChecks == "true")
                     {
-
                         checkResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.ECS;
-
+                        _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
                     }
                     else if (_ecsGateway.UseEcsforChecks == "false")
                     {
@@ -763,13 +770,18 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
                         checkResult = capiClaimResponse.CheckEligibilityStatus;
                         source = ProcessEligibilityCheckSource.DWP;
+                        _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
                     }
                     else // do both checks
                     {
                         checkResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.DWP;
+                        _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
+
+                        sw.Restart();
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
                         eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
+                        _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                         if (checkResult != eceCheckResult)
                         {
@@ -1060,6 +1072,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             queue = _queueClientBulk;
         else
             throw new Exception($"invalid queue {queName}.");
+        
+        var sw = Stopwatch.StartNew();
         if (await queue.ExistsAsync())
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
@@ -1067,8 +1081,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if (properties.ApproximateMessagesCount > 0)
             {
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
+                
+                _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
                 foreach (var item in retrievedMessage)
                 {
+                    sw.Restart();
                     var checkData =
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
@@ -1120,6 +1137,8 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                                 TimeSpan.Zero
                             );                    
                     }
+                    
+                    _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
                 }
 
                 properties = await queue.GetPropertiesAsync();
