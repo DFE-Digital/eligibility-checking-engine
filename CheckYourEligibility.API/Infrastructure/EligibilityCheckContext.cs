@@ -22,7 +22,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
     public virtual DbSet<Establishment> Establishments { get; set; }
     public virtual DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
-    public virtual DbSet<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
+    public virtual DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustSchools { get; set; }
     public virtual DbSet<LocalAuthority> LocalAuthorities { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
     public virtual DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -68,11 +68,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         this.BulkInsert(data);
     }
 
-    public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustSchool> schoolData)
+    public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
         using (var transaction = base.Database.BeginTransaction())
         {
-            this.Truncate<MultiAcademyTrustSchool>();
+            this.Truncate<MultiAcademyTrustEstablishment>();
             this.MultiAcademyTrusts.ExecuteDelete();
             this.BulkInsert(trustData);
             this.BulkInsert(schoolData);
@@ -107,7 +107,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<BulkCheck>()
             .HasOne(b => b.LocalAuthority)
             .WithMany()
-            .HasForeignKey(b => b.LocalAuthorityId)
+            .HasForeignKey(b => b.LocalAuthorityID)
             .IsRequired(false);
 
         // EligibilityCheck to BulkCheck relationship
@@ -122,11 +122,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasOne(e => e.LocalAuthority);
 
         // MultiAcademyTrustSchool to MultiAcademyTrust relationship
-        modelBuilder.Entity<MultiAcademyTrustSchool>()
+        modelBuilder.Entity<MultiAcademyTrustEstablishment>()
             .HasOne(s => s.MultiAcademyTrust)
-            .WithMany(t => t.MultiAcademyTrustSchools)
-            .HasForeignKey(s => s.TrustId)
-            .HasPrincipalKey(t => t.UID)
+            .WithMany(t => t.MultiAcademyTrustEstablishments)
+            .HasForeignKey(s => s.MultiAcademyTrustID)
+            .HasPrincipalKey(t => t.MultiAcademyTrustID)
             .IsRequired(true);
 
         modelBuilder.Entity<Application>()

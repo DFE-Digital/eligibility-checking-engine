@@ -9,8 +9,8 @@ namespace CheckYourEligibility.API.Domain
     [ExcludeFromCodeCoverage(Justification = "Data Model.")]
     public class ECSConflict
     {
-        [Key] public int ID { get; set; }
-        public string CorrelationId { get; set; }
+        [Key] public int ECSConflictID { get; set; }
+        public string CorrelationID { get; set; }
         [Column(TypeName = "varchar(50)")] public CheckEligibilityStatus ECE_Status { get; set; }
         [Column(TypeName = "varchar(50)")] public CheckEligibilityStatus ECS_Status { get; set; }
         [Column(TypeName = "varchar(50)")] public string LastName { get; set; }

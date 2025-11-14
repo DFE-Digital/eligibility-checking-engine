@@ -6,7 +6,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class ApplicationEvidence
 {
-    public int Id { get; set; }
+    public int ApplicationEvidenceID { get; set; }
 
     [Column(TypeName = "varchar(255)")] public string FileName { get; set; }
 

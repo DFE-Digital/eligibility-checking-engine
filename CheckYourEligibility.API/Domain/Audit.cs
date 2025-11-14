@@ -13,7 +13,7 @@ public class Audit
 
     [Column(TypeName = "varchar(100)")] public AuditType Type { get; set; }
 
-    [Column(TypeName = "varchar(200)")] public string TypeId { get; set; }
+    [Column(TypeName = "varchar(200)")] public string TypeID { get; set; }
 
     [Column(TypeName = "varchar(200)")] public string Url { get; set; }
 

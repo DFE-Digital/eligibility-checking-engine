@@ -374,7 +374,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 // Admin user requesting a specific local authority (e.g., /bulk-check/status/201)
                 // Filter by the specific local authority requested
-                query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+                query = query.Where(x => x.LocalAuthorityID == requestedLAId);
             }
         }
         else
@@ -383,7 +383,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             if (allowedLocalAuthorityIds.Contains(requestedLAId))
             {
                 // User has access to the specific requested local authority
-                query = query.Where(x => x.LocalAuthorityId == requestedLAId);
+                query = query.Where(x => x.LocalAuthorityID == requestedLAId);
             }
             else
             {
@@ -817,11 +817,11 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeId == guid);
+                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
 
-                    CorrelationId = correlationId,
+                    CorrelationID = correlationId,
                     ECE_Status = eceCheckResult,
                     ECS_Status = checkResult,
                     DateOfBirth = checkData.DateOfBirth,
@@ -1090,7 +1090,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
-                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.TypeId == checkData.Guid && a.Type == AuditType.Check && a.Method == "POST");
+                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == checkData.Guid && a.Type == AuditType.Check && a.Method == "POST");
                         string scope = string.Empty;
                         if (postCheckAudit != null && postCheckAudit.Scope != null) scope = postCheckAudit.Scope;
 

@@ -56,11 +56,11 @@ public class AdministrationGateway : IAdministration
         var localAuthorites = data
             .Select(m => new { m.LaCode, m.LaName })
             .Distinct()
-            .Select(x => new LocalAuthority { LocalAuthorityId = x.LaCode, LaName = x.LaName });
+            .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName });
 
         foreach (var la in localAuthorites)
         {
-            var item = _db.LocalAuthorities.FirstOrDefault(x => x.LocalAuthorityId == la.LocalAuthorityId);
+            var item = _db.LocalAuthorities.FirstOrDefault(x => x.LocalAuthorityID == la.LocalAuthorityID);
             if (item != null)
                 try
                 {
@@ -79,9 +79,9 @@ public class AdministrationGateway : IAdministration
 
         var Establishment = data.Select(x => new Establishment
         {
-            EstablishmentId = x.Urn,
+            EstablishmentID = x.Urn,
             EstablishmentName = x.EstablishmentName,
-            LocalAuthorityId = x.LaCode,
+            LocalAuthorityID = x.LaCode,
             Locality = x.Locality,
             Postcode = x.Postcode,
             StatusOpen = x.Status == "Open",
@@ -96,7 +96,7 @@ public class AdministrationGateway : IAdministration
             foreach (var sc in Establishment)
             {
                 var item = await _db.Establishments.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.EstablishmentId == sc.EstablishmentId);
+                    .FirstOrDefaultAsync(x => x.EstablishmentID == sc.EstablishmentID);
 
                 if (item != null)
                     try
@@ -105,7 +105,7 @@ public class AdministrationGateway : IAdministration
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"db error {item.EstablishmentId} {item.EstablishmentName}", ex);
+                        _logger.LogError($"db error {item.EstablishmentID} {item.EstablishmentName}", ex);
                     }
                 else
                     _db.Establishments.Add(sc);
@@ -124,10 +124,10 @@ public class AdministrationGateway : IAdministration
         var multiAcademyTrusts = data
             .Select(m => new { m.GroupUID, m.GroupName })
             .Distinct()
-            .Select(x => new MultiAcademyTrust { UID = x.GroupUID, Name = x.GroupName });
+            .Select(x => new MultiAcademyTrust { MultiAcademyTrustID = x.GroupUID, Name = x.GroupName });
 
         var multiAcademyTrustSchools = data
-            .Select(x => new MultiAcademyTrustSchool { TrustId = x.GroupUID, SchoolId = x.AcademyURN });
+            .Select(x => new MultiAcademyTrustEstablishment { MultiAcademyTrustID = x.GroupUID, EstablishmentID = x.AcademyURN });
 
         _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustSchools);
     }
@@ -157,7 +157,7 @@ public class AdministrationGateway : IAdministration
         "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetLaData(LocalAuthority? item)
     {
-        _db.LocalAuthorities.AsNoTracking().Where(b => b.LocalAuthorityId == item.LocalAuthorityId)
+        _db.LocalAuthorities.AsNoTracking().Where(b => b.LocalAuthorityID == item.LocalAuthorityID)
             .ExecuteUpdate(setters => setters
                 .SetProperty(b => b.LaName, item.LaName));
     }
@@ -166,9 +166,9 @@ public class AdministrationGateway : IAdministration
         "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetEstablishmentData(Establishment? item)
     {
-        _db.Establishments.Where(b => b.EstablishmentId == item.EstablishmentId)
+        _db.Establishments.Where(b => b.EstablishmentID == item.EstablishmentID)
             .ExecuteUpdate(setters => setters
-                .SetProperty(b => b.LocalAuthorityId, item.LocalAuthorityId)
+                .SetProperty(b => b.LocalAuthorityID, item.LocalAuthorityID)
                 .SetProperty(b => b.EstablishmentName, item.EstablishmentName)
                 .SetProperty(b => b.Street, item.Street)
                 .SetProperty(b => b.Postcode, item.Postcode)

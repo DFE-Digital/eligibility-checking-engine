@@ -26,22 +26,22 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
 
         int.TryParse(la, out int laInt);
         int.TryParse(mat, out int matInt);
-        var matSchools = mat != null ? _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matInt).Select(x => x.SchoolId).ToList() : null;
+        var matSchools = mat != null ? _db.MultiAcademyTrustSchools.Where(x => x.MultiAcademyTrustID == matInt).Select(x => x.EstablishmentID).ToList() : null;
 
         if (int.TryParse(query, out var EstablishmentId))
         {
             var establishmentFromUrn = _db.Establishments
                 .Include(x => x.LocalAuthority)
                 .FirstOrDefault(x => x.StatusOpen &&
-                                     x.EstablishmentId == EstablishmentId &&
-                                     (la == null || x.LocalAuthorityId.Equals(laInt)) &&
-                                     (matSchools == null || matSchools.Contains(x.EstablishmentId)));
+                                     x.EstablishmentID == EstablishmentId &&
+                                     (la == null || x.LocalAuthorityID.Equals(laInt)) &&
+                                     (matSchools == null || matSchools.Contains(x.EstablishmentID)));
 
             if (establishmentFromUrn != null)
             {
                 var item = new Establishment
                 {
-                    Id = establishmentFromUrn.EstablishmentId,
+                    Id = establishmentFromUrn.EstablishmentID,
                     Name = establishmentFromUrn.EstablishmentName,
                     Postcode = establishmentFromUrn.Postcode,
                     Locality = establishmentFromUrn.Locality,
@@ -60,8 +60,8 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
         var allEstablishments = _db.Establishments
             .Where(x => x.StatusOpen &&
                         x.EstablishmentName.Contains(query) &&
-                        (la == null || x.LocalAuthorityId.Equals(laInt)) &&
-                        (matSchools == null || matSchools.Contains(x.EstablishmentId)))
+                        (la == null || x.LocalAuthorityID.Equals(laInt)) &&
+                        (matSchools == null || matSchools.Contains(x.EstablishmentID)))
             .Include(x => x.LocalAuthority);
 
         var queryResult = new List<Domain.Establishment>();
@@ -86,7 +86,7 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
             .ThenBy(x => x.EstablishmentName).Take(takeScoolResultsMax)
             .Select(x => new Establishment
             {
-                Id = x.EstablishmentId,
+                Id = x.EstablishmentID,
                 Name = x.EstablishmentName,
                 Postcode = x.Postcode,
                 Locality = x.Locality,

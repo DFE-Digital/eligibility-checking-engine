@@ -10,7 +10,7 @@ public class MultiAcademyTrust
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public int UID { get; set; }
+    public int MultiAcademyTrustID { get; set; }
     public string Name { get; set; }
-    public virtual Collection<MultiAcademyTrustSchool> MultiAcademyTrustSchools { get; set; }
+    public virtual Collection<MultiAcademyTrustEstablishment> MultiAcademyTrustEstablishments { get; set; }
 }

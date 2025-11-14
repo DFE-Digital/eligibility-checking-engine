@@ -41,10 +41,10 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     public async Task Execute_returns_failure_when_guid_is_null_or_empty(string guid)
     {
         // Arrange
-        var allowedLocalAuthorityIds = new List<int> { 201 };
+        var allowedLocalAuthorityIDs = new List<int> { 201 };
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, group ID is required.");
@@ -55,9 +55,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 };
+        var allowedLocalAuthorityIDs = new List<int> { 201 };
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 201;
+        bulkCheck.LocalAuthorityID = 201;
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
@@ -65,7 +65,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync((IList<CheckEligibilityItem>)null!);
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -76,9 +76,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 };
+        var allowedLocalAuthorityIDs = new List<int> { 201 };
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 201;
+        bulkCheck.LocalAuthorityID = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
@@ -90,7 +90,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(guid, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         result.Data.Should().BeEquivalentTo(resultItems);
@@ -101,9 +101,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 };
+        var allowedLocalAuthorityIDs = new List<int> { 201 };
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 201;
+        bulkCheck.LocalAuthorityID = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
@@ -115,7 +115,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(guid, allowedLocalAuthorityIds);
+        await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         _mockCheckGateway.Verify(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid), Times.Once);
@@ -126,9 +126,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 };
+        var allowedLocalAuthorityIDs = new List<int> { 201 };
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 201;
+        bulkCheck.LocalAuthorityID = 201;
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
@@ -140,7 +140,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(guid, allowedLocalAuthorityIds);
+        await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid), Times.Once);
@@ -151,15 +151,15 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 }; // User only has access to LA 201
+        var allowedLocalAuthorityIDs = new List<int> { 201 }; // User only has access to LA 201
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 305; // But bulk check belongs to LA 305
+        bulkCheck.LocalAuthorityID = 305; // But bulk check belongs to LA 305
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
@@ -171,9 +171,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 0 }; // Admin access (0 means all)
+        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Admin access (0 means all)
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = 305; // Any local authority
+        bulkCheck.LocalAuthorityID = 305; // Any local authority
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
@@ -185,7 +185,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(guid, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -197,15 +197,15 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIds = new List<int> { 201 }; // User has access to LA 201
+        var allowedLocalAuthorityIDs = new List<int> { 201 }; // User has access to LA 201
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityId = null; // But bulk check has no local authority set
+        bulkCheck.LocalAuthorityID = null; // But bulk check has no local authority set
         
         _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()

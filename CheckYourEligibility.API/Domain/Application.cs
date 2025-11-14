@@ -15,7 +15,7 @@ public class Application
 
     [Column(TypeName = "varchar(8)")] public string Reference { get; set; }
 
-    public int LocalAuthorityId { get; set; }
+    public int LocalAuthorityID { get; set; }
 
     public virtual Establishment Establishment { get; set; }
     public int EstablishmentId { get; set; }

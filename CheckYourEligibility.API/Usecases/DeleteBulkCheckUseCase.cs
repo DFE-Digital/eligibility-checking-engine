@@ -46,8 +46,8 @@ namespace CheckYourEligibility.API.Usecases
             // Check if user has permission to delete this bulk check
             if (!allowedLocalAuthorityIds.Contains(0)) // Not an admin
             {
-                if (!bulkCheck.LocalAuthorityId.HasValue ||
-                    !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityId.Value))
+                if (!bulkCheck.LocalAuthorityID.HasValue ||
+                    !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value))
                 {
                     throw new InvalidScopeException($"Access denied. You can only delete bulk checks for your assigned local authority.");
                 }

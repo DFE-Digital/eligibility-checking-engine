@@ -26,7 +26,7 @@ public class BulkCheck
     /// <summary>
     /// The Local Authority ID that submitted this bulk check
     /// </summary>
-    public int? LocalAuthorityId { get; set; }
+    public int? LocalAuthorityID { get; set; }
     
     /// <summary>
     /// Navigation property to the Local Authority

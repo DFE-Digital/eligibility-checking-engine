@@ -57,7 +57,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
 
         RateLimitEvent rlEvent = new RateLimitEvent
         {
-            RateLimitEventId = Guid.NewGuid().ToString(),
+            RateLimitEventID = Guid.NewGuid().ToString(),
             PartitionName = partition,
             TimeStamp = DateTime.UtcNow,
             QuerySize = querySize,
@@ -70,7 +70,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         {
             _httpContextAccessor.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             _httpContextAccessor.HttpContext.Response.Headers.Append("Retry-After", options.WindowLength.TotalSeconds.ToString());
-            await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventId, false);
+            await _rateLimitGateway.UpdateStatus(rlEvent.RateLimitEventID, false);
             _logger.LogWarning($"RateLmiter partition {rlEvent.PartitionName} rejected request with size {querySize}");
             return false;
         }

@@ -578,7 +578,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var audit = _fixture.Create<Audit>();
-        audit.TypeId = item.EligibilityCheckID;
+        audit.TypeID = item.EligibilityCheckID;
         _fakeInMemoryDb.Audits.Add(audit);
 
         CAPICitizenResponse citizenResponse =  _fixture.Create<CAPICitizenResponse>();      

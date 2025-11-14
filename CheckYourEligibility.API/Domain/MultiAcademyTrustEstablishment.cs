@@ -4,10 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace CheckYourEligibility.API.Domain;
 
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
-public class MultiAcademyTrustSchool
+public class MultiAcademyTrustEstablishment
 {
-    [Key] public int ID { get; set; }
-    public int TrustId { get; set; }
-    public int SchoolId { get; set; }
+    [Key] public int MultiAcademyTrustEstablishmentID { get; set; }
+    public int MultiAcademyTrustID { get; set; }
+    public int EstablishmentID { get; set; }
     public virtual MultiAcademyTrust MultiAcademyTrust { get; set; }
 }

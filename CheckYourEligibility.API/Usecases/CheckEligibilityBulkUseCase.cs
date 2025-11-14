@@ -109,7 +109,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             EligibilityType = type,
             Status = BulkCheckStatus.InProgress,
             SubmittedDate = DateTime.UtcNow,
-            LocalAuthorityId = model.Meta?.LocalAuthorityId
+            LocalAuthorityID = model.Meta?.LocalAuthorityId
         };
 
         await _checkGateway.CreateBulkCheck(bulkCheck);

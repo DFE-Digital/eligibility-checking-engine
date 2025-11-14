@@ -55,10 +55,10 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
         }
 
         // Validate local authority access
-        if (!allowedLocalAuthorityIds.Contains(0) && (bulkCheck.LocalAuthorityId == null || !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityId.Value)))
+        if (!allowedLocalAuthorityIds.Contains(0) && (bulkCheck.LocalAuthorityID == null || !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value)))
         {
             _logger.LogWarning(
-                $"User attempted to access bulk upload {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} belonging to local authority {bulkCheck.LocalAuthorityId} without permission");
+                $"User attempted to access bulk upload {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} belonging to local authority {bulkCheck.LocalAuthorityID} without permission");
             throw new UnauthorizedAccessException($"You do not have permission to access bulk check {guid}");
         }
 

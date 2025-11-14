@@ -53,10 +53,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest { File = null! };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -77,10 +77,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.ContentType).Returns(contentType);
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -101,11 +101,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -122,7 +122,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -151,12 +151,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -173,7 +173,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -192,10 +192,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -214,10 +214,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -239,19 +239,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+        var allowedLocalAuthorityIDs = new List<int> { 1 }; // Only LA 1 is allowed
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Not allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Not allowed
             EstablishmentName = "Test School 2"
         };
 
@@ -269,7 +269,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -292,19 +292,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 0 }; // Super user (contains 0)
+        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Super user (contains 0)
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2,
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2,
             EstablishmentName = "Test School 2"
         };
 
@@ -323,7 +323,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -345,26 +345,26 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Allowed
             EstablishmentName = "Test School 2"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 789012,
-            LocalAuthorityId = 3, // Not allowed
+            EstablishmentID = 789012,
+            LocalAuthorityID = 3, // Not allowed
             EstablishmentName = "Test School 3"
         };
 
@@ -383,7 +383,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -407,19 +407,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+        var allowedLocalAuthorityIDs = new List<int> { 1 }; // Only LA 1 is allowed
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Not allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Not allowed
             EstablishmentName = "Test School 3"
         };
 
@@ -438,7 +438,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -463,7 +463,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
@@ -478,7 +478,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -510,7 +510,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
@@ -525,7 +525,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds); // Assert
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs); // Assert
         result.Should().NotBeNull();
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(1);
@@ -542,10 +542,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -564,10 +564,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(jsonContent, "application/json");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -588,12 +588,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -609,7 +609,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Don't verify audit as it won't be called on exception
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Never);
@@ -632,14 +632,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ThrowsAsync(new Exception("Database connection error"));
 
         // Act & Assert - The exception should bubble up
         var exception =
-            Assert.ThrowsAsync<Exception>(async () => await _sut.Execute(request, allowedLocalAuthorityIds));
+            Assert.ThrowsAsync<Exception>(async () => await _sut.Execute(request, allowedLocalAuthorityIDs));
 
         exception.Should().NotBeNull();
         exception!.Message.Should().Be("Database connection error");
@@ -657,19 +657,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School 1"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 789012,
-            LocalAuthorityId = 3,
+            EstablishmentID = 789012,
+            LocalAuthorityID = 3,
             EstablishmentName = "Test School 3"
         };
 
@@ -687,7 +687,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds); // Assert
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs); // Assert
         result.Should().NotBeNull();
         result.SuccessfulImports.Should().Be(2);
         result.FailedImports.Should().Be(1);
@@ -729,12 +729,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(content, contentType);
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -751,7 +751,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -770,12 +770,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -795,7 +795,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -808,10 +808,9 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.ParentNationalInsuranceNumber.Should().Be("AB123456C");
         capturedApplication.ParentEmail.Should().Be("john.smith@example.com");
         capturedApplication.ChildFirstName.Should().Be("Emma");
-        capturedApplication.ChildLastName.Should().Be("Smith");
         capturedApplication.ChildDateOfBirth.Should().Be(new DateTime(2015, 4, 12));
         capturedApplication.EstablishmentId.Should().Be(123456);
-        capturedApplication.LocalAuthorityId.Should().Be(1);
+        capturedApplication.LocalAuthorityID.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
         capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
@@ -839,10 +838,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportJsonRequest { Applications = null! };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -859,10 +858,10 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData>() };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -893,12 +892,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -915,7 +914,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -959,19 +958,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2,
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2,
             EstablishmentName = "Test School 2"
         };
 
@@ -989,7 +988,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1033,19 +1032,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
-        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+        var allowedLocalAuthorityIDs = new List<int> { 1 }; // Only LA 1 is allowed
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Not allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Not allowed
             EstablishmentName = "Test School 2"
         };
 
@@ -1063,7 +1062,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1110,19 +1109,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
-        var allowedLocalAuthorityIds = new List<int> { 0 }; // Super user (contains 0)
+        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Super user (contains 0)
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2,
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2,
             EstablishmentName = "Test School 2"
         };
 
@@ -1141,7 +1140,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1201,26 +1200,26 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         {
             Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 }
         };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2 }; // LA 1 and 2 are allowed, but not 3
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment2 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Allowed
             EstablishmentName = "Test School 2"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 789012,
-            LocalAuthorityId = 3, // Not allowed
+            EstablishmentID = 789012,
+            LocalAuthorityID = 3, // Not allowed
             EstablishmentName = "Test School 3"
         };
 
@@ -1239,7 +1238,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1302,19 +1301,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         {
             Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 }
         };
-        var allowedLocalAuthorityIds = new List<int> { 1 }; // Only LA 1 is allowed
+        var allowedLocalAuthorityIDs = new List<int> { 1 }; // Only LA 1 is allowed
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1, // Allowed
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1, // Allowed
             EstablishmentName = "Test School 1"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 654321,
-            LocalAuthorityId = 2, // Not allowed
+            EstablishmentID = 654321,
+            LocalAuthorityID = 2, // Not allowed
             EstablishmentName = "Test School 3"
         };
 
@@ -1333,7 +1332,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1396,7 +1395,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         {
             Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 }
         };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
@@ -1411,7 +1410,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1444,12 +1443,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -1466,7 +1465,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Don't verify audit as it won't be called on exception
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Never);
@@ -1499,14 +1498,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ThrowsAsync(new Exception("Database connection error"));
 
         // Act & Assert - The exception should bubble up
         var exception =
-            Assert.ThrowsAsync<Exception>(async () => await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds));
+            Assert.ThrowsAsync<Exception>(async () => await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs));
 
         exception.Should().NotBeNull();
         exception!.Message.Should().Be("Database connection error");
@@ -1563,19 +1562,19 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         {
             Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2, applicationData3 }
         };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment1 = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School 1"
         };
 
         var establishment3 = new DomainEstablishment
         {
-            EstablishmentId = 789012,
-            LocalAuthorityId = 3,
+            EstablishmentID = 789012,
+            LocalAuthorityID = 3,
             EstablishmentName = "Test School 3"
         };
 
@@ -1593,7 +1592,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds); // Assert
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs); // Assert
         result.Should().NotBeNull();
         result.SuccessfulImports.Should().Be(2);
         result.FailedImports.Should().Be(1);
@@ -1622,12 +1621,12 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         var establishment = new DomainEstablishment
         {
-            EstablishmentId = 123456,
-            LocalAuthorityId = 1,
+            EstablishmentID = 123456,
+            LocalAuthorityID = 1,
             EstablishmentName = "Test School"
         };
 
@@ -1647,7 +1646,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync("audit-id");
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1663,7 +1662,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.ChildLastName.Should().Be("Smith");
         capturedApplication.ChildDateOfBirth.Should().Be(new DateTime(2015, 4, 12));
         capturedApplication.EstablishmentId.Should().Be(123456);
-        capturedApplication.LocalAuthorityId.Should().Be(1);
+        capturedApplication.LocalAuthorityID.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
         capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
@@ -1686,7 +1685,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
@@ -1701,7 +1700,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
         // Act
-        var result = await _sut.Execute(request, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
@@ -1748,7 +1747,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
 
         var request = new ApplicationBulkImportJsonRequest
             { Applications = new List<ApplicationBulkImportData> { applicationData1, applicationData2 } };
-        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
+        var allowedLocalAuthorityIDs = new List<int> { 1, 2, 3 };
 
         // Setup mock for URN lookup
         var establishmentLookup = new Dictionary<string, DomainEstablishment>();
@@ -1763,7 +1762,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
 
         // Act
-        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIds);
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();

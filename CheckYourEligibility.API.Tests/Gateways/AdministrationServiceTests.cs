@@ -128,13 +128,13 @@ public class AdministrationServiceTests : TestBase.TestBase
         var existingData = data.First();
         var la = new LocalAuthority
         {
-            LocalAuthorityId = existingData.LaCode,
+            LocalAuthorityID = existingData.LaCode,
             LaName = existingData.LaName
         };
         _fakeInMemoryDb.LocalAuthorities.Add(la);
         _fakeInMemoryDb.Establishments.Add(new Establishment
         {
-            EstablishmentId = existingData.Urn,
+            EstablishmentID = existingData.Urn,
             EstablishmentName = existingData.EstablishmentName,
             LocalAuthority = la,
             County = existingData.County,

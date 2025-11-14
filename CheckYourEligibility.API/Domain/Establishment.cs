@@ -7,7 +7,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class Establishment
 {
-    [Key] public int EstablishmentId { get; set; }
+    [Key] public int EstablishmentID { get; set; }
 
     public string EstablishmentName { get; set; }
     public string Postcode { get; set; }
@@ -16,7 +16,7 @@ public class Establishment
     public string Town { get; set; }
     public string County { get; set; }
     public bool StatusOpen { get; set; }
-    public int LocalAuthorityId { get; set; }
+    public int LocalAuthorityID { get; set; }
     public virtual LocalAuthority LocalAuthority { get; set; }
 
     [NotMapped] public double? LevenshteinDistance { get; set; }

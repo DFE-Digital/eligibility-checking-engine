@@ -211,7 +211,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
 
                 // Check local authority permissions - similar to CreateApplicationUseCase
                 if (!allowedLocalAuthorityIds.Contains(0) &&
-                    !allowedLocalAuthorityIds.Contains(establishment.LocalAuthorityId))
+                    !allowedLocalAuthorityIds.Contains(establishment.LocalAuthorityID))
                 {
                     response.FailedImports++;
                     response.Errors.Add(
@@ -224,8 +224,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     ApplicationID = Guid.NewGuid().ToString(),
                     Type = CheckEligibilityType.FreeSchoolMeals, // Default to FSM for bulk import
                     Reference = GenerateReference(),
-                    LocalAuthorityId = establishment.LocalAuthorityId,
-                    EstablishmentId = establishment.EstablishmentId,
+                    LocalAuthorityID = establishment.LocalAuthorityID,
+                    EstablishmentId = establishment.EstablishmentID,
                     ParentFirstName = row.ParentFirstName,
                     ParentLastName = row.ParentSurname,
                     ParentDateOfBirth = validationResult.ParentDateOfBirth!.Value,

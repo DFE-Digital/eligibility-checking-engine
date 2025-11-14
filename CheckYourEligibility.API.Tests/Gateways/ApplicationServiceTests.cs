@@ -261,7 +261,7 @@ public class ApplicationServiceTests : TestBase.TestBase
             Data = new ApplicationRequestSearchData
             {
                 Statuses = new[] { statusItem },
-                Establishment = Establishment.EstablishmentId
+                Establishment = Establishment.EstablishmentID
             }
         };
 
@@ -290,8 +290,8 @@ public class ApplicationServiceTests : TestBase.TestBase
             Data = new ApplicationRequestSearchData
             {
                 Statuses = new[] { statusItem },
-                Establishment = Establishment.EstablishmentId,
-                LocalAuthority = Establishment.LocalAuthorityId,
+                Establishment = Establishment.EstablishmentID,
+                LocalAuthority = Establishment.LocalAuthorityID,
                 ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
                 ParentLastName = postApplicationResponse.ParentLastName,
                 ParentNationalAsylumSeekerServiceNumber =
@@ -329,8 +329,8 @@ public class ApplicationServiceTests : TestBase.TestBase
             Data = new ApplicationRequestSearchData
             {
                 Statuses = new[] { statusItem },
-                Establishment = Establishment.EstablishmentId,
-                LocalAuthority = Establishment.LocalAuthorityId,
+                Establishment = Establishment.EstablishmentID,
+                LocalAuthority = Establishment.LocalAuthorityID,
                 ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
                 ParentLastName = postApplicationResponse.ParentLastName,
                 ParentNationalAsylumSeekerServiceNumber =
@@ -364,7 +364,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationRequestSearchData
             {
-                Establishment = Establishment.EstablishmentId
+                Establishment = Establishment.EstablishmentID
             }
         };
 
@@ -400,7 +400,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationRequestSearchData
             {
-                Establishment = Establishment.EstablishmentId
+                Establishment = Establishment.EstablishmentID
             }
         };
 
@@ -475,7 +475,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationRequestSearchData
             {
-                Establishment = Establishment.EstablishmentId,
+                Establishment = Establishment.EstablishmentID,
                 Statuses = new[] { ApplicationStatus.Archived }
             }
         };
@@ -583,9 +583,9 @@ public class ApplicationServiceTests : TestBase.TestBase
             Data = new ApplicationRequestSearchData
             {
                 Statuses = new[] { statusItem },
-                Establishment = Establishment.EstablishmentId,
-                LocalAuthority = Establishment.LocalAuthorityId,
-                MultiAcademyTrust = MultiAcademyTrust.UID,
+                Establishment = Establishment.EstablishmentID,
+                LocalAuthority = Establishment.LocalAuthorityID,
+                MultiAcademyTrust = MultiAcademyTrust.MultiAcademyTrustID,
                 ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
                 ParentLastName = postApplicationResponse.ParentLastName,
                 ParentNationalAsylumSeekerServiceNumber =
@@ -625,7 +625,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     {
         var la = _fixture.Create<LocalAuthority>();
         Establishment = _fixture.Create<Establishment>();
-        Establishment.LocalAuthorityId = la.LocalAuthorityId;
+        Establishment.LocalAuthorityID = la.LocalAuthorityID;
 
         _fakeInMemoryDb.LocalAuthorities.Add(la);
         _fakeInMemoryDb.Establishments.Add(Establishment);
@@ -639,10 +639,10 @@ public class ApplicationServiceTests : TestBase.TestBase
         MultiAcademyTrust = _fixture.Create<MultiAcademyTrust>();
         Establishment = _fixture.Create<Establishment>();
 
-        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustSchool>();
-        multiAcademyTrustSchool.TrustId = MultiAcademyTrust.UID;
-        multiAcademyTrustSchool.SchoolId = Establishment.EstablishmentId;
-        MultiAcademyTrust.MultiAcademyTrustSchools.Add(multiAcademyTrustSchool);
+        var multiAcademyTrustSchool = _fixture.Create<MultiAcademyTrustEstablishment>();
+        multiAcademyTrustSchool.MultiAcademyTrustID = MultiAcademyTrust.MultiAcademyTrustID;
+        multiAcademyTrustSchool.EstablishmentID = Establishment.EstablishmentID;
+        MultiAcademyTrust.MultiAcademyTrustEstablishments.Add(multiAcademyTrustSchool);
 
         _fakeInMemoryDb.Establishments.Add(Establishment);
         _fakeInMemoryDb.MultiAcademyTrusts.Add(MultiAcademyTrust);
@@ -661,7 +661,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         request.ChildDateOfBirth = "2007-02-01";
         request.ParentNationalAsylumSeekerServiceNumber = null;
         request.UserId = User.UserID;
-        request.Establishment = Establishment.EstablishmentId;
+        request.Establishment = Establishment.EstablishmentID;
 
         await AddHash(new CheckProcessData
         {
@@ -684,7 +684,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         request.ChildDateOfBirth = "2007-02-01";
         request.ParentNationalInsuranceNumber = null;
         request.UserId = User.UserID;
-        request.Establishment = Establishment.EstablishmentId;
+        request.Establishment = Establishment.EstablishmentID;
 
         await AddHash(new CheckProcessData
         {
@@ -789,7 +789,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationRequestSearchData
             {
-                Establishment = Establishment.EstablishmentId
+                Establishment = Establishment.EstablishmentID
             }
         };
 

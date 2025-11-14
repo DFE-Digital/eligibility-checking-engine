@@ -30,14 +30,14 @@ public class MappingProfile : Profile
             .ForMember(x => x.ChildDateOfBirth,
                 y => y.MapFrom(z =>
                     DateTime.ParseExact(z.ChildDateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture)))
-            .ForMember(dest => dest.LocalAuthorityId, opt => opt.Ignore())
+            .ForMember(dest => dest.LocalAuthorityID, opt => opt.Ignore())
             .ForMember(dest => dest.EstablishmentId, opt => opt.MapFrom(src => src.Establishment))
             .ForMember(dest => dest.Establishment, opt => opt.Ignore())
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ReverseMap();
 
         CreateMap<ApplicationEvidenceResponse, ApplicationEvidence>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ApplicationEvidenceID, opt => opt.Ignore())
             .ForMember(dest => dest.Application, opt => opt.Ignore())
             .ForMember(dest => dest.ApplicationID, opt => opt.Ignore())
             .ReverseMap();
@@ -55,12 +55,12 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         CreateMap<Establishment, ApplicationEstablishment>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.EstablishmentId))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.EstablishmentID))
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.EstablishmentName))
             .ReverseMap();
 
         CreateMap<LocalAuthority, ApplicationEstablishment.EstablishmentLocalAuthority>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.LocalAuthorityId))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.LocalAuthorityID))
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.LaName))
             .ReverseMap();
 

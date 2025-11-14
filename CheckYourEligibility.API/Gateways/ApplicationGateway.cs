@@ -57,8 +57,8 @@ public class ApplicationGateway : BaseGateway, IApplication
             {
                 var establishment = _db.Establishments
                     .Include(x => x.LocalAuthority)
-                    .First(x => x.EstablishmentId == data.Establishment);
-                item.LocalAuthorityId = establishment.LocalAuthorityId;
+                    .First(x => x.EstablishmentID == data.Establishment);
+                item.LocalAuthorityID = establishment.LocalAuthorityID;
             }
             catch (Exception ex)
             {
@@ -167,7 +167,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             var updates = await _db.SaveChangesAsync();
             TrackMetric($"Application Status Change {result.Status}", 1);
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
-            TrackMetric($"Application Status Change La:-{result.LocalAuthorityId} {result.Status}", 1);
+            TrackMetric($"Application Status Change La:-{result.LocalAuthorityID} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
                 { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
@@ -185,8 +185,8 @@ public class ApplicationGateway : BaseGateway, IApplication
         try
         {
             var localAuthorityId = await _db.Establishments
-                .Where(x => x.EstablishmentId == establishmentId)
-                .Select(x => x.LocalAuthorityId)
+                .Where(x => x.EstablishmentID == establishmentId)
+                .Select(x => x.LocalAuthorityID)
                 .FirstAsync();
 
             return localAuthorityId;
@@ -208,8 +208,8 @@ public class ApplicationGateway : BaseGateway, IApplication
         try
         {
             var multiAcademyTrustId = await _db.MultiAcademyTrustSchools
-                .Where(x => x.SchoolId == establishmentId)
-                .Select(x => x.TrustId)
+                .Where(x => x.EstablishmentID == establishmentId)
+                .Select(x => x.MultiAcademyTrustID)
                 .FirstAsync();
             return multiAcademyTrustId;
         }
@@ -232,7 +232,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var localAuthorityId = await _db.Applications
                 .Where(x => x.ApplicationID == applicationId)
-                .Select(x => x.LocalAuthorityId)
+                .Select(x => x.LocalAuthorityID)
                 .FirstAsync();
 
             return localAuthorityId;
@@ -259,8 +259,8 @@ public class ApplicationGateway : BaseGateway, IApplication
             }
 
             var establishment = await _db.Establishments
-                .Where(x => x.EstablishmentId == establishmentId)
-                .Select(x => new { x.EstablishmentId, x.LocalAuthorityId })
+                .Where(x => x.EstablishmentID == establishmentId)
+                .Select(x => new { x.EstablishmentID, x.LocalAuthorityID })
                 .FirstOrDefaultAsync();
 
             if (establishment == null)
@@ -268,7 +268,7 @@ public class ApplicationGateway : BaseGateway, IApplication
                 return (false, 0, 0);
             }
 
-            return (true, establishment.EstablishmentId, establishment.LocalAuthorityId);
+            return (true, establishment.EstablishmentID, establishment.LocalAuthorityID);
         }
         catch (Exception ex)
         {
@@ -326,7 +326,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
 
         return await _db.Establishments
-            .FirstOrDefaultAsync(e => e.EstablishmentId == establishmentId);
+            .FirstOrDefaultAsync(e => e.EstablishmentID == establishmentId);
     }
 
     /// <summary>
@@ -356,7 +356,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         // Get all establishments in a single query
         var establishmentIds = validUrns.Select(v => v.EstablishmentId).ToList();
         var establishments = await _db.Establishments
-            .Where(e => establishmentIds.Contains(e.EstablishmentId))
+            .Where(e => establishmentIds.Contains(e.EstablishmentID))
             .ToListAsync();
 
         // Create dictionary mapping original URN string to establishment
@@ -364,7 +364,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
         foreach (var validUrn in validUrns)
         {
-            var establishment = establishments.FirstOrDefault(e => e.EstablishmentId == validUrn.EstablishmentId);
+            var establishment = establishments.FirstOrDefault(e => e.EstablishmentID == validUrn.EstablishmentId);
             if (establishment != null)
             {
                 result[validUrn.OriginalUrn] = establishment;
@@ -434,7 +434,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             query = query.Where(x => establishmentIds.Contains(x.EstablishmentId));
         }
         if (model.Data?.LocalAuthority != null)
-            query = query.Where(x => x.LocalAuthorityId == model.Data.LocalAuthority);
+            query = query.Where(x => x.LocalAuthorityID == model.Data.LocalAuthority);
 
         if (!string.IsNullOrEmpty(model.Data?.ParentNationalInsuranceNumber))
             query = query.Where(x => x.ParentNationalInsuranceNumber == model.Data.ParentNationalInsuranceNumber);
@@ -560,7 +560,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
     private List<int> GetMatSchoolIds(int matId)
     {
-        return _db.MultiAcademyTrustSchools.Where(x => x.TrustId == matId).Select(x => x.SchoolId).ToList();
+        return _db.MultiAcademyTrustSchools.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();
     }
 
     #endregion

@@ -147,15 +147,15 @@ public class ApplicationGatewayTests : TestBase.TestBase
         // First create the related entities that are required
         var localAuthority = new LocalAuthority
         {
-            LocalAuthorityId = 1,
+            LocalAuthorityID = 1,
             LaName = "Test LA"
         };
         
         var establishment = new Establishment
         {
-            EstablishmentId = 1,
+            EstablishmentID = 1,
             EstablishmentName = "Test School",
-            LocalAuthorityId = localAuthority.LocalAuthorityId,
+            LocalAuthorityID = localAuthority.LocalAuthorityID,
             Postcode = "SW1A 1AA",
             Street = "Test Street",
             Locality = "Test Locality",
@@ -179,8 +179,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
 
         var app = CreateTestApplication();
         app.Status = Domain.Enums.ApplicationStatus.Entitled;
-        app.EstablishmentId = establishment.EstablishmentId;
-        app.LocalAuthorityId = localAuthority.LocalAuthorityId;
+        app.EstablishmentId = establishment.EstablishmentID;
+        app.LocalAuthorityID = localAuthority.LocalAuthorityID;
         app.UserId = user.UserID;
         
         await _dbContext.Applications.AddAsync(app);
@@ -194,21 +194,21 @@ public class ApplicationGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task GetLocalAuthorityIdForApplication_ArchivedApplication_ReturnsLocalAuthorityId()
+    public async Task GetLocalAuthorityIDForApplication_ArchivedApplication_ReturnsLocalAuthorityID()
     {
         // Arrange
         // First create the related entities that are required
         var localAuthority = new LocalAuthority
         {
-            LocalAuthorityId = 2,
+            LocalAuthorityID = 2,
             LaName = "Test LA 2"
         };
         
         var establishment = new Establishment
         {
-            EstablishmentId = 2,
+            EstablishmentID = 2,
             EstablishmentName = "Test School 2",
-            LocalAuthorityId = localAuthority.LocalAuthorityId,
+            LocalAuthorityID = localAuthority.LocalAuthorityID,
             Postcode = "SW1A 1AA",
             Street = "Test Street",
             Locality = "Test Locality",
@@ -224,8 +224,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
 
         var app = CreateTestApplication();
         app.Status = Domain.Enums.ApplicationStatus.Archived;
-        app.EstablishmentId = establishment.EstablishmentId;
-        app.LocalAuthorityId = localAuthority.LocalAuthorityId;
+        app.EstablishmentId = establishment.EstablishmentID;
+        app.LocalAuthorityID = localAuthority.LocalAuthorityID;
         
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
@@ -234,11 +234,11 @@ public class ApplicationGatewayTests : TestBase.TestBase
         var result = await _sut.GetLocalAuthorityIdForApplication(app.ApplicationID);
 
         // Assert
-        result.Should().Be(app.LocalAuthorityId);
+        result.Should().Be(app.LocalAuthorityID);
     }
 
     [Test]
-    public async Task GetLocalAuthorityIdForApplication_NonArchivedApplication_ReturnsLocalAuthorityId()
+    public async Task GetLocalAuthorityIDForApplication_NonArchivedApplication_ReturnsLocalAuthorityID()
     {
         // Arrange
         var app = CreateTestApplication();
@@ -250,7 +250,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         var result = await _sut.GetLocalAuthorityIdForApplication(app.ApplicationID);
 
         // Assert
-        result.Should().Be(app.LocalAuthorityId);
+        result.Should().Be(app.LocalAuthorityID);
     }
 
     #endregion
@@ -275,7 +275,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             ChildLastName = _fixture.Create<string>().PadRight(20)[..20],
             ChildDateOfBirth = DateTime.UtcNow.AddYears(-10),
             EstablishmentId = _fixture.Create<int>(),
-            LocalAuthorityId = _fixture.Create<int>(),
+            LocalAuthorityID = _fixture.Create<int>(),
             UserId = _fixture.Create<string>().PadRight(36)[..36],
             Created = DateTime.UtcNow,
             Updated = DateTime.UtcNow

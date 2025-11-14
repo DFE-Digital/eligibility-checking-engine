@@ -6,7 +6,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class LocalAuthority
 {
-    [Key] public int LocalAuthorityId { get; set; }
+    [Key] public int LocalAuthorityID { get; set; }
 
     public string LaName { get; set; }
 }

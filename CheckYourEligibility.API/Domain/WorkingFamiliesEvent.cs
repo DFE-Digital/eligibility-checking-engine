@@ -6,7 +6,7 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class WorkingFamiliesEvent
 {
-    public string WorkingFamiliesEventId { get; set; }
+    public string WorkingFamiliesEventID { get; set; }
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; }
     [Column(TypeName = "varchar(100)")] public string ChildFirstName { get; set; }
 

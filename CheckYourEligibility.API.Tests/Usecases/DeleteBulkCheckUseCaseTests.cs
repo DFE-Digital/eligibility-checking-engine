@@ -38,11 +38,11 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
-        var localAuthorityId = 123;
-        var allowedLocalAuthorityIds = new List<int> { localAuthorityId };
+        var LocalAuthorityID = 123;
+        var allowedLocalAuthorityIDs = new List<int> { LocalAuthorityID };
         
         var bulkCheck = _fixture.Build<BulkCheck>()
-            .With(x => x.LocalAuthorityId, localAuthorityId)
+            .With(x => x.LocalAuthorityID, LocalAuthorityID)
             .Create();
         
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
@@ -51,7 +51,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
         
         // Act
-        var result = await _sut.Execute(groupId, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().Be(response);
@@ -64,11 +64,11 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
-        var bulkCheckLocalAuthorityId = 123;
-        var allowedLocalAuthorityIds = new List<int> { 0 }; // Admin user
+        var bulkCheckLocalAuthorityID = 123;
+        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Admin user
         
         var bulkCheck = _fixture.Build<BulkCheck>()
-            .With(x => x.LocalAuthorityId, bulkCheckLocalAuthorityId)
+            .With(x => x.LocalAuthorityID, bulkCheckLocalAuthorityID)
             .Create();
         
         var response = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
@@ -77,7 +77,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         _mockGateway.Setup(s => s.DeleteByBulkCheckId(groupId)).ReturnsAsync(response);
         
         // Act
-        var result = await _sut.Execute(groupId, allowedLocalAuthorityIds);
+        var result = await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().Be(response);
@@ -90,12 +90,12 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
-        var allowedLocalAuthorityIds = new List<int> { 123 };
+        var allowedLocalAuthorityIDs = new List<int> { 123 };
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync((BulkCheck?)null);
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowExactlyAsync<NotFoundException>()
@@ -110,17 +110,17 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
-        var bulkCheckLocalAuthorityId = 123;
-        var allowedLocalAuthorityIds = new List<int> { 456 }; // Different LA
+        var bulkCheckLocalAuthorityID = 123;
+        var allowedLocalAuthorityIDs = new List<int> { 456 }; // Different LA
         
         var bulkCheck = _fixture.Build<BulkCheck>()
-            .With(x => x.LocalAuthorityId, bulkCheckLocalAuthorityId)
+            .With(x => x.LocalAuthorityID, bulkCheckLocalAuthorityID)
             .Create();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowExactlyAsync<InvalidScopeException>()
@@ -131,20 +131,20 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Execute_Should_Throw_InvalidScopeException_When_BulkCheck_Has_No_LocalAuthorityId()
+    public async Task Execute_Should_Throw_InvalidScopeException_When_BulkCheck_Has_No_LocalAuthorityID()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
-        var allowedLocalAuthorityIds = new List<int> { 123 };
+        var allowedLocalAuthorityIDs = new List<int> { 123 };
         
         var bulkCheck = _fixture.Build<BulkCheck>()
-            .With(x => x.LocalAuthorityId, (int?)null)
+            .With(x => x.LocalAuthorityID, (int?)null)
             .Create();
         
         _mockGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowExactlyAsync<InvalidScopeException>()
@@ -158,10 +158,10 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     public async Task Execute_Should_Throw_ValidationException_When_GroupId_Is_Empty()
     {
         // Arrange
-        var allowedLocalAuthorityIds = new List<int> { 123 };
+        var allowedLocalAuthorityIDs = new List<int> { 123 };
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(string.Empty, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(string.Empty, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowExactlyAsync<ValidationException>()
@@ -175,10 +175,10 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     public async Task Execute_Should_Throw_ValidationException_When_GroupId_Is_Null()
     {
         // Arrange
-        var allowedLocalAuthorityIds = new List<int> { 123 };
+        var allowedLocalAuthorityIDs = new List<int> { 123 };
         
         // Act
-        Func<Task> act = async () => await _sut.Execute(null!, allowedLocalAuthorityIds);
+        Func<Task> act = async () => await _sut.Execute(null!, allowedLocalAuthorityIDs);
 
         // Assert
         await act.Should().ThrowExactlyAsync<ValidationException>()

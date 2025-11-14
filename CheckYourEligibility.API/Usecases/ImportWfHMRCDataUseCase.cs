@@ -108,7 +108,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
         var submissionDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Submission Date")]));
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
-            WorkingFamiliesEventId = Guid.NewGuid().ToString(),
+            WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eventProps[columnHeaders.IndexOf("Eligibility Code")],
             ValidityStartDate = validityStartDate,
             ValidityEndDate = validityEndDate,

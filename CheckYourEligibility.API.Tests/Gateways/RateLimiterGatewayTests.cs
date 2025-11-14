@@ -46,7 +46,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
         var checkEvent = _fixture.Create<RateLimitEvent>();
-        checkEvent.RateLimitEventId = guid;
+        checkEvent.RateLimitEventID = guid;
         // Act
         await _sut.Create(checkEvent);
         // Assert
@@ -59,7 +59,7 @@ public class RateLimiterServiceTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
         var mockEvent = _fixture.Create<RateLimitEvent>();
-        mockEvent.RateLimitEventId = guid;
+        mockEvent.RateLimitEventID = guid;
         mockEvent.Accepted = true;
         _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
         _fakeInMemoryDb.SaveChangesAsync();
