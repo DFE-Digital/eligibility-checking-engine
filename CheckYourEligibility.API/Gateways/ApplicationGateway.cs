@@ -419,6 +419,52 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
     }
 
+
+    public async Task<ApplicationStatusRestoreResponse> RestoreArchivedApplicationStatus(string guid)
+    {
+        // Find the archived application
+        var application = await _db.Applications
+            .FirstOrDefaultAsync(x => x.ApplicationID == guid && x.Status == ApplicationStatus.Archived);
+
+        // if(application.Status != ApplicationStatus.Archived)
+        // {
+        //     return 
+        // }
+        
+        if (application != null)
+        {
+            // Restore most recent non-archived status
+            var lastStatus = await _db.ApplicationStatuses
+                .Where(x => x.ApplicationID == guid && x.Type != ApplicationStatus.Archived)
+                .OrderByDescending(x => x.TimeStamp)
+                .FirstOrDefaultAsync();
+            
+            if (lastStatus != null)
+            {
+                application.Status = lastStatus.Type;
+                application.Updated = DateTime.UtcNow;
+
+                await AddStatusHistory(application, application.Status.Value);
+                await _db.SaveChangesAsync();
+
+                return new ApplicationStatusRestoreResponse
+                {
+                    Data = new ApplicationStatusRestoreResponseData
+                    {
+                        Status = application.Status.Value.ToString(),
+                        Updated = application.Updated
+                    }
+                };
+
+            }
+
+
+        }
+
+        return null;
+    }
+
+
     #region Private
 
     private IQueryable<Application> ApplyAdditionalFilters(IQueryable<Application> query,
@@ -565,6 +611,8 @@ public class ApplicationGateway : BaseGateway, IApplication
     {
         return _db.MultiAcademyTrustEstablishments.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();
     }
+
+
 
     #endregion
 }

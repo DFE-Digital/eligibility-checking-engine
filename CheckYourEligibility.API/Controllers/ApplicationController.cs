@@ -24,6 +24,7 @@ public class ApplicationController : BaseController
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
+    private readonly IRestoreArchivedApplicationStatusUseCase _restoreArchivedApplicationStatusUseCase;
     private readonly IImportApplicationsUseCase _importApplicationsUseCase;
     private readonly IDeleteApplicationUseCase _deleteApplicationUseCase;
 
@@ -350,4 +351,49 @@ public class ApplicationController : BaseController
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
+
+    /// <summary>
+    /// Restores an archived application by GUID
+    /// </summary>
+    /// <param name="guid">The application GUID to restore</param>
+    [ProducesResponseType(typeof(ApplicationStatusRestoreResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/application/{guid}/restore")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    public async Task<ActionResult> RestoreArchivedApplication(string guid)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _restoreArchivedApplicationStatusUseCase.Execute(guid, localAuthorityIds);
+
+            if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
+             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Error restoring archived application for guid {guid?.Replace(Environment.NewLine, "")}");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
 }

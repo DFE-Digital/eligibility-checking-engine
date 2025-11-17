@@ -87,4 +87,11 @@ public interface IApplication
     /// <param name="guid">Application GUID</param>
     /// <returns>True if deleted successfully, false if not found</returns>
     Task<bool> DeleteApplication(string guid);
+
+    /// <summary>
+    /// Restores an archived application's previous status   
+    /// </summary>
+    /// <param name="guid">Application GUID</param>
+    /// <returns>Task</returns>
+    Task<ApplicationStatusRestoreResponse> RestoreArchivedApplicationStatus(string guid);
 }
