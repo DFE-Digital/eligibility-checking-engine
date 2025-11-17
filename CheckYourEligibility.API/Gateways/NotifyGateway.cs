@@ -1,5 +1,6 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 using Notify.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -24,6 +25,7 @@ public class NotifyGateway : BaseGateway, INotify
 
     private void Deliver(string templateId, string email, Dictionary<string, object> personalisation)
     {
+        if (_configuration.GetValue<string>($"Notify:Key").IsNullOrEmpty()) return;
         _client.SendEmail(email, templateId, personalisation);
     }
 }
