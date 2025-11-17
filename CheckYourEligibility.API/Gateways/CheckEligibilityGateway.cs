@@ -812,7 +812,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
 
@@ -823,7 +822,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     LastName = checkData.LastName,
                     Nino = checkData.NationalInsuranceNumber,
                     Type = checkData.Type,
-                    Organisation = organisation.Authentication,
                     TimeStamp = DateTime.UtcNow,
                     EligibilityCheckHashID = result.EligibilityCheckHashID,
                     CAPIEndpoint = capiClaimResponse.CAPIEndpoint,

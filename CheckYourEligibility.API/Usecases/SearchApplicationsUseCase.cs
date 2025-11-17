@@ -59,9 +59,16 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new ArgumentException("Either LocalAuthority, Establishment, or MultiAcademyTrust must be specified");
         }
 
-        if(model.Data.LocalAuthority!=null) validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
-        else if(model.Data.MultiAcademyTrust!=null) validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
-        else if(model.Data.Establishment!=null) await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        if (model.Data.LocalAuthority != null || model.Data.Establishment != null || model.Data.MultiAcademyTrust != null)
+        {
+            if (model.Data.LocalAuthority != null)
+                validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
+            if (model.Data.MultiAcademyTrust != null)
+                validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
+            if (model.Data.Establishment != null)
+                await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds,
+                    allowedMultiAcademyTrustIds);
+        }
         else
         {
             throw new UnauthorizedAccessException(
