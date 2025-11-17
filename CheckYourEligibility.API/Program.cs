@@ -186,11 +186,8 @@ builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEvent
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
-if (!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty())
-{
-    builder.Services.AddTransient<INotificationClient>(x =>
-        new NotificationClient(builder.Configuration.GetValue<string>("Notify:Key")));
-}
+builder.Services.AddTransient<INotificationClient>(x =>
+    new NotificationClient(!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty()?builder.Configuration.GetValue<string>("Notify:Key"):"key"));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });
