@@ -59,10 +59,15 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new ArgumentException("Either LocalAuthority, Establishment, or MultiAcademyTrust must be specified");
         }
 
-        validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
-        validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
-        await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
-
+        if(model.Data.LocalAuthority!=null) validateLocalAuthority(model.Data.LocalAuthority, allowedLocalAuthorityIds);
+        else if(model.Data.MultiAcademyTrust!=null) validateMultiAcademyTrust(model.Data.MultiAcademyTrust, allowedMultiAcademyTrustIds);
+        else if(model.Data.Establishment!=null) await validateEstablishment(model.Data.Establishment, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        else
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to search all applications");
+        }
+        
         var response = await _applicationGateway.GetApplications(model);
 
         if (response == null || !response.Data.Any())
