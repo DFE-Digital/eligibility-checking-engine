@@ -17,7 +17,6 @@ namespace CheckYourEligibility.API.Domain
         [Column(TypeName = "varchar(50)")] public string DateOfBirth { get; set; }
         [Column(TypeName = "varchar(50)")] public string Nino { get; set; }
         [Column(TypeName = "varchar(50)")] public CheckEligibilityType Type { get; set; }
-        public string Organisation { get; set; }
         public DateTime TimeStamp { get; set; }
         public string EligibilityCheckHashID { get; set; }
         public virtual EligibilityCheckHash EligibilityCheckHash { get; set; }
