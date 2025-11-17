@@ -460,7 +460,7 @@ public class EligibilityCheckController : BaseController
     [ProducesResponseType(typeof(CheckEligibilityBulkStatusResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpGet("/bulk-check/status/{organisationId}")]
+    [HttpGet("/bulk-check/search")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> BulkCheckStatuses(string organisationId)
