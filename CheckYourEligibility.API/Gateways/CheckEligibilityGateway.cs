@@ -90,11 +90,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
             item.Type = baseType.Type;
 
-            // if (data is CheckEligibilityRequestBulkData bulkDataItem)
-            // {
-            //     item.ClientIdentifier = bulkDataItem.ClientIdentifier;
-            // }
-
             item.BulkCheckID = _groupId;
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.Created = DateTime.UtcNow;
@@ -111,14 +106,23 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
                 item.EligibilityCheckHash = checkHashResult;
 
-                // If hash is found for eligible or not eligible
-                // get the first valid check and apply correct CheckData to latest check record
-                // to make sure correct data is returned
-                if (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible) {
+                if (data.Type==CheckEligibilityType.WorkingFamilies&&(hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible)) {
+                    try
+                    {
+                        var firstValidCheck = await _db.CheckEligibilities
+                            .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID &&
+                                        x.Status == hashedStatus).OrderByDescending(x => x.Created).FirstAsync();
 
-                    var firstValidCheck = await _db.CheckEligibilities.Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID && x.Status == hashedStatus).OrderBy(x => x.Created).FirstAsync();
-                    item.CheckData = firstValidCheck.CheckData;
-                }               
+                        CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
+                        hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                        
+                        item.CheckData = JsonConvert.SerializeObject(hashCheckData);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error creating check with ID: {GroupId}", _groupId);
+                    }
+                }
             }
 
             await _db.CheckEligibilities.AddAsync(item);
@@ -155,9 +159,9 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            /*if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
                 throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-*/
+
             switch (result.Type)
             {
                 case CheckEligibilityType.FreeSchoolMeals:
@@ -814,7 +818,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             {
                 ECSConflict ecsConflictRecord = new()
                 {
-
                     CorrelationID = correlationId,
                     ECE_Status = eceCheckResult,
                     ECS_Status = checkResult,
@@ -1101,7 +1104,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         if (result == CheckEligibilityStatus.queuedForProcessing)
                         {
                             //If item doesn't exist, or we've tried more than retry limit
-                            if (result == null || item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                            if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
                             {
                                 //Delete message and update status to error
                                 await UpdateEligibilityCheckStatus(checkData.Guid,
@@ -1112,7 +1115,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                         // If status is not queued for Processing, we have a conclusive answer
                         else
                         {
-                            await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            try
+                            {
+                                await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Deleting message error");
+                            }
                         }
                     }
                     catch (Exception ex)
