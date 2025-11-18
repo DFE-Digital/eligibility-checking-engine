@@ -1,5 +1,4 @@
-﻿using System.Net;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -8,6 +7,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
@@ -37,6 +37,7 @@ public class ApplicationController : BaseController
         IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
         IImportApplicationsUseCase importApplicationsUseCase,
         IDeleteApplicationUseCase deleteApplicationUseCase,
+        IRestoreArchivedApplicationStatusUseCase restoreArchivedApplicationStatusUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -49,6 +50,7 @@ public class ApplicationController : BaseController
         _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
         _importApplicationsUseCase = importApplicationsUseCase;
         _deleteApplicationUseCase = deleteApplicationUseCase;
+        _restoreArchivedApplicationStatusUseCase = restoreArchivedApplicationStatusUseCase;
     }
 
     /// <summary>
@@ -359,7 +361,7 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ApplicationStatusRestoreResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/application/{guid}/restore")]
+    [HttpPost("/application/restore/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> RestoreArchivedApplication(string guid)
@@ -377,22 +379,19 @@ public class ApplicationController : BaseController
 
             var response = await _restoreArchivedApplicationStatusUseCase.Execute(guid, localAuthorityIds);
 
-            if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
-             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+            if (response == null)
+                return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
+
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+
         }
-        catch (NotFoundException ex)
+        catch (NotFoundException)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
         }
         catch (UnauthorizedAccessException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                $"Error restoring archived application for guid {guid?.Replace(Environment.NewLine, "")}");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 403 }] });
         }
     }
 

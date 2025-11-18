@@ -13,6 +13,7 @@ public interface IRestoreArchivedApplicationStatusUseCase
     /// Restores the archived status of an application
     /// </summary>
     /// <param name="guid">The ID of the application to restore</param>
+    /// <param name="allowedLocalAuthorityIds"></param>
     Task<ApplicationStatusRestoreResponse> Execute(string guid, List<int> allowedLocalAuthorityIds);
 }
 

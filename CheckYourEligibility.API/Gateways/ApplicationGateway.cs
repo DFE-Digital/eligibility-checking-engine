@@ -6,7 +6,9 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
@@ -110,7 +112,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-                { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
             return item;
         }
 
@@ -134,9 +136,9 @@ public class ApplicationGateway : BaseGateway, IApplication
 
         // Pagination
         int pageNumber = model.PageNumber <= 0 ? 1 : model.PageNumber;
-        if(model.Meta?.PageNumber>pageNumber) pageNumber = model.Meta.PageNumber;
+        if (model.Meta?.PageNumber > pageNumber) pageNumber = model.Meta.PageNumber;
         int pageSize = model.PageSize;
-        if(model.Meta?.PageSize>pageSize) pageSize = model.Meta.PageSize;
+        if (model.Meta?.PageSize > pageSize) pageSize = model.Meta.PageSize;
         var pagedResults = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -172,7 +174,7 @@ public class ApplicationGateway : BaseGateway, IApplication
             TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
             TrackMetric($"Application Status Change La:-{result.LocalAuthorityID} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
 
         return null;
@@ -420,48 +422,42 @@ public class ApplicationGateway : BaseGateway, IApplication
     }
 
 
+    /// <summary>
+    /// Restores an archived application to its most recent non-archived status.
+    /// </summary>
+    /// <param name="guid">The application GUID to restore.</param>
+    /// <returns>An ApplicationStatusRestoreResponse containing the restored status and updated timestamp.</returns>
     public async Task<ApplicationStatusRestoreResponse> RestoreArchivedApplicationStatus(string guid)
     {
-        // Find the archived application
         var application = await _db.Applications
-            .FirstOrDefaultAsync(x => x.ApplicationID == guid && x.Status == ApplicationStatus.Archived);
+            .FirstOrDefaultAsync(x => x.ApplicationID == guid);
 
-        // if(application.Status != ApplicationStatus.Archived)
-        // {
-        //     return 
-        // }
-        
-        if (application != null)
+        if (application == null)
+            throw new NotFoundException();
+
+        if (application.Status != ApplicationStatus.Archived)
+            throw new UnauthorizedAccessException("Only archived applications can be restored");
+
+        var lastStatus = await _db.ApplicationStatuses
+            .Where(x => x.ApplicationID == guid && x.Type != ApplicationStatus.Archived)
+            .OrderByDescending(x => x.TimeStamp)
+            .FirstOrDefaultAsync();
+
+
+        application.Status = lastStatus.Type;
+        application.Updated = DateTime.UtcNow;
+
+        await AddStatusHistory(application, application.Status.Value);
+        await _db.SaveChangesAsync();
+
+        return new ApplicationStatusRestoreResponse
         {
-            // Restore most recent non-archived status
-            var lastStatus = await _db.ApplicationStatuses
-                .Where(x => x.ApplicationID == guid && x.Type != ApplicationStatus.Archived)
-                .OrderByDescending(x => x.TimeStamp)
-                .FirstOrDefaultAsync();
-            
-            if (lastStatus != null)
+            Data = new ApplicationStatusRestoreResponseData
             {
-                application.Status = lastStatus.Type;
-                application.Updated = DateTime.UtcNow;
-
-                await AddStatusHistory(application, application.Status.Value);
-                await _db.SaveChangesAsync();
-
-                return new ApplicationStatusRestoreResponse
-                {
-                    Data = new ApplicationStatusRestoreResponseData
-                    {
-                        Status = application.Status.Value.ToString(),
-                        Updated = application.Updated
-                    }
-                };
-
+                Status = application.Status.Value.ToString(),
+                Updated = application.Updated
             }
-
-
-        }
-
-        return null;
+        };
     }
 
 
