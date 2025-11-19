@@ -361,7 +361,7 @@ public class ApplicationController : BaseController
     [ProducesResponseType(typeof(ApplicationStatusRestoreResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/application/restore/{guid}")]
+    [HttpPatch("/application/{guid}/restore")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> RestoreArchivedApplication(string guid)
