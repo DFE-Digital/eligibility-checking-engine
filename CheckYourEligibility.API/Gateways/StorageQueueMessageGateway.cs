@@ -20,32 +20,19 @@ namespace CheckYourEligibility.API.Gateways;
 
 public class StorageQueueMessageGateway : BaseGateway, IStorageQueueMessage
 {
-    private const int SurnameCheckCharachters = 3;
-    protected readonly IAudit _audit;
     private readonly IConfiguration _configuration;
-    private readonly IEligibilityCheckContext _db;
 
-    private readonly IEcsAdapter _ecsAdapter;
-    private readonly IDwpAdapter _dwpAdapter;
-    private readonly IHash _hashGateway;
     private readonly ILogger _logger;
-    protected readonly IMapper _mapper;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
 
 
-    public StorageQueueMessageGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
+    public StorageQueueMessageGateway(ILoggerFactory logger,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway)
+        IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
-        _db = dbContext;
-        _mapper = mapper;
-        _ecsAdapter = ecsAdapter;
-        _dwpAdapter= dwpAdapter;
-        _audit = audit;
-        _hashGateway = hashGateway;
         _configuration = configuration;
 
         setQueueStandard(_configuration.GetValue<string>("QueueFsmCheckStandard"), queueClientGateway);
