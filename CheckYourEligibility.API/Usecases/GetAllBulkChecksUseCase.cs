@@ -19,14 +19,14 @@ public interface IGetAllBulkChecksUseCase
 
 public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 {
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
     private readonly ILogger<GetAllBulkChecksUseCase> _logger;
 
     public GetAllBulkChecksUseCase(
-        ICheckEligibility checkGateway,
+        IBulkCheck bulkCheckGateway,
         ILogger<GetAllBulkChecksUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _bulkCheckGateway = bulkCheckGateway;
         _logger = logger;
     }
 
@@ -84,7 +84,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         // We can use a dummy local authority ID since admin permissions (0 in allowedLocalAuthorityIds) 
         // will override the filtering in the gateway
         // Pass false to get all bulk checks, not just from last 7 days
-        return await _checkGateway.GetBulkStatuses("0", new List<int> { 0 }, includeLast7DaysOnly: false);
+        return await _bulkCheckGateway.GetBulkStatuses("0", new List<int> { 0 }, includeLast7DaysOnly: false);
     }
 
     private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthorities(IList<int> allowedLocalAuthorityIds)
@@ -95,7 +95,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         // Pass false to get all bulk checks, not just from last 7 days
         foreach (var localAuthorityId in allowedLocalAuthorityIds)
         {
-            var bulkChecks = await _checkGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: false);
+            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: false);
             if (bulkChecks != null)
             {
                 allBulkChecks.AddRange(bulkChecks);

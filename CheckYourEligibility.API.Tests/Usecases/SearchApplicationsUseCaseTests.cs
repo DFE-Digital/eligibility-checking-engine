@@ -343,8 +343,8 @@ public class SearchApplicationsUseCaseTests
         // Assert
         result.Should().NotBeNull();
         result.Data.Should().BeEmpty();
-        result.TotalPages.Should().Be(0);
-        result.TotalRecords.Should().Be(0);
+        result.Meta.TotalPages.Should().Be(0);
+        result.Meta.TotalRecords.Should().Be(0);
     }
 
     [Test]
@@ -372,8 +372,8 @@ public class SearchApplicationsUseCaseTests
         // Assert
         result.Should().NotBeNull();
         result.Data.Should().BeEmpty();
-        result.TotalPages.Should().Be(0);
-        result.TotalRecords.Should().Be(0);
+        result.Meta.TotalPages.Should().Be(0);
+        result.Meta.TotalRecords.Should().Be(0);
     }
 
     [Test]

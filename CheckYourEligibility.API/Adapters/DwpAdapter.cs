@@ -13,9 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
-namespace CheckYourEligibility.API.Gateways;
+namespace CheckYourEligibility.API.Adapters;
 
-public interface IDwpGateway
+public interface IDwpAdapter
 {
     Task<(StatusCodeResult,string)> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correaltionId);
@@ -24,7 +24,7 @@ public interface IDwpGateway
 }
 
 [ExcludeFromCodeCoverage]
-public class DwpGateway : BaseGateway, IDwpGateway
+public class DwpAdapter: IDwpAdapter
 {
     public const string decision_entitled = "decision_entitled";
     public const string statusInPayment = "in_payment";
@@ -53,7 +53,7 @@ public class DwpGateway : BaseGateway, IDwpGateway
     private readonly string _UseEcsforChecks;
     private bool _ran;
 
-    public DwpGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
+    public DwpAdapter(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;
@@ -246,7 +246,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
             if (entitled)
             {
                 _logger.LogInformation($"Dwp {DwpBenefitType.universal_credit} found for CitizenId:-{citizenId}");
-                TrackMetric($"Dwp {DwpBenefitType.universal_credit} entitled", 1);
                 return true;
             }
         }
@@ -261,7 +260,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
         if (benefit != null)
         {
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");
-            TrackMetric($"Dwp {benefitType} entitled", 1);
 
             return true;
         }
@@ -325,7 +323,6 @@ public class DwpGateway : BaseGateway, IDwpGateway
             else if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
                 _logger.LogInformation("DWP Duplicate matches found");
-                TrackMetric("DWP Duplicate Matches Found", 1);
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
                 citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
                 return citizenResponse;

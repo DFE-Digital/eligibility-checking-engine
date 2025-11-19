@@ -17,20 +17,20 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
+        _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadResultsUseCase>>(MockBehavior.Loose);
-        _sut = new GetBulkUploadResultsUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
-        _mockCheckGateway.VerifyAll();
+        _mockBulkCheckGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
-    private Mock<ICheckEligibility> _mockCheckGateway;
+    private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<GetBulkUploadResultsUseCase>> _mockLogger;
     private GetBulkUploadResultsUseCase _sut;
@@ -59,9 +59,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 201;
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync((IList<CheckEligibilityItem>)null!);
 
         // Act
@@ -82,9 +82,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
             .ReturnsAsync(_fixture.Create<string>());
@@ -107,9 +107,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
             .ReturnsAsync(_fixture.Create<string>());
@@ -118,7 +118,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
-        _mockCheckGateway.Verify(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid), Times.Once);
+        _mockBulkCheckGateway.Verify(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid), Times.Once);
     }
 
     [Test]
@@ -132,9 +132,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
             .ReturnsAsync(_fixture.Create<string>());
@@ -155,7 +155,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 305; // But bulk check belongs to LA 305
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
 
         // Act
@@ -177,9 +177,9 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         
         var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
             .ReturnsAsync(_fixture.Create<string>());
@@ -201,7 +201,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = null; // But bulk check has no local authority set
         
-        _mockCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
 
         // Act

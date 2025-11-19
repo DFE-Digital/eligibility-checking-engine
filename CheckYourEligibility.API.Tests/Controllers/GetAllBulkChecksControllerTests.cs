@@ -15,14 +15,14 @@ namespace CheckYourEligibility.API.Tests.Controllers
     public class GetAllBulkChecksControllerTests
     {
         private Mock<IGetAllBulkChecksUseCase> _mockUseCase = null!;
-        private EligibilityCheckController _controller = null!;
-        private Mock<ILogger<EligibilityCheckController>> _mockLogger = null!;
+        private BulkCheckController _controller = null!;
+        private Mock<ILogger<BulkCheckController>> _mockLogger = null!;
 
         [SetUp]
         public void Setup()
         {
             _mockUseCase = new Mock<IGetAllBulkChecksUseCase>();
-            _mockLogger = new Mock<ILogger<EligibilityCheckController>>();
+            _mockLogger = new Mock<ILogger<BulkCheckController>>();
 
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
@@ -34,12 +34,12 @@ namespace CheckYourEligibility.API.Tests.Controllers
             // Create minimal mocks - only create the ones that are actually needed
             var mockAudit = new Mock<IAudit>();
 
-            _controller = new EligibilityCheckController(
+            _controller = new BulkCheckController(
                 _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
                 // Pass nulls for dependencies we're not testing
-                null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
+                null!, null!, null!, null!, null!, 
                 _mockUseCase.Object
             );
         }

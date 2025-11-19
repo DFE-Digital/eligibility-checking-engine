@@ -16,19 +16,19 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
+        _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadProgressUseCase>>(MockBehavior.Loose);
-        _sut = new GetBulkUploadProgressUseCase(_mockCheckGateway.Object, _mockLogger.Object);
+        _sut = new GetBulkUploadProgressUseCase(_mockBulkCheckGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
     }
 
     [TearDown]
     public void Teardown()
     {
-        _mockCheckGateway.VerifyAll();
+        _mockBulkCheckGateway.VerifyAll();
     }
 
-    private Mock<ICheckEligibility> _mockCheckGateway;
+    private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<ILogger<GetBulkUploadProgressUseCase>> _mockLogger;
     private GetBulkUploadProgressUseCase _sut;
     private Fixture _fixture;
@@ -50,7 +50,7 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
-        _mockCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync((BulkStatus)null);
+        _mockBulkCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync((BulkStatus)null);
 
         // Act
         Func<Task> act = async () => await _sut.Execute(guid);
@@ -65,7 +65,7 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var statusValue = _fixture.Create<BulkStatus>();
-        _mockCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync(statusValue);
+        _mockBulkCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync(statusValue);
 
         // Act
         var result = await _sut.Execute(guid);
@@ -83,12 +83,12 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var statusValue = _fixture.Create<BulkStatus>();
-        _mockCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync(statusValue);
+        _mockBulkCheckGateway.Setup(s => s.GetBulkStatus(guid)).ReturnsAsync(statusValue);
 
         // Act
         await _sut.Execute(guid);
 
         // Assert
-        _mockCheckGateway.Verify(s => s.GetBulkStatus(guid), Times.Once);
+        _mockBulkCheckGateway.Verify(s => s.GetBulkStatus(guid), Times.Once);
     }
 }

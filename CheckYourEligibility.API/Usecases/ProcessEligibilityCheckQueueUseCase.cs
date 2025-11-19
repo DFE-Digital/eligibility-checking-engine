@@ -6,7 +6,7 @@ namespace CheckYourEligibility.API.UseCases;
 /// <summary>
 ///     Interface for processing messages from a specified queue
 /// </summary>
-public interface IProcessQueueMessagesUseCase
+public interface IProcessEligibilityBulkCheckUseCase
 {
     /// <summary>
     ///     Execute the use case
@@ -16,14 +16,14 @@ public interface IProcessQueueMessagesUseCase
     Task<MessageResponse> Execute(string queue);
 }
 
-public class ProcessQueueMessagesUseCase : IProcessQueueMessagesUseCase
+public class ProcessEligibilityCheckQueueUseCase : IProcessEligibilityBulkCheckUseCase
 {
-    private readonly ICheckEligibility _checkGateway;
-    private readonly ILogger<ProcessQueueMessagesUseCase> _logger;
+    private readonly IStorageQueue _storageQueueGateway;
+    private readonly ILogger<ProcessEligibilityCheckQueueUseCase> _logger;
 
-    public ProcessQueueMessagesUseCase(ICheckEligibility checkGateway, ILogger<ProcessQueueMessagesUseCase> logger)
+    public ProcessEligibilityCheckQueueUseCase(IStorageQueue storageQueueGateway, ILogger<ProcessEligibilityCheckQueueUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _storageQueueGateway = storageQueueGateway;
         _logger = logger;
     }
 
@@ -35,7 +35,7 @@ public class ProcessQueueMessagesUseCase : IProcessQueueMessagesUseCase
             return new MessageResponse { Data = "Invalid Request." };
         }
 
-        await _checkGateway.ProcessQueue(queue);
+        await _storageQueueGateway.ProcessQueue(queue);
         _logger.LogInformation(
             $"Queue {queue.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} processed successfully");
         return new MessageResponse { Data = "Queue Processed." };

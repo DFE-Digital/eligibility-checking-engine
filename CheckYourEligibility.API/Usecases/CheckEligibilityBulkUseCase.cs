@@ -28,7 +28,8 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 {
     private readonly IValidator<IEligibilityServiceType> _validator;
     private readonly IAudit _auditGateway;
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
+    private readonly ICheckEligibility _checkEligibilityGateway;
     private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
 
     /// <summary>
@@ -36,12 +37,14 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
     /// </summary>
     public CheckEligibilityBulkUseCase(
         IValidator<IEligibilityServiceType> validator,
-        ICheckEligibility checkGateway,
+        ICheckEligibility checkEligibilityGateway,
+        IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
         ILogger<CheckEligibilityBulkUseCase> logger)
     {
         _validator = validator;
-        _checkGateway = checkGateway;
+        _checkEligibilityGateway = checkEligibilityGateway;
+        _bulkCheckGateway = bulkCheckGateway;
         _auditGateway = auditGateway;
         _logger = logger;
     }
@@ -112,9 +115,9 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             LocalAuthorityID = model.Meta?.LocalAuthorityId
         };
 
-        await _checkGateway.CreateBulkCheck(bulkCheck);
+        await _bulkCheckGateway.CreateBulkCheck(bulkCheck);
 
-        await _checkGateway.PostCheck(bulkData, groupId);
+        await _checkEligibilityGateway.PostCheck(bulkData, groupId);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 

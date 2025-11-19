@@ -21,15 +21,15 @@ public interface IProcessEligibilityCheckUseCase
 public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
 {
     private readonly IAudit _auditGateway;
-    private readonly ICheckEligibility _checkGateway;
+    private readonly ICheckingEngine _checkingEngineGateway;
     private readonly ILogger<ProcessEligibilityCheckUseCase> _logger;
 
     public ProcessEligibilityCheckUseCase(
-        ICheckEligibility checkGateway,
+        ICheckingEngine checkingEngineGateway,
         IAudit auditGateway,
         ILogger<ProcessEligibilityCheckUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _checkingEngineGateway = checkingEngineGateway;
         _auditGateway = auditGateway;
         _logger = logger;
     }
@@ -41,7 +41,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         try
         {
             var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-            var response = await _checkGateway.ProcessCheck(guid, auditItemTemplate);
+            var response = await _checkingEngineGateway.ProcessCheck(guid, auditItemTemplate);
 
             if (response == null)
             {

@@ -16,10 +16,10 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
+        _mockCheckingEngineGateway = new Mock<ICheckingEngine>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ProcessEligibilityCheckUseCase>>(MockBehavior.Loose);
-        _sut = new ProcessEligibilityCheckUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
+        _sut = new ProcessEligibilityCheckUseCase(_mockCheckingEngineGateway.Object, _mockAuditGateway.Object,
             _mockLogger.Object);
         _fixture = new Fixture();
     }
@@ -27,11 +27,11 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
     [TearDown]
     public void Teardown()
     {
-        _mockCheckGateway.VerifyAll();
+        _mockCheckingEngineGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
-    private Mock<ICheckEligibility> _mockCheckGateway;
+    private Mock<ICheckingEngine> _mockCheckingEngineGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ProcessEligibilityCheckUseCase>> _mockLogger;
     private ProcessEligibilityCheckUseCase _sut;
@@ -58,7 +58,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
 
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
-        _mockCheckGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
+        _mockCheckingEngineGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
             .ReturnsAsync((CheckEligibilityStatus?)null);
 
         // Act
@@ -78,7 +78,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
 
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
-        _mockCheckGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
+        _mockCheckingEngineGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
             .ReturnsAsync(statusValue);
 
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
@@ -100,7 +100,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
 
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
-        _mockCheckGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
+        _mockCheckingEngineGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
             .ReturnsAsync(statusValue);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
@@ -122,7 +122,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
 
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
-        _mockCheckGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
+        _mockCheckingEngineGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
             .ReturnsAsync(statusValue);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
 
@@ -130,7 +130,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         await _sut.Execute(guid);
 
         // Assert
-        _mockCheckGateway.Verify(s => s.ProcessCheck(guid, auditItemTemplate), Times.Once);
+        _mockCheckingEngineGateway.Verify(s => s.ProcessCheck(guid, auditItemTemplate), Times.Once);
     }
 
     [Test]
@@ -142,7 +142,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
 
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
-        _mockCheckGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
+        _mockCheckingEngineGateway.Setup(s => s.ProcessCheck(guid, auditItemTemplate))
             .ThrowsAsync(new ProcessCheckException("Test exception"));
 
         // Act

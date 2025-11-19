@@ -2,6 +2,7 @@
 
 using AutoFixture;
 using AutoMapper;
+using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
@@ -19,7 +20,7 @@ public class DwpServiceTests : TestBase.TestBase
 {
     // private IEligibilityCheckContext _fakeInMemoryDb;
     private IConfiguration _configuration;
-    private DwpGateway _sut;
+    private DwpAdapter _sut;
     private HttpClient httpClient;
 
     [SetUp]
@@ -58,7 +59,7 @@ public class DwpServiceTests : TestBase.TestBase
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
 
-        _sut = new DwpGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new DwpAdapter(new NullLoggerFactory(), httpClient, _configuration);
     }
 
     [TearDown]
@@ -73,7 +74,7 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         request.data[0].attributes.endDate = null;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
@@ -105,7 +106,7 @@ public class DwpServiceTests : TestBase.TestBase
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
@@ -121,7 +122,7 @@ public class DwpServiceTests : TestBase.TestBase
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
@@ -137,7 +138,7 @@ public class DwpServiceTests : TestBase.TestBase
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         // Act
         var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
 
@@ -155,13 +156,13 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 10000 }
             }
         };
@@ -184,13 +185,13 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             }
         };
@@ -214,19 +215,19 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             }
         };
@@ -249,19 +250,19 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             }
         };
@@ -284,25 +285,25 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
             }
         };
@@ -325,25 +326,25 @@ public class DwpServiceTests : TestBase.TestBase
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[0].attributes.status = DwpGateway.statusInPayment;
+        request.data[0].attributes.status = DwpAdapter.statusInPayment;
         request.data[0].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             },
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-d"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 100 }
             }
         };
@@ -371,13 +372,13 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.endDate = DateTime.Now.ToString("yyyy-MM-dd");
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 500 }
             }
         };
@@ -404,13 +405,13 @@ public class DwpServiceTests : TestBase.TestBase
         request.data[0].attributes.endDate = DateTime.Now.ToString("yyyy-MM-dd");
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
             }
         };
@@ -435,10 +436,10 @@ public class DwpServiceTests : TestBase.TestBase
         //JSA
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
@@ -469,10 +470,10 @@ public class DwpServiceTests : TestBase.TestBase
         //JSA
         request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
@@ -503,10 +504,10 @@ public class DwpServiceTests : TestBase.TestBase
         //IS
         request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
@@ -537,16 +538,16 @@ public class DwpServiceTests : TestBase.TestBase
         //IS
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
-        request.data[0].attributes.status = DwpGateway.decision_entitled;
+        request.data[0].attributes.status = DwpAdapter.decision_entitled;
         //UC
         request.data[1].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
-        request.data[1].attributes.status = DwpGateway.statusInPayment;
+        request.data[1].attributes.status = DwpAdapter.statusInPayment;
         request.data[1].attributes.awards = new List<Award>
         {
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
-                status = DwpGateway.awardStatusLive,
+                status = DwpAdapter.awardStatusLive,
                 assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
             }
         };

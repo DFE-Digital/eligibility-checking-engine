@@ -20,14 +20,14 @@ public interface IGetBulkUploadProgressUseCase
 
 public class GetBulkUploadProgressUseCase : IGetBulkUploadProgressUseCase
 {
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
     private readonly ILogger<GetBulkUploadProgressUseCase> _logger;
 
     public GetBulkUploadProgressUseCase(
-        ICheckEligibility checkGateway,
+        IBulkCheck bulkCheckGateway,
         ILogger<GetBulkUploadProgressUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _bulkCheckGateway = bulkCheckGateway;
         _logger = logger;
     }
 
@@ -35,7 +35,7 @@ public class GetBulkUploadProgressUseCase : IGetBulkUploadProgressUseCase
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, group ID is required.");
 
-        var response = await _checkGateway.GetBulkStatus(guid);
+        var response = await _bulkCheckGateway.GetBulkStatus(guid);
         if (response == null)
         {
             _logger.LogWarning(
