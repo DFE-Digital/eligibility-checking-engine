@@ -39,9 +39,10 @@ public class SearchApplicationsUseCaseTests
         // Arrange
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(null!, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(null!, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<ArgumentException>();
 
         exception.WithMessage("Invalid request, data is required");
@@ -54,9 +55,10 @@ public class SearchApplicationsUseCaseTests
         var model = new ApplicationSearchRequest { Data = null };
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<ArgumentException>();
 
         exception.WithMessage("Invalid request, data is required");
@@ -75,9 +77,10 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<ArgumentException>();
 
         exception.WithMessage("Either LocalAuthority, Establishment, or MultiAcademyTrust must be specified");
@@ -96,9 +99,10 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { };
         var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 }; // Specific authorities only, not including 0 (all)
+        var allowedEstablishmentIds = new List<int> { };
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
 
         exception.WithMessage("You do not have permission to search applications for this multi academy trust");
@@ -117,9 +121,10 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; // Specific authorities only, not including 0 (all)
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
 
         exception.WithMessage("You do not have permission to search applications for this local authority");
@@ -138,6 +143,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 0 }; // 0 means 'all' permissions
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
@@ -145,7 +151,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
@@ -167,6 +173,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; // Specific authorities only
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
             .ReturnsAsync(localAuthorityIdFromEstablishment);
@@ -174,7 +181,7 @@ public class SearchApplicationsUseCaseTests
             .ThrowsAsync(new Exception($"Unable to find school:- {establishmentId} in MAT data"));
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds))
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
             .Should().ThrowAsync<UnauthorizedAccessException>();
 
         exception.WithMessage(
@@ -197,6 +204,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
@@ -208,7 +216,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
@@ -233,6 +241,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1 };
         var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
@@ -244,7 +253,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
@@ -268,6 +277,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
@@ -277,7 +287,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
@@ -302,6 +312,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { };
         var allowedMultiAcademyTrustIds = new List<int> { 1, 2, 3 };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
@@ -313,7 +324,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
@@ -334,11 +345,12 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
 
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync((ApplicationSearchResponse?)null);
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().NotBeNull();
@@ -360,6 +372,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Build<ApplicationSearchResponse>()
             .With(r => r.Data, new List<ApplicationResponse>())
             .Create();
@@ -367,7 +380,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().NotBeNull();
@@ -389,6 +402,7 @@ public class SearchApplicationsUseCaseTests
             .Create();
         var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 };
         var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
@@ -396,7 +410,7 @@ public class SearchApplicationsUseCaseTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds);
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
 
         // Assert
         result.Should().Be(response);
