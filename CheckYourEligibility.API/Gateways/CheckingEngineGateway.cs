@@ -58,9 +58,9 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            /*if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
                 throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-*/
+
             switch (result.Type)
             {
                 case CheckEligibilityType.FreeSchoolMeals:
