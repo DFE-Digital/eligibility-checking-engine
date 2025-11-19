@@ -71,7 +71,7 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    private async Task<string> SendMessage(EligibilityCheck item)
+    public async Task<string> SendMessage(EligibilityCheck item)
     {
         var queueName = string.Empty;
         if (_queueClientStandard != null)

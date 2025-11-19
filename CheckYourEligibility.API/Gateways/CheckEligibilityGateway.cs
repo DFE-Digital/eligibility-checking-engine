@@ -35,6 +35,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private readonly IEcsAdapter _ecsAdapter;
     private readonly IDwpAdapter _dwpAdapter;
     private readonly IHash _hashGateway;
+    private readonly IStorageQueue _storageQueueGateway;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
     private string _groupId;
@@ -43,7 +44,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway)
+        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway, IStorageQueue storageQueueGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -52,6 +53,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _dwpAdapter = dwpAdapter;
         _audit = audit;
         _hashGateway = hashGateway;
+        _storageQueueGateway = storageQueueGateway;
         _configuration = configuration;
     }
 
@@ -112,7 +114,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
             if (checkHashResult == null)
             {
-                var queue = await SendMessage(item);
+                var queue = await _storageQueueGateway.SendMessage(item);
             }
 
             return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
@@ -420,14 +422,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         return bulkChecks;
     }
 
-    public async Task<BulkCheck?> GetBulkCheck(string guid)
-    {
-        var bulkCheck = await _db.BulkChecks
-            .FirstOrDefaultAsync(x => x.BulkCheckID == guid);
-
-        return bulkCheck;
-    }
-
     public static string GetHash(CheckProcessData item)
     {
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
@@ -484,44 +478,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private void setQueueBulk(string queName, QueueServiceClient queueClientGateway)
     {
         if (queName != "notSet") _queueClientBulk = queueClientGateway.GetQueueClient(queName);
-    }
-
-    [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    private async Task<string> SendMessage(EligibilityCheck item)
-    {
-        var queueName = string.Empty;
-        if (_queueClientStandard != null)
-        {
-            if (item.BulkCheckID.IsNullOrEmpty())
-            {
-                await _queueClientStandard.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
-
-                LogQueueCount(_queueClientStandard);
-                queueName = _queueClientStandard.Name;
-            }
-            else
-            {
-                await _queueClientBulk.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
-                LogQueueCount(_queueClientBulk);
-                queueName = _queueClientBulk.Name;
-            }
-        }
-
-        return queueName;
     }
 
     /// <summary>
@@ -874,16 +830,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     ClientIdentifier = checkItem.ClientIdentifier
                 };
         }
-    }
-
-    [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    private void LogQueueCount(QueueClient queue)
-    {
-        QueueProperties properties = queue.GetProperties();
-
-        // Retrieve the cached approximate message count
-        var cachedMessagesCount = properties.ApproximateMessagesCount;
-        TrackMetric($"QueueCount:-{_queueClientStandard.Name}", cachedMessagesCount);
     }
 
     private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data)

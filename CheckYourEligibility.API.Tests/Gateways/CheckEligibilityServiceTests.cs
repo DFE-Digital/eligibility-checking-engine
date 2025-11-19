@@ -35,6 +35,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     private Mock<IAudit> _moqAudit;
     private Mock<IEcsAdapter> _moqEcsGateway;
     private Mock<IDwpAdapter> _moqDwpGateway;
+    private Mock<IStorageQueue> _moqStorageQueueGateway;
     private CheckEligibilityGateway _sut;
 
     [SetUp]
@@ -71,13 +72,14 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
         _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
+        _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 
 
         _sut = new CheckEligibilityGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper,
             new QueueServiceClient(webJobsConnection),
-            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _moqAudit.Object, _hashGateway);
+            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _moqAudit.Object, _hashGateway, _moqStorageQueueGateway.Object);
     }
 
     [TearDown]
@@ -98,7 +100,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
 
         var svc = new CheckEligibilityGateway(new NullLoggerFactory(), db.Object, _mapper, null, _configuration,
-            _moqEcsGateway.Object, _moqDwpGateway.Object, _moqAudit.Object, _hashGateway);
+            _moqEcsGateway.Object, _moqDwpGateway.Object, _moqAudit.Object, _hashGateway, _moqStorageQueueGateway.Object);
         db.Setup(x => x.CheckEligibilities.AddAsync(It.IsAny<EligibilityCheck>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception());
 
