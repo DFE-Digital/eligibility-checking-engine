@@ -213,20 +213,11 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// <returns>The multi academy trust ID</returns>
     public async Task<int> GetMultiAcademyTrustIdForEstablishment(int establishmentId)
     {
-        try
-        {
-            var multiAcademyTrustId = await _db.MultiAcademyTrustEstablishments
-                .Where(x => x.EstablishmentID == establishmentId)
-                .Select(x => x.MultiAcademyTrustID)
-                .FirstAsync();
-            return multiAcademyTrustId;
-        }
-        catch (Exception ex)
-        {
-            // Some Establishments are not part of MAT so only INFO
-            _logger.LogInformation(ex, $"Unable to find school:- {establishmentId} in MAT data");
-            throw new Exception($"Unable to find school:- {establishmentId} in MAT data, {ex.Message}");
-        }
+        var multiAcademyTrustId = await _db.MultiAcademyTrustEstablishments
+            .Where(x => x.EstablishmentID == establishmentId)
+            .Select(x => x.MultiAcademyTrustID)
+            .FirstOrDefaultAsync();
+        return multiAcademyTrustId;
     }
 
     /// <summary>
