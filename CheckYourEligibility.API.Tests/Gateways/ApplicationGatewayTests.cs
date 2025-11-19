@@ -1,8 +1,10 @@
 using AutoFixture;
 using AutoMapper;
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -150,8 +152,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
             LocalAuthorityID = 1,
             LaName = "Test LA"
         };
-        
-        var establishment = new Establishment
+
+        var establishment = new Domain.Establishment
         {
             EstablishmentID = 1,
             EstablishmentName = "Test School",
@@ -182,7 +184,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         app.EstablishmentId = establishment.EstablishmentID;
         app.LocalAuthorityID = localAuthority.LocalAuthorityID;
         app.UserId = user.UserID;
-        
+
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
@@ -203,8 +205,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
             LocalAuthorityID = 2,
             LaName = "Test LA 2"
         };
-        
-        var establishment = new Establishment
+
+        var establishment = new Domain.Establishment
         {
             EstablishmentID = 2,
             EstablishmentName = "Test School 2",
@@ -226,7 +228,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         app.Status = Domain.Enums.ApplicationStatus.Archived;
         app.EstablishmentId = establishment.EstablishmentID;
         app.LocalAuthorityID = localAuthority.LocalAuthorityID;
-        
+
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
@@ -252,6 +254,61 @@ public class ApplicationGatewayTests : TestBase.TestBase
         // Assert
         result.Should().Be(app.LocalAuthorityID);
     }
+
+    #endregion
+
+    #region RestoreArchivedApplicationStatus Tests
+
+    [Test]
+    public async Task RestoreArchivedApplicationStatus_ShouldRestorePreviousStatus_WhenApplicationIsArchived()
+    {
+        // Arrange
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        await _dbContext.Applications.AddAsync(app);
+        var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
+        previousStatus.Type = Domain.Enums.ApplicationStatus.Entitled;
+        await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.RestoreArchivedApplicationStatus(app.ApplicationID);
+
+        // Assert
+        result.Should().BeOfType<ApplicationStatusRestoreResponse>();
+        var updatedApp = await _dbContext.Applications.FirstOrDefaultAsync(a => a.ApplicationID == app.ApplicationID);
+        updatedApp.Should().NotBeNull();
+        updatedApp!.Status.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+    }
+
+    [Test]
+    public async Task RestoredArchivedApplicationStatus_ShouldThrowNotFoundException_WhenApplicationDoesNotExist()
+    {
+        // Arrange
+        var nonExistentGuid = Guid.NewGuid().ToString();
+
+        // Act
+        Func<Task> act = async () => await _sut.RestoreArchivedApplicationStatus(nonExistentGuid);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Test]
+    public async Task RestoreArchivedApplicationStatus_ShouldThrow_UnauthorizedException_WhenApplicationIsNotArchived()
+    {
+        // Arrange
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+        // Act
+        Func<Task> act = async () => await _sut.RestoreArchivedApplicationStatus(app.ApplicationID);
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+
 
     #endregion
 
