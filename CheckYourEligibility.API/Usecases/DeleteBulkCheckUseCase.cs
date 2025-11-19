@@ -22,11 +22,13 @@ namespace CheckYourEligibility.API.Usecases
     public class DeleteBulkCheckUseCase : IDeleteBulkCheckUseCase
     {
         private readonly ICheckEligibility _checkGateway;
+        private readonly IBulkCheck _bulkCheckGateway;
         private readonly ILogger<DeleteBulkCheckUseCase> _logger;
 
-        public DeleteBulkCheckUseCase(ICheckEligibility checkGateway, ILogger<DeleteBulkCheckUseCase> logger)
+        public DeleteBulkCheckUseCase(ICheckEligibility checkGateway, IBulkCheck bulkCheckGateway, ILogger<DeleteBulkCheckUseCase> logger)
         {
             _checkGateway = checkGateway;
+            _bulkCheckGateway = bulkCheckGateway;
             _logger = logger;
         }
 
@@ -37,7 +39,7 @@ namespace CheckYourEligibility.API.Usecases
                 throw new ValidationException(null, "Invalid Request, group ID is required.");
 
             // First, get the bulk check to validate ownership
-            var bulkCheck = await _checkGateway.GetBulkCheck(groupId);
+            var bulkCheck = await _bulkCheckGateway.GetBulkCheck(groupId);
 
             if (bulkCheck == null)
             {

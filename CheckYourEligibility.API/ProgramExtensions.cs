@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Extensions;
@@ -38,10 +39,13 @@ public static class ProgramExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddTransient<ICheckEligibility, CheckEligibilityGateway>();
+        services.AddTransient<IBulkCheck, BulkCheckGateway>();
+        services.AddTransient<ICheckingEngine, CheckingEngineGateway>();
+        services.AddTransient<IStorageQueue, StorageQueueGateway>();
         services.AddTransient<IApplication, ApplicationGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();
         services.AddTransient<INotify, NotifyGateway>();
-        services.AddTransient<IEcsGateway, EcsGateway>();
+        services.AddTransient<IEcsAdapter, EcsAdapter>();
         services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
         services.AddTransient<IUsers, UsersGateway>();
         services.AddTransient<IAudit, AuditGateway>();
@@ -52,7 +56,7 @@ public static class ProgramExtensions
 
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpClient<IDwpGateway, DwpGateway>(client =>
+        services.AddHttpClient<IDwpAdapter, DwpAdapter>(client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
         });

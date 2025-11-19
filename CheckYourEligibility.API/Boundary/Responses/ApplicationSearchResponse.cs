@@ -6,4 +6,12 @@ public class ApplicationSearchResponse
 
     public int TotalPages { get; set; }
     public int TotalRecords { get; set; }
+    
+    public ApplicationSearchResponseMeta Meta { get; set; }
+}
+
+public class ApplicationSearchResponseMeta
+{
+    public int TotalPages { get; set; }
+    public int TotalRecords { get; set; }
 }

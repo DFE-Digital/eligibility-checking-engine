@@ -152,7 +152,6 @@ builder.Services.AddJwtSettings(builder.Configuration);
 // Use cases
 builder.Services.AddScoped<ICreateOrUpdateUserUseCase, CreateOrUpdateUserUseCase>();
 builder.Services.AddScoped<IAuthenticateUserUseCase, AuthenticateUserUseCase>();
-builder.Services.AddScoped<IMatchCitizenUseCase, MatchCitizenUseCase>();
 builder.Services.AddScoped<IGetCitizenClaimsUseCase, GetCitizenClaimsUseCase>();
 builder.Services.AddScoped<ISearchEstablishmentsUseCase, SearchEstablishmentsUseCase>();
 builder.Services.AddScoped<ICleanUpEligibilityChecksUseCase, CleanUpEligibilityChecksUseCase>();
@@ -168,7 +167,7 @@ builder.Services.AddScoped<IUpdateApplicationStatusUseCase, UpdateApplicationSta
 builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
 builder.Services.AddScoped<IDeleteApplicationUseCase, DeleteApplicationUseCase>();
 builder.Services.AddScoped<IRestoreArchivedApplicationStatusUseCase, RestoreArchivedApplicationStatusUseCase>();
-builder.Services.AddScoped<IProcessQueueMessagesUseCase, ProcessQueueMessagesUseCase>();
+builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibilityCheckQueueUseCase>();
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
 

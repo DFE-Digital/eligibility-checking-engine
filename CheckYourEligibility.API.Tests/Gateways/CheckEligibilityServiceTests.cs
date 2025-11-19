@@ -5,6 +5,7 @@ using System.Net;
 using AutoFixture;
 using AutoMapper;
 using Azure.Storage.Queues;
+using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
@@ -32,8 +33,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     private HashGateway _hashGateway;
     private IMapper _mapper;
     private Mock<IAudit> _moqAudit;
-    private Mock<IEcsGateway> _moqEcsGateway;
-    private Mock<IDwpGateway> _moqDwpGateway;
+    private Mock<IEcsAdapter> _moqEcsGateway;
+    private Mock<IDwpAdapter> _moqDwpGateway;
     private CheckEligibilityGateway _sut;
 
     [SetUp]
@@ -68,8 +69,8 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _moqEcsGateway = new Mock<IEcsGateway>(MockBehavior.Strict);
-        _moqDwpGateway = new Mock<IDwpGateway>(MockBehavior.Strict);
+        _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
+        _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 

@@ -19,14 +19,14 @@ public interface IGetBulkCheckStatusesUseCase
 
 public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
 {
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
     private readonly ILogger<GetBulkCheckStatusesUseCase> _logger;
 
     public GetBulkCheckStatusesUseCase(
-        ICheckEligibility checkGateway,
+        IBulkCheck bulkCheckGateway,
         ILogger<GetBulkCheckStatusesUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _bulkCheckGateway = bulkCheckGateway;
         _logger = logger;
     }
 
@@ -42,7 +42,7 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
                 "You do not have permission to access applications for this establishment's local authority");
         }
 
-        var response = await _checkGateway.GetBulkStatuses(localAuthority, allowedLocalAuthorityIds);
+        var response = await _bulkCheckGateway.GetBulkStatuses(localAuthority, allowedLocalAuthorityIds);
         if (response == null)
         {
             _logger.LogWarning(

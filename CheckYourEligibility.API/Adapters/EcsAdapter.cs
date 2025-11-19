@@ -2,12 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Xml.Linq;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Properties;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
-namespace CheckYourEligibility.API.Gateways;
-public interface IEcsGateway
+namespace CheckYourEligibility.API.Adapters;
+public interface IEcsAdapter
 {
     public string UseEcsforChecks { get; }
     public string UseEcsforChecksWF { get; }
@@ -16,7 +17,7 @@ public interface IEcsGateway
 }
 
 [ExcludeFromCodeCoverage]
-public class EcsGateway : BaseGateway, IEcsGateway
+public class EcsAdapter: IEcsAdapter
 {
     private readonly IConfiguration _configuration;
     private readonly string EcsHost;
@@ -30,12 +31,12 @@ public class EcsGateway : BaseGateway, IEcsGateway
     private readonly string _UseEcsforChecks;
     private readonly string _UseEcsforChecksWF;
 
-    string IEcsGateway.UseEcsforChecks => _UseEcsforChecks;
+    string IEcsAdapter.UseEcsforChecks => _UseEcsforChecks;
 
-    string IEcsGateway.UseEcsforChecksWF => _UseEcsforChecksWF;
+    string IEcsAdapter.UseEcsforChecksWF => _UseEcsforChecksWF;
     private bool _ran;
 
-    public EcsGateway(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
+    public EcsAdapter(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceFsmCheckEligibility");
         _configuration = configuration;

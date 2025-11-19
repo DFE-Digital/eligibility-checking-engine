@@ -1,6 +1,7 @@
 using System.Net;
 using AutoFixture;
 using AutoMapper;
+using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain.Enums;
@@ -15,11 +16,11 @@ using Resources = CheckYourEligibility.API.Tests.Properties.Resources;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class EcsGatewayTests : TestBase.TestBase
+public class EcsAdapterTests : TestBase.TestBase
 {
     // private IEligibilityCheckContext _fakeInMemoryDb;
     private IConfiguration _configuration;
-    private EcsGateway _sut;
+    private EcsAdapter _sut;
     private HttpClient httpClient;
 
     [SetUp]
@@ -53,7 +54,7 @@ public class EcsGatewayTests : TestBase.TestBase
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
 
-        _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new EcsAdapter(new NullLoggerFactory(), httpClient, _configuration);
     }
 
     [TearDown]
@@ -82,7 +83,7 @@ public class EcsGatewayTests : TestBase.TestBase
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new EcsAdapter(new NullLoggerFactory(), httpClient, _configuration);
 
         // Act
         var response = await _sut.EcsCheck(request, CheckEligibilityType.FreeSchoolMeals, _configuration["Dwp:EcsLAId"]);
@@ -110,7 +111,7 @@ public class EcsGatewayTests : TestBase.TestBase
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new EcsAdapter(new NullLoggerFactory(), httpClient, _configuration);
 
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -146,7 +147,7 @@ public class EcsGatewayTests : TestBase.TestBase
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new EcsAdapter(new NullLoggerFactory(), httpClient, _configuration);
 
         // Act
         var response = await _sut.EcsWFCheck(request, _configuration["Dwp:EcsLAId"]);
@@ -174,7 +175,7 @@ public class EcsGatewayTests : TestBase.TestBase
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        _sut = new EcsGateway(new NullLoggerFactory(), httpClient, _configuration);
+        _sut = new EcsAdapter(new NullLoggerFactory(), httpClient, _configuration);
 
         var wf = _fixture.Create<CheckEligibilityRequestData>();
         wf.DateOfBirth = "1990-01-01";

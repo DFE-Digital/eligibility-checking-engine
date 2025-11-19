@@ -156,7 +156,12 @@ public class ApplicationGateway : BaseGateway, IApplication
         {
             Data = mappedResults,
             TotalRecords = totalRecords,
-            TotalPages = totalPages
+            TotalPages = totalPages,
+            Meta = new ApplicationSearchResponseMeta()
+            {
+                TotalRecords = totalRecords,
+                TotalPages = totalPages,
+            }
         };
     }
 

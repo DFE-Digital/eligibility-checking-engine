@@ -8,14 +8,14 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ProcessQueueMessagesUseCaseTests : TestBase.TestBase
+public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
 {
     [SetUp]
     public void Setup()
     {
-        _mockGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
-        _mockLogger = new Mock<ILogger<ProcessQueueMessagesUseCase>>(MockBehavior.Loose);
-        _sut = new ProcessQueueMessagesUseCase(_mockGateway.Object, _mockLogger.Object);
+        _mockGateway = new Mock<IStorageQueue>(MockBehavior.Strict);
+        _mockLogger = new Mock<ILogger<ProcessEligibilityCheckQueueUseCase>>(MockBehavior.Loose);
+        _sut = new ProcessEligibilityCheckQueueUseCase(_mockGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
     }
 
@@ -25,9 +25,9 @@ public class ProcessQueueMessagesUseCaseTests : TestBase.TestBase
         _mockGateway.VerifyAll();
     }
 
-    private Mock<ICheckEligibility> _mockGateway;
-    private Mock<ILogger<ProcessQueueMessagesUseCase>> _mockLogger;
-    private ProcessQueueMessagesUseCase _sut;
+    private Mock<IStorageQueue> _mockGateway;
+    private Mock<ILogger<ProcessEligibilityCheckQueueUseCase>> _mockLogger;
+    private ProcessEligibilityCheckQueueUseCase _sut;
     private Fixture _fixture;
 
     [Test]

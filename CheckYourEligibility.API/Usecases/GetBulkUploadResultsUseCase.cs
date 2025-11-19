@@ -22,15 +22,15 @@ public interface IGetBulkUploadResultsUseCase
 public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
 {
     private readonly IAudit _auditGateway;
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
     private readonly ILogger<GetBulkUploadResultsUseCase> _logger;
 
     public GetBulkUploadResultsUseCase(
-        ICheckEligibility checkGateway,
+        IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
         ILogger<GetBulkUploadResultsUseCase> logger)
     {
-        _checkGateway = checkGateway;
+        _bulkCheckGateway = bulkCheckGateway;
         _auditGateway = auditGateway;
         _logger = logger;
     }
@@ -46,7 +46,7 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(new List<Error>(), "Invalid Request, group ID is required.");
 
         // First, verify the bulk check exists and user has permission to access it
-        var bulkCheck = await _checkGateway.GetBulkCheck(guid);
+        var bulkCheck = await _bulkCheckGateway.GetBulkCheck(guid);
         if (bulkCheck == null)
         {
             _logger.LogWarning(
@@ -62,7 +62,7 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
             throw new UnauthorizedAccessException($"You do not have permission to access bulk check {guid}");
         }
 
-        var response = await _checkGateway.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid);
+        var response = await _bulkCheckGateway.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid);
         if (response == null)
         {
             _logger.LogWarning(

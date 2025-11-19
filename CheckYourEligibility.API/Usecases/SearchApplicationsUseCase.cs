@@ -78,7 +78,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         var response = await _applicationGateway.GetApplications(model);
 
         if (response == null || !response.Data.Any())
-            return new ApplicationSearchResponse { Data = [], TotalPages = 0, TotalRecords = 0 };
+            return new ApplicationSearchResponse { Data = [], TotalPages = 0, TotalRecords = 0, Meta = new ApplicationSearchResponseMeta(){TotalPages = 0, TotalRecords = 0} };
         await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
 
         return response;
