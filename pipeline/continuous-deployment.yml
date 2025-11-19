@@ -112,7 +112,7 @@ stages:
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
 
   # Cypress Tests Dev Stage
-  - template: pipeline/templates/run-cypress-tests-template.yml@templates
+  - template: pipeline/templates/run-cypress-tests-template.yml
     parameters:
       stageName: 'RunCypressTestsDev'
       displayName: 'Run Cypress Tests Dev'
