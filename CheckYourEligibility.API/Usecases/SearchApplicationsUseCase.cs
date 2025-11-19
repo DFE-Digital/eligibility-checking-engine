@@ -105,7 +105,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         //Does the establishment scope allow this search
         //Does the MAT scope allow this search
         //Does the LA scope allow this search
-        // Returns at first success. Means that if valid establishment but invalid LA the search wills still be allowed.
+        // Returns at first success. Means that if valid establishment but invalid LA the search will still be allowed.
 
         //Check if an establishment scope was provided for Id used in the search
         if (allowedEstablishmentIds.Contains(0) || allowedEstablishmentIds.Contains(establishmentId))
@@ -119,13 +119,6 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new UnauthorizedAccessException(
                 "You do not have permission to search applications for this establishment's local authority or multi academy trust");
         }
-
-        //If we have supplied MAT scope
-        //If the establishment not part of a MAT, then return error? Or continue to LA check?
-        // --GOT TO BE CONTINUE DUE TO PROD ISSUE
-        //If the establishment is part of MAT
-        // Check if MAT is covered by scopes
-
         
         var multiAcademyTrustId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId);
         //If the establishment belongs to a Multi Academy Trust, And there is a MAT scope that matches the MAT for the establishment
@@ -154,32 +147,5 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new UnauthorizedAccessException(
                 "You do not have permission to search applications for this establishment's local authority or multi academy trust");
         }
-
-/*
-        // Get the local authority ID for the establishment and check permissions
-        var localAuthorityId =
-            await _applicationGateway.GetLocalAuthorityIdForEstablishment(establishmentId);
-        var isValidLocalAuthority = allowedLocalAuthorityIds.Contains(0) || allowedLocalAuthorityIds.Contains(localAuthorityId);
-
-        // Get the multi academy trust ID for the establishment and check permissions
-        bool isValidMultiAcademyTrust;
-        try
-        {
-            var multiAcademyTrustId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId);
-            isValidMultiAcademyTrust = allowedMultiAcademyTrustIds.Contains(0) || allowedMultiAcademyTrustIds.Contains(multiAcademyTrustId);
-        }
-        catch (Exception ex)
-        {
-            // The establishment does not belong to a MAT so should fail permissions unless the LA has permissions
-            isValidMultiAcademyTrust = false;
-        }
-
-        // Establishment must be part of either the LocalAuthority or MultiAcademyTrust of the user
-        if (!isValidLocalAuthority && !isValidMultiAcademyTrust)
-        {
-            throw new UnauthorizedAccessException(
-                "You do not have permission to search applications for this establishment's local authority or multi academy trust");
-        }
-        */
     }
 }
