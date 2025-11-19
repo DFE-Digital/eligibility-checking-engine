@@ -15,7 +15,7 @@ using String = string;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class UserServiceTests : TestBase.TestBase
+public class UserGatewayTests : TestBase.TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;

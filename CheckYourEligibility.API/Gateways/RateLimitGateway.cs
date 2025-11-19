@@ -3,7 +3,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class RateLimitGateway : BaseGateway, IRateLimit
+public class RateLimitGateway : IRateLimit
 {
     private readonly IEligibilityCheckContext _db;
 

@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace CheckYourEligibility.API.Tests;
 
 [ExcludeFromCodeCoverage]
-public class AdministrationServiceTests : TestBase.TestBase
+public class AdministrationGatewayTests : TestBase.TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
