@@ -189,6 +189,39 @@ public class SearchApplicationsUseCaseTests
     }
 
     [Test]
+    public async Task Execute_Should_NOT_Throw_UnauthorizedAccessException_When_Establishment_LocalAuthority_MAT_Not_Allowed()
+    {
+        // Arrange
+        var establishmentId = 123;
+        var localAuthorityIdFromEstablishment = 999; // Not in allowed list
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
+            {
+                LocalAuthority = null,
+                Establishment = establishmentId
+            })
+            .Create();
+        var allowedLocalAuthorityIds = new List<int> { 0 }; // Specific authorities only
+        var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { };
+        var response = _fixture.Create<ApplicationSearchResponse>();
+
+        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
+            .ReturnsAsync(localAuthorityIdFromEstablishment);
+        _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
+            .ReturnsAsync(0); // Could not find a MAT for the establishment
+            _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds);
+
+        // Assert
+        result.Should().Be(response);;
+    }
+
+    [Test]
     public async Task Execute_Should_Allow_Establishment_When_LocalAuthority_Is_Allowed()
     {
         // Arrange
