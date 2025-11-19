@@ -25,7 +25,7 @@ using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class BulkCheckGateway : BaseGateway, IBulkCheck
+public class BulkCheckGateway : IBulkCheck
 {
     protected readonly IAudit _audit;
     private readonly IEligibilityCheckContext _db;

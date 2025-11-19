@@ -25,7 +25,7 @@ using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
+public class CheckEligibilityGateway : ICheckEligibility
 {
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
@@ -194,6 +194,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                 item.ClientIdentifier = CheckData.ClientIdentifier;
             }
 
+            //TODO: This can probably be done as a map
             switch (result.Type)
             {
                 case CheckEligibilityType.WorkingFamilies:
@@ -248,6 +249,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     #region Private
     private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
     {
+        //TODO: This should probably live with the usecase
         switch (type)
         {
             case CheckEligibilityType.FreeSchoolMeals:

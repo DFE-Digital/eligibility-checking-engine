@@ -5,7 +5,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class UsersGateway : BaseGateway, IUsers
+public class UsersGateway : IUsers
 {
     private readonly IEligibilityCheckContext _db;
 

@@ -5,7 +5,7 @@ using Notify.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class NotifyGateway : BaseGateway, INotify
+public class NotifyGateway : INotify
 {
     private readonly INotificationClient _client;
     private readonly IConfiguration _configuration;

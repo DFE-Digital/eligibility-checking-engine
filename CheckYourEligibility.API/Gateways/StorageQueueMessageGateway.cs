@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class StorageQueueMessageGateway : BaseGateway, IStorageQueueMessage
+public class StorageQueueMessageGateway : IStorageQueueMessage
 {
     private readonly IConfiguration _configuration;
 
@@ -42,6 +42,7 @@ public class StorageQueueMessageGateway : BaseGateway, IStorageQueueMessage
     #region Private
 
     [ExcludeFromCodeCoverage]
+    //TODO: These two methods are ridiculously ugly. Do it in the constructor instead
     private void setQueueStandard(string queName, QueueServiceClient queueClientGateway)
     {
         if (queName != "notSet") _queueClientStandard = queueClientGateway.GetQueueClient(queName);
@@ -54,6 +55,7 @@ public class StorageQueueMessageGateway : BaseGateway, IStorageQueueMessage
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
+    //TODO: Ideally this method and whole class would live in the StorageQueue gateway
     public async Task<string> SendMessage(EligibilityCheck item)
     {
         var queueName = string.Empty;
@@ -98,7 +100,6 @@ public class StorageQueueMessageGateway : BaseGateway, IStorageQueueMessage
 
         // Retrieve the cached approximate message count
         var cachedMessagesCount = properties.ApproximateMessagesCount;
-        TrackMetric($"QueueCount:-{_queueClientStandard.Name}", cachedMessagesCount);
     }
 
     #endregion

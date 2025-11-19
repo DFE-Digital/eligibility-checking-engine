@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class StorageQueueGateway : BaseGateway, IStorageQueue, IStorageQueueMessage
+public class StorageQueueGateway : IStorageQueue
 {
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
@@ -47,6 +47,7 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue, IStorageQueueMess
 
     #region Private
 
+    //TODO: These two methods are ridiculously ugly. Do it in the constructor instead
     [ExcludeFromCodeCoverage]
     private void setQueueStandard(string queName, QueueServiceClient queueClientGateway)
     {
@@ -59,6 +60,7 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue, IStorageQueueMess
         if (queName != "notSet") _queueClientBulk = queueClientGateway.GetQueueClient(queName);
     }
 
+    //TODO: This method should return a list of IDs, that the bulk check usecase iterates over and sends to single check use case
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
     public async Task<string> SendMessage(EligibilityCheck item)
     {
@@ -104,7 +106,6 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue, IStorageQueueMess
 
         // Retrieve the cached approximate message count
         var cachedMessagesCount = properties.ApproximateMessagesCount;
-        TrackMetric($"QueueCount:-{_queueClientStandard.Name}", cachedMessagesCount);
     }
 
     public async Task ProcessQueue(string queName)
