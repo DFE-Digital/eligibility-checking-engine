@@ -178,7 +178,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
             .ReturnsAsync(localAuthorityIdFromEstablishment);
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
-            .ThrowsAsync(new Exception($"Unable to find school:- {establishmentId} in MAT data"));
+            .ReturnsAsync(0);
 
         // Act & Assert
         var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
@@ -279,8 +279,6 @@ public class SearchApplicationsUseCaseTests
 
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
-        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
-            .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
@@ -290,7 +288,6 @@ public class SearchApplicationsUseCaseTests
 
         // Assert
         result.Should().Be(response);
-        _mockApplicationGateway.Verify(s => s.GetLocalAuthorityIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId), Times.Once);
         _mockApplicationGateway.Verify(s => s.GetApplications(model), Times.Once);
     }
@@ -315,6 +312,8 @@ public class SearchApplicationsUseCaseTests
 
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
             .ReturnsAsync(localAuthorityIdFromEstablishment);
+        _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
+            .ReturnsAsync(0);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
@@ -348,8 +347,6 @@ public class SearchApplicationsUseCaseTests
         var allowedEstablishmentIds = new List<int> { };
         var response = _fixture.Create<ApplicationSearchResponse>();
 
-        _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(establishmentId))
-            .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);

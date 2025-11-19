@@ -101,7 +101,13 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
 
     private async Task validateEstablishment(int establishmentId, List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds, List<int> allowedEstablishmentIds)
     {
-        //Check if an establishment scope was provided for this search
+        //This checks that
+        //Does the establishment scope allow this search
+        //Does the MAT scope allow this search
+        //Does the LA scope allow this search
+        // Returns at first success. Means that if valid establishment but invalid LA the search wills still be allowed.
+
+        //Check if an establishment scope was provided for Id used in the search
         if (allowedEstablishmentIds.Contains(0) || allowedEstablishmentIds.Contains(establishmentId))
         {
             // There is a matching establishment scope
@@ -109,16 +115,53 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         }
         else if (!allowedEstablishmentIds.IsNullOrEmpty())
         {
+            //If an establishment scope was provided which didn't allow the establishment Id in the request
             throw new UnauthorizedAccessException(
                 "You do not have permission to search applications for this establishment's local authority or multi academy trust");
         }
 
+        //If we have supplied MAT scope
+        //If the establishment not part of a MAT, then return error? Or continue to LA check?
+        // --GOT TO BE CONTINUE DUE TO PROD ISSUE
+        //If the establishment is part of MAT
+        // Check if MAT is covered by scopes
+
+        
+        var multiAcademyTrustId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+        //If the establishment belongs to a Multi Academy Trust, And there is a MAT scope that matches the MAT for the establishment
+        if (multiAcademyTrustId != 0 && (allowedMultiAcademyTrustIds.Contains(0) || allowedMultiAcademyTrustIds.Contains(multiAcademyTrustId)))
+        {
+            // There is a matching establishment scope
+            return;
+        }
+        //If the establishment belongs to a MAT and there was an attempt to use a MAT scope that didn't match
+        else if (multiAcademyTrustId != 0 && !allowedEstablishmentIds.IsNullOrEmpty())
+        {
+            //If an establishment scope was provided which didn't allow the establishment Id in the request
+            throw new UnauthorizedAccessException(
+                "You do not have permission to search applications for this establishment's local authority or multi academy trust");
+        }
+
+        // Check that the establishment belongs to any of the LAs provided in the scopes
+        var localAuthorityId =
+            await _applicationGateway.GetLocalAuthorityIdForEstablishment(establishmentId);
+        if (allowedLocalAuthorityIds.Contains(0) || allowedLocalAuthorityIds.Contains(localAuthorityId)){ 
+            return;
+        }
+        else
+        {
+            //No scopes were present that have access to the establishment Id that was searched for
+            throw new UnauthorizedAccessException(
+                "You do not have permission to search applications for this establishment's local authority or multi academy trust");
+        }
+
+/*
         // Get the local authority ID for the establishment and check permissions
         var localAuthorityId =
             await _applicationGateway.GetLocalAuthorityIdForEstablishment(establishmentId);
         var isValidLocalAuthority = allowedLocalAuthorityIds.Contains(0) || allowedLocalAuthorityIds.Contains(localAuthorityId);
 
-        // Get the multi academy trust ID for the stablishment and check permissions
+        // Get the multi academy trust ID for the establishment and check permissions
         bool isValidMultiAcademyTrust;
         try
         {
@@ -137,5 +180,6 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             throw new UnauthorizedAccessException(
                 "You do not have permission to search applications for this establishment's local authority or multi academy trust");
         }
+        */
     }
 }
