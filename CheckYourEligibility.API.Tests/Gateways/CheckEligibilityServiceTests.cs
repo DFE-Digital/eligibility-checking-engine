@@ -35,7 +35,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
     private Mock<IAudit> _moqAudit;
     private Mock<IEcsAdapter> _moqEcsGateway;
     private Mock<IDwpAdapter> _moqDwpGateway;
-    private Mock<IStorageQueue> _moqStorageQueueGateway;
+    private Mock<IStorageQueueMessage> _moqStorageQueueGateway;
     private CheckEligibilityGateway _sut;
 
     [SetUp]
@@ -72,7 +72,7 @@ public class CheckEligibilityServiceTests : TestBase.TestBase
 
         _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
         _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
-        _moqStorageQueueGateway = new Mock<IStorageQueue>();
+        _moqStorageQueueGateway = new Mock<IStorageQueueMessage>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 

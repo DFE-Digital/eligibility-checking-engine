@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class StorageQueueGateway : BaseGateway, IStorageQueue
+public class StorageQueueGateway : BaseGateway, IStorageQueue, IStorageQueueMessage
 {
     private const int SurnameCheckCharachters = 3;
     protected readonly IAudit _audit;

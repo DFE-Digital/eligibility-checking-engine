@@ -35,16 +35,14 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     private readonly IEcsAdapter _ecsAdapter;
     private readonly IDwpAdapter _dwpAdapter;
     private readonly IHash _hashGateway;
-    private readonly IStorageQueue _storageQueueGateway;
+    private readonly IStorageQueueMessage _storageQueueMessageGateway;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
     private string _groupId;
-    private QueueClient _queueClientBulk;
-    private QueueClient _queueClientStandard;
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway, IStorageQueue storageQueueGateway)
+        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway, IStorageQueueMessage storageQueueMessageGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -53,7 +51,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
         _dwpAdapter = dwpAdapter;
         _audit = audit;
         _hashGateway = hashGateway;
-        _storageQueueGateway = storageQueueGateway;
+        _storageQueueMessageGateway = storageQueueMessageGateway;
         _configuration = configuration;
     }
 
@@ -114,7 +112,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
             await _db.SaveChangesAsync();
             if (checkHashResult == null)
             {
-                var queue = await _storageQueueGateway.SendMessage(item);
+                var queue = await _storageQueueMessageGateway.SendMessage(item);
             }
 
             return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
@@ -467,19 +465,6 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
     }
 
     #region Private
-
-    [ExcludeFromCodeCoverage]
-    private void setQueueStandard(string queName, QueueServiceClient queueClientGateway)
-    {
-        if (queName != "notSet") _queueClientStandard = queueClientGateway.GetQueueClient(queName);
-    }
-
-    [ExcludeFromCodeCoverage]
-    private void setQueueBulk(string queName, QueueServiceClient queueClientGateway)
-    {
-        if (queName != "notSet") _queueClientBulk = queueClientGateway.GetQueueClient(queName);
-    }
-
     /// <summary>
     /// Logic to find a match in Working families events' table
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
