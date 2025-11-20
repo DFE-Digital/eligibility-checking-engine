@@ -92,47 +92,20 @@ stages:
       jwtPassword: '$(JWT_PASSWORD_DEV)'
       cypressEnv: 'DEV'
 ## -- dev cypress tests -- ##
-  
-  - stage: DeployAppTest
-    displayName: Deploy App Test
-    jobs:
-    - deployment: testdeploy
-      displayName: Deploy App Test
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: TEST
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-test-kv-ece
-              inputs:
-                azureSubscription: 's203t.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203t01-core1 --server ece-test-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203t01-core1 --server ece-test-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203t.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-test-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
+
+## -- test deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployAppTest'
+      displayName: 'Deploy App Test'
+      deploymentName: 'testdeploy'
+      environment: 'TEST'
+      ECE_KEY_VAULT_NAME: 'ece-test-kv-ece'
+      azureSubscription: 's203t.azdo.deployment'
+      azureResourceGroup: 's203t01-core1'
+      sqlServerName: 'ece-test-database'
+      webAppName: 'ece-test-as-eligibility-checking-engine'
+## -- test deploy -- ##
 
 ## -- test cypress tests -- ##
   - template: templates/run-cypress-tests-template.yml
@@ -145,46 +118,19 @@ stages:
       cypressEnv: 'TEST'
 ## -- test cypress tests -- ##
 
-  - stage: DeployAppPP
-    displayName: Deploy App Pre-prod
-    jobs:
-    - deployment: ppdeploy
-      displayName: Deploy App Pre-prod
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: PRE-PROD
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-pp-kv-ece
-              inputs:
-                azureSubscription: 's203t.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203t02-core1 --server ece-pp-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203t02-core1 --server ece-pp-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203t.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-pp-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
+## -- pp deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployAppPP'
+      displayName: 'Deploy App Pre-prod'
+      deploymentName: 'ppdeploy'
+      environment: 'PRE-PROD'
+      ECE_KEY_VAULT_NAME: 'ece-pp-kv-ece'
+      azureSubscription: 's203t.azdo.deployment'
+      azureResourceGroup: 's203t02-core1'
+      sqlServerName: 'ece-pp-database'
+      webAppName: 'ece-pp-as-eligibility-checking-engine'
+## -- pp deploy -- ##
 
 ## -- pp cypress tests -- ##
   - template: templates/run-cypress-tests-template.yml
@@ -197,43 +143,16 @@ stages:
       cypressEnv: 'PP'
 ## -- pp cypress tests -- ##
 
-  - stage: DeployApp
-    displayName: Deploy App Production
-    jobs:
-    - deployment: deploy
-      displayName: Deploy App Production
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: PROD
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-kv-ece
-              inputs:
-                azureSubscription: 's203p.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203p01-core1 --server ece-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203p01-core1 --server ece-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203p.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
+## -- prod deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployApp'
+      displayName: 'Deploy App Production'
+      deploymentName: 'deploy'
+      environment: 'PROD'
+      ECE_KEY_VAULT_NAME: 'ece-kv-ece'
+      azureSubscription: 's203p.azdo.deployment'
+      azureResourceGroup: 's203p01-core1'
+      sqlServerName: 'ece-database'
+      webAppName: 'ece-as-eligibility-checking-engine'
+## -- prod deploy -- ##
