@@ -111,7 +111,7 @@ stages:
                 WebAppName: 'ece-dev-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
 
-  # Cypress Tests Dev Stage
+## -- dev cypress tests -- ##
   - template: templates/run-cypress-tests-template.yml
     parameters:
       stageName: 'RunCypressTestsDev'
@@ -120,6 +120,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_DEV)'
       jwtPassword: '$(JWT_PASSWORD_DEV)'
       cypressEnv: 'DEV'
+## -- dev cypress tests -- ##
   
   - stage: DeployAppTest
     displayName: Deploy App Test
