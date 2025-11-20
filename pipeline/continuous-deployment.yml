@@ -162,53 +162,17 @@ stages:
                 appType: 'webApp'
                 WebAppName: 'ece-test-as-eligibility-checking-engine'
                 packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
-              
-  - stage: RunCypressTestsTest
-    displayName: Run Cypress Tests Test
-    jobs:
-    - job: 'SetUpCypress'
-      displayName: 'SetUpTests'
-      pool:
-        vmImage: ubuntu-latest
-      steps:
-      - task: Bash@3
-        inputs:
-          targetType: inline
-          script: |
-           cd tests
-           npm install
-      - task: Bash@3
-        displayName: 'RunTests'
-        inputs:
-         targetType: inline
-         script: |
-          cd tests
-          export CYPRESS_API_HOST="$(CYPRESS_API_HOST_TEST)"
-          export CYPRESS_JWT_USERNAME=$(JWT_USERNAME_TEST)
-          export CYPRESS_JWT_PASSWORD='$(JWT_PASSWORD_TEST)'
-          export CYPRESS_ENV='TEST'
-          npm run e2e:electron
 
-      - task: Bash@3
-        condition: always()
-        displayName: 'Generate report'
-        inputs:
-         targetType: inline
-         script: |
-          cd tests
-          npm run combine:reports
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Cypress Screenshot Files'
-        condition: failed()
-        inputs:
-          PathtoPublish: 'tests/cypress/screenshots/'
-          ArtifactName: 'screenshots'
-      - task: PublishTestResults@2
-        condition: always()
-        displayName: 'Publish test results'
-        inputs:
-         testResultsFiles: '**/combined-report.xml'
-         searchFolder: 'tests'
+## -- test cypress tests -- ##
+  - template: templates/run-cypress-tests-template.yml
+    parameters:
+      stageName: 'RunCypressTestsTest'
+      displayName: 'Run Cypress Tests Test'
+      cypressApiHost: '$(CYPRESS_API_HOST_TEST)'
+      jwtUsername: '$(JWT_USERNAME_TEST)'
+      jwtPassword: '$(JWT_PASSWORD_TEST)'
+      cypressEnv: 'TEST'
+## -- test cypress tests -- ##
 
   - stage: DeployAppPP
     displayName: Deploy App Pre-prod
