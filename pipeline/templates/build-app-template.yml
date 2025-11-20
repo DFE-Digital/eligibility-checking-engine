@@ -2,10 +2,14 @@ parameters:
   - name: isDeployRun
     type: boolean
     default: false
+  - name: stageName
+    type: string
+  - name: displayName
+    type: string
   
 stages:
-  - stage: BuildApp
-    displayName: Build App
+  - stage: ${{ parameters.stageName }}
+    displayName: ${{ parameters.displayName }}
     jobs:
     - job: 
       pool:
