@@ -47,6 +47,7 @@ public class AdministrationGateway : IAdministration
         }
     }
 
+    //TODO: THis should live in the Establishment gateway
     [ExcludeFromCodeCoverage(Justification = "Use of bulk operations")]
     public async Task ImportEstablishments(IEnumerable<EstablishmentRow> data)
     {
@@ -119,6 +120,7 @@ public class AdministrationGateway : IAdministration
         }
     }
 
+    //TODO: This should live in its own MAT gateway
     public async Task ImportMats(IEnumerable<MatRow> data)
     {
         var multiAcademyTrusts = data

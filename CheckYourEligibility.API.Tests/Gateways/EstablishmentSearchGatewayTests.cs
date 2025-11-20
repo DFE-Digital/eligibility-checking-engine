@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class SchoolSearchServiceTests : TestBase.TestBase
+public class EstablishmentSearchGatewayTests : TestBase.TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;

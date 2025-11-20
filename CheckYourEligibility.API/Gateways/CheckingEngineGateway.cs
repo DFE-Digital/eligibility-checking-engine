@@ -25,10 +25,9 @@ using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class CheckingEngineGateway : BaseGateway, ICheckingEngine
+public class CheckingEngineGateway : ICheckingEngine
 {
     private const int SurnameCheckCharachters = 3;
-    protected readonly IAudit _audit;
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
 
@@ -36,36 +35,34 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
     private readonly IDwpAdapter _dwpAdapter;
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
-    protected readonly IMapper _mapper;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
 
-    public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
-        QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway)
+    public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
+        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
-        _mapper = mapper;
         _ecsAdapter = ecsAdapter;
         _dwpAdapter = dwpAdapter;
-        _audit = audit;
         _hashGateway = hashGateway;
         _configuration = configuration;
     }
 
     public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
     {
+        //TODO: This should come from the other gateway
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            x.Status != CheckEligibilityStatus.deleted);
 
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            /*if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
                 throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-*/
+
+            //TODO: This should live in the use case
             switch (result.Type)
             {
                 case CheckEligibilityType.FreeSchoolMeals:
@@ -132,6 +129,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName)
     {
+        //TODO: This should probably be its own adapter
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
@@ -203,6 +201,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
     private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
         EligibilityCheck? result, CheckProcessData checkData)
     {
+        //TODO: This should be cleaned up
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
@@ -339,6 +338,8 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
                     var sw = Stopwatch.StartNew();
+                    
+                    //TODO: This should live in the use case
                     if (_ecsAdapter.UseEcsforChecks == "true")
                     {
                         checkResult = await EcsCheck(checkData, laId);
@@ -387,7 +388,6 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
         {
             // Revert status back and do not save changes
             result.Status = CheckEligibilityStatus.queuedForProcessing;
-            TrackMetric("Dwp Error", 1);
         }
         else
         {
@@ -401,7 +401,6 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
                 var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
-
                     CorrelationID = correlationId,
                     ECE_Status = eceCheckResult,
                     ECS_Status = checkResult,
@@ -424,10 +423,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
             await _db.SaveChangesAsync();
         }
 
-        TrackMetric($"FSM Check:-{result.Status}", 1);
-        TrackMetric("FSM Check", 1);
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
-        TrackMetric("Check ProcessingTime (Seconds)", processingTime);
     }
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
@@ -477,6 +473,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
         }
     }
 
+    //TODO: These two could be adapters
     private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data)
     {
         var checkReults = _db.FreeSchoolMealsHO.Where(x =>

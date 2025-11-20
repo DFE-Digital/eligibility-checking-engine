@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class DwpServiceTests : TestBase.TestBase
+public class DwpAdapterTests : TestBase.TestBase
 {
     // private IEligibilityCheckContext _fakeInMemoryDb;
     private IConfiguration _configuration;

@@ -6,7 +6,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class AuditGateway : BaseGateway, IAudit
+public class AuditGateway : IAudit
 {
     private readonly IEligibilityCheckContext _db;
     private readonly IHttpContextAccessor _httpContextAccessor;

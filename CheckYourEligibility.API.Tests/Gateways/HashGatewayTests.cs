@@ -16,7 +16,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class HashServiceTests : TestBase.TestBase
+public class HashGatewayTests : TestBase.TestBase
 {
     private readonly int _hashCheckDays = 7;
     private IConfiguration _configuration;

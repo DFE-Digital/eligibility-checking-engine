@@ -2,8 +2,7 @@
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
 
-public interface IStorageQueue
+public interface IStorageQueueMessage
 {
-
-    Task ProcessQueue(string queue);
+    Task<string> SendMessage(EligibilityCheck item);
 }

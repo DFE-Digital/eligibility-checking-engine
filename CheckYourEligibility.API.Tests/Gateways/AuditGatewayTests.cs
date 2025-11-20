@@ -18,7 +18,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class AuditServiceTests : TestBase.TestBase
+public class AuditGatewayTests : TestBase.TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
