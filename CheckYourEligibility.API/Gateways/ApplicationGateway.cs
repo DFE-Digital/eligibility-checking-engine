@@ -6,6 +6,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
@@ -161,18 +162,61 @@ public class ApplicationGateway : IApplication
         };
     }
 
-    public async Task<ApplicationStatusUpdateResponse> UpdateApplicationStatus(string guid, ApplicationStatusData data)
+    public async Task<ApplicationUpdateResponse> UpdateApplication(string guid, ApplicationUpdateData data)
     {
         var result = await _db.Applications.FirstOrDefaultAsync(x => x.ApplicationID == guid);
         if (result != null)
         {
-            result.Status = data.Status;
-            await AddStatusHistory(result, result.Status.Value);
+            if (data.EstablishmentUrn.HasValue)
+            {
+                var establishment = await _db.Establishments.FirstOrDefaultAsync(x => x.EstablishmentID == data.EstablishmentUrn.Value);
+                if (establishment == null)
+                {
+                    throw new KeyNotFoundException($"Establishment with URN {data.EstablishmentUrn} not found.");
+                }
+                result.EstablishmentId = establishment.EstablishmentID;
+            }
+
+            if (data.Status.HasValue)
+            {
+                result.Status = data.Status;
+                await AddStatusHistory(result, result.Status.Value);
+            }
 
             result.Updated = DateTime.UtcNow;
             var updates = await _db.SaveChangesAsync();
-            return new ApplicationStatusUpdateResponse
-                { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
+            return new ApplicationUpdateResponse
+                { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
+        }
+
+        return null;
+    }
+
+    public async Task<ApplicationUpdateResponse> UpdateApplicationByReference(string reference, ApplicationUpdateData data)
+    {
+        var result = await _db.Applications.FirstOrDefaultAsync(x => x.Reference == reference);
+        if (result != null)
+        {
+            if (data.EstablishmentUrn.HasValue)
+            {
+                var establishment = await _db.Establishments.FirstOrDefaultAsync(x => x.EstablishmentID == data.EstablishmentUrn.Value);
+                if (establishment == null)
+                {
+                    throw new KeyNotFoundException($"Establishment with URN {data.EstablishmentUrn} not found.");
+                }
+                result.EstablishmentId = establishment.EstablishmentID;
+            }
+
+            if (data.Status.HasValue)
+            {
+                result.Status = data.Status;
+                await AddStatusHistory(result, result.Status.Value);
+            }
+
+            result.Updated = DateTime.UtcNow;
+            var updates = await _db.SaveChangesAsync();
+            return new ApplicationUpdateResponse
+                { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
         }
 
         return null;
@@ -238,6 +282,21 @@ public class ApplicationGateway : IApplication
             _logger.LogError(ex, $"Unable to find application:- {applicationId?.Replace(Environment.NewLine, "")}");
             throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
         }
+    }
+
+    public async Task<int> GetLocalAuthorityIdForApplicationByReference(string reference)
+    {
+        var application = await _db.Applications
+            .Where(x => x.Reference == reference)
+            .Select(x => new { x.LocalAuthorityID })
+            .FirstOrDefaultAsync();
+
+        if (application == null)
+        {
+            throw new NotFoundException($"Application with reference {reference} not found");
+        }
+
+        return application.LocalAuthorityID;
     }
 
     /// <summary>

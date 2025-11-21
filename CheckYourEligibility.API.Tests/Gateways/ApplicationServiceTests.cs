@@ -156,21 +156,21 @@ public class ApplicationServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_InValidRequest_UpdateApplicationStatus_Should_Return_null()
+    public void Given_InValidRequest_UpdateApplication_Should_Return_null()
     {
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
 
         // Act
-        var response = _sut.UpdateApplicationStatus(guid, request.Data);
+        var response = _sut.UpdateApplication(guid, request.Data);
 
         // Assert
         response.Result.Should().BeNull();
     }
 
     [Test]
-    public async Task Given_ValidRequest_UpdateApplicationStatus_Should_Return_UpdatedStatus()
+    public async Task Given_ValidRequest_UpdateApplication_Should_Return_UpdatedStatus()
     {
         // Arrange
         await ClearDownData();
@@ -179,16 +179,17 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         var response = _sut.PostApplication(request);
 
-        var requestUpdateStatus = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var requestUpdateStatus = _fixture.Create<ApplicationUpdateRequest>();
+        requestUpdateStatus.Data = new ApplicationUpdateData { Status = ApplicationStatus.Entitled, EstablishmentUrn = null };
 
         // Act
 
 
         // Act
-        var applicationStatusUpdate = await _sut.UpdateApplicationStatus(response.Result.Id, requestUpdateStatus.Data);
+        var applicationStatusUpdate = await _sut.UpdateApplication(response.Result.Id, requestUpdateStatus.Data);
 
         // Assert
-        applicationStatusUpdate.Should().BeOfType<ApplicationStatusUpdateResponse>();
+        applicationStatusUpdate.Should().BeOfType<ApplicationUpdateResponse>();
         applicationStatusUpdate.Data.Status.Should().BeEquivalentTo(requestUpdateStatus.Data.Status.ToString());
     }
 
@@ -391,7 +392,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         var archivedAppResponse = await _sut.PostApplication(requestArchived);
         
         // Archive the second application
-        await _sut.UpdateApplicationStatus(archivedAppResponse.Id, new ApplicationStatusData
+        await _sut.UpdateApplication(archivedAppResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.Archived
         });
@@ -443,7 +444,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         var appResponse = await _sut.PostApplication(request);
         
         // Archive the application
-        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.Archived
         });
@@ -466,7 +467,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         var appResponse = await _sut.PostApplication(request);
         
-        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.Archived
         });
@@ -489,7 +490,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ArchivedApplication_UpdateApplicationStatus_Should_UpdateSuccessfully()
+    public async Task Given_ArchivedApplication_UpdateApplication_Should_UpdateSuccessfully()
     {
         // Arrange
         await ClearDownData();
@@ -500,13 +501,13 @@ public class ApplicationServiceTests : TestBase.TestBase
         var appResponse = await _sut.PostApplication(request);
         
         // Archive the application
-        await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.Archived
         });
 
         // Act - Update the archived application status to something else
-        var updateResult = await _sut.UpdateApplicationStatus(appResponse.Id, new ApplicationStatusData
+        var updateResult = await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.EvidenceNeeded
         });
