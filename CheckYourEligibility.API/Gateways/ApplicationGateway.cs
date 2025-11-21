@@ -14,7 +14,7 @@ using Establishment = CheckYourEligibility.API.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class ApplicationGateway : BaseGateway, IApplication
+public class ApplicationGateway : IApplication
 {
     private const int referenceMaxValue = 99999999;
     private static Random randomNumber;
@@ -82,9 +82,7 @@ public class ApplicationGateway : BaseGateway, IApplication
 
             var saved = _db.Applications
                 .First(x => x.ApplicationID == item.ApplicationID);
-
-            TrackMetric($"Application {item.Type}", 1);
-
+            
             return await GetApplication(saved.ApplicationID);
         }
         catch (Exception ex)
@@ -173,9 +171,6 @@ public class ApplicationGateway : BaseGateway, IApplication
 
             result.Updated = DateTime.UtcNow;
             var updates = await _db.SaveChangesAsync();
-            TrackMetric($"Application Status Change {result.Status}", 1);
-            TrackMetric($"Application Status Change Establishment:-{result.EstablishmentId} {result.Status}", 1);
-            TrackMetric($"Application Status Change La:-{result.LocalAuthorityID} {result.Status}", 1);
             return new ApplicationStatusUpdateResponse
                 { Data = new ApplicationStatusDataResponse { Status = result.Status.Value.ToString() } };
         }
@@ -188,6 +183,7 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="establishmentId">The establishment ID</param>
     /// <returns>The local authority ID</returns>
+    //TODO: This method should live in its own MAT gateway
     public async Task<int> GetLocalAuthorityIdForEstablishment(int establishmentId)
     {
         try
@@ -211,22 +207,14 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="establishmentId">The establishment ID</param>
     /// <returns>The multi academy trust ID</returns>
+    //TODO: This method should live in its own MAT gateway
     public async Task<int> GetMultiAcademyTrustIdForEstablishment(int establishmentId)
     {
-        try
-        {
-            var multiAcademyTrustId = await _db.MultiAcademyTrustEstablishments
-                .Where(x => x.EstablishmentID == establishmentId)
-                .Select(x => x.MultiAcademyTrustID)
-                .FirstAsync();
-            return multiAcademyTrustId;
-        }
-        catch (Exception ex)
-        {
-            // Some Establishments are not part of MAT so only INFO
-            _logger.LogInformation(ex, $"Unable to find school:- {establishmentId} in MAT data");
-            throw new Exception($"Unable to find school:- {establishmentId} in MAT data, {ex.Message}");
-        }
+        var multiAcademyTrustId = await _db.MultiAcademyTrustEstablishments
+            .Where(x => x.EstablishmentID == establishmentId)
+            .Select(x => x.MultiAcademyTrustID)
+            .FirstOrDefaultAsync();
+        return multiAcademyTrustId;
     }
 
     /// <summary>
@@ -257,6 +245,8 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="urn">The establishment URN</param>
     /// <returns>Tuple containing existence flag, establishment ID, and local authority ID</returns>
+    //TODO: This method should live in its own Establishment gateway
+
     public async Task<(bool exists, int establishmentId, int localAuthorityId)> GetEstablishmentByUrn(string urn)
     {
         try
@@ -310,7 +300,6 @@ public class ApplicationGateway : BaseGateway, IApplication
             _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
 
             // Track metrics
-            TrackMetric("Bulk Applications Imported", applicationsList.Count);
 
             return Task.CompletedTask;
         }
@@ -326,6 +315,8 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="urn">School URN as string</param>
     /// <returns>Establishment entity or null if not found</returns>
+    //TODO: This method should live in its own Establishment gateway
+
     public async Task<Establishment?> GetEstablishmentEntityByUrn(string urn)
     {
         if (string.IsNullOrWhiteSpace(urn) || !int.TryParse(urn, out var establishmentId))
@@ -342,6 +333,7 @@ public class ApplicationGateway : BaseGateway, IApplication
     /// </summary>
     /// <param name="urns">Collection of School URNs as strings</param>
     /// <returns>Dictionary mapping URN to establishment entity</returns>
+    //TODO: This method should live in its own Establishment gateway
     public async Task<Dictionary<string, Establishment>> GetEstablishmentEntitiesByUrns(
         IEnumerable<string> urns)
     {
@@ -413,7 +405,6 @@ public class ApplicationGateway : BaseGateway, IApplication
             await _db.SaveChangesAsync();
 
             _logger.LogInformation($"Application {guid.Replace(Environment.NewLine, "")} deleted successfully");
-            TrackMetric("Application Deleted", 1);
 
             return true;
         }
@@ -485,31 +476,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         }
 
         return query.OrderBy(x => x.Created);
-
-        // In case we need to order by status first and then by created date
-        /* if (model.Data?.Statuses != null && model.Data.Statuses.Any())
-        {
-            return query.OrderBy(x => x.Status).ThenBy(x => x.Created);
-        }
-        else
-        {
-            return query.OrderBy(x => x.Created);
-        } */
     }
-
-
-    /* private string GetReference()
-    {
-        var unique = false;
-        var nextReference = string.Empty;
-        while (!unique)
-        {
-            nextReference = randomNumber.Next(1, referenceMaxValue).ToString();
-            unique = _db.Applications.FirstOrDefault(x => x.Reference == nextReference) == null;
-        }
-
-        return nextReference;
-    } */
 
     private string GetReference()
     {
@@ -539,7 +506,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         return Guid.NewGuid().ToString("N").Substring(0, 8);
     }
 
-
+    //TODO: Doesn't this exist as a static method elsewhere?
     private EligibilityCheckHash? GetHash(CheckEligibilityType type, Application data)
     {
         var age = DateTime.UtcNow.AddDays(-_hashCheckDays);
@@ -566,6 +533,7 @@ public class ApplicationGateway : BaseGateway, IApplication
         await _db.ApplicationStatuses.AddAsync(status);
     }
 
+    //TODO: This method should live in its own MAT gateway
     private List<int> GetMatSchoolIds(int matId)
     {
         return _db.MultiAcademyTrustEstablishments.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();

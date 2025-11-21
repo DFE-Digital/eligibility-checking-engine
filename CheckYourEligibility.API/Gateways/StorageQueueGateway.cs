@@ -18,18 +18,12 @@ using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class StorageQueueGateway : BaseGateway, IStorageQueue
+public class StorageQueueGateway : IStorageQueue
 {
-    private const int SurnameCheckCharachters = 3;
-    protected readonly IAudit _audit;
     private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
 
-    private readonly IEcsAdapter _ecsAdapter;
-    private readonly IDwpAdapter _dwpAdapter;
-    private readonly IHash _hashGateway;
     private readonly ILogger _logger;
-    protected readonly IMapper _mapper;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
@@ -37,17 +31,12 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue
     private ICheckingEngine _checkingEngineGateway;
 
 
-    public StorageQueueGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
+    public StorageQueueGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         QueueServiceClient queueClientGateway,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IAudit audit, IHash hashGateway, ICheckEligibility checkEligibilityGateway, ICheckingEngine checkingEngineGateway)
+        IConfiguration configuration, ICheckEligibility checkEligibilityGateway, ICheckingEngine checkingEngineGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
-        _mapper = mapper;
-        _ecsAdapter = ecsAdapter;
-        _dwpAdapter= dwpAdapter;
-        _audit = audit;
-        _hashGateway = hashGateway;
         _configuration = configuration;
         _checkEligibilityGateway = checkEligibilityGateway;
         _checkingEngineGateway = checkingEngineGateway;
@@ -58,6 +47,7 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue
 
     #region Private
 
+    //TODO: These two methods are ridiculously ugly. Do it in the constructor instead
     [ExcludeFromCodeCoverage]
     private void setQueueStandard(string queName, QueueServiceClient queueClientGateway)
     {
@@ -70,6 +60,7 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue
         if (queName != "notSet") _queueClientBulk = queueClientGateway.GetQueueClient(queName);
     }
 
+    //TODO: This method should return a list of IDs, that the bulk check usecase iterates over and sends to single check use case
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
     public async Task<string> SendMessage(EligibilityCheck item)
     {
@@ -115,7 +106,6 @@ public class StorageQueueGateway : BaseGateway, IStorageQueue
 
         // Retrieve the cached approximate message count
         var cachedMessagesCount = properties.ApproximateMessagesCount;
-        TrackMetric($"QueueCount:-{_queueClientStandard.Name}", cachedMessagesCount);
     }
 
     public async Task ProcessQueue(string queName)

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class HashGateway : BaseGateway, IHash
+public class HashGateway : IHash
 {
     protected readonly IAudit _audit;
     private readonly IEligibilityCheckContext _db;
