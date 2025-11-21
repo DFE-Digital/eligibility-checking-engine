@@ -32,12 +32,20 @@ public interface IApplication
     Task<ApplicationSearchResponse> GetApplications(ApplicationSearchRequest model);
 
     /// <summary>
-    /// Updates the status of an application
+    /// Updates an application
     /// </summary>
     /// <param name="guid">Application GUID</param>
-    /// <param name="data">Status update data</param>
-    /// <returns>Status update response</returns>
-    Task<ApplicationStatusUpdateResponse> UpdateApplicationStatus(string guid, ApplicationStatusData data);
+    /// <param name="data">Update data</param>
+    /// <returns>Update response</returns>
+    Task<ApplicationUpdateResponse> UpdateApplication(string guid, ApplicationUpdateData data);
+
+    /// <summary>
+    /// Updates an application by reference
+    /// </summary>
+    /// <param name="reference">Application Reference</param>
+    /// <param name="data">Update data</param>
+    /// <returns>Update response</returns>
+    Task<ApplicationUpdateResponse> UpdateApplicationByReference(string reference, ApplicationUpdateData data);
 
     /// <summary>
     /// Gets the local authority ID for an establishment
@@ -59,6 +67,13 @@ public interface IApplication
     /// <param name="applicationId">Application ID</param>
     /// <returns>Local authority ID</returns>
     Task<int> GetLocalAuthorityIdForApplication(string applicationId);
+
+    /// <summary>
+    /// Gets the local authority ID for an application by reference
+    /// </summary>
+    /// <param name="reference">Application Reference</param>
+    /// <returns>Local authority ID</returns>
+    Task<int> GetLocalAuthorityIdForApplicationByReference(string reference);
 
     /// <summary>
     /// Bulk imports applications without creating eligibility check hashes
