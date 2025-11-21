@@ -1,27 +1,20 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using AutoMapper;
 using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -122,6 +115,20 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
     }
 
     #region Private
+    /// <summary>
+    /// If VSD falls in the spring term (1st Jan - 31st March) return the following term (summer)
+    /// If VSD falls in the summer term (1st April - 31st August) return the following term (autumn)
+    /// If VSD falls in the spring term (1st Sept - 31st December) return the following term (spring)
+    /// </summary>
+    /// <param name="validityStartDate"></param>
+    /// <returns></returns>
+    private string DetermineTermValidity(DateTime validityStartDate, bool childTooYoung ) {
+       
+        int year = validityStartDate.Year;
+        if (validityStartDate >= new DateTime(year, 1, 1) && validityStartDate <= new DateTime(year, 3, 31)) { return (childTooYoung ? "autumn":"summer"); }
+        else if (validityStartDate >= new DateTime(year, 4, 1) && validityStartDate <= new DateTime(year, 8, 31)) { return (childTooYoung ?"spring" :"autumn"); }       
+        else return (childTooYoung ? "summer" : "spring");
+    }
 
     /// <summary>
     /// Logic to find a match in Working families events' table
@@ -129,35 +136,51 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
     /// </summary>
     /// <param name="checkData"></param>
     /// <returns></returns>
-    private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
+    private async Task<(WorkingFamiliesEvent, List<string>)> Check_Working_Families_EventRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName)
     {
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        List<string> TermValidity = new();
+        DateTime requestChildDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        bool childTooYoung = requestChildDob.AddMonths(9) >= DateTime.UtcNow;
+
         var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
             x.EligibilityCode == eligibilityCode &&
             (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
              x.PartnerLastName.ToUpper() == lastName) &&
-            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
+            x.ChildDateOfBirth == requestChildDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
 
-        // If there is more than one record
-        // check if second to last record has not expired yet
-        // set the event to the second record that is still valid
+        // If there is more than one record returned AND older record still ongoing (VED > today)
+        // set the event to the second record that is still ongoing
         // and get set ValidityEndDate and the GracePeriodEndDate of the future record
         if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
         {
             wfEvent = wfRecords[1];
 
+            // NOTE: might be redundant 
             wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
             wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
+
+            //Determine Term Validity based on DVSD for each returned record and add it to the list
+            for (int r = 0; r < wfRecords.Count(); r++)
+            {
+
+                TermValidity.Add(DetermineTermValidity(wfRecords[r].DiscretionaryValidityStartDate, childTooYoung));
+
+            }
         }
+
+        // else return the latest record
+        // determine term validity for latest record
         else
         {
             wfEvent = wfRecords.FirstOrDefault();
+            TermValidity.Add(DetermineTermValidity(wfEvent.DiscretionaryValidityStartDate, childTooYoung));
+           
         }
 
-        return wfEvent;
+        return (wfEvent, TermValidity);
     }
     /// <summary>
     /// This method is used for generating test data in runtime
@@ -204,6 +227,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
         EligibilityCheck? result, CheckProcessData checkData)
     {
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        List<string> TermValidiy = new();
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
@@ -239,27 +263,29 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
             
             _logger.LogInformation($"Processing ECS WF check in {sw.ElapsedMilliseconds} ms");
         }
-
         // Get event for ECE record
         else
         {
-            wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+
+            (wfEvent, TermValidiy) = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                 checkData.NationalInsuranceNumber, checkData.LastName);
             
             _logger.LogInformation($"Processing ECE WF check in {sw.ElapsedMilliseconds} ms");
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
-        
+      
         // If event is returned initiate business logic. 
-        if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
+        if (wfEvent != null)
         {
             //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
+
             var currentDate = DateTime.UtcNow.Date;
 
             if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
             {
                 result.Status = CheckEligibilityStatus.eligible;
+
             }
             else
             {
@@ -270,7 +296,7 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
         result.EligibilityCheckHashID =
             await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
 
-        // Now update the check data in the EligibilityCheckTable with all the neccessary fields
+        // Now update the check data in the EligibilityCheckTable with all the additional fields
         // that needs to be returned on the GET request if a record has been found
         if (wfEvent != null && result.Status != CheckEligibilityStatus.notFound)
         {
@@ -279,6 +305,8 @@ public class CheckingEngineGateway : BaseGateway, ICheckingEngine
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
             wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+            wfCheckData.TermValidity = TermValidiy;
+          
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
             _db.CheckEligibilities.Update(result);

@@ -245,6 +245,7 @@ public class CheckEligibilityGateway : BaseGateway, ICheckEligibility
                     item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
                     item.DateOfBirth = CheckData.DateOfBirth;
+                    item.TermValidity = CheckData.TermValidity;
                     break;
                 default:
                     item.DateOfBirth = CheckData.DateOfBirth;

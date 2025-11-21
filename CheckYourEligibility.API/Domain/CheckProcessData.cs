@@ -18,7 +18,7 @@ public class CheckProcessData
     public string DateOfBirth { get; set; }
     public string SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
-
+    public IList<string> TermValidity { get; set; }
     public string? ClientIdentifier { get; set; }
 
     public CheckEligibilityType Type { get; set; }
