@@ -30,8 +30,8 @@ stages:
       deploymentName: 'devdeploy'
       environment: 'DEV'
       ECE_KEY_VAULT_NAME: '$(kvDev)'
-      azureSubscription: '$(subDev)'
-      azureResourceGroup: '$(rgDev)'
+      azureSubscription: '$(subscriptionDev)'
+      azureResourceGroup: '$(resourceGroupDev)'
       sqlServerName: '$(sqlServerDev)'
       webAppName: '$(webAppNameDev)'
 ## -- dev deploy -- ##
