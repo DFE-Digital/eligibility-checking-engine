@@ -11,6 +11,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  # Environment specific variables i.e. azure resource names, are defined in Azure DevOps UI. 
 
 stages:
 ## -- build app -- ##
