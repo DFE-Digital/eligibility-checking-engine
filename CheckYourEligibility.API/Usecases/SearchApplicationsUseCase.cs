@@ -127,8 +127,8 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             // There is a matching establishment scope
             return;
         }
-        //If the establishment belongs to a MAT and there was an attempt to use a MAT scope that didn't match
-        else if (multiAcademyTrustId != 0 && !allowedEstablishmentIds.IsNullOrEmpty())
+        //Else if there was an attempt to use a multi_academy_trust scope which didn't correspond to the establishment
+        else if (!allowedEstablishmentIds.IsNullOrEmpty() && !allowedEstablishmentIds.Contains(0))
         {
             //If an establishment scope was provided which didn't allow the establishment Id in the request
             throw new UnauthorizedAccessException(
