@@ -28,11 +28,11 @@ stages:
       displayName: 'Deploy App Dev'
       deploymentName: 'devdeploy'
       environment: 'DEV'
-      ECE_KEY_VAULT_NAME: 'ece-dev-kv-ece'
-      azureSubscription: 's203d.azdo.deployment'
-      azureResourceGroup: 's203d01-core1'
-      sqlServerName: 'ece-dev-database'
-      webAppName: 'ece-dev-as-eligibility-checking-engine'
+      ECE_KEY_VAULT_NAME: '$(kvDev)'
+      azureSubscription: '$(subDev)'
+      azureResourceGroup: '$(rgDev)'
+      sqlServerName: '$(sqlServerDev)'
+      webAppName: '$(webAppNameDev)'
 ## -- dev deploy -- ##
 
 ## -- dev cypress tests -- ##
