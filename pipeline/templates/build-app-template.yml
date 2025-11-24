@@ -1,5 +1,5 @@
 parameters:
-  - name: isDeployRun
+  - name: isDeployRun # Indicates if this build is part of a deployment pipeline run
     type: boolean
     default: false
   - name: stageName
@@ -24,7 +24,7 @@ stages:
 
       - task: CmdLine@2
         displayName: 'Build migrations bundle'
-        condition: eq(${{ parameters.isDeployRun }}, true) #Only runs for deployment pipeline runs
+        condition: eq(${{ parameters.isDeployRun }}, true) # Task only runs for deployment pipeline runs
         inputs:
           script: |
             dotnet tool install --global dotnet-ef --version 8.0.4
