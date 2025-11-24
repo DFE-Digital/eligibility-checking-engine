@@ -1,27 +1,16 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using AutoMapper;
-using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
-using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -281,6 +270,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     LastName = checkItem.LastName?.ToUpper(),
                     DateOfBirth = checkItem.DateOfBirth,
                     ClientIdentifier = checkItem.ClientIdentifier,
+                    TermValidity = checkItem.TermValidity,
                     Type = type
                 };
             default:

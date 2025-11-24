@@ -1,7 +1,5 @@
 // Ignore Spelling: Levenshtein
 
-using System.Globalization;
-using System.Net;
 using AutoFixture;
 using AutoMapper;
 using Azure.Storage.Queues;
@@ -17,12 +15,15 @@ using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
+using System.Globalization;
+using System.Net;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -213,6 +214,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals; // Force FSM type for this test
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
         item.Type = fsm.Type;
@@ -224,7 +226,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
+     //   _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
 
@@ -732,7 +734,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_validRequest_Process_Should_Return_updatedStatus_notEligble()
+    public async Task Given_WF_validRequest_and_ECS_Legacy_Enabled_Process_Should_Return_updatedStatus_notEligble()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -764,7 +766,10 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         soapResponse.ValidityStartDate = DateTime.Today.AddDays(-2).ToString();
         soapResponse.ValidityEndDate = DateTime.Today.AddDays(-1).ToString();
         soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString();
-        
+        soapResponse.Status = "0";
+        soapResponse.ErrorCode = "0";
+        soapResponse.Qualifier = string.Empty;
+
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
@@ -777,7 +782,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_validRequest_dobNonMatch_Process_Should_Return_updatedStatus_notFound()
+    public async Task Given_WF_validRequest_dobNonMatch_Process_Should_Return_updatedStatus_notFound()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -812,7 +817,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
+    public async Task Given_WF_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -866,14 +871,24 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "doe";
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
-        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
+
+        var ecsSoapCheckResponse = new SoapCheckResponse { 
+            Status = "1", 
+            ErrorCode = "0", 
+            Qualifier = string.Empty, 
+            ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), 
+            ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), 
+            GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() 
+        };
+
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
-        var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
+       
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         // Act
         var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());

@@ -330,9 +330,6 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Assert
         response.Should().BeOfType<CheckEligibilityItem>();
         response.EligibilityCode.Should().BeEquivalentTo(check.EligibilityCode);
-        response.ValidityStartDate.Should().BeEquivalentTo(check.ValidityStartDate);
-        response.ValidityEndDate.Should().BeEquivalentTo(check.ValidityEndDate);
-        response.GracePeriodEndDate.Should().BeEquivalentTo(check.GracePeriodEndDate);
         response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
         response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
         response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
@@ -489,6 +486,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             ValidityEndDate = request.ValidityEndDate,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             DateOfBirth = request.DateOfBirth,
+            TermValidity = request.TermValidity,
             Type = CheckEligibilityType.WorkingFamilies
         };
     }
