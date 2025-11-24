@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
@@ -140,7 +141,7 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationSearchRequest model)
     {
         try
@@ -148,12 +149,11 @@ public class ApplicationController : BaseController
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
             var establishmentIds = User.GetSpecificScopeIds(_establishmentScopeName);
-            if ((localAuthorityIds == null || localAuthorityIds.Count == 0) &&
-                (multiAcademyTrustIds == null || multiAcademyTrustIds.Count == 0))
+            if (localAuthorityIds.IsNullOrEmpty() && multiAcademyTrustIds.IsNullOrEmpty() && establishmentIds.IsNullOrEmpty())
             {
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority or multi academy trust scope found" }]
+                    Errors = [new Error { Title = "No local_authority, multi_academy_trust, or establishment scope found" }]
                 });
             }
 

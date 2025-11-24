@@ -382,7 +382,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var badRequestResult = response as BadRequestObjectResult;
         badRequestResult?.Value.Should().BeOfType<ErrorResponse>();
         var errorResponse = badRequestResult?.Value as ErrorResponse;
-        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local authority or multi academy trust scope found");
+        errorResponse?.Errors?.FirstOrDefault()?.Title.Should().Be("No local_authority, multi_academy_trust, or establishment scope found");
     }
 
     [Test]
