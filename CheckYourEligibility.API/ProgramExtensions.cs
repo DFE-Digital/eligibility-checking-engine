@@ -57,20 +57,27 @@ public static class ProgramExtensions
 
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpClient<IDwpAdapter, DwpAdapter>(client =>
+        // Register HttpClient normally
+        services.AddHttpClient("Dwp", client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
         });
+
+        // Register DwpAdapter as singleton, inject IHttpClientFactory
+        services.AddSingleton<IDwpAdapter>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient("Dwp");
+            var config = sp.GetRequiredService<IConfiguration>();
+            return new DwpAdapter(loggerFactory, httpClient, config);
+        });
+
         return services;
     }
 
     public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        /* var jwtSettings = new JwtSettings();
-        configuration.GetSection("Jwt").Bind(jwtSettings);
-        services.AddSingleton(jwtSettings);
-        return services; */
-
         services.AddTransient(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
