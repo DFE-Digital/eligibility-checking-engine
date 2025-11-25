@@ -395,7 +395,7 @@ public class ApplicationController : BaseController
         }
         catch (Exception ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404 }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404 }] });
         }
     }
 
