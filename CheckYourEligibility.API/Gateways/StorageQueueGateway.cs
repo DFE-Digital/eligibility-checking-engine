@@ -62,52 +62,6 @@ public class StorageQueueGateway : IStorageQueue
 
     //TODO: This method should return a list of IDs, that the bulk check usecase iterates over and sends to single check use case
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    public async Task<string> SendMessage(EligibilityCheck item)
-    {
-        var queueName = string.Empty;
-        if (_queueClientStandard != null)
-        {
-            if (item.BulkCheckID.IsNullOrEmpty())
-            {
-                await _queueClientStandard.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
-
-                LogQueueCount(_queueClientStandard);
-                queueName = _queueClientStandard.Name;
-            }
-            else
-            {
-                await _queueClientBulk.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
-                LogQueueCount(_queueClientBulk);
-                queueName = _queueClientBulk.Name;
-            }
-        }
-
-        return queueName;
-    }
-
-    [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    private void LogQueueCount(QueueClient queue)
-    {
-        QueueProperties properties = queue.GetProperties();
-
-        // Retrieve the cached approximate message count
-        var cachedMessagesCount = properties.ApproximateMessagesCount;
-    }
-
     public async Task ProcessQueue(string queName)
     {
         QueueClient queue;
@@ -131,6 +85,7 @@ public class StorageQueueGateway : IStorageQueue
                 foreach (var item in retrievedMessage)
                 {
                     sw.Restart();
+                    string popReceipt = item.PopReceipt;
                     var checkData =
                         JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
@@ -158,13 +113,20 @@ public class StorageQueueGateway : IStorageQueue
                                 //Delete message and update status to error
                                 await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                     new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
-                                await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                                await queue.DeleteMessageAsync(item.MessageId, popReceipt);
                             }
                         }
                         // If status is not queued for Processing, we have a conclusive answer
                         else
                         {
-                            await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            try
+                            {
+                                await queue.DeleteMessageAsync(item.MessageId, popReceipt);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error deleting queue item");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -175,21 +137,21 @@ public class StorageQueueGateway : IStorageQueue
                         {
                             await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                 new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
-                            await queue.DeleteMessageAsync(item.MessageId, item.PopReceipt);
+                            await queue.DeleteMessageAsync(item.MessageId, popReceipt);
                         }
                         else
+                        {
                             await queue.UpdateMessageAsync(
                                 item.MessageId,
-                                item.PopReceipt,
+                                popReceipt,
                                 item.Body,
-                                TimeSpan.Zero
-                            );                    
+                                TimeSpan.FromSeconds(5)
+                            );
+                        }
                     }
                     
                     _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
                 }
-
-                properties = await queue.GetPropertiesAsync();
             }
         }
     }
