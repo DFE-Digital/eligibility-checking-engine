@@ -393,6 +393,10 @@ public class ApplicationController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 403 }] });
         }
+        catch (Exception ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404 }] });
+        }
     }
 
 }

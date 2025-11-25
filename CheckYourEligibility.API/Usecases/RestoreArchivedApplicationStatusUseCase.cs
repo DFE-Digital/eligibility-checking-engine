@@ -31,7 +31,7 @@ public class RestoreArchivedApplicationStatusUseCase : IRestoreArchivedApplicati
     public async Task<ApplicationStatusRestoreResponse> Execute(string guid, List<int> allowedLocalAuthorityIds)
     {
        
-       int localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForApplication(guid);
+       var localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForApplication(guid);
         
         if (!allowedLocalAuthorityIds.Contains(0) && !allowedLocalAuthorityIds.Contains(localAuthorityId))
         {
