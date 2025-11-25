@@ -36,6 +36,7 @@ public class UpdateApplicationStatusUseCase : IUpdateApplicationStatusUseCase
         }
 
         var response = await _applicationGateway.UpdateApplicationStatus(guid, model.Data);
+        
         if (response == null) return null;
 
         await _auditGateway.CreateAuditEntry(AuditType.Application, guid);
