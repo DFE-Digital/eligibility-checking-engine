@@ -101,11 +101,6 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
 
     private async Task validateEstablishment(int establishmentId, List<int> allowedLocalAuthorityIds, List<int> allowedMultiAcademyTrustIds, List<int> allowedEstablishmentIds)
     {
-        //This checks that
-        //Does the establishment scope allow this search
-        //Does the MAT scope allow this search
-        //Does the LA scope allow this search
-        // Returns at first success. Means that if valid establishment but invalid LA the search will still be allowed.
 
         //Check if an establishment scope was provided for Id used in the search
         if (allowedEstablishmentIds.Contains(0) || allowedEstablishmentIds.Contains(establishmentId))

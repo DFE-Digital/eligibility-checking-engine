@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests;
@@ -27,8 +27,9 @@ public class ApplicationControllerTests : TestBase.TestBase
     private ILogger<ApplicationController> _mockLogger = null!;
     private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase = null!;
     private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
-    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!; 
-    private Mock<IDeleteApplicationUseCase> _mockDeleteApplicationUseCase = null!; 
+    private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!;
+    private Mock<IDeleteApplicationUseCase> _mockDeleteApplicationUseCase = null!;
+    private Mock<IRestoreArchivedApplicationStatusUseCase> _mockRestoreArchiveApplicationUseCase = null!;
     private ApplicationController _sut = null!;
 
     [SetUp]
@@ -38,8 +39,9 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockGetApplicationUseCase = new Mock<IGetApplicationUseCase>(MockBehavior.Strict);
         _mockSearchApplicationsUseCase = new Mock<ISearchApplicationsUseCase>(MockBehavior.Strict);
         _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
-        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict); 
-        _mockDeleteApplicationUseCase = new Mock<IDeleteApplicationUseCase>(MockBehavior.Strict); 
+        _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict);
+        _mockDeleteApplicationUseCase = new Mock<IDeleteApplicationUseCase>(MockBehavior.Strict);
+        _mockRestoreArchiveApplicationUseCase = new Mock<IRestoreArchivedApplicationStatusUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
         _fixture = new Fixture(); // Ensure _fixture is initialized
@@ -61,8 +63,9 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockGetApplicationUseCase.Object,
             _mockSearchApplicationsUseCase.Object,
             _mockUpdateApplicationStatusUseCase.Object,
-            _mockImportApplicationsUseCase.Object, 
+            _mockImportApplicationsUseCase.Object,
             _mockDeleteApplicationUseCase.Object,
+            _mockRestoreArchiveApplicationUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -75,6 +78,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockUpdateApplicationStatusUseCase.VerifyAll();
         _mockImportApplicationsUseCase.VerifyAll();
         _mockDeleteApplicationUseCase.VerifyAll();
+        _mockRestoreArchiveApplicationUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -93,7 +97,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         var expectedResult = new ObjectResult(applicationFsm)
-            { StatusCode = StatusCodes.Status201Created };
+        { StatusCode = StatusCodes.Status201Created };
 
         // Act
         var response = await _sut.Application(request);
@@ -249,7 +253,7 @@ public class ApplicationControllerTests : TestBase.TestBase
 
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.Application(guid);
@@ -280,7 +284,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -311,7 +315,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         var expectedResponse = _fixture.Create<ApplicationSearchResponse>();
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -356,7 +360,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
-            { StatusCode = StatusCodes.Status200OK };
+        { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.ApplicationStatusUpdate(guid, request);
@@ -644,7 +648,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest
-            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
         var localAuthorityIds = new List<int> { 1 };
 
@@ -665,7 +669,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest
-            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         SetupControllerWithLocalAuthorityIds(new List<int>());
 
         // Act
@@ -683,7 +687,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest
-            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
@@ -705,7 +709,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest
-            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
@@ -727,7 +731,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new ApplicationBulkImportRequest
-            { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
+        { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
@@ -938,4 +942,54 @@ public class ApplicationControllerTests : TestBase.TestBase
         var errorResponse = badRequestResult!.Value as ErrorResponse;
         errorResponse!.Errors!.First().Title.Should().Be("General error");
     }
+
+    [Test]
+    public async Task Given_Valid_guid_RestoreArchivedApplicationStatus_Should_Return_StatusOk()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var expectedResponse = _fixture.Create<ApplicationStatusRestoreResponse>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockRestoreArchiveApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
+            .ReturnsAsync(expectedResponse);
+
+        var expectedResult = new ObjectResult(expectedResponse) { StatusCode = StatusCodes.Status200OK };
+
+        // Act
+        var response = await _sut.RestoreArchivedApplication(guid);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+
+    }
+
+    [Test]
+    public async Task Given_InValid_guid_RestoreArchivedApplicationStatus_Should_Return_StatusNotFound()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var request = _fixture.Create<ApplicationStatusRestoreResponse>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockRestoreArchiveApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
+            .ReturnsAsync((ApplicationStatusRestoreResponse)null!);
+
+        var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
+
+        // Act
+        var response = await _sut.RestoreArchivedApplication(guid);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+
+
 }

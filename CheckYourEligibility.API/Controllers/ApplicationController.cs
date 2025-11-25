@@ -1,5 +1,4 @@
-﻿using System.Net;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -9,6 +8,7 @@ using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Net;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
@@ -26,6 +26,7 @@ public class ApplicationController : BaseController
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
+    private readonly IRestoreArchivedApplicationStatusUseCase _restoreArchivedApplicationStatusUseCase;
     private readonly IImportApplicationsUseCase _importApplicationsUseCase;
     private readonly IDeleteApplicationUseCase _deleteApplicationUseCase;
 
@@ -38,6 +39,7 @@ public class ApplicationController : BaseController
         IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
         IImportApplicationsUseCase importApplicationsUseCase,
         IDeleteApplicationUseCase deleteApplicationUseCase,
+        IRestoreArchivedApplicationStatusUseCase restoreArchivedApplicationStatusUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -51,6 +53,7 @@ public class ApplicationController : BaseController
         _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
         _importApplicationsUseCase = importApplicationsUseCase;
         _deleteApplicationUseCase = deleteApplicationUseCase;
+        _restoreArchivedApplicationStatusUseCase = restoreArchivedApplicationStatusUseCase;
     }
 
     /// <summary>
@@ -353,4 +356,50 @@ public class ApplicationController : BaseController
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
+
+    /// <summary>
+    /// Restores an archived application by GUID
+    /// </summary>
+    /// <param name="guid">The application GUID to restore</param>
+    [ProducesResponseType(typeof(ApplicationStatusRestoreResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPatch("/application/{guid}/restore")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    public async Task<ActionResult> RestoreArchivedApplication(string guid)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _restoreArchivedApplicationStatusUseCase.Execute(guid, localAuthorityIds);
+
+            if (response == null)
+                return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
+
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 403 }] });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404 }] });
+        }
+    }
+
 }
