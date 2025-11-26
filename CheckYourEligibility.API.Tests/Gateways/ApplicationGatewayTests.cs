@@ -295,7 +295,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task RestoreArchivedApplicationStatus_ShouldThrow_UnauthorizedException_WhenApplicationIsNotArchived()
+    public async Task RestoreArchivedApplicationStatus_ShouldThrow_BadRequest_WhenApplicationIsNotArchived()
     {
         // Arrange
         var app = CreateTestApplication();
@@ -305,7 +305,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         // Act
         Func<Task> act = async () => await _sut.RestoreArchivedApplicationStatus(app.ApplicationID);
         // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        await act.Should().ThrowAsync<BadRequest>();
     }
 
 
