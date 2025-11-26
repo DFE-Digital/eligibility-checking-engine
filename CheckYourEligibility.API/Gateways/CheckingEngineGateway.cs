@@ -60,8 +60,8 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
             if (result.Status != CheckEligibilityStatus.queuedForProcessing)
-                throw new ProcessCheckException($"Error checkItem {guid} not queuedForProcessing. {result.Status}");
-
+                return result.Status;
+            
             //TODO: This should live in the use case
             switch (result.Type)
             {
