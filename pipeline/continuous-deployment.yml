@@ -54,11 +54,11 @@ stages:
       displayName: 'Deploy App Test'
       deploymentName: 'testdeploy'
       environment: 'TEST'
-      ECE_KEY_VAULT_NAME: 'ece-test-kv-ece'
-      azureSubscription: 's203t.azdo.deployment'
-      azureResourceGroup: 's203t01-core1'
-      sqlServerName: 'ece-test-database'
-      webAppName: 'ece-test-as-eligibility-checking-engine'
+      ECE_KEY_VAULT_NAME: $(kvTest)
+      azureSubscription: $(subscriptionTest)
+      azureResourceGroup: $(resourceGroupTest)
+      sqlServerName: $(sqlServerTest)
+      webAppName: $(webAppNameTest)
 ## -- test deploy -- ##
 
 ## -- test cypress tests -- ##
@@ -79,11 +79,11 @@ stages:
       displayName: 'Deploy App Pre-prod'
       deploymentName: 'ppdeploy'
       environment: 'PRE-PROD'
-      ECE_KEY_VAULT_NAME: 'ece-pp-kv-ece'
-      azureSubscription: 's203t.azdo.deployment'
-      azureResourceGroup: 's203t02-core1'
-      sqlServerName: 'ece-pp-database'
-      webAppName: 'ece-pp-as-eligibility-checking-engine'
+      ECE_KEY_VAULT_NAME: $(kvPreProd)
+      azureSubscription: $(subscriptionPreProd)
+      azureResourceGroup: $(resourceGroupPreProd)
+      sqlServerName: $(sqlServerPreProd)
+      webAppName: $(webAppNamePreProd)
 ## -- pp deploy -- ##
 
 ## -- pp cypress tests -- ##
@@ -104,9 +104,9 @@ stages:
       displayName: 'Deploy App Production'
       deploymentName: 'deploy'
       environment: 'PROD'
-      ECE_KEY_VAULT_NAME: 'ece-kv-ece'
-      azureSubscription: 's203p.azdo.deployment'
-      azureResourceGroup: 's203p01-core1'
-      sqlServerName: 'ece-database'
-      webAppName: 'ece-as-eligibility-checking-engine'
+      ECE_KEY_VAULT_NAME: $(kvProd)
+      azureSubscription: $(subscriptionProd)
+      azureResourceGroup: $(resourceGroupProd)
+      sqlServerName: $(sqlServerProd)
+      webAppName: $(webAppNameProd)
 ## -- prod deploy -- ##
