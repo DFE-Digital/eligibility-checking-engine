@@ -121,10 +121,14 @@ public class ApplicationGateway : IApplication
         IQueryable<Application> query;
 
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value) && a.Status != ApplicationStatus.Archived);
-        else
-            query = _db.Applications.Where(a => a.Status != ApplicationStatus.Archived);
-
+        {
+            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+        }
+        else 
+        { 
+            query = _db.Applications; 
+        }
+            
         // Apply other filters
         query = ApplyAdditionalFilters(query, model);
 
