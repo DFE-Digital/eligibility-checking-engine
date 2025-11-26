@@ -385,17 +385,17 @@ public class ApplicationController : BaseController
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
 
         }
-        catch (NotFoundException)
+        catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404}] });
         }
         catch (UnauthorizedAccessException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 403 }] });
+            return Unauthorized(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 403 }] });
         }
         catch (Exception ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 404 }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = 400 }] });
         }
     }
 

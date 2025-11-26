@@ -1,6 +1,5 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Globalization;
 using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
@@ -8,8 +7,8 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
 using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
 using Establishment = CheckYourEligibility.API.Domain.Establishment;
@@ -200,7 +199,7 @@ public class ApplicationGateway : IApplication
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Unable to find school:- {establishmentId}");
-            throw new Exception($"Unable to find school:- {establishmentId}, {ex.Message}");
+            throw new NotFoundException($"Unable to find school:- {establishmentId}, {ex.Message}");
         }
     }
 
@@ -238,7 +237,7 @@ public class ApplicationGateway : IApplication
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Unable to find application:- {applicationId?.Replace(Environment.NewLine, "")}");
-            throw new Exception($"Unable to find application:- {applicationId}, {ex.Message}");
+            throw new NotFoundException($"Unable to find application:- {applicationId}, {ex.Message}");
         }
     }
 
@@ -432,7 +431,7 @@ public class ApplicationGateway : IApplication
             throw new NotFoundException();
 
         if (application.Status != ApplicationStatus.Archived)
-            throw new UnauthorizedAccessException("Only archived applications can be restored");
+            throw new BadRequest("Only archived applications can be restored");
 
         var lastStatus = await _db.ApplicationStatuses
             .Where(x => x.ApplicationID == guid && x.Type != ApplicationStatus.Archived)
