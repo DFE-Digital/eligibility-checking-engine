@@ -97,7 +97,7 @@ public class ApplicationGateway : IApplication
     public async Task<ApplicationResponse?> GetApplication(string guid)
     {
         var result = await _db.Applications
-            .Where(x => x.ApplicationID == guid && x.Status != ApplicationStatus.Archived)
+            .Where(x => x.ApplicationID == guid)
             .Include(x => x.Statuses)
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)

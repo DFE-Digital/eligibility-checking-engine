@@ -395,7 +395,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ArchivedApplication_GetApplication_Should_ReturnNull()
+    public async Task Given_ArchivedApplication_GetApplication_Should_ReturnOne()
     {
         // Arrange
         await ClearDownData();
@@ -415,7 +415,8 @@ public class ApplicationServiceTests : TestBase.TestBase
         var response = await _sut.GetApplication(appResponse.Id);
 
         // Assert
-        response.Should().BeNull();
+        response.Id.Should().Be(appResponse.Id);
+        response.Status.Should().Be(ApplicationStatus.Archived.ToString());
     }
 
     [Test]
