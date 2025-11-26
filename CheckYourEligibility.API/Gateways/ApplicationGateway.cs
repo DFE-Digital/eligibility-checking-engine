@@ -97,7 +97,7 @@ public class ApplicationGateway : IApplication
     public async Task<ApplicationResponse?> GetApplication(string guid)
     {
         var result = await _db.Applications
-            .Where(x => x.ApplicationID == guid && x.Status != ApplicationStatus.Archived)
+            .Where(x => x.ApplicationID == guid)
             .Include(x => x.Statuses)
             .Include(x => x.Establishment)
             .ThenInclude(x => x.LocalAuthority)
@@ -121,10 +121,14 @@ public class ApplicationGateway : IApplication
         IQueryable<Application> query;
 
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value) && a.Status != ApplicationStatus.Archived);
-        else
-            query = _db.Applications.Where(a => a.Status != ApplicationStatus.Archived);
-
+        {
+            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+        }
+        else 
+        { 
+            query = _db.Applications; 
+        }
+            
         // Apply other filters
         query = ApplyAdditionalFilters(query, model);
 

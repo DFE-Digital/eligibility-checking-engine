@@ -375,43 +375,6 @@ public class ApplicationServiceTests : TestBase.TestBase
         response.Data.Should().NotBeEmpty();
     }
 
-    [Test]
-    public async Task Given_ArchivedApplication_GetApplications_Should_ExcludeArchivedApplications()
-    {
-        // Arrange
-        await ClearDownData();
-        await CreateUserEstablishmentAndLa();
-
-        // Create a normal application
-        var requestNormal = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
-        var normalAppResponse = await _sut.PostApplication(requestNormal);
-
-        // Create an archived application
-        var requestArchived = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
-        var archivedAppResponse = await _sut.PostApplication(requestArchived);
-        
-        // Archive the second application
-        await _sut.UpdateApplicationStatus(archivedAppResponse.Id, new ApplicationStatusData
-        {
-            Status = ApplicationStatus.Archived
-        });
-
-        var requestSearch = new ApplicationSearchRequest
-        {
-            Data = new ApplicationSearchRequestData
-            {
-                Establishment = Establishment.EstablishmentID
-            }
-        };
-
-        // Act
-        var response = await _sut.GetApplications(requestSearch);
-
-        // Assert
-        response.Data.Should().HaveCount(1);
-        response.Data.First().Id.Should().Be(normalAppResponse.Id);
-        response.Data.Should().NotContain(app => app.Id == archivedAppResponse.Id);
-    }
 
     [Test]
     public async Task Given_Application_WithUserReturnNewUser()
@@ -432,7 +395,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ArchivedApplication_GetApplication_Should_ReturnNull()
+    public async Task Given_ArchivedApplication_GetApplication_Should_ReturnOne()
     {
         // Arrange
         await ClearDownData();
@@ -452,11 +415,12 @@ public class ApplicationServiceTests : TestBase.TestBase
         var response = await _sut.GetApplication(appResponse.Id);
 
         // Assert
-        response.Should().BeNull();
+        response.Id.Should().Be(appResponse.Id);
+        response.Status.Should().Be(ApplicationStatus.Archived.ToString());
     }
 
     [Test]
-    public async Task Given_ExplicitSearchForArchivedStatus_GetApplications_Should_ReturnEmpty()
+    public async Task Given_ExplicitSearchForArchivedStatus_GetApplications_Should_ReturnArchived()
     {
         // Arrange
         await ClearDownData();
@@ -484,8 +448,8 @@ public class ApplicationServiceTests : TestBase.TestBase
         var response = await _sut.GetApplications(requestSearch);
 
         // Assert
-        response.Data.Should().BeEmpty();
-        response.TotalRecords.Should().Be(0);
+        response.TotalRecords.Should().Be(1);
+        response.Data.First().Status.Should().Be(ApplicationStatus.Archived.ToString());
     }
 
     [Test]
