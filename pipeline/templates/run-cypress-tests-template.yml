@@ -1,0 +1,60 @@
+parameters:
+  - name: stageName
+    type: string
+  - name: displayName
+    type: string
+  - name: cypressApiHost
+    type: string
+  - name: jwtUsername
+    type: string
+  - name: jwtPassword
+    type: string
+  - name: cypressEnv
+    type: string
+
+stages:
+- stage: ${{ parameters.stageName }}
+  displayName: ${{ parameters.displayName }}
+  jobs:
+    - job: 'SetUpCypress'
+      displayName: 'SetUpTestsDev'
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - task: Bash@3
+          inputs:
+            targetType: inline
+            script: |
+              cd tests
+              npm install
+        - task: Bash@3
+          displayName: 'RunTests'
+          inputs:
+            targetType: inline
+            script: |
+              cd tests
+              export CYPRESS_API_HOST=${{ parameters.cypressApiHost }}
+              export CYPRESS_JWT_USERNAME=${{ parameters.jwtUsername }}
+              export CYPRESS_JWT_PASSWORD=${{ parameters.jwtPassword }}
+              export CYPRESS_ENV=${{ parameters.cypressEnv }}
+              npm run e2e:electron
+        - task: Bash@3
+          condition: always()
+          displayName: 'Generate report'
+          inputs:
+            targetType: inline
+            script: |
+              cd tests
+              npm run combine:reports
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Cypress Screenshot Files'
+          condition: failed()
+          inputs:
+            PathtoPublish: 'tests/cypress/screenshots/'
+            ArtifactName: 'screenshots'
+        - task: PublishTestResults@2
+          condition: always()
+          displayName: 'Publish test results'
+          inputs:
+            testResultsFiles: '**/combined-report.xml'
+            searchFolder: 'tests'

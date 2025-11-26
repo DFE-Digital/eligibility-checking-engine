@@ -1,0 +1,62 @@
+parameters:
+  - name: stageName
+    type: string
+  - name: displayName
+    type: string
+  - name: deploymentName
+    type: string
+  - name: environment
+    type: string
+  - name: ECE_KEY_VAULT_NAME
+    type: string
+  - name: azureSubscription
+    type: string
+  - name: azureResourceGroup
+    type: string
+  - name: sqlServerName
+    type: string
+  - name: webAppName
+    type: string
+
+  
+stages:
+- stage: ${{ parameters.stageName }}
+  displayName: ${{ parameters.displayName }}
+  jobs:
+  - deployment: ${{ parameters.deploymentName }}
+    displayName: ${{ parameters.displayName }}
+    pool:
+      name: Azure Pipelines
+      vmImage: 'windows-latest'
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        preDeploy:
+          steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              targetPath: '$(Pipeline.Workspace)'
+          - task: AzureCLI@2
+            displayName: 'Run Migrations'
+            env:
+              ECE_KEY_VAULT_NAME: ${{ parameters.ECE_KEY_VAULT_NAME }}
+            inputs:
+              azureSubscription: ${{ parameters.azureSubscription }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az sql server firewall-rule create -g ${{ parameters.azureResourceGroup }} --server ${{ parameters.sqlServerName }} --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
+                cd D:/a/1/checkYourEligibilityAPI &&\
+                ./efbundle.exe &&\
+                az sql server firewall-rule delete -g ${{ parameters.azureResourceGroup }} --server ${{ parameters.sqlServerName }} --name ADO-Deploy
+        
+        deploy:
+          steps:
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: ${{ parameters.azureSubscription }}
+              appType: 'webApp'
+              WebAppName: ${{ parameters.webAppName }}
+              packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
