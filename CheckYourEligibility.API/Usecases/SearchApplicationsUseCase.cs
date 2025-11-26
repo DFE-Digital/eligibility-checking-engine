@@ -112,7 +112,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
         {
             //If an establishment scope was provided which didn't allow the establishment Id in the request
             throw new UnauthorizedAccessException(
-                "You do not have permission to search applications for this establishment's local authority or multi academy trust");
+                "You do not have permission to search applications for this establishment");
         }
         
         var multiAcademyTrustId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId);

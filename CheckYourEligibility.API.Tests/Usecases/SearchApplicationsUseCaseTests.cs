@@ -159,6 +159,30 @@ public class SearchApplicationsUseCaseTests
     }
 
     [Test]
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_Establishment_Not_Allowed()
+    {
+        // Arrange
+        var establishmentId = 123;
+        var model = _fixture.Build<ApplicationSearchRequest>()
+            .With(x => x.Data, new ApplicationSearchRequestData
+            {
+                LocalAuthority = null,
+                Establishment = establishmentId
+            })
+            .Create();
+        var allowedLocalAuthorityIds = new List<int> { 1, 2, 3 }; // Specific authorities only
+        var allowedMultiAcademyTrustIds = new List<int> { };
+        var allowedEstablishmentIds = new List<int> { 1 };
+
+        // Act & Assert
+        var exception = await FluentActions.Invoking(() => _sut.Execute(model, allowedLocalAuthorityIds, allowedMultiAcademyTrustIds, allowedEstablishmentIds))
+            .Should().ThrowAsync<UnauthorizedAccessException>();
+
+        exception.WithMessage(
+            "You do not have permission to search applications for this establishment");
+    }
+
+    [Test]
     public async Task Execute_Should_Throw_UnauthorizedAccessException_When_Establishment_LocalAuthority_MAT_Not_Allowed()
     {
         // Arrange
