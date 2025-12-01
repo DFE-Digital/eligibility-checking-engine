@@ -26,7 +26,7 @@ public class ApplicationControllerTests : TestBase.TestBase
     private Mock<IGetApplicationUseCase> _mockGetApplicationUseCase = null!;
     private ILogger<ApplicationController> _mockLogger = null!;
     private Mock<ISearchApplicationsUseCase> _mockSearchApplicationsUseCase = null!;
-    private Mock<IUpdateApplicationStatusUseCase> _mockUpdateApplicationStatusUseCase = null!;
+    private Mock<IUpdateApplicationUseCase> _mockUpdateApplicationUseCase = null!;
     private Mock<IImportApplicationsUseCase> _mockImportApplicationsUseCase = null!;
     private Mock<IDeleteApplicationUseCase> _mockDeleteApplicationUseCase = null!;
     private Mock<IRestoreArchivedApplicationStatusUseCase> _mockRestoreArchiveApplicationUseCase = null!;
@@ -38,7 +38,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockCreateApplicationUseCase = new Mock<ICreateApplicationUseCase>(MockBehavior.Strict);
         _mockGetApplicationUseCase = new Mock<IGetApplicationUseCase>(MockBehavior.Strict);
         _mockSearchApplicationsUseCase = new Mock<ISearchApplicationsUseCase>(MockBehavior.Strict);
-        _mockUpdateApplicationStatusUseCase = new Mock<IUpdateApplicationStatusUseCase>(MockBehavior.Strict);
+        _mockUpdateApplicationUseCase = new Mock<IUpdateApplicationUseCase>(MockBehavior.Strict);
         _mockImportApplicationsUseCase = new Mock<IImportApplicationsUseCase>(MockBehavior.Strict);
         _mockDeleteApplicationUseCase = new Mock<IDeleteApplicationUseCase>(MockBehavior.Strict);
         _mockRestoreArchiveApplicationUseCase = new Mock<IRestoreArchivedApplicationStatusUseCase>(MockBehavior.Strict);
@@ -62,7 +62,7 @@ public class ApplicationControllerTests : TestBase.TestBase
             _mockCreateApplicationUseCase.Object,
             _mockGetApplicationUseCase.Object,
             _mockSearchApplicationsUseCase.Object,
-            _mockUpdateApplicationStatusUseCase.Object,
+            _mockUpdateApplicationUseCase.Object,
             _mockImportApplicationsUseCase.Object,
             _mockDeleteApplicationUseCase.Object,
             _mockRestoreArchiveApplicationUseCase.Object,
@@ -75,7 +75,7 @@ public class ApplicationControllerTests : TestBase.TestBase
         _mockCreateApplicationUseCase.VerifyAll();
         _mockGetApplicationUseCase.VerifyAll();
         _mockSearchApplicationsUseCase.VerifyAll();
-        _mockUpdateApplicationStatusUseCase.VerifyAll();
+        _mockUpdateApplicationUseCase.VerifyAll();
         _mockImportApplicationsUseCase.VerifyAll();
         _mockDeleteApplicationUseCase.VerifyAll();
         _mockRestoreArchiveApplicationUseCase.VerifyAll();
@@ -323,45 +323,45 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_InValid_guid_ApplicationStatusUpdate_Should_Return_StatusNotFound()
+    public async Task Given_InValid_guid_UpdateApplication_Should_Return_StatusNotFound()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
-            .ReturnsAsync((ApplicationStatusUpdateResponse)null!);
+        _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+            .ReturnsAsync((ApplicationUpdateResponse)null!);
         var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
 
     [Test]
-    public async Task Given_Valid_guid_ApplicationStatusUpdate_Should_Return_StatusOk()
+    public async Task Given_Valid_guid_UpdateApplication_Should_Return_StatusOk()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
-        var expectedResponse = _fixture.Create<ApplicationStatusUpdateResponse>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
+        var expectedResponse = _fixture.Create<ApplicationUpdateResponse>();
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+        _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
         { StatusCode = StatusCodes.Status200OK };
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
@@ -421,17 +421,17 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ApplicationStatusUpdate_Without_LocalAuthority_Should_Return_BadRequest()
+    public async Task Given_UpdateApplication_Without_LocalAuthority_Should_Return_BadRequest()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
 
         // Setup controller with empty local authority claims
         SetupControllerWithLocalAuthorityIds(new List<int>());
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -442,21 +442,21 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ApplicationStatusUpdate_With_NotFoundException_Should_Return_StatusNotFound()
+    public async Task Given_UpdateApplication_With_NotFoundException_Should_Return_StatusNotFound()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+        _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new NotFoundException("Application not found"));
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeOfType<NotFoundObjectResult>();
@@ -467,21 +467,21 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ApplicationStatusUpdate_With_UnauthorizedAccessException_Should_Return_BadRequest()
+    public async Task Given_UpdateApplication_With_UnauthorizedAccessException_Should_Return_BadRequest()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+        _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new UnauthorizedAccessException("Access denied"));
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
@@ -492,21 +492,21 @@ public class ApplicationControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ApplicationStatusUpdate_With_ValidationException_Should_Return_BadRequest()
+    public async Task Given_UpdateApplication_With_ValidationException_Should_Return_BadRequest()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var request = _fixture.Create<ApplicationStatusUpdateRequest>();
+        var request = _fixture.Create<ApplicationUpdateRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
-        _mockUpdateApplicationStatusUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
+        _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Invalid status"));
 
         // Act
-        var response = await _sut.ApplicationStatusUpdate(guid, request);
+        var response = await _sut.UpdateApplication(guid, request);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();

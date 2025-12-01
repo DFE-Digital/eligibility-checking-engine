@@ -4,18 +4,18 @@ import { validLoginRequestBody } from '../../support/requestBodies';
 describe('Verify School Search', () => {
 
   const expectedSchoolData = {
-    "id": 100020,
-    "name": "Primrose Hill School",
-    "postcode": "NW1 8JL",
-    "street": "Princess Road",
+    "id": 143409,
+    "name": "Roselands Primary School",
+    "postcode": "EN11 9AR",
+    "street": "High Wood Road",
     "locality": "",
-    "town": "London",
-    "county": "",
-    "la": "Camden",
+    "town": "Hoddesdon",
+    "county": "Hertfordshire",
+    "la": "Hertfordshire",
     "distance": 0.0
 
   };
-  const searchCriteria = 'Primrose Hill School';
+  const searchCriteria = 'Roselands Primary School';
 
 
   it('Verify 200 OK and Bearer Token Is Returned when Valid Credentials are used', () => {
