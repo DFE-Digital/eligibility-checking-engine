@@ -52,6 +52,8 @@ public class DwpAdapter: IDwpAdapter
     private readonly ILogger _logger;
     private readonly string _UseEcsforChecks;
     private bool _ran;
+    private string _token;
+    private DateTime _tokenExpiry;
 
     public DwpAdapter(ILoggerFactory logger, HttpClient httpClient, IConfiguration configuration)
     {
@@ -347,6 +349,11 @@ public class DwpAdapter: IDwpAdapter
 
     private async Task<string?> GetToken()
     {
+        if (_tokenExpiry > DateTime.Now.AddSeconds(5))
+        {
+            return _token;
+        }
+
         var uri = $"{_DWP_ApiTokenUrl}";
 
         var parameters = new Dictionary<string, string>();
@@ -361,6 +368,9 @@ public class DwpAdapter: IDwpAdapter
 
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
+        _token = responseData.access_token;
+        _tokenExpiry = DateTime.Now.AddSeconds(responseData.expires_in);
+        
         return responseData.access_token;
     }
 
@@ -395,4 +405,5 @@ public class JwtBearer
 {
     // Primary identifiers (OAuth2 standard names)
     public string access_token { get; set; }
+    public int expires_in { get; set; }
 }
