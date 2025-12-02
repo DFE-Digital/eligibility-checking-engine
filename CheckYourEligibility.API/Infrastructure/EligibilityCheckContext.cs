@@ -144,6 +144,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<ApplicationEvidence>()
             .HasIndex(e => e.ApplicationID, "idx_ApplicationEvidence_ApplicationID");
 
+        modelBuilder.Entity<Audit>()
+            .HasIndex(a => a.TypeID, "idx_TypeId");
 
         modelBuilder.Entity<EligibilityCheckHash>()
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
