@@ -13,6 +13,16 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public EligibilityCheckContext(DbContextOptions<EligibilityCheckContext> options) : base(options)
     {
     }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (EF.IsDesignTime)
+        {
+            optionsBuilder.UseSqlServer(opt => opt.CommandTimeout(600));
+        }
+        base.OnConfiguring(optionsBuilder);
+    }
+
     public virtual DbSet<ECSConflict> ECSConflicts { get; set; }
     public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }

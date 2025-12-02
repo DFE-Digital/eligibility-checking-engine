@@ -13,7 +13,6 @@ namespace CheckYourEligibility.API.Migrations
             migrationBuilder.CreateIndex(
                 name: "idx_TypeId",
                 table: "Audits",
-                schema: "dbo",
                 column: "TypeID");
         }
 
@@ -22,8 +21,7 @@ namespace CheckYourEligibility.API.Migrations
         {
             migrationBuilder.DropIndex(
                 name: "idx_TypeId",
-                table: "Audits",
-                schema: "dbo");
+                table: "Audits");
         }
     }
 }
