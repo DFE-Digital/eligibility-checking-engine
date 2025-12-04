@@ -14,8 +14,14 @@ public class EligibilityEventsController : BaseController
         _logger = logger;
     }
 
-    [HttpPost("/efe/api/v1/eligibility-events")]
-    public IActionResult EligibilityEvents()
+    [HttpPut("/efe/api/v1/eligibility-events/{id}")]
+    public IActionResult EligibilityEvents(string id)
+    {
+        return Ok();
+    }
+
+    [HttpDelete("/efe/api/v1/eligibility-events/{id}")]
+    public IActionResult DeleteEligibilityEvent(string id)
     {
         return Ok();
     }
