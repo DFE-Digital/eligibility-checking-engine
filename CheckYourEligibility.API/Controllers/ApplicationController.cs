@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using ValidationException = FluentValidation.ValidationException;
 
@@ -21,6 +22,7 @@ public class ApplicationController : BaseController
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly string _multiAcademyTrustScopeName;
+    private readonly string _establishmentScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
     private readonly IUpdateApplicationUseCase _updateApplicationUseCase;
@@ -44,6 +46,7 @@ public class ApplicationController : BaseController
         _logger = logger;
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
         _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scope:multi_academy_trust") ?? "multi_academy_trust";
+        _establishmentScopeName = configuration.GetValue<string>("Jwt:Scope:establishment") ?? "establishment";
         _createApplicationUseCase = createApplicationUseCase;
         _getApplicationUseCase = getApplicationUseCase;
         _searchApplicationsUseCase = searchApplicationsUseCase;
@@ -141,23 +144,23 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationSearchRequest model)
     {
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
-            if ((localAuthorityIds == null || localAuthorityIds.Count == 0) &&
-                (multiAcademyTrustIds == null || multiAcademyTrustIds.Count == 0))
+            var establishmentIds = User.GetSpecificScopeIds(_establishmentScopeName);
+            if (localAuthorityIds.IsNullOrEmpty() && multiAcademyTrustIds.IsNullOrEmpty() && establishmentIds.IsNullOrEmpty())
             {
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority or multi academy trust scope found" }]
+                    Errors = [new Error { Title = "No local_authority, multi_academy_trust, or establishment scope found" }]
                 });
             }
 
-            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds, multiAcademyTrustIds);
+            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
         catch (ArgumentException ex)
