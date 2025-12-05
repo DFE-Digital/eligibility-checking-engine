@@ -11,366 +11,102 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  # Environment specific variables i.e. azure resource names, are defined in Azure DevOps UI. 
 
 stages:
-  - stage: BuildApp
-    displayName: Build App
-    jobs:
-      #- template: templates/app-build.yml@templates
-    - job: 
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      steps:
-      - task: NuGetToolInstaller@1
+## -- build app -- ##
+  - template: templates/build-app-template.yml
+    parameters:
+      isDeployRun: true
+      stageName: 'BuildApp'
+      displayName: 'Build App'
+## -- build app -- ##
 
-      - task: NuGetCommand@2
-        inputs:
-          restoreSolution: '$(solution)'
-          
-      - task: CmdLine@2
-        displayName: 'Build migrations bundle'
-        inputs:
-          script: |
-            dotnet tool install --global dotnet-ef --version 8.0.4
-            dotnet ef migrations bundle --verbose --self-contained -r win-x86 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
-            mv efbundle.exe $(Build.ArtifactStagingDirectory)
+## -- dev deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployAppDev'
+      displayName: 'Deploy App Dev'
+      deploymentName: 'devdeploy'
+      environment: 'DEV'
+      ECE_KEY_VAULT_NAME: '$(kvDev)'
+      azureSubscription: '$(subscriptionDev)'
+      azureResourceGroup: '$(resourceGroupDev)'
+      sqlServerName: '$(sqlServerDev)'
+      webAppName: '$(webAppNameDev)'
+## -- dev deploy -- ##
 
-      - task: VSBuild@1
-        inputs:
-          solution: '$(solution)'
-          msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-          platform: '$(buildPlatform)'
-          configuration: '$(buildConfiguration)'
+## -- dev cypress tests -- ##
+  - template: templates/run-cypress-tests-template.yml
+    parameters:
+      stageName: 'RunCypressTestsDev'
+      displayName: 'Run Cypress Tests Dev'
+      cypressApiHost: '$(CYPRESS_API_HOST_DEV)'
+      jwtUsername: '$(JWT_USERNAME_DEV)'
+      jwtPassword: '$(JWT_PASSWORD_DEV)'
+      cypressEnv: 'DEV'
+## -- dev cypress tests -- ##
 
-      - task: VSTest@2
-        inputs:
-          platform: '$(buildPlatform)'
-          configuration: '$(buildConfiguration)'
-          runSettingsFile: 'CheckYourEligibility.API.Tests/.runsettings'
-          resultsFolder: '$(build.ArtifactStagingDirectory)/Test/Results'
-          otherConsoleOptions: '/collect:"Code Coverage;Format=Cobertura"'  # <<<< this is the important bit
-          codeCoverageEnabled: True
+## -- test deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployAppTest'
+      displayName: 'Deploy App Test'
+      deploymentName: 'testdeploy'
+      environment: 'TEST'
+      ECE_KEY_VAULT_NAME: $(kvTest)
+      azureSubscription: $(subscriptionTest)
+      azureResourceGroup: $(resourceGroupTest)
+      sqlServerName: $(sqlServerTest)
+      webAppName: $(webAppNameTest)
+## -- test deploy -- ##
 
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: 'Cobertura'
-          summaryFileLocation: '$(build.ArtifactStagingDirectory)/Test/Results/**/*.xml'
+## -- test cypress tests -- ##
+  - template: templates/run-cypress-tests-template.yml
+    parameters:
+      stageName: 'RunCypressTestsTest'
+      displayName: 'Run Cypress Tests Test'
+      cypressApiHost: '$(CYPRESS_API_HOST_TEST)'
+      jwtUsername: '$(JWT_USERNAME_TEST)'
+      jwtPassword: '$(JWT_PASSWORD_TEST)'
+      cypressEnv: 'TEST'
+## -- test cypress tests -- ##
 
-      - task: DotNetCoreCLI@2
-        inputs:
-          command: publish
-          publishWebProjects: True
-          arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-          zipAfterPublish: True
-      - task: PublishPipelineArtifact@1
-        inputs:
-          targetPath: '$(Build.ArtifactStagingDirectory)' 
-          artifactName: 'checkYourEligibilityAPI'
+## -- pp deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployAppPP'
+      displayName: 'Deploy App Pre-prod'
+      deploymentName: 'ppdeploy'
+      environment: 'PRE-PROD'
+      ECE_KEY_VAULT_NAME: $(kvPreProd)
+      azureSubscription: $(subscriptionPreProd)
+      azureResourceGroup: $(resourceGroupPreProd)
+      sqlServerName: $(sqlServerPreProd)
+      webAppName: $(webAppNamePreProd)
+## -- pp deploy -- ##
 
-  
-  - stage: DeployAppDev
-    displayName: Deploy App Dev
-    jobs:
-    - deployment: devdeploy
-      displayName: Deploy App Dev
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: DEV
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-dev-kv-ece
-              inputs:
-                azureSubscription: 's203d.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                scriptPath: $(Pipeline.Workspace)
-                inlineScript: |
-                  az sql server firewall-rule create -g s203d01-core1 --server ece-dev-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203d01-core1 --server ece-dev-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203d.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-dev-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
+## -- pp cypress tests -- ##
+  - template: templates/run-cypress-tests-template.yml
+    parameters:
+      stageName: 'RunCypressTestsPp'
+      displayName: 'Run Cypress Tests Pre-Prod'
+      cypressApiHost: '$(CYPRESS_API_HOST_PP)'
+      jwtUsername: '$(JWT_USERNAME_PP)'
+      jwtPassword: '$(JWT_PASSWORD_PP)'
+      cypressEnv: 'PP'
+## -- pp cypress tests -- ##
 
-  - stage: RunCypressTestsDev
-    displayName: Run Cypress Tests Dev
-    jobs:
-      - job: 'SetUpCypress'
-        displayName: 'SetUpTestsDev'
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - task: Bash@3
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                npm install
-          - task: Bash@3
-            displayName: 'RunTests'
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                export CYPRESS_API_HOST="$(CYPRESS_API_HOST_DEV)"
-                export CYPRESS_JWT_USERNAME=$(JWT_USERNAME_DEV)
-                export CYPRESS_JWT_PASSWORD='$(JWT_PASSWORD_DEV)'
-                export CYPRESS_ENV='DEV'
-                npm run e2e:electron
-
-          - task: Bash@3
-            condition: always()
-            displayName: 'Generate report'
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                npm run combine:reports
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Cypress Screenshot Files'
-            condition: failed()
-            inputs:
-              PathtoPublish: 'tests/cypress/screenshots/'
-              ArtifactName: 'screenshots'
-          - task: PublishTestResults@2
-            condition: always()
-            displayName: 'Publish test results'
-            inputs:
-              testResultsFiles: '**/combined-report.xml'
-              searchFolder: 'tests'
-
-  - stage: DeployAppTest
-    displayName: Deploy App Test
-    jobs:
-    - deployment: testdeploy
-      displayName: Deploy App Test
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: TEST
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-test-kv-ece
-              inputs:
-                azureSubscription: 's203t.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203t01-core1 --server ece-test-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203t01-core1 --server ece-test-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203t.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-test-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
-              
-  - stage: RunCypressTestsTest
-    displayName: Run Cypress Tests Test
-    jobs:
-    - job: 'SetUpCypress'
-      displayName: 'SetUpTests'
-      pool:
-        vmImage: ubuntu-latest
-      steps:
-      - task: Bash@3
-        inputs:
-          targetType: inline
-          script: |
-           cd tests
-           npm install
-      - task: Bash@3
-        displayName: 'RunTests'
-        inputs:
-         targetType: inline
-         script: |
-          cd tests
-          export CYPRESS_API_HOST="$(CYPRESS_API_HOST_TEST)"
-          export CYPRESS_JWT_USERNAME=$(JWT_USERNAME_TEST)
-          export CYPRESS_JWT_PASSWORD='$(JWT_PASSWORD_TEST)'
-          export CYPRESS_ENV='TEST'
-          npm run e2e:electron
-
-      - task: Bash@3
-        condition: always()
-        displayName: 'Generate report'
-        inputs:
-         targetType: inline
-         script: |
-          cd tests
-          npm run combine:reports
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Cypress Screenshot Files'
-        condition: failed()
-        inputs:
-          PathtoPublish: 'tests/cypress/screenshots/'
-          ArtifactName: 'screenshots'
-      - task: PublishTestResults@2
-        condition: always()
-        displayName: 'Publish test results'
-        inputs:
-         testResultsFiles: '**/combined-report.xml'
-         searchFolder: 'tests'
-
-  - stage: DeployAppPP
-    displayName: Deploy App Pre-prod
-    jobs:
-    - deployment: ppdeploy
-      displayName: Deploy App Pre-prod
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: PRE-PROD
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-pp-kv-ece
-              inputs:
-                azureSubscription: 's203t.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203t02-core1 --server ece-pp-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203t02-core1 --server ece-pp-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203t.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-pp-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
-                
-  - stage: RunCypressTestsPp
-    displayName: Run Cypress Tests Pre-Prod
-    jobs:
-      - job: 'SetUpCypress'
-        displayName: 'SetUpTests'
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - task: Bash@3
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                npm install
-          - task: Bash@3
-            displayName: 'RunTests'
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                export CYPRESS_API_HOST="$(CYPRESS_API_HOST_PP)"
-                export CYPRESS_JWT_USERNAME=$(JWT_USERNAME_PP)
-                export CYPRESS_JWT_PASSWORD='$(JWT_PASSWORD_PP)'
-                export CYPRESS_ENV='PP'
-                npm run e2e:electron
-
-          - task: Bash@3
-            condition: always()
-            displayName: 'Generate report'
-            inputs:
-              targetType: inline
-              script: |
-                cd tests
-                npm run combine:reports
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Cypress Screenshot Files'
-            condition: failed()
-            inputs:
-              PathtoPublish: 'tests/cypress/screenshots/'
-              ArtifactName: 'screenshots'
-          - task: PublishTestResults@2
-            condition: always()
-            displayName: 'Publish test results'
-            inputs:
-              testResultsFiles: '**/combined-report.xml'
-              searchFolder: 'tests'
-
-  - stage: DeployApp
-    displayName: Deploy App Production
-    jobs:
-    - deployment: deploy
-      displayName: Deploy App Production
-      pool:
-        name: Azure Pipelines
-        vmImage: 'windows-latest'
-      environment: PROD
-      strategy:
-        runOnce:
-          preDeploy:
-            steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-            - task: AzureCLI@2
-              displayName: 'Run Migrations'
-              env:
-                ECE_KEY_VAULT_NAME: ece-kv-ece
-              inputs:
-                azureSubscription: 's203p.azdo.deployment'
-                scriptType: 'bash'
-                scriptLocation: 'inlineScript'
-                inlineScript: |
-                  az sql server firewall-rule create -g s203p01-core1 --server ece-database --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                  cd D:/a/1/checkYourEligibilityAPI &&\
-                  ./efbundle.exe &&\
-                  az sql server firewall-rule delete -g s203p01-core1 --server ece-database --name ADO-Deploy
-          
-          deploy:
-            steps:
-            - task: AzureRmWebAppDeployment@4
-              inputs:
-                ConnectionType: 'AzureRM'
-                azureSubscription: 's203p.azdo.deployment'
-                appType: 'webApp'
-                WebAppName: 'ece-as-eligibility-checking-engine'
-                packageForLinux: '$(Pipeline.Workspace)/checkYourEligibilityAPI/CheckYourEligibility.API.zip'
+## -- prod deploy -- ##
+  - template: templates/deploy-app-template.yml
+    parameters:
+      stageName: 'DeployApp'
+      displayName: 'Deploy App Production'
+      deploymentName: 'deploy'
+      environment: 'PROD'
+      ECE_KEY_VAULT_NAME: $(kvProd)
+      azureSubscription: $(subscriptionProd)
+      azureResourceGroup: $(resourceGroupProd)
+      sqlServerName: $(sqlServerProd)
+      webAppName: $(webAppNameProd)
+## -- prod deploy -- ##
