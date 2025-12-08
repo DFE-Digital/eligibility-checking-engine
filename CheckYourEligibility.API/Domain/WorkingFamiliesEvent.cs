@@ -12,6 +12,7 @@ public class WorkingFamiliesEvent
 
     [Column(TypeName = "varchar(100)")] public string ChildLastName { get; set; }
     public DateTime ChildDateOfBirth { get; set; }
+    [Column(TypeName = "nvarchar(9)")] public string? ChildPostCode { get; set; }
     [Column(TypeName = "varchar(100)")] public string ParentFirstName { get; set; }
 
     [Column(TypeName = "varchar(100)")] public string ParentLastName { get; set; }
