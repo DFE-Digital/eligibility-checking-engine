@@ -43,6 +43,15 @@ public class AuditGateway : IAudit
         }
     }
 
+    private string GetScope(AuditType type, HttpContext httpContext)
+    {
+        if (type == AuditType.Client)
+        {
+            return httpContext.Request.Form.TryGetValue("scope", out var value) ? value.ToString() : "";
+        }
+        return httpContext.User.Claims.FirstOrDefault(x => x.Type == "scope")?.Value ?? "";
+    }
+
     public AuditData? AuditDataGet(AuditType type, string id)
     {
         try
@@ -56,7 +65,7 @@ public class AuditGateway : IAudit
                 var method = httpContext.Request.Method;
                 var auth = httpContext.User.Claims.FirstOrDefault(x =>
                     x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value ?? "";
-                var scope = httpContext.User.Claims.FirstOrDefault(x => x.Type == "scope")?.Value ?? "";
+                var scope = GetScope(type, httpContext);
                 return new AuditData
                 {
                     Type = type,
