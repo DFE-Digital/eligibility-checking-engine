@@ -117,6 +117,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             ParentLastName = eventProps[columnHeaders.IndexOf("Parent Surname")],
             ChildFirstName = eventProps[columnHeaders.IndexOf("Child Forename")],
             ChildLastName = eventProps[columnHeaders.IndexOf("Child Surname")],
+            ChildPostCode = eventProps[columnHeaders.IndexOf("Child Postcode")],
             ChildDateOfBirth = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Child DOB")])),
             PartnerNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Partner NINO")],
             PartnerFirstName = eventProps[columnHeaders.IndexOf("Partner Forename")],
