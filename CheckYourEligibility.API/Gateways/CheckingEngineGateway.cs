@@ -137,18 +137,33 @@ public class CheckingEngineGateway : ICheckingEngine
             (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
              x.PartnerLastName.ToUpper() == lastName) &&
-            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
+            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).ToListAsync();
 
         // If there is more than one record
-        // check if second to last record has not expired yet
-        // set the event to the second record that is still valid
-        // and get set ValidityEndDate and the GracePeriodEndDate of the future record
-        if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
+        if (wfRecords.Count() > 1)
         {
-            wfEvent = wfRecords[1];
+            // check if second to last record has not expired yet
+            // set the event to the second record that is still valid
+            // and get set ValidityEndDate and the GracePeriodEndDate of the future record
+            wfEvent = wfRecords.FirstOrDefault();
+            if ( wfRecords[1].ValidityEndDate > DateTime.UtcNow)
+            {
+                wfEvent = wfRecords[1];
+                wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
+                wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
+            }
 
-            wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
-            wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
+            //Check for contiguous events
+            for (int i=0; i < wfRecords.Count() - 1; i++)
+            {
+                //TODO: Should this logic be applied to DSVD or just VSD?
+                //DSVD will always be either the same as VSD or at the start of the term it was valid for
+                if (wfRecords[i].DiscretionaryValidityStartDate <= wfRecords[i+1].GracePeriodEndDate)
+                {
+                    wfEvent.DiscretionaryValidityStartDate = wfRecords[i+1].DiscretionaryValidityStartDate;
+                    wfEvent.ValidityStartDate = wfRecords[i+1].ValidityStartDate;
+                }
+            }
         }
         else
         {

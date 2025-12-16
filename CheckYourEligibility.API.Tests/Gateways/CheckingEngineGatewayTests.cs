@@ -118,7 +118,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         act.Should().ThrowExactlyAsync<ProcessCheckException>();
     }
 
-    [Ignore("Temporqarily disabled")]
+    [Ignore("Temporarily disabled")]
     [Test]
     public void Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException_InvalidStatus()
     {
@@ -880,6 +880,155 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
+    }
+
+    [Test]
+    public async Task Given_Contiguous_WF_Events_Request_Should_Return_Earliest_VSD_single_event()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        wf.DateOfBirth = "2022-01-01";
+        wf.NationalInsuranceNumber = "AB123456C";
+        wf.EligibilityCode = "50012345678";
+        wf.LastName = "smith";
+        var dataItem = GetCheckProcessData(wf);
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
+        wfEvent.EligibilityCode = "50012345678";
+        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
+        wfEvent.ParentLastName = "smith";
+        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(1);
+        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(1);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-1);
+        wfEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-1);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Should().Be(CheckEligibilityStatus.eligible);
+        var result = _fakeInMemoryDb.CheckEligibilities.FirstOrDefault(x => x.EligibilityCheckID == item.EligibilityCheckID);
+        var checkData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+        checkData.ValidityStartDate.Should().Be(wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd"));
+        checkData.GracePeriodEndDate.Should().Be(wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"));
+    }
+
+    [Test]
+    public async Task Given_Contiguous_WF_Events_Request_Should_Return_Earliest_VSD_reconfirmed_event()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        wf.DateOfBirth = "2022-01-01";
+        wf.NationalInsuranceNumber = "AB123456C";
+        wf.EligibilityCode = "50012345678";
+        wf.LastName = "smith";
+        var dataItem = GetCheckProcessData(wf);
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
+        wfEvent.EligibilityCode = "50012345678";
+        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
+        wfEvent.ParentLastName = "smith";
+        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-10);
+        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-10);
+        wfEvent.SubmissionDate = DateTime.Today.AddDays(-20);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-20);
+        wfEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-20);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+
+        var reconfirmedEvent =  _fixture.Create<WorkingFamiliesEvent>();
+        reconfirmedEvent.EligibilityCode = "50012345678";
+        reconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
+        reconfirmedEvent.ParentLastName = "smith";
+        reconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        reconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(10);
+        reconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(10);
+        reconfirmedEvent.SubmissionDate = DateTime.Today.AddDays(-10);
+        reconfirmedEvent.ValidityStartDate = DateTime.Today.AddDays(-10);
+        reconfirmedEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-10);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(reconfirmedEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Should().Be(CheckEligibilityStatus.eligible);
+        var result = _fakeInMemoryDb.CheckEligibilities.FirstOrDefault(x => x.EligibilityCheckID == item.EligibilityCheckID);
+        var checkData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+        checkData.ValidityStartDate.Should().Be(wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd"));
+        checkData.GracePeriodEndDate.Should().Be(reconfirmedEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"));
+    }
+
+    [Test]
+    public async Task Given_NonContiguous_WF_Events_Request_Should_Return_Earliest_VSD_In_Block()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        wf.DateOfBirth = "2022-01-01";
+        wf.NationalInsuranceNumber = "AB123456C";
+        wf.EligibilityCode = "50012345678";
+        wf.LastName = "smith";
+        var dataItem = GetCheckProcessData(wf);
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
+        wfEvent.EligibilityCode = "50012345678";
+        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
+        wfEvent.ParentLastName = "smith";
+        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-15);
+        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-15);
+        wfEvent.SubmissionDate = DateTime.Today.AddDays(-20);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-20);
+        wfEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-20);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+
+        var reconfirmedEvent =  _fixture.Create<WorkingFamiliesEvent>();
+        reconfirmedEvent.EligibilityCode = "50012345678";
+        reconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
+        reconfirmedEvent.ParentLastName = "smith";
+        reconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        reconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(10);
+        reconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(10);
+        reconfirmedEvent.SubmissionDate = DateTime.Today.AddDays(-10);
+        reconfirmedEvent.ValidityStartDate = DateTime.Today.AddDays(-10);
+        reconfirmedEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-10);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(reconfirmedEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Should().Be(CheckEligibilityStatus.eligible);
+        var result = _fakeInMemoryDb.CheckEligibilities.FirstOrDefault(x => x.EligibilityCheckID == item.EligibilityCheckID);
+        var checkData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+        checkData.ValidityStartDate.Should().Be(reconfirmedEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd"));
+        checkData.GracePeriodEndDate.Should().Be(reconfirmedEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"));
     }
 
     [Test]
