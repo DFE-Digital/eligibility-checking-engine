@@ -22,4 +22,6 @@ public class Establishment
     [NotMapped] public double? LevenshteinDistance { get; set; }
 
     [Column(TypeName = "varchar(100)")] public string Type { get; set; }
+
+    public bool InPrivateBeta { get; set; } = false;
 }
