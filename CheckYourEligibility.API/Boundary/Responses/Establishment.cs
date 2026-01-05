@@ -12,4 +12,5 @@ public class Establishment
     public string La { get; set; }
     public double? Distance { get; set; }
     public string Type { get; set; }
+    public bool InPrivateBeta { get; set; } = false;
 }
