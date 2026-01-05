@@ -49,7 +49,8 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
                     Street = establishmentFromUrn.Street,
                     Town = establishmentFromUrn.Town,
                     La = establishmentFromUrn.LocalAuthority.LaName,
-                    Type = establishmentFromUrn.Type
+                    Type = establishmentFromUrn.Type,
+                    InPrivateBeta = establishmentFromUrn.InPrivateBeta
                 };
                 results.Add(item);
             }
@@ -95,7 +96,8 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
                 Town = x.Town,
                 La = x.LocalAuthority.LaName,
                 Distance = x.LevenshteinDistance,
-                Type = x.Type
+                Type = x.Type,
+                InPrivateBeta = x.InPrivateBeta
             });
     }
 }
