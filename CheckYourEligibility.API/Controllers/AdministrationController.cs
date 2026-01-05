@@ -25,6 +25,7 @@ public class AdministrationController : BaseController
     private readonly IImportFsmHMRCDataUseCase _importFsmHMRCDataUseCase;
     private readonly IImportFsmHomeOfficeDataUseCase _importFsmHomeOfficeDataUseCase;
     private readonly IImportWfHMRCDataUseCase _importWfHMRCDataUseCase;
+    private readonly IUpdateEstablishmentsPrivateBetaUseCase _updateEstablishmentsPrivateBetaUseCase;
 
     /// <summary>
     ///     Constructor for AdministrationController
@@ -35,6 +36,8 @@ public class AdministrationController : BaseController
     /// <param name="importMatsUseCase"></param>
     /// <param name="importFsmHomeOfficeDataUseCase"></param>
     /// <param name="importFsmHMRCDataUseCase"></param>
+    /// <param name="importWfHMRCDataUseCase"></param>
+    /// <param name="updateEstablishmentsPrivateBetaUseCase"></param>
     /// <param name="audit"></param>
     public AdministrationController(
         ICleanUpEligibilityChecksUseCase cleanUpEligibilityChecksUseCase,
@@ -44,6 +47,7 @@ public class AdministrationController : BaseController
         IImportFsmHomeOfficeDataUseCase importFsmHomeOfficeDataUseCase,
         IImportFsmHMRCDataUseCase importFsmHMRCDataUseCase,
         IImportWfHMRCDataUseCase importWfHMRCDataUseCase,
+        IUpdateEstablishmentsPrivateBetaUseCase updateEstablishmentsPrivateBetaUseCase,
         IAudit audit) : base(audit)
     {
         _cleanUpEligibilityChecksUseCase = cleanUpEligibilityChecksUseCase;
@@ -53,6 +57,7 @@ public class AdministrationController : BaseController
         _importFsmHomeOfficeDataUseCase = importFsmHomeOfficeDataUseCase;
         _importFsmHMRCDataUseCase = importFsmHMRCDataUseCase;
         _importWfHMRCDataUseCase = importWfHMRCDataUseCase;
+        _updateEstablishmentsPrivateBetaUseCase = updateEstablishmentsPrivateBetaUseCase;
     }
 
     /// <summary>
@@ -186,6 +191,31 @@ public class AdministrationController : BaseController
         {
             await _importWfHMRCDataUseCase.Execute(file);
             return new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
+                { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    ///     Updates the InPrivateBeta flag for establishments from CSV input
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("multipart/form-data")]
+    [HttpPost("/admin/update-establishments-private-beta")]
+    [Authorize(Policy = PolicyNames.RequireAdminScope)]
+    public async Task<ActionResult> UpdateEstablishmentsPrivateBeta(IFormFile file)
+    {
+        try
+        {
+            await _updateEstablishmentsPrivateBetaUseCase.Execute(file);
+            return new ObjectResult(new MessageResponse
+                    { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
                 { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)
