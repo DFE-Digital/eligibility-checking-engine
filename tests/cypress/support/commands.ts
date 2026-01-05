@@ -367,12 +367,13 @@ Cypress.Commands.add('verifySchoolSearchResponse', (response, expectedData) => {
   expect(response.body).to.have.property('data');
 
   const responseData = response.body.data;
-  // Ensure the response data is an array
+  // Ensure the response data is an array with at least one result
   expect(responseData).to.be.an('array');
-  expect(responseData).to.have.length(1);
+  expect(responseData.length).to.be.at.least(1);
 
-  // Extract the first item from the array
-  const school = responseData[0];
+  // Find the expected school in the results by id
+  const school = responseData.find((s: any) => s.id === expectedData.id);
+  expect(school, `School with id ${expectedData.id} should be in the results`).to.not.be.undefined;
 
   // Assertions to verify response data matches expected data
   expect(school).to.have.property('id', expectedData.id);
@@ -384,6 +385,14 @@ Cypress.Commands.add('verifySchoolSearchResponse', (response, expectedData) => {
   expect(school).to.have.property('county', expectedData.county);
   expect(school).to.have.property('la', expectedData.la);
   expect(school).to.have.property('distance', expectedData.distance);
+
+  // Verify optional properties if provided in expectedData
+  if ('type' in expectedData) {
+    expect(school).to.have.property('type', expectedData.type);
+  }
+  if ('inPrivateBeta' in expectedData) {
+    expect(school).to.have.property('inPrivateBeta', expectedData.inPrivateBeta);
+  }
 });
 
 

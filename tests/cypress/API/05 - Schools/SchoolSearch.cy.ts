@@ -17,6 +17,21 @@ describe('Verify School Search', () => {
   };
   const searchCriteria = 'Roselands Primary School';
 
+  const privateBetaSchoolData = {
+    "id": 100718,
+    "name": "Kilmorie Primary School",
+    "postcode": "SE23 2SP",
+    "street": "Kilmorie Road",
+    "locality": "",
+    "town": "London",
+    "county": "",
+    "la": "Lewisham",
+    "distance": 0.0,
+    "type": "Community school",
+    "inPrivateBeta": true
+  };
+  const privateBetaSearchCriteria = 'Kilmorie Primary School';
+
 
   it('Verify 200 OK and Bearer Token Is Returned when Valid Credentials are used', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
@@ -41,6 +56,15 @@ describe('Verify School Search', () => {
   it('Verify 401 response is returned when bearer token is not provided', () => {
     cy.apiRequest('GET', `establishment/search?query=${searchCriteria}`, {},'application/x-www-form-urlencoded').then((response) => {
       cy.verifyApiResponseCode(response, 401)
+    });
+  });
+
+  it('Verify inPrivateBeta is true for Kilmorie Primary School', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+      cy.apiRequest('GET', `establishment/search?query=${privateBetaSearchCriteria}`, {}, token).then((response) => {
+        cy.verifyApiResponseCode(response, 200);
+        cy.verifySchoolSearchResponse(response, privateBetaSchoolData);
+      });
     });
   });
 })  
