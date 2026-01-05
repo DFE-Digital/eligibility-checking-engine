@@ -276,7 +276,6 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.LastName = wfEvent.ParentLastName;
             wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
