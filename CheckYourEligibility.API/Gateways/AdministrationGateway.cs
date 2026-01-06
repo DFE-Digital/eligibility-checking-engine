@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
@@ -47,7 +48,7 @@ public class AdministrationGateway : IAdministration
         }
     }
 
-    //TODO: THis should live in the Establishment gateway
+    //TODO: This should live in the Establishment gateway
     [ExcludeFromCodeCoverage(Justification = "Use of bulk operations")]
     public async Task ImportEstablishments(IEnumerable<EstablishmentRow> data)
     {
@@ -63,6 +64,7 @@ public class AdministrationGateway : IAdministration
         {
             var item = _db.LocalAuthorities.FirstOrDefault(x => x.LocalAuthorityID == la.LocalAuthorityID);
             if (item != null)
+            {
                 try
                 {
                     SetLaData(la);
@@ -72,10 +74,13 @@ public class AdministrationGateway : IAdministration
                     _logger.LogError("db error", ex);
                 }
 
+            }
             else
+            {
                 _db.LocalAuthorities.Add(la);
-        }
+            }
 
+        }
         await _db.SaveChangesAsync();
 
         var Establishment = data.Select(x => new Establishment
@@ -92,29 +97,26 @@ public class AdministrationGateway : IAdministration
             Type = x.Type
         });
 
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         try
         {
-            foreach (var sc in Establishment)
+            var establishmentList = Establishment.ToList();
+            int total = establishmentList.Count();
+            const int batchSize = 10;
+            int batchNo = 1;
+            for (int offset = 0; offset < total; offset += batchSize)
             {
-                var item = await _db.Establishments.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.EstablishmentID == sc.EstablishmentID);
+                batchNo++;
+                var batch = establishmentList.Skip(offset).Take(batchSize);
+                _db.BulkInsertOrUpdate_Establishment(batch);
+                Console.WriteLine($"Batch {batchNo} for {batchSize} batch size: {stopwatch.ElapsedMilliseconds} ");
 
-                if (item != null)
-                    try
-                    {
-                        SetEstablishmentData(sc);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"db error {item.EstablishmentID} {item.EstablishmentName}", ex);
-                    }
-                else
-                    _db.Establishments.Add(sc);
             }
-
-            await _db.SaveChangesAsync();
+            stopwatch.Stop();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             //fall through
         }

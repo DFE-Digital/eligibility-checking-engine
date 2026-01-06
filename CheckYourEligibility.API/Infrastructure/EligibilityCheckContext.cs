@@ -68,6 +68,32 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         this.BulkInsert(data);
     }
 
+    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data) {
+
+        using var transaction = base.Database.BeginTransaction();
+
+        try {
+
+            var config = new BulkConfig
+            {
+                PreserveInsertOrder = true,
+                BatchSize = 10
+            };
+
+            this.BulkInsertOrUpdate(data, config);
+            transaction.Commit();
+
+        }
+        catch (Exception ex)
+        {
+
+            Console.Error.WriteLine($"BulkInsertOrUpdate_Establishment failed: {ex.Message}\n{ex.StackTrace}");
+            transaction.Rollback();
+            throw; 
+        }
+       
+        
+    }
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
         using (var transaction = base.Database.BeginTransaction())
