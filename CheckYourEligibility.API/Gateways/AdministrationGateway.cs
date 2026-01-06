@@ -89,9 +89,8 @@ public class AdministrationGateway : IAdministration
                 batchNo++;           
             }       
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            //fall through
         }
     }
 
