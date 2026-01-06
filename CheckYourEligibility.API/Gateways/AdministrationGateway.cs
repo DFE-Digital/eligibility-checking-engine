@@ -89,9 +89,7 @@ public class AdministrationGateway : IAdministration
                 batchNo++;           
             }       
         }
-        catch (Exception)
-        {
-        }
+        catch (Exception) { }
     }
 
     //TODO: This should live in its own MAT gateway
