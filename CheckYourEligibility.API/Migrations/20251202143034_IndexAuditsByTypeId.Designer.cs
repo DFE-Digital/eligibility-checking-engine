@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20251202143034_IndexAuditsByTypeId")]
+    partial class IndexAuditsByTypeId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -378,9 +381,6 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("InPrivateBeta")
-                        .HasColumnType("bit");
-
                     b.Property<int>("LocalAuthorityID")
                         .HasColumnType("int");
 
@@ -566,9 +566,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("ChildLastName")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ChildPostCode")
-                        .HasColumnType("nvarchar(9)");
 
                     b.Property<DateTime>("DiscretionaryValidityStartDate")
                         .HasColumnType("datetime2");

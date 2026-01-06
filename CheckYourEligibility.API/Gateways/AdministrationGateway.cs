@@ -159,6 +159,20 @@ public class AdministrationGateway : IAdministration
 
     [ExcludeFromCodeCoverage(Justification =
         "In memory db does not support execute update, direct updating causes concurrency error")]
+    public async Task UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data)
+    {
+        foreach (var item in data)
+        {
+            _db.Establishments.Where(b => b.EstablishmentID == item.EstablishmentId)
+                .ExecuteUpdate(setters => setters
+                    .SetProperty(b => b.InPrivateBeta, item.InPrivateBeta));
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    [ExcludeFromCodeCoverage(Justification =
+        "In memory db does not support execute update, direct updating causes concurrency error")]
     private void SetLaData(LocalAuthority? item)
     {
         _db.LocalAuthorities.AsNoTracking().Where(b => b.LocalAuthorityID == item.LocalAuthorityID)

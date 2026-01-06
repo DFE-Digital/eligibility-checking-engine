@@ -13,4 +13,5 @@ public static class Admin
     public const string XmlfileRequired = "Xml data file is required.";
     public const string HMRCFileProcessed = "HMRC File Processed.";
     public const string XlsmfileRequired = "Xlsm data file is required.";
+    public const string EstablishmentPrivateBetaUpdated = "Establishment Private Beta Updated.";
 }

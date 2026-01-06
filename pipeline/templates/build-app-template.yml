@@ -1,0 +1,71 @@
+parameters:
+  - name: isDeployRun # Indicates if this build is part of a deployment pipeline run
+    type: boolean
+    default: false
+  - name: stageName
+    type: string
+  - name: displayName
+    type: string
+  
+stages:
+  - stage: ${{ parameters.stageName }}
+    displayName: ${{ parameters.displayName }}
+    jobs:
+    - job: 
+      pool:
+        name: Azure Pipelines
+        vmImage: 'windows-latest'
+      steps:
+      - task: NuGetToolInstaller@1
+
+      - task: NuGetCommand@2
+        inputs:
+          restoreSolution: '$(solution)'
+
+      - task: CmdLine@2
+        displayName: 'Build migrations bundle'
+        condition: eq(${{ parameters.isDeployRun }}, true) # Task only runs for deployment pipeline runs
+        inputs:
+          script: |
+            dotnet tool install --global dotnet-ef --version 8.0.4
+            dotnet ef migrations bundle --verbose --self-contained -r win-x86 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
+            mv efbundle.exe $(Build.ArtifactStagingDirectory)
+
+      - task: VSBuild@1
+        inputs:
+          solution: '$(solution)'
+          msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+
+      - task: VSTest@2
+        inputs:
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+          runSettingsFile: 'CheckYourEligibility.API.Tests/.runsettings'
+          resultsFolder: '$(build.ArtifactStagingDirectory)/Test/Results'
+          otherConsoleOptions: '/collect:"Code Coverage;Format=Cobertura"'  # <<<< this is the important bit
+          codeCoverageEnabled: True
+
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: '$(build.ArtifactStagingDirectory)/Test/Results/**/*.xml'
+
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: publish
+          publishWebProjects: True
+          arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+          zipAfterPublish: True
+
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: 'tests'
+          Contents: '**'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/tests'
+
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)' 
+          artifactName: 'checkYourEligibilityAPI'

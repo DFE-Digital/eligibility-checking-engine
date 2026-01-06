@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20251208180314_AddChildPostCodeToWorkingFamiliesEvents")]
+    partial class AddChildPostCodeToWorkingFamiliesEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,8 +200,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("AuditID");
 
-                    b.HasIndex(new[] { "TypeID" }, "idx_TypeId");
-
                     b.ToTable("Audits");
                 });
 
@@ -377,9 +378,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("EstablishmentName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("InPrivateBeta")
-                        .HasColumnType("bit");
 
                     b.Property<int>("LocalAuthorityID")
                         .HasColumnType("int");

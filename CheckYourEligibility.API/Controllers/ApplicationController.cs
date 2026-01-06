@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using ValidationException = FluentValidation.ValidationException;
 
@@ -21,9 +22,10 @@ public class ApplicationController : BaseController
     private readonly IGetApplicationUseCase _getApplicationUseCase;
     private readonly string _localAuthorityScopeName;
     private readonly string _multiAcademyTrustScopeName;
+    private readonly string _establishmentScopeName;
     private readonly ILogger<ApplicationController> _logger;
     private readonly ISearchApplicationsUseCase _searchApplicationsUseCase;
-    private readonly IUpdateApplicationStatusUseCase _updateApplicationStatusUseCase;
+    private readonly IUpdateApplicationUseCase _updateApplicationUseCase;
     private readonly IRestoreArchivedApplicationStatusUseCase _restoreArchivedApplicationStatusUseCase;
     private readonly IImportApplicationsUseCase _importApplicationsUseCase;
     private readonly IDeleteApplicationUseCase _deleteApplicationUseCase;
@@ -34,7 +36,7 @@ public class ApplicationController : BaseController
         ICreateApplicationUseCase createApplicationUseCase,
         IGetApplicationUseCase getApplicationUseCase,
         ISearchApplicationsUseCase searchApplicationsUseCase,
-        IUpdateApplicationStatusUseCase updateApplicationStatusUseCase,
+        IUpdateApplicationUseCase updateApplicationUseCase,
         IImportApplicationsUseCase importApplicationsUseCase,
         IDeleteApplicationUseCase deleteApplicationUseCase,
         IRestoreArchivedApplicationStatusUseCase restoreArchivedApplicationStatusUseCase,
@@ -44,10 +46,11 @@ public class ApplicationController : BaseController
         _logger = logger;
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
         _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scope:multi_academy_trust") ?? "multi_academy_trust";
+        _establishmentScopeName = configuration.GetValue<string>("Jwt:Scope:establishment") ?? "establishment";
         _createApplicationUseCase = createApplicationUseCase;
         _getApplicationUseCase = getApplicationUseCase;
         _searchApplicationsUseCase = searchApplicationsUseCase;
-        _updateApplicationStatusUseCase = updateApplicationStatusUseCase;
+        _updateApplicationUseCase = updateApplicationUseCase;
         _importApplicationsUseCase = importApplicationsUseCase;
         _deleteApplicationUseCase = deleteApplicationUseCase;
         _restoreArchivedApplicationStatusUseCase = restoreArchivedApplicationStatusUseCase;
@@ -141,23 +144,23 @@ public class ApplicationController : BaseController
     [Consumes("application/json", "application/vnd.api+json; version=1.0")]
     [HttpPost("/application/search")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> ApplicationSearch([FromBody] ApplicationSearchRequest model)
     {
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
-            if ((localAuthorityIds == null || localAuthorityIds.Count == 0) &&
-                (multiAcademyTrustIds == null || multiAcademyTrustIds.Count == 0))
+            var establishmentIds = User.GetSpecificScopeIds(_establishmentScopeName);
+            if (localAuthorityIds.IsNullOrEmpty() && multiAcademyTrustIds.IsNullOrEmpty() && establishmentIds.IsNullOrEmpty())
             {
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority or multi academy trust scope found" }]
+                    Errors = [new Error { Title = "No local_authority, multi_academy_trust, or establishment scope found" }]
                 });
             }
 
-            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds, multiAcademyTrustIds);
+            var response = await _searchApplicationsUseCase.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
         catch (ArgumentException ex)
@@ -176,19 +179,19 @@ public class ApplicationController : BaseController
     }
 
     /// <summary>
-    ///     Updates the status of an application
+    ///     Updates an application
     /// </summary>
     /// <param name="guid"></param>
     /// <param name="model"></param>
     /// <returns></returns>
-    [ProducesResponseType(typeof(ApplicationStatusUpdateResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ApplicationUpdateResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/application/{guid}")]
     [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
-    public async Task<ActionResult> ApplicationStatusUpdate(string guid,
-        [FromBody] ApplicationStatusUpdateRequest model)
+    public async Task<ActionResult> UpdateApplication(string guid,
+        [FromBody] ApplicationUpdateRequest model)
     {
         try
         {
@@ -201,7 +204,7 @@ public class ApplicationController : BaseController
                 });
             }
 
-            var response = await _updateApplicationStatusUseCase.Execute(guid, model, localAuthorityIds);
+            var response = await _updateApplicationUseCase.Execute(guid, model, localAuthorityIds);
             if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
@@ -220,7 +223,57 @@ public class ApplicationController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                $"Error updating application status for guid {guid?.Replace(Environment.NewLine, "")}");
+                $"Error updating application for guid {guid?.Replace(Environment.NewLine, "")}");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    ///     Updates an application by reference
+    /// </summary>
+    /// <param name="reference"></param>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(ApplicationUpdateResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPatch("/application/reference/{reference}")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    public async Task<ActionResult> UpdateApplicationByReference(string reference,
+        [FromBody] ApplicationUpdateRequest model)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _updateApplicationUseCase.ExecuteByReference(reference, model, localAuthorityIds);
+            if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "" }] });
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Error updating application for reference {reference?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

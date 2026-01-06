@@ -176,4 +176,42 @@ public class EstablishmentSearchGatewayTests : TestBase.TestBase
         // Assert
         response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
     }
+
+    [Test]
+    public async Task Given_Search_Should_Return_InPrivateBeta_Property()
+    {
+        // Arrange
+        Establishment = _fixture.Create<Establishment>();
+        Establishment.InPrivateBeta = true;
+        Establishment.StatusOpen = true;
+        _fakeInMemoryDb.Establishments.Add(Establishment);
+        _fakeInMemoryDb.SaveChanges();
+        string la = null;
+        string mat = null;
+
+        // Act
+        var response = await _sut.Search(Establishment.EstablishmentName, la, mat);
+
+        // Assert
+        response.First().InPrivateBeta.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task Given_Search_Should_Return_Type_Property()
+    {
+        // Arrange
+        Establishment = _fixture.Create<Establishment>();
+        Establishment.Type = "Academy converter";
+        Establishment.StatusOpen = true;
+        _fakeInMemoryDb.Establishments.Add(Establishment);
+        _fakeInMemoryDb.SaveChanges();
+        string la = null;
+        string mat = null;
+
+        // Act
+        var response = await _sut.Search(Establishment.EstablishmentName, la, mat);
+
+        // Assert
+        response.First().Type.Should().Be("Academy converter");
+    }
 }
