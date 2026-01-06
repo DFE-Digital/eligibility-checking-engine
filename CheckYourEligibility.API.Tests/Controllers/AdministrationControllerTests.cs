@@ -22,6 +22,7 @@ public class AdministrationControllerTests : TestBase.TestBase
     private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
     private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
     private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
+    private Mock<IUpdateEstablishmentsPrivateBetaUseCase> _mockUpdateEstablishmentsPrivateBetaUseCase;
     private ILogger<AdministrationController> _mockLogger;
     private AdministrationController _sut;
 
@@ -35,6 +36,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
         _mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
         _mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
+        _mockUpdateEstablishmentsPrivateBetaUseCase = new Mock<IUpdateEstablishmentsPrivateBetaUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<AdministrationController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new AdministrationController(
@@ -45,6 +47,7 @@ public class AdministrationControllerTests : TestBase.TestBase
             _mockImportFsmHomeOfficeDataUseCase.Object,
             _mockImportFsmHMRCDataUseCase.Object,
             _mockImportWfHMRCDataUseCase.Object,
+            _mockUpdateEstablishmentsPrivateBetaUseCase.Object,
             _mockAuditGateway.Object);
     }
 
@@ -56,6 +59,7 @@ public class AdministrationControllerTests : TestBase.TestBase
         _mockImportMatsUseCase.VerifyAll();
         _mockImportFsmHomeOfficeDataUseCase.VerifyAll();
         _mockImportFsmHMRCDataUseCase.VerifyAll();
+        _mockUpdateEstablishmentsPrivateBetaUseCase.VerifyAll();
     }
 
     [Test]
@@ -289,6 +293,56 @@ public class AdministrationControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.ImportWfHMRCData(null);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status200OK()
+    {
+        // Arrange
+        _mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+
+        var content = "EstablishmentId,InPrivateBeta\n100718,true\n142364,false";
+        var fileName = "test.csv";
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(content);
+        writer.Flush();
+        stream.Position = 0;
+
+        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/csv"
+        };
+        var expectedResult =
+            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
+                { StatusCode = StatusCodes.Status200OK };
+
+        // Act
+        var response = await _sut.UpdateEstablishmentsPrivateBeta(file);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var expectedResult =
+            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+                { StatusCode = StatusCodes.Status400BadRequest };
+
+        // Setup mock to throw InvalidDataException
+        _mockUpdateEstablishmentsPrivateBetaUseCase
+            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
+            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+
+        // Act
+        var response = await _sut.UpdateEstablishmentsPrivateBeta(null);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);

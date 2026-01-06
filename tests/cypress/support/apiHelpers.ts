@@ -1,5 +1,10 @@
 // cypress/support/apiHelpers.ts
 
+export function buildUrl(path: string): string {
+    const baseUrl = Cypress.config('baseUrl') || '';
+    return new URL(path, baseUrl.endsWith('/') ? baseUrl : baseUrl + '/').href;
+}
+
 export const verifyUnauthorizedWithoutToken = (method: string, endpoint: string, requestBody: any, contentType: string) => {
     cy.apiRequest(method, endpoint, requestBody, null, null, contentType).then((response) => {
         cy.verifyApiResponseCode(response, 401)
