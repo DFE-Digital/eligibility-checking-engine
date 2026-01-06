@@ -52,38 +52,19 @@ public class AdministrationGateway : IAdministration
     [ExcludeFromCodeCoverage(Justification = "Use of bulk operations")]
     public async Task ImportEstablishments(IEnumerable<EstablishmentRow> data)
     {
-        //remove records where la is 0
-        data = data.Where(x => x.LaCode != 0).ToList();
+        try
+        {
+            //remove records where la is 0
+            data = data.Where(x => x.LaCode != 0).ToList();
 
-        var localAuthorites = data
+        var localAuthorities = data
             .Select(m => new { m.LaCode, m.LaName })
             .Distinct()
             .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName });
 
-        foreach (var la in localAuthorites)
-        {
-            var item = _db.LocalAuthorities.FirstOrDefault(x => x.LocalAuthorityID == la.LocalAuthorityID);
-            if (item != null)
-            {
-                try
-                {
-                    SetLaData(la);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("db error", ex);
-                }
+        _db.BulkInsertOrUpdate_LocalAuthority(localAuthorities);
 
-            }
-            else
-            {
-                _db.LocalAuthorities.Add(la);
-            }
-
-        }
-        await _db.SaveChangesAsync();
-
-        var Establishment = data.Select(x => new Establishment
+        var Establishments = data.Select(x => new Establishment
         {
             EstablishmentID = x.Urn,
             EstablishmentName = x.EstablishmentName,
@@ -96,25 +77,17 @@ public class AdministrationGateway : IAdministration
             County = x.County,
             Type = x.Type
         });
-
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        try
-        {
-            var establishmentList = Establishment.ToList();
+     
+            var establishmentList = Establishments.ToList();
             int total = establishmentList.Count();
-            const int batchSize = 10;
+            const int batchSize = 3000;
             int batchNo = 1;
             for (int offset = 0; offset < total; offset += batchSize)
             {
-                batchNo++;
                 var batch = establishmentList.Skip(offset).Take(batchSize);
                 _db.BulkInsertOrUpdate_Establishment(batch);
-                Console.WriteLine($"Batch {batchNo} for {batchSize} batch size: {stopwatch.ElapsedMilliseconds} ");
-
-            }
-            stopwatch.Stop();
+                batchNo++;           
+            }       
         }
         catch (Exception ex)
         {
@@ -169,32 +142,5 @@ public class AdministrationGateway : IAdministration
         }
 
         await _db.SaveChangesAsync();
-    }
-
-    [ExcludeFromCodeCoverage(Justification =
-        "In memory db does not support execute update, direct updating causes concurrency error")]
-    private void SetLaData(LocalAuthority? item)
-    {
-        _db.LocalAuthorities.AsNoTracking().Where(b => b.LocalAuthorityID == item.LocalAuthorityID)
-            .ExecuteUpdate(setters => setters
-                .SetProperty(b => b.LaName, item.LaName));
-    }
-
-    [ExcludeFromCodeCoverage(Justification =
-        "In memory db does not support execute update, direct updating causes concurrency error")]
-    private void SetEstablishmentData(Establishment? item)
-    {
-        _db.Establishments.Where(b => b.EstablishmentID == item.EstablishmentID)
-            .ExecuteUpdate(setters => setters
-                .SetProperty(b => b.LocalAuthorityID, item.LocalAuthorityID)
-                .SetProperty(b => b.EstablishmentName, item.EstablishmentName)
-                .SetProperty(b => b.Street, item.Street)
-                .SetProperty(b => b.Postcode, item.Postcode)
-                .SetProperty(b => b.County, item.County)
-                .SetProperty(b => b.StatusOpen, item.StatusOpen)
-                .SetProperty(b => b.Locality, item.Locality)
-                .SetProperty(b => b.Town, item.Town)
-                .SetProperty(b => b.Type, item.Type)
-            );
     }
 }
