@@ -778,12 +778,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     public async Task Given_validRequest_Process_Should_Return_LastName_From_Request()
     {
         // Arrange
+        var requestLastName = "smith";
+
         var item = _fixture.Create<EligibilityCheck>();
         var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
         wf.DateOfBirth = "2022-01-01";
         wf.NationalInsuranceNumber = "AB123456C";
         wf.EligibilityCode = "50012345678";
-        wf.LastName = "smith";
+        wf.LastName = requestLastName;
         var dataItem = GetCheckProcessData(wf);
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -793,7 +795,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
-        wfEvent.ParentLastName = "smith";
+        wfEvent.ParentLastName = requestLastName;
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
@@ -820,8 +822,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
-        JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData)?.LastName.Should().Be("smith");
-        //item.CheckData.Should().Be(JsonConvert.SerializeObject(dataItem)); //TODO: IT shouldn't be this. Just checking that this is still the right reference to the object
+        JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData)?.LastName.Should().Be(requestLastName.ToUpper());
     }
 
     [Test]

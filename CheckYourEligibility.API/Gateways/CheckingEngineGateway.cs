@@ -228,7 +228,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
             {
                 wfEvent.EligibilityCode = checkData.EligibilityCode;
-                wfEvent.ParentLastName = innerResult.ParentSurname;
+                wfEvent.ParentLastName = checkData.LastName;  //Return value as submitted in request
                 wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
                 wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
                 wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
@@ -276,6 +276,7 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.LastName = wfEvent.ParentLastName;
             wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
