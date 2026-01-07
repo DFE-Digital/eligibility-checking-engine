@@ -712,8 +712,6 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
-        item.CheckData = JsonConvert.SerializeObject(dataItem);
-
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.FreeSchoolMealsHO.Add(new FreeSchoolMealsHO
         {
@@ -774,6 +772,57 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.notEligible);
+    }
+
+    [Test]
+    public async Task Given_validRequest_Process_Should_Return_LastName_From_Request()
+    {
+        // Arrange
+        var requestLastName = "smith";
+
+        var item = _fixture.Create<EligibilityCheck>();
+        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
+        wf.DateOfBirth = "2022-01-01";
+        wf.NationalInsuranceNumber = "AB123456C";
+        wf.EligibilityCode = "50012345678";
+        wf.LastName = requestLastName;
+        var dataItem = GetCheckProcessData(wf);
+        item.Type = CheckEligibilityType.WorkingFamilies;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+
+        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
+        wfEvent.EligibilityCode = "50012345678";
+        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
+        wfEvent.ParentLastName = requestLastName;
+        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
+        wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
+        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
+        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        
+        
+        var soapResponse = _fixture.Create<SoapCheckResponse>();
+        soapResponse.Status = "1";
+        soapResponse.ErrorCode = "0";
+        soapResponse.Qualifier = "";
+        soapResponse.ParentSurname = "";
+        soapResponse.ValidityStartDate = DateTime.Today.AddDays(-2).ToString();
+        soapResponse.ValidityEndDate = DateTime.Today.AddDays(1).ToString();
+        soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(1).ToString();
+        
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+
+        // Act
+        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+
+        // Assert
+        response.Should().Be(CheckEligibilityStatus.eligible);
+        JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData)?.LastName.Should().Be(requestLastName.ToUpper());
     }
 
     [Test]
