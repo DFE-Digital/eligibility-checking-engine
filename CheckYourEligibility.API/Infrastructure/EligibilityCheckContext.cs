@@ -77,7 +77,39 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         this.BulkInsert(data);
     }
+    public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data) {
 
+        using var transaction = base.Database.BeginTransaction();
+        try
+        {
+            this.BulkInsertOrUpdate(data, config =>
+            config.UpdateByProperties = new List<string> { nameof(LocalAuthority.LocalAuthorityID), nameof(LocalAuthority.LaName) });
+            transaction.Commit();
+        }
+
+        catch (Exception ex) {
+       
+            transaction.Rollback();
+        }        
+
+    }
+    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data) {
+
+        using var transaction = base.Database.BeginTransaction();
+
+        try {
+
+            this.BulkInsertOrUpdate(data, config => config.BatchSize = 30000 );
+            transaction.Commit();
+
+        }
+        catch (Exception ex)
+        {          
+            transaction.Rollback();
+        }
+       
+        
+    }
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
         using (var transaction = base.Database.BeginTransaction())
@@ -92,6 +124,14 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<LocalAuthority>()
+            .Property(e => e.LocalAuthorityID)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<Establishment>()
+            .Property(e => e.EstablishmentID)
+            .ValueGeneratedNever();
+
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");
         modelBuilder.Entity<EligibilityCheck>()
             .Property(p => p.Status)
