@@ -130,33 +130,43 @@ public class CheckingEngineGateway : ICheckingEngine
         string eligibilityCode, string nino, string lastName)
     {
         //TODO: This should probably be its own adapter
-        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
             x.EligibilityCode == eligibilityCode &&
             (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
              x.PartnerLastName.ToUpper() == lastName) &&
-            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).Take(2).ToListAsync();
+            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
 
+        WorkingFamiliesEvent wfEvent = wfRecords.FirstOrDefault();
         // If there is more than one record
         // check if second to last record has not expired yet
-        // set the event to the second record that is still valid
+        // set the event to the second record that is still valid, sets submission date
         // and get set ValidityEndDate and the GracePeriodEndDate of the future record
         if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
         {
             wfEvent = wfRecords[1];
-
             wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
             wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
         }
-        else
+
+        //Check for contiguous events and set VSD to earliest VSD of the current contiguous block
+        for (int i=0; i < wfRecords.Count() - 1; i++)
         {
-            wfEvent = wfRecords.FirstOrDefault();
+            if (wfRecords[i].DiscretionaryValidityStartDate <= wfRecords[i+1].GracePeriodEndDate)
+            {
+                wfEvent.DiscretionaryValidityStartDate = wfRecords[i+1].DiscretionaryValidityStartDate;
+                wfEvent.ValidityStartDate = wfRecords[i+1].ValidityStartDate;
+            }
+            else
+            {
+                break;
+            }
         }
 
         return wfEvent;
     }
+
     /// <summary>
     /// This method is used for generating test data in runtime
     /// If code starts with 900 it will generate an event record that must return Eligible
