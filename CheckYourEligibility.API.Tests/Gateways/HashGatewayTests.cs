@@ -19,6 +19,7 @@ namespace CheckYourEligibility.API.Tests;
 public class HashGatewayTests : TestBase.TestBase
 {
     private readonly int _hashCheckDays = 7;
+    private readonly int _hashCheckDaysWF = 1;
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private Mock<IAudit> _moqAudit;
@@ -37,7 +38,8 @@ public class HashGatewayTests : TestBase.TestBase
         var configForSmsApi = new Dictionary<string, string>
         {
             { "QueueFsmCheckStandard", "notSet" },
-            { "HashCheckDays", _hashCheckDays.ToString() }
+            { "HashCheckDays", _hashCheckDays.ToString() },
+            { "HashCheckDaysWF", _hashCheckDaysWF.ToString() },
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
@@ -73,6 +75,27 @@ public class HashGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Given_validRequest_Create_Exists_Should_Return_Hash_WorkingFamilies()
+    {
+        // Arrange
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        var wf = _fixture.Create<CheckEligibilityRequestData>();
+        wf.DateOfBirth = "1990-01-01";
+        wf.Type = CheckEligibilityType.WorkingFamilies;
+        var dataItem = GetCheckProcessData(wf);
+
+        // Act
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+            new AuditData());
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var response = await _sut.Exists(dataItem);
+
+        // Assert
+        response.Should().BeOfType<EligibilityCheckHash>();
+    }
+
+    [Test]
     public async Task Given_HashIsOld_Exists_Should_Return_null()
     {
         // Arrange
@@ -87,6 +110,31 @@ public class HashGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
         var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
         hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDays + 1));
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.Exists(dataItem);
+
+        // Assert
+        response.Should().BeNull();
+    }
+
+    [Test]
+    public async Task Given_WorkingFamilies_HashIsOld_Exists_Should_Return_null()
+    {
+        // Arrange
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        var wf = _fixture.Create<CheckEligibilityRequestData>();
+        wf.DateOfBirth = "1990-01-01";
+        wf.Type = CheckEligibilityType.WorkingFamilies;
+        var dataItem = GetCheckProcessData(wf);
+
+
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+            new AuditData());
+        await _fakeInMemoryDb.SaveChangesAsync();
+        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
+        hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDaysWF + 1));
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act

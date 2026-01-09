@@ -40,7 +40,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
         // Configure real configuration
         var configData = new Dictionary<string, string?>
         {
-            { "HashCheckDays", "30" }
+            { "HashCheckDays", "30" },
+            { "HashCheckDaysWF", "1" }
         };
 
         _configuration = new ConfigurationBuilder()
