@@ -123,19 +123,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        //modelBuilder.Entity<LocalAuthority>()
-        //   .HasKey(x => x.LocalAuthorityID);
-        //modelBuilder.Entity<LocalAuthority>()
-        //    .Property(e => e.LocalAuthorityID)
-        //    .ValueGeneratedNever();
-
-
-        //modelBuilder.Entity<Establishment>()
-        //    .HasKey(e => e.EstablishmentID);
-
-        //modelBuilder.Entity<Establishment>()
-        //    .Property(e => e.EstablishmentID)
-        //    .ValueGeneratedNever();
 
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");
         modelBuilder.Entity<EligibilityCheck>()
