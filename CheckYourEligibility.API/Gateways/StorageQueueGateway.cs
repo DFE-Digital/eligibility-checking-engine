@@ -68,7 +68,6 @@ public class StorageQueueGateway : IStorageQueue
             throw new Exception($"invalid queue {queName}.");
         
         var sw = Stopwatch.StartNew();
-        var st = Stopwatch.StartNew();
         if (await queue.ExistsAsync())
         {
             QueueProperties properties = await queue.GetPropertiesAsync();
@@ -79,7 +78,6 @@ public class StorageQueueGateway : IStorageQueue
                 
                 _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
               
-                int i  = 0;
                 foreach (var item in retrievedMessage)
                 {
                     sw.Restart();
