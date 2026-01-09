@@ -276,8 +276,8 @@ public class CheckingEngineGateway : ICheckingEngine
             }
         }
         // Create hash just with the check request data to match on post requests
-        //result.EligibilityCheckHashID =
-        //    await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+        result.EligibilityCheckHashID =
+            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
 
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request if a record has been found

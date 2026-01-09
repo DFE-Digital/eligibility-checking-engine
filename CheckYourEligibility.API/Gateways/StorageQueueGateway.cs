@@ -148,16 +148,10 @@ public class StorageQueueGateway : IStorageQueue
                             );
                         }
                     }
-                    i++;
+
                     _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
-                   Console.WriteLine(
-                       $"Item_No....{i}" +
-                       $"Process_Time....{sw.ElapsedMilliseconds:N0} ms");
+
                 }
-                Console.WriteLine(
-              $"Item_Total_Count....{i}" +
-              $"Mean....{st.ElapsedMilliseconds / i:N0} ms" +
-              $"Total_Elapsed_Time....{st.ElapsedMilliseconds:N0} ms");
             }
           
         }

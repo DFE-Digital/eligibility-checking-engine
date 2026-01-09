@@ -106,7 +106,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             //TODO: The message queueing logic should sit in the use case, targeting the storage queue gateway
             if (checkHashResult == null)
             {
-               // var queue = await _storageQueueMessageGateway.SendMessage(item);
+                var queue = await _storageQueueMessageGateway.SendMessage(item);
             }
 
             return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
