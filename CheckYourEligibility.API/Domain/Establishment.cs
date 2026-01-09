@@ -7,7 +7,9 @@ namespace CheckYourEligibility.API.Domain;
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
 public class Establishment
 {
-    [Key] public int EstablishmentID { get; set; }
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public int EstablishmentID { get; set; }
 
     public string EstablishmentName { get; set; }
     public string Postcode { get; set; }
