@@ -11,6 +11,7 @@ public class HashGateway : IHash
     protected readonly IAudit _audit;
     private readonly IEligibilityCheckContext _db;
     private readonly int _hashCheckDays;
+    private readonly int _hashCheckDaysWF;
 
     private readonly ILogger _logger;
 
@@ -27,6 +28,7 @@ public class HashGateway : IHash
         _logger = logger.CreateLogger("HashService");
         _db = dbContext;
         _hashCheckDays = configuration.GetValue<short>("HashCheckDays");
+        _hashCheckDaysWF = configuration.GetValue<short>("HashCheckDaysWF");
         _audit = audit;
     }
 
@@ -37,7 +39,8 @@ public class HashGateway : IHash
     /// <returns></returns>
     public async Task<EligibilityCheckHash?> Exists(CheckProcessData item)
     {
-        var age = DateTime.UtcNow.AddDays(-_hashCheckDays);
+        var hashValidityDays = item.Type == CheckEligibilityType.WorkingFamilies ? _hashCheckDaysWF : _hashCheckDays;
+        var age = DateTime.UtcNow.AddDays(-hashValidityDays);
         var hash = item.GetHash();
         return await _db.EligibilityCheckHashes.FirstOrDefaultAsync(x => x.Hash == hash && x.TimeStamp >= age);
     }

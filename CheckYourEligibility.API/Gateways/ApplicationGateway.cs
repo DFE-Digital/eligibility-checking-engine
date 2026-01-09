@@ -21,6 +21,7 @@ public class ApplicationGateway : IApplication
     private static Random randomNumber;
     private readonly IEligibilityCheckContext _db;
     private readonly int _hashCheckDays;
+    private readonly int _hashCheckDaysWF;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
 
@@ -33,6 +34,7 @@ public class ApplicationGateway : IApplication
 
         randomNumber ??= new Random(referenceMaxValue);
         _hashCheckDays = configuration.GetValue<short>("HashCheckDays");
+        _hashCheckDaysWF = configuration.GetValue<short>("HashCheckDaysWF");
     }
 
     public async Task<ApplicationResponse> PostApplication(ApplicationRequestData data)
@@ -612,7 +614,8 @@ public class ApplicationGateway : IApplication
     //TODO: Doesn't this exist as a static method elsewhere?
     private EligibilityCheckHash? GetHash(CheckEligibilityType type, Application data)
     {
-        var age = DateTime.UtcNow.AddDays(-_hashCheckDays);
+        var hashValidityDays = type == CheckEligibilityType.WorkingFamilies ? _hashCheckDaysWF : _hashCheckDays;
+        var age = DateTime.UtcNow.AddDays(-hashValidityDays);
         var hash = CheckEligibilityGateway.GetHash(new CheckProcessData
         {
             DateOfBirth = data.ParentDateOfBirth.ToString("yyyy-MM-dd"),
