@@ -1,20 +1,15 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using AutoMapper;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
-using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -82,6 +77,7 @@ public class StorageQueueGateway : IStorageQueue
                 QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
                 
                 _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
+              
                 foreach (var item in retrievedMessage)
                 {
                     sw.Restart();
@@ -92,6 +88,7 @@ public class StorageQueueGateway : IStorageQueue
                     {
                         var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == checkData.Guid && a.Type == AuditType.Check && a.Method == "POST");
                         string scope = string.Empty;
+
                         if (postCheckAudit != null && postCheckAudit.Scope != null) scope = postCheckAudit.Scope;
 
                         var result = await _checkingEngineGateway.ProcessCheck(checkData.Guid, new AuditData
@@ -114,7 +111,7 @@ public class StorageQueueGateway : IStorageQueue
                                 await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                     new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
                                 await queue.DeleteMessageAsync(item.MessageId, popReceipt);
-                            }
+                            } 
                         }
                         // If status is not queued for Processing, we have a conclusive answer
                         else
@@ -149,10 +146,12 @@ public class StorageQueueGateway : IStorageQueue
                             );
                         }
                     }
-                    
+
                     _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
+
                 }
             }
+          
         }
     }
 
