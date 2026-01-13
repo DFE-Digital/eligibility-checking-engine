@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Fsm
 
+using System.Configuration;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -183,12 +184,23 @@ public class CheckingEngineGateway : ICheckingEngine
         bool isEligiblePrefix = !prefix.IsNullOrEmpty() && eligibilityCode.StartsWith(prefix);
         DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        //TODO: split eligibilitycode into substring representing the increments of VSD VED GPED
+        //Allow the substring to inform the today.AddDays()
+        //Set the DSVD to the same as the VSD
+        //E.g. 90010203000 would represent an eligible code with a (D)VSD 10 days prior, a VSD 20 days later, and a GPED 30 days later
+        //TODO: Check that this formatting aligns with how it is structured in ECS
+        //Need a way to indicate whether it should be in GP?
         if (isEligiblePrefix)
         {
-            wfEvent.ValidityStartDate = today.AddDays(-1);
-            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-1);
-            wfEvent.ValidityEndDate = today.AddMonths(3);
-            wfEvent.GracePeriodEndDate = today.AddMonths(6);
+            int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
+            int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
+            int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
+
+
+            wfEvent.ValidityStartDate = today.AddDays(-vsdOffset);
+            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-vsdOffset);
+            wfEvent.ValidityEndDate = today.AddDays(vedOffset);
+            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
             wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
             wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
             wfEvent.EligibilityCode = eligibilityCode;
