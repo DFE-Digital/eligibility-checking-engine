@@ -200,12 +200,5 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
 
-        // FosterCarer to FosterChild relationship
-        modelBuilder.Entity<FosterCarer>()
-            .HasOne(c => c.FosterChild)
-            .WithOne(d => d.FosterCarer)
-            .HasForeignKey<FosterChild>(d => d.FosterCarerId)
-            .IsRequired(true)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -11,6 +11,11 @@ public class FosterChild
     [Column(TypeName = "varchar(100)")] public string LastName { get; set; }
     public DateOnly DateOfBirth { get; set; }
     public string PostCode { get; set; }
+
+    public DateOnly ValidityStartDate { get; set; }
+    public DateOnly ValidityEndDate { get; set; }
+    public DateOnly SubmissionDate { get; set; }
+    
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 

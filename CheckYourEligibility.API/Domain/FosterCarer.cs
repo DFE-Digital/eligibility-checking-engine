@@ -17,6 +17,8 @@ public class FosterCarer
     public DateOnly? PartnerDateOfBirth { get; set; }
     [Column(TypeName = "varchar(50)")] public string? PartnerNationalInsuranceNumber { get; set; }
 
+    public int LocalAuthorityId { get; set; }
+
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
