@@ -8,6 +8,8 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
@@ -59,37 +61,38 @@ public class StorageQueueGateway : IStorageQueue
 
     //TODO: This method should return a list of IDs, that the bulk check usecase iterates over and sends to single check use case
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    public async Task<List<string>> ProcessQueueAsync(string queName)
+    public async Task<QueueMessage[]> ProcessQueueAsync(string queName)
     {
-        QueueClient queue;
-        QueueMessage[] retrievedMessages ;
-        List<string> queuedItemGuidList = [];
-        var sw = Stopwatch.StartNew();
-        if (queName == _configuration.GetValue<string>("QueueFsmCheckStandard"))
-            queue = _queueClientStandard;
-        else if (queName == _configuration.GetValue<string>("QueueFsmCheckBulk"))
-            queue = _queueClientBulk;
-        else
-            throw new Exception($"invalid queue {queName}.");
+      
+        QueueMessage[] retrievedMessages = [];
+        QueueClient queueClient = SetQueueClient(queName);
 
-        QueueProperties properties = await queue.GetPropertiesAsync();
-
-        if (properties.ApproximateMessagesCount > 0) {
-
-           retrievedMessages = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
-            _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
-
-            var tasks = retrievedMessages.Select(async item =>
-
-            {
-                sw.Restart();
-                var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
-                queuedItemGuidList.Add(checkData.Guid);
-            });
-            await Task.WhenAll(tasks);
-        }
-       
-        return queuedItemGuidList;
+        retrievedMessages = await queueClient.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));  
+          return retrievedMessages;
     }
     #endregion
+
+    public async Task DeleteMessageAsync(QueueMessage message , string queueName) {
+
+        QueueClient queueClient = SetQueueClient(queueName);
+        await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+
+    }
+    private QueueClient SetQueueClient(string queueName) {
+
+        if (queueName == _configuration.GetValue<string>("QueueFsmCheckStandard"))
+        {
+            return _queueClientStandard;
+        }
+
+        else if (queueName == _configuration.GetValue<string>("QueueFsmCheckBulk"))
+        {
+            return _queueClientBulk;
+        }
+
+        else {
+            throw new Exception($"invalid queue {queueName}.");
+        }
+        
+    }
 }

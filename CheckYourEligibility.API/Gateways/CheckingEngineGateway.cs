@@ -287,6 +287,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         result.Updated = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+      
     }
     /// <summary>
     /// Extract LA Id from scope if it exists
