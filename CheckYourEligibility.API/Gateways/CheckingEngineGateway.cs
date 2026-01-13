@@ -1,27 +1,19 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
-using AutoMapper;
 using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -50,7 +42,7 @@ public class CheckingEngineGateway : ICheckingEngine
         _configuration = configuration;
     }
 
-    public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
+    public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate)
     {
         //TODO: This should come from the other gateway
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&

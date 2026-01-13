@@ -25,6 +25,11 @@ public static class ProgramExtensions
                 connectionString,
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
         );
+        services.AddDbContextFactory<EligibilityCheckContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                x => x.MigrationsAssembly("CheckYourEligibility.API")));
+
 
         return services;
     }

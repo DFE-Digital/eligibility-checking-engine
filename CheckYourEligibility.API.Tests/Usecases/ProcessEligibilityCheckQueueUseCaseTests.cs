@@ -14,8 +14,8 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
     public void Setup()
     {
         _mockGateway = new Mock<IStorageQueue>(MockBehavior.Strict);
-        _mockLogger = new Mock<ILogger<ProcessEligibilityCheckQueueUseCase>>(MockBehavior.Loose);
-        _sut = new ProcessEligibilityCheckQueueUseCase(_mockGateway.Object, _mockLogger.Object);
+        _mockLogger = new Mock<ILogger<ProcessEligibilityBulkCheckUseCase>>(MockBehavior.Loose);
+        _sut = new ProcessEligibilityBulkCheckUseCase(_mockGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
     }
 
@@ -26,8 +26,8 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
     }
 
     private Mock<IStorageQueue> _mockGateway;
-    private Mock<ILogger<ProcessEligibilityCheckQueueUseCase>> _mockLogger;
-    private ProcessEligibilityCheckQueueUseCase _sut;
+    private Mock<ILogger<ProcessEligibilityBulkCheckUseCase>> _mockLogger;
+    private ProcessEligibilityBulkCheckUseCase _sut;
     private Fixture _fixture;
 
     [Test]
@@ -48,13 +48,14 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var queueName = _fixture.Create<string>();
-        _mockGateway.Setup(s => s.ProcessQueue(queueName)).Returns(Task.CompletedTask);
+        var queuedItemsuidList = _fixture.Create<List<string>>();
+        _mockGateway.Setup(s => s.ProcessQueueAsync(queueName)).Returns(Task.FromResult(queuedItemsuidList));
 
         // Act
         await _sut.Execute(queueName);
 
         // Assert
-        _mockGateway.Verify(s => s.ProcessQueue(queueName), Times.Once);
+        _mockGateway.Verify(s => s.ProcessQueueAsync(queueName), Times.Once);
     }
 
     [Test]
@@ -62,7 +63,8 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var queueName = _fixture.Create<string>();
-        _mockGateway.Setup(s => s.ProcessQueue(queueName)).Returns(Task.CompletedTask);
+        var queuedItemsuidList = _fixture.Create<List<string>>();
+        _mockGateway.Setup(s => s.ProcessQueueAsync(queueName)).Returns(Task.FromResult(queuedItemsuidList));
 
         // Act
         var result = await _sut.Execute(queueName);

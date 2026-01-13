@@ -16,12 +16,13 @@ public interface IProcessEligibilityBulkCheckUseCase
     Task<MessageResponse> Execute(string queue);
 }
 
-public class ProcessEligibilityCheckQueueUseCase : IProcessEligibilityBulkCheckUseCase
+public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUseCase
 {
     private readonly IStorageQueue _storageQueueGateway;
-    private readonly ILogger<ProcessEligibilityCheckQueueUseCase> _logger;
+    private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
+    private readonly ILogger<ProcessEligibilityBulkCheckUseCase> _logger;
 
-    public ProcessEligibilityCheckQueueUseCase(IStorageQueue storageQueueGateway, ILogger<ProcessEligibilityCheckQueueUseCase> logger)
+    public ProcessEligibilityBulkCheckUseCase(IStorageQueue storageQueueGateway, ILogger<ProcessEligibilityBulkCheckUseCase> logger)
     {
         _storageQueueGateway = storageQueueGateway;
         _logger = logger;
@@ -35,7 +36,14 @@ public class ProcessEligibilityCheckQueueUseCase : IProcessEligibilityBulkCheckU
             return new MessageResponse { Data = "Invalid Request." };
         }
 
-        await _storageQueueGateway.ProcessQueue(queue);
+     var queuedItemsGuidIds =  await _storageQueueGateway.ProcessQueueAsync(queue);
+       
+        foreach (var queuedItemGuid in queuedItemsGuidIds) {
+
+            await _processEligibilityCheckUseCase.Execute(queuedItemGuid);
+        }
+      
+
         _logger.LogInformation(
             $"Queue {queue.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} processed successfully");
         return new MessageResponse { Data = "Queue Processed." };

@@ -95,7 +95,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.ProcessCheck(request, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(request, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().BeNull();
@@ -112,7 +112,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        Func<Task> act = async () => await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         act.Should().ThrowExactlyAsync<ProcessCheckException>();
@@ -135,7 +135,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        Func<Task> act = async () => await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         act.Should().ThrowExactlyAsync<ProcessCheckException>().Result
@@ -166,7 +166,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.parentNotFound);
@@ -201,7 +201,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.parentNotFound);
@@ -230,7 +230,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.eligible);
@@ -269,7 +269,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         //Assert
         // Should return ECS result
@@ -298,7 +298,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.notEligible);
@@ -325,7 +325,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.notEligible);
@@ -352,7 +352,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.notEligible);
@@ -382,7 +382,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.parentNotFound);
@@ -411,7 +411,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.queuedForProcessing);
@@ -441,7 +441,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.queuedForProcessing);
@@ -472,7 +472,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.eligible);
@@ -503,7 +503,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.notEligible);
@@ -536,7 +536,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.queuedForProcessing);
@@ -566,7 +566,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.queuedForProcessing);
@@ -589,7 +589,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.parentNotFound);
@@ -618,7 +618,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.eligible);
@@ -656,7 +656,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Result.Should().Be(CheckEligibilityStatus.parentNotFound);
@@ -693,7 +693,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -724,7 +724,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -769,7 +769,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.notEligible);
@@ -819,7 +819,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -855,7 +855,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.notFound);
@@ -889,7 +889,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.notFound);
@@ -926,7 +926,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -963,7 +963,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -1017,7 +1017,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -1071,7 +1071,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);
@@ -1152,7 +1152,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
-        var response = await _sut.ProcessCheck(item.EligibilityCheckID, _fixture.Create<AuditData>());
+        var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
         response.Should().Be(CheckEligibilityStatus.eligible);

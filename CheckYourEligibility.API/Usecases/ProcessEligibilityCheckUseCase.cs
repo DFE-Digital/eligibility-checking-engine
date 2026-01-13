@@ -41,7 +41,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         try
         {
             var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-            var response = await _checkingEngineGateway.ProcessCheck(guid, auditItemTemplate);
+            var response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate);
 
             if (response == null)
             {

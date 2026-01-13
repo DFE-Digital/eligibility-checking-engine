@@ -7,5 +7,5 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface ICheckingEngine
 {
-    Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData? auditItem);
+    Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData? auditItem);
 }

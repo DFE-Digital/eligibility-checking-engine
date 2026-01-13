@@ -5,10 +5,12 @@ using Azure.Storage.Queues.Models;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -57,103 +59,37 @@ public class StorageQueueGateway : IStorageQueue
 
     //TODO: This method should return a list of IDs, that the bulk check usecase iterates over and sends to single check use case
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    public async Task ProcessQueue(string queName)
+    public async Task<List<string>> ProcessQueueAsync(string queName)
     {
         QueueClient queue;
+        QueueMessage[] retrievedMessages ;
+        List<string> queuedItemGuidList = [];
+        var sw = Stopwatch.StartNew();
         if (queName == _configuration.GetValue<string>("QueueFsmCheckStandard"))
             queue = _queueClientStandard;
         else if (queName == _configuration.GetValue<string>("QueueFsmCheckBulk"))
             queue = _queueClientBulk;
         else
             throw new Exception($"invalid queue {queName}.");
-        
-        var sw = Stopwatch.StartNew();
-        if (await queue.ExistsAsync())
-        {
-            QueueProperties properties = await queue.GetPropertiesAsync();
 
-            if (properties.ApproximateMessagesCount > 0)
+        QueueProperties properties = await queue.GetPropertiesAsync();
+
+        if (properties.ApproximateMessagesCount > 0) {
+
+           retrievedMessages = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
+            _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
+
+            var tasks = retrievedMessages.Select(async item =>
+
             {
-                QueueMessage[] retrievedMessage = await queue.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
-                
-                _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
-              
-                foreach (var item in retrievedMessage)
-                {
-                    sw.Restart();
-                    string popReceipt = item.PopReceipt;
-                    var checkData =
-                        JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
-                    try
-                    {
-                        var postCheckAudit = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == checkData.Guid && a.Type == AuditType.Check && a.Method == "POST");
-                        string scope = string.Empty;
-
-                        if (postCheckAudit != null && postCheckAudit.Scope != null) scope = postCheckAudit.Scope;
-
-                        var result = await _checkingEngineGateway.ProcessCheck(checkData.Guid, new AuditData
-                        {
-                            Type = AuditType.Check,
-                            typeId = checkData.Guid,
-                            authentication = queName,
-                            method = "processQue",
-                            source = "queueProcess",
-                            url = ".",
-                            scope = scope
-                        });
-                        // When status is Queued For Processing, i.e. not error
-                        if (result == CheckEligibilityStatus.queuedForProcessing)
-                        {
-                            //If item doesn't exist, or we've tried more than retry limit
-                            if (result == null || item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
-                            {
-                                //Delete message and update status to error
-                                await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
-                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
-                                await queue.DeleteMessageAsync(item.MessageId, popReceipt);
-                            } 
-                        }
-                        // If status is not queued for Processing, we have a conclusive answer
-                        else
-                        {
-                            try
-                            {
-                                await queue.DeleteMessageAsync(item.MessageId, popReceipt);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Error deleting queue item");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Queue processing");
-                        // If we've had exceptions on this item more than retry limit
-                        if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
-                        {
-                            await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
-                                new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
-                            await queue.DeleteMessageAsync(item.MessageId, popReceipt);
-                        }
-                        else
-                        {
-                            await queue.UpdateMessageAsync(
-                                item.MessageId,
-                                popReceipt,
-                                item.Body,
-                                TimeSpan.FromSeconds(5)
-                            );
-                        }
-                    }
-
-                    _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
-
-                }
-            }
-          
+                sw.Restart();
+                var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
+                queuedItemGuidList.Add(checkData.Guid);
+            });
+            await Task.WhenAll(tasks);
         }
+       
+        return queuedItemGuidList;
     }
-
     #endregion
 }

@@ -168,7 +168,7 @@ builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>(
 builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
 builder.Services.AddScoped<IDeleteApplicationUseCase, DeleteApplicationUseCase>();
 builder.Services.AddScoped<IRestoreArchivedApplicationStatusUseCase, RestoreArchivedApplicationStatusUseCase>();
-builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibilityCheckQueueUseCase>();
+builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibilityBulkCheckUseCase>();
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
 
