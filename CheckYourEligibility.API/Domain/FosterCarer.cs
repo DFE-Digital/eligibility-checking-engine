@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using CheckYourEligibility.API.Domain;
 
 public class FosterCarer
 {
@@ -17,7 +18,16 @@ public class FosterCarer
     public DateOnly? PartnerDateOfBirth { get; set; }
     [Column(TypeName = "varchar(50)")] public string? PartnerNationalInsuranceNumber { get; set; }
 
-    public int LocalAuthorityId { get; set; }
+ 
+    /// <summary>
+    /// The Local Authority ID that this foster carer is registered with
+    /// </summary>
+    public int? LocalAuthorityID { get; set; }
+    
+    /// <summary>
+    /// Navigation property to the Local Authority
+    /// </summary>
+    public virtual LocalAuthority? LocalAuthority { get; set; }
 
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }

@@ -157,6 +157,15 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasForeignKey(b => b.LocalAuthorityID)
             .IsRequired(false);
 
+
+        // FosterCarer to LocalAuthority relationship
+        modelBuilder.Entity<FosterCarer>()
+            .HasOne(fc => fc.LocalAuthority)
+            .WithMany()
+            .HasForeignKey(fc => fc.LocalAuthorityID)
+            .IsRequired(false);
+       
+
         // EligibilityCheck to BulkCheck relationship
         modelBuilder.Entity<EligibilityCheck>()
             .HasOne(e => e.BulkCheck)
