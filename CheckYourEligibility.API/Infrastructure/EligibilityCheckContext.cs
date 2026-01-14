@@ -40,7 +40,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Audit> Audits { get; set; }
-
+    public virtual DbSet<FosterCarer> FosterCarers { get; set; }
+    public virtual DbSet<FosterChild> FosterChildren { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
@@ -77,7 +78,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         this.BulkInsert(data);
     }
-    public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data) {
+    public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data)
+    {
 
         using var transaction = base.Database.BeginTransaction();
         try
@@ -87,27 +89,30 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             transaction.Commit();
         }
 
-        catch (Exception ex) {
-       
+        catch (Exception ex)
+        {
+
             transaction.Rollback();
-        }        
+        }
 
     }
-    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data) {
+    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data)
+    {
 
         using var transaction = base.Database.BeginTransaction();
 
-        try {
-            this.BulkInsertOrUpdate(data, config => config.BatchSize = 30000 );
+        try
+        {
+            this.BulkInsertOrUpdate(data, config => config.BatchSize = 30000);
             transaction.Commit();
 
         }
         catch (Exception ex)
-        {          
+        {
             transaction.Rollback();
         }
-       
-        
+
+
     }
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
@@ -151,6 +156,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .WithMany()
             .HasForeignKey(b => b.LocalAuthorityID)
             .IsRequired(false);
+       
 
         // EligibilityCheck to BulkCheck relationship
         modelBuilder.Entity<EligibilityCheck>()
@@ -194,5 +200,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
+
     }
 }

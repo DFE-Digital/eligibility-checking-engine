@@ -19,6 +19,8 @@ public interface IEligibilityCheckContext
     DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     DbSet<User> Users { get; set; }
     DbSet<Audit> Audits { get; set; }
+    DbSet<FosterCarer> FosterCarers { get; set; }
+    DbSet<FosterChild> FosterChildren { get; set; }
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data);
     Task<int> SaveChangesAsync();
     int SaveChanges();
