@@ -58,7 +58,7 @@ public class CheckingEngineGateway : ICheckingEngine
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
         isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
-        isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:IsExpired");
+        isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
     }
 
     public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
@@ -70,8 +70,8 @@ public class CheckingEngineGateway : ICheckingEngine
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
-                return result.Status;
+            //if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            //    return result.Status;
             
             //TODO: This should live in the use case
             switch (result.Type)
