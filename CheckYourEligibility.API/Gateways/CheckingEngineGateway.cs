@@ -235,7 +235,7 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         
         wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
-        wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
+        wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
         wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
         wfEvent.EligibilityCode = eligibilityCode;
 
