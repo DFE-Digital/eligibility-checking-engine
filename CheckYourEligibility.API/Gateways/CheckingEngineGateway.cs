@@ -181,59 +181,56 @@ public class CheckingEngineGateway : ICheckingEngine
     /// <summary>
     /// This method is used for generating test data in runtime
     /// If code starts with 900 it will generate an event record that must return Eligible
-    /// If code starts with 901 it will generate an event record that must return notEligible
-    /// If code starts with 902 it will generate an event record that must return NotFound
-    /// If code starts with 903 it will generate an event record that must return Error
+    /// If code starts with 901 it will generate an event record that must return Eligible in grace period
+    /// If code starts with 902 it will generate an event record that must return NotEligible as it has not reached VSD yet
+    /// If code starts with 903 it will generate an event record that must return NotEligible as the GPED has passed
+    /// If code starts with 904 it will generate an event record that must return NotFound
+    /// If code starts with 905 it will generate an event record that must return Error
     /// </summary>
     /// <param name="checkData"></param>
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData)
     {
         string eligibilityCode = checkData.EligibilityCode;
-        bool isEligible = !isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix);
-        bool isInGracePeriod = !isInGracePeriodPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isInGracePeriodPrefix);
-        bool isNotYetEligible = !isNotYetEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isNotYetEligiblePrefix);
-        bool isExpired = !isExpiredPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isExpiredPrefix);
-        DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-        
-        //If not matching a test data sceenario return null = notFound
-        if (!isEligible && !isInGracePeriod && !isExpired && !isNotYetEligible)
-        {
-            return null;
-        }
 
-        //Parse dat offsets from eligibility code
+        // Parse date offsets from eligibility code
         int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
         int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
         int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
 
-        //Apply date offsets based on scenari type
-        if (isEligible)
+        // Apply date offsets based on scenario type
+        if (!isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix))
         {
             wfEvent.ValidityStartDate = DateTime.Today.AddDays(-vsdOffset);
             wfEvent.ValidityEndDate = DateTime.Today.AddDays(vedOffset);
             wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
         }
-        else if (isInGracePeriod)
+        else if (!isInGracePeriodPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isInGracePeriodPrefix))
         {
             wfEvent.ValidityEndDate = DateTime.Today.AddDays(-vedOffset);
             wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
             wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(gpedOffset);
         }
-        else if (isExpired)
-        {
-            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-gpedOffset);
-            wfEvent.ValidityEndDate = wfEvent.GracePeriodEndDate.AddDays(-vedOffset);
-            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
-        }
-        else if (isNotYetEligible)
+        else if (!isNotYetEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isNotYetEligiblePrefix))
         {
             wfEvent.ValidityStartDate = DateTime.Today.AddDays(vsdOffset);
             wfEvent.ValidityEndDate = wfEvent.ValidityStartDate.AddDays(vedOffset);
             wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
         }
+        else if (!isExpiredPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isExpiredPrefix))
+        {
+            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-gpedOffset);
+            wfEvent.ValidityEndDate = wfEvent.GracePeriodEndDate.AddDays(-vedOffset);
+            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
+        }
+        else
+        {
+            // If not matching a test data sceenario return null = notFound
+            return wfEvent;
+        }
         
+        // Populate the rest of the test record
         wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
         wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
         wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
@@ -241,6 +238,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         return wfEvent;
     }
+
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
