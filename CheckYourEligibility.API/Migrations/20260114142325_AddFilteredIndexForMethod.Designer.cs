@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260114142325_AddFilteredIndexForMethod")]
+    partial class AddFilteredIndexForMethod
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -198,7 +201,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasKey("AuditID");
 
                     b.HasIndex(new[] { "Method" }, "idx_Method")
-                        .HasFilter("[Method] = 'POST' AND [Type] = 'Check'");
+                        .HasFilter("[Method] = 'POST'");
 
                     b.HasIndex(new[] { "TypeID" }, "idx_TypeId");
 
@@ -330,8 +333,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex("BulkCheckID");
 
                     b.HasIndex("EligibilityCheckHashID");
-
-                    b.HasIndex("Type");
 
                     b.ToTable("EligibilityCheck", (string)null);
                 });

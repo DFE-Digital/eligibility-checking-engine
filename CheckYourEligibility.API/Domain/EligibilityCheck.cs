@@ -3,6 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Domain;
 
@@ -10,6 +11,7 @@ namespace CheckYourEligibility.API.Domain;
 /// Represents an individual eligibility check
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
+[Index(nameof(Type))]
 public class EligibilityCheck
 {
     /// <summary>
