@@ -40,6 +40,11 @@ public class CheckingEngineGateway : ICheckingEngine
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
 
+    private readonly string isEligiblePrefix;
+    private readonly string isInGracePeriodPrefix;
+    private readonly string isNotYetEligiblePrefix;
+    private readonly string isExpiredPrefix;
+
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway)
     {
@@ -49,6 +54,11 @@ public class CheckingEngineGateway : ICheckingEngine
         _dwpAdapter = dwpAdapter;
         _hashGateway = hashGateway;
         _configuration = configuration;
+
+        isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
+        isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
+        isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
+        isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:IsExpired");
     }
 
     public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
@@ -180,35 +190,55 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData)
     {
         string eligibilityCode = checkData.EligibilityCode;
-        var prefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
-        bool isEligiblePrefix = !prefix.IsNullOrEmpty() && eligibilityCode.StartsWith(prefix);
+        bool isEligible = !isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix);
+        bool isInGracePeriod = !isInGracePeriodPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isInGracePeriodPrefix);
+        bool isNotYetEligible = !isNotYetEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isNotYetEligiblePrefix);
+        bool isExpired = !isExpiredPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isExpiredPrefix);
         DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-        //TODO: split eligibilitycode into substring representing the increments of VSD VED GPED
-        //Allow the substring to inform the today.AddDays()
-        //Set the DSVD to the same as the VSD
-        //E.g. 90010203000 would represent an eligible code with a (D)VSD 10 days prior, a VSD 20 days later, and a GPED 30 days later
-        //TODO: Check that this formatting aligns with how it is structured in ECS
-        //Need a way to indicate whether it should be in GP?
-        if (isEligiblePrefix)
+        
+        //If not matching a test data sceenario return null = notFound
+        if (!isEligible && !isInGracePeriod && !isExpired && !isNotYetEligible)
         {
-            int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
-            int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
-            int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
+            return null;
+        }
 
+        //Parse dat offsets from eligibility code
+        int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
+        int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
+        int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
 
-            wfEvent.ValidityStartDate = today.AddDays(-vsdOffset);
-            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-vsdOffset);
-            wfEvent.ValidityEndDate = today.AddDays(vedOffset);
+        //Apply date offsets based on scenari type
+        if (isEligible)
+        {
+            wfEvent.ValidityStartDate = DateTime.Today.AddDays(-vsdOffset);
+            wfEvent.ValidityEndDate = DateTime.Today.AddDays(vedOffset);
             wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
-            wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
-            wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
-            wfEvent.EligibilityCode = eligibilityCode;
         }
-        else
+        else if (isInGracePeriod)
         {
-            wfEvent = null;
+            wfEvent.ValidityEndDate = DateTime.Today.AddDays(-vedOffset);
+            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
+            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(gpedOffset);
         }
+        else if (isExpired)
+        {
+            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-gpedOffset);
+            wfEvent.ValidityEndDate = wfEvent.GracePeriodEndDate.AddDays(-vedOffset);
+            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
+        }
+        else if (isNotYetEligible)
+        {
+            wfEvent.ValidityStartDate = DateTime.Today.AddDays(vsdOffset);
+            wfEvent.ValidityEndDate = wfEvent.ValidityStartDate.AddDays(vedOffset);
+            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
+        }
+        
+        wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
+        wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
+        wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
+        wfEvent.EligibilityCode = eligibilityCode;
+
         return wfEvent;
     }
     /// <summary>
