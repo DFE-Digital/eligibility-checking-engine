@@ -2,6 +2,8 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Text;
@@ -31,6 +33,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
         IProcessEligibilityCheckUseCase processEligibilityCheckUseCase)
     {
         _storageQueueGateway = storageQueueGateway;
+        _logger = logger;
         _processEligibilityCheckUseCase = processEligibilityCheckUseCase;
         _logger = logger;
     }
@@ -56,8 +59,9 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                 var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                 try
                 {
-                    await _processEligibilityCheckUseCase.Execute(checkData.Guid);
-
+                 
+                   await _processEligibilityCheckUseCase.Execute(checkData.Guid);
+                         
                     i++;
 
                     Console.WriteLine(

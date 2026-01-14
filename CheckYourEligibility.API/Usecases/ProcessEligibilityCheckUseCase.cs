@@ -2,6 +2,8 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -22,13 +24,17 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly ICheckingEngine _checkingEngineGateway;
+    private readonly IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
+
     private readonly ILogger<ProcessEligibilityCheckUseCase> _logger;
 
     public ProcessEligibilityCheckUseCase(
         ICheckingEngine checkingEngineGateway,
         IAudit auditGateway,
-        ILogger<ProcessEligibilityCheckUseCase> logger)
+        ILogger<ProcessEligibilityCheckUseCase> logger,
+       IDbContextFactory<EligibilityCheckContext> dbContextFactory)
     {
+        _dbContextFactory   = dbContextFactory;
         _checkingEngineGateway = checkingEngineGateway;
         _auditGateway = auditGateway;
         _logger = logger;
@@ -40,8 +46,15 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
 
         try
         {
+            CheckEligibilityStatus? response = null;
             var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-            var response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate);
+
+            using (var dbContext = _dbContextFactory.CreateDbContext())
+            {
+                // pass dbContext
+                response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate);
+                await _auditGateway.CreateAuditEntry(AuditType.Check, guid);
+            }
 
             if (response == null)
             {
@@ -50,7 +63,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                 throw new NotFoundException(guid);
             }
 
-            await _auditGateway.CreateAuditEntry(AuditType.Check, guid);
+      
 
             _logger.LogInformation(
                 $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {response.Value}");

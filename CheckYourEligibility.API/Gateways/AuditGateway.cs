@@ -23,14 +23,20 @@ public class AuditGateway : IAudit
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<string> AuditAdd(AuditData data)
+    public async Task<string> AuditAdd(AuditData data, EligibilityCheckContext? dbContextFactory = null)
     {
         try
         {
             var item = _mapper.Map<Audit>(data);
             item.AuditID = Guid.NewGuid().ToString();
             item.TimeStamp = DateTime.UtcNow;
+            
+            if (dbContextFactory != null) { 
 
+              await dbContextFactory.Audits.AddAsync(item);
+              await dbContextFactory.SaveChangesAsync();
+              
+            }
             await _db.Audits.AddAsync(item);
             await _db.SaveChangesAsync();
 
@@ -97,7 +103,7 @@ public class AuditGateway : IAudit
         }
     }
 
-    public async Task<string> CreateAuditEntry(AuditType type, string id)
+    public async Task<string> CreateAuditEntry(AuditType type, string id, EligibilityCheckContext? dbContextFactory = null)
     {
         try
         {
@@ -111,7 +117,7 @@ public class AuditGateway : IAudit
             }
 
             // Add it to the database
-            return await AuditAdd(auditData);
+            return await AuditAdd(auditData, dbContextFactory);
         }
         catch (Exception ex)
         {
@@ -120,4 +126,5 @@ public class AuditGateway : IAudit
             return string.Empty;
         }
     }
+
 }
