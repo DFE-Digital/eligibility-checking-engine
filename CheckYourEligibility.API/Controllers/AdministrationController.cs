@@ -204,7 +204,7 @@ public class AdministrationController : BaseController
     /// </summary>
     /// <param name="file"></param>
     /// <returns></returns>
-    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(UpdateEstablishmentsPrivateBetaResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("multipart/form-data")]
     [HttpPost("/admin/update-establishments-private-beta")]
@@ -213,9 +213,8 @@ public class AdministrationController : BaseController
     {
         try
         {
-            await _updateEstablishmentsPrivateBetaUseCase.Execute(file);
-            return new ObjectResult(new MessageResponse
-                    { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
+            var result = await _updateEstablishmentsPrivateBetaUseCase.Execute(file);
+            return new ObjectResult(result)
                 { StatusCode = StatusCodes.Status200OK };
         }
         catch (InvalidDataException ex)

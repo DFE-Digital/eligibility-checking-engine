@@ -1,4 +1,5 @@
 using System.Globalization;
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.CsvImport;
@@ -11,7 +12,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IUpdateEstablishmentsPrivateBetaUseCase
 {
-    Task Execute(IFormFile file);
+    Task<UpdateEstablishmentsPrivateBetaResponse> Execute(IFormFile file);
 }
 
 public class UpdateEstablishmentsPrivateBetaUseCase : IUpdateEstablishmentsPrivateBetaUseCase
@@ -28,7 +29,7 @@ public class UpdateEstablishmentsPrivateBetaUseCase : IUpdateEstablishmentsPriva
         _logger = logger;
     }
 
-    public async Task Execute(IFormFile file)
+    public async Task<UpdateEstablishmentsPrivateBetaResponse> Execute(IFormFile file)
     {
         List<EstablishmentPrivateBetaRow> dataLoad;
         if (file == null || file.ContentType.ToLower() != "text/csv")
@@ -57,7 +58,19 @@ public class UpdateEstablishmentsPrivateBetaUseCase : IUpdateEstablishmentsPriva
                 $"{file.FileName} - {JsonConvert.SerializeObject(new EstablishmentPrivateBetaRow())} :- {ex.Message}, {ex.InnerException?.Message}");
         }
 
-        await _gateway.UpdateEstablishmentsPrivateBeta(dataLoad);
+        var notFoundIds = await _gateway.UpdateEstablishmentsPrivateBeta(dataLoad);
         await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
+
+        var totalRecords = dataLoad.Count;
+        var updatedCount = totalRecords - notFoundIds.Count;
+
+        return new UpdateEstablishmentsPrivateBetaResponse
+        {
+            Message = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}",
+            TotalRecords = totalRecords,
+            UpdatedCount = updatedCount,
+            NotFoundCount = notFoundIds.Count,
+            NotFoundEstablishmentIds = notFoundIds
+        };
     }
 }

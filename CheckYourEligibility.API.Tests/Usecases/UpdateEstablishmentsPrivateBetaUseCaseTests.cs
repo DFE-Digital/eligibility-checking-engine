@@ -1,4 +1,5 @@
 using AutoFixture;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.CsvImport;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -55,15 +56,54 @@ public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase.TestBase
         fileMock.Setup(f => f.Length).Returns(ms.Length);
         fileMock.Setup(f => f.ContentType).Returns("text/csv");
 
-        _mockGateway.Setup(s => s.UpdateEstablishmentsPrivateBeta(It.IsAny<List<EstablishmentPrivateBetaRow>>())).Returns(Task.CompletedTask);
+        _mockGateway.Setup(s => s.UpdateEstablishmentsPrivateBeta(It.IsAny<List<EstablishmentPrivateBetaRow>>()))
+            .ReturnsAsync(new List<int>());
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(fileMock.Object);
+        var result = await _sut.Execute(fileMock.Object);
 
         // Assert
         _mockGateway.Verify(s => s.UpdateEstablishmentsPrivateBeta(It.IsAny<List<EstablishmentPrivateBetaRow>>()), Times.Once);
+        result.TotalRecords.Should().Be(2);
+        result.UpdatedCount.Should().Be(2);
+        result.NotFoundCount.Should().Be(0);
+        result.NotFoundEstablishmentIds.Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task Execute_Should_Return_NotFoundIds_When_Establishments_Do_Not_Exist()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        var content = ValidCsvContent;
+        var fileName = "test.csv";
+        var ms = new MemoryStream();
+        var writer = new StreamWriter(ms);
+        writer.Write(content);
+        writer.Flush();
+        ms.Position = 0;
+        fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
+        fileMock.Setup(f => f.FileName).Returns(fileName);
+        fileMock.Setup(f => f.Length).Returns(ms.Length);
+        fileMock.Setup(f => f.ContentType).Returns("text/csv");
+
+        var notFoundIds = new List<int> { 100718 };
+        _mockGateway.Setup(s => s.UpdateEstablishmentsPrivateBeta(It.IsAny<List<EstablishmentPrivateBetaRow>>()))
+            .ReturnsAsync(notFoundIds);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        // Act
+        var result = await _sut.Execute(fileMock.Object);
+
+        // Assert
+        result.TotalRecords.Should().Be(2);
+        result.UpdatedCount.Should().Be(1);
+        result.NotFoundCount.Should().Be(1);
+        result.NotFoundEstablishmentIds.Should().ContainSingle().Which.Should().Be(100718);
+        result.Message.Should().Contain(Admin.EstablishmentPrivateBetaUpdated);
     }
 
     [Test]
@@ -86,7 +126,7 @@ public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase.TestBase
         List<EstablishmentPrivateBetaRow> capturedData = null;
         _mockGateway.Setup(s => s.UpdateEstablishmentsPrivateBeta(It.IsAny<List<EstablishmentPrivateBetaRow>>()))
             .Callback<IEnumerable<EstablishmentPrivateBetaRow>>(data => capturedData = data.ToList())
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new List<int>());
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
             .ReturnsAsync(_fixture.Create<string>());
 

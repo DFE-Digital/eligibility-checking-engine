@@ -13,5 +13,5 @@ public interface IAdministration
     Task ImportHMRCData(IEnumerable<FreeSchoolMealsHMRC> data);
     Task ImportHomeOfficeData(IEnumerable<FreeSchoolMealsHO> data);
     Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data);
-    Task UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data);
+    Task<List<int>> UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data);
 }

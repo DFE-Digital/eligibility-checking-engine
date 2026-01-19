@@ -302,8 +302,6 @@ public class AdministrationControllerTests : TestBase.TestBase
     public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status200OK()
     {
         // Arrange
-        _mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
-
         var content = "EstablishmentId,InPrivateBeta\n100718,true\n142364,false";
         var fileName = "test.csv";
         var stream = new MemoryStream();
@@ -317,15 +315,71 @@ public class AdministrationControllerTests : TestBase.TestBase
             Headers = new HeaderDictionary(),
             ContentType = "text/csv"
         };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
-                { StatusCode = StatusCodes.Status200OK };
+
+        var useCaseResponse = new UpdateEstablishmentsPrivateBetaResponse
+        {
+            Message = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}",
+            TotalRecords = 2,
+            UpdatedCount = 2,
+            NotFoundCount = 0,
+            NotFoundEstablishmentIds = new List<int>()
+        };
+
+        _mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>()))
+            .ReturnsAsync(useCaseResponse);
+
+        var expectedResult = new ObjectResult(useCaseResponse)
+            { StatusCode = StatusCodes.Status200OK };
 
         // Act
         var response = await _sut.UpdateEstablishmentsPrivateBeta(file);
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_NotFoundIds_In_Response()
+    {
+        // Arrange
+        var content = "EstablishmentId,InPrivateBeta\n100718,true\n999999,false";
+        var fileName = "test.csv";
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(content);
+        writer.Flush();
+        stream.Position = 0;
+
+        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/csv"
+        };
+
+        var useCaseResponse = new UpdateEstablishmentsPrivateBetaResponse
+        {
+            Message = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}",
+            TotalRecords = 2,
+            UpdatedCount = 1,
+            NotFoundCount = 1,
+            NotFoundEstablishmentIds = new List<int> { 999999 }
+        };
+
+        _mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>()))
+            .ReturnsAsync(useCaseResponse);
+
+        // Act
+        var response = await _sut.UpdateEstablishmentsPrivateBeta(file);
+
+        // Assert
+        var objectResult = response as ObjectResult;
+        objectResult.Should().NotBeNull();
+        objectResult!.StatusCode.Should().Be(StatusCodes.Status200OK);
+        
+        var resultValue = objectResult.Value as UpdateEstablishmentsPrivateBetaResponse;
+        resultValue.Should().NotBeNull();
+        resultValue!.NotFoundCount.Should().Be(1);
+        resultValue.NotFoundEstablishmentIds.Should().Contain(999999);
     }
 
     [Test]
