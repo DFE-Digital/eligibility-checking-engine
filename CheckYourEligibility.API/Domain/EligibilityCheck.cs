@@ -11,7 +11,6 @@ namespace CheckYourEligibility.API.Domain;
 /// Represents an individual eligibility check
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Data Model.")]
-[Index(nameof(Type))]
 public class EligibilityCheck
 {
     /// <summary>
