@@ -1,6 +1,8 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -75,8 +77,8 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                     Status = response.Value.ToString()
                 }
             };
-
-            if (response.Value == CheckEligibilityStatus.queuedForProcessing)
+            // When status is Queued For Processing, i.e. not error
+               if (response.Value == CheckEligibilityStatus.queuedForProcessing)
                 throw new ApplicationException("Eligibility check still queued for processing.");
 
             return resultResponse;
