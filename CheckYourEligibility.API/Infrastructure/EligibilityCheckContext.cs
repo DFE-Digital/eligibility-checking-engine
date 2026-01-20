@@ -18,7 +18,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         if (EF.IsDesignTime)
         {
-            optionsBuilder.UseSqlServer(opt => opt.CommandTimeout(600));
+            optionsBuilder.UseSqlServer(opt => opt.CommandTimeout(3600));
         }
         base.OnConfiguring(optionsBuilder);
     }
@@ -187,6 +187,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<Audit>()
             .HasIndex(a => a.TypeID, "idx_TypeId");
+
+        modelBuilder.Entity<Audit>()
+            .HasIndex(a => a.Method, "idx_Method")
+            .HasFilter("[Method] = 'POST' AND [Type] = 'Check'"); 
 
         modelBuilder.Entity<EligibilityCheckHash>()
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
