@@ -6,7 +6,7 @@ public class FosterCarer
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public int FosterCarerId { get; set; }
+    public Guid FosterCarerId { get; set; }
     [Column(TypeName = "varchar(100)")] public string FirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string LastName { get; set; }
     public DateOnly DateOfBirth { get; set; }
@@ -18,12 +18,12 @@ public class FosterCarer
     public DateOnly? PartnerDateOfBirth { get; set; }
     [Column(TypeName = "varchar(50)")] public string? PartnerNationalInsuranceNumber { get; set; }
 
- 
+
     /// <summary>
     /// The Local Authority ID that this foster carer is registered with
     /// </summary>
     public int? LocalAuthorityID { get; set; }
-    
+
     /// <summary>
     /// Navigation property to the Local Authority
     /// </summary>

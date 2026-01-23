@@ -156,7 +156,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .WithMany()
             .HasForeignKey(b => b.LocalAuthorityID)
             .IsRequired(false);
-       
+
 
         // EligibilityCheck to BulkCheck relationship
         modelBuilder.Entity<EligibilityCheck>()
@@ -201,5 +201,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
 
+        modelBuilder.Entity<FosterChild>()
+            .HasOne(fc => fc.FosterCarer)
+            .WithOne(c => c.FosterChild)
+            .HasForeignKey<FosterChild>(fc => fc.FosterCarerId)
+            .IsRequired();
     }
 }
