@@ -61,6 +61,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
         if (retrievedItemsFromQueue.Count() > 0) {
 
             var tasks = retrievedItemsFromQueue.Select(async item =>
+            
             {
 
                 sw.Restart();
@@ -122,7 +123,11 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                     }
                 }
 
-            });
+                _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
+            }
+            
+            );
+
             await Task.WhenAll(tasks);
 
             st.Stop();

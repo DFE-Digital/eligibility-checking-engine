@@ -49,13 +49,13 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         try
         {
             CheckEligibilityStatus? response = null;
-            var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-
+      
             using (var dbContext = _dbContextFactory.CreateDbContext())
             {
                 // pass dbContext
+                var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
                 response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate);
-                await _auditGateway.CreateAuditEntry(AuditType.Check, guid);
+                await _auditGateway.CreateAuditEntry(AuditType.Check, guid, dbContext);
             }
 
             if (response == null)
@@ -65,7 +65,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                 throw new NotFoundException(guid);
             }
 
-      
+        
 
             _logger.LogInformation(
                 $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {response.Value}");

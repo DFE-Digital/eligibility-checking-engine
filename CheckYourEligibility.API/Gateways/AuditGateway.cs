@@ -3,6 +3,8 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -30,15 +32,16 @@ public class AuditGateway : IAudit
             var item = _mapper.Map<Audit>(data);
             item.AuditID = Guid.NewGuid().ToString();
             item.TimeStamp = DateTime.UtcNow;
-            
-            if (dbContextFactory != null) { 
 
-              await dbContextFactory.Audits.AddAsync(item);
-              await dbContextFactory.SaveChangesAsync();
-              
+            var context = dbContextFactory ?? _db;
+
+            await context.Audits.AddAsync(item);
+
+            // Temp logs - delete later
+            if (dbContextFactory != null) {
+                Console.WriteLine(dbContextFactory.ChangeTracker.DebugView.LongView);
             }
-            await _db.Audits.AddAsync(item);
-            await _db.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             return item.AuditID;
         }
