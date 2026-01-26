@@ -3,6 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Domain;
 

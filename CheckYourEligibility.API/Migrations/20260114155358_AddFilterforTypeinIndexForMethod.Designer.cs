@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260114155358_AddFilterforTypeinIndexForMethod")]
+    partial class AddFilterforTypeinIndexForMethod
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -616,103 +619,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("WorkingFamiliesEvents");
                 });
 
-            modelBuilder.Entity("FosterCarer", b =>
-                {
-                    b.Property<int>("FosterCarerId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("HasPartner")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int?>("LocalAuthorityID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NationalInsuranceNumber")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<DateOnly?>("PartnerDateOfBirth")
-                        .HasColumnType("date");
-
-                    b.Property<string>("PartnerFirstName")
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PartnerLastName")
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PartnerNationalInsuranceNumber")
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("FosterCarerId");
-
-                    b.HasIndex("LocalAuthorityID");
-
-                    b.ToTable("FosterCarers");
-                });
-
-            modelBuilder.Entity("FosterChild", b =>
-                {
-                    b.Property<int>("FosterChildId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("FosterCarerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PostCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateOnly>("SubmissionDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("ValidityEndDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly>("ValidityStartDate")
-                        .HasColumnType("date");
-
-                    b.HasKey("FosterChildId");
-
-                    b.HasIndex("FosterCarerId")
-                        .IsUnique();
-
-                    b.ToTable("FosterChildren");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
@@ -815,26 +721,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("MultiAcademyTrust");
                 });
 
-            modelBuilder.Entity("FosterCarer", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
-                        .WithMany()
-                        .HasForeignKey("LocalAuthorityID");
-
-                    b.Navigation("LocalAuthority");
-                });
-
-            modelBuilder.Entity("FosterChild", b =>
-                {
-                    b.HasOne("FosterCarer", "FosterCarer")
-                        .WithOne("FosterChild")
-                        .HasForeignKey("FosterChild", "FosterCarerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FosterCarer");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.Navigation("Evidence");
@@ -850,11 +736,6 @@ namespace CheckYourEligibility.API.Migrations
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
                 {
                     b.Navigation("MultiAcademyTrustEstablishments");
-                });
-
-            modelBuilder.Entity("FosterCarer", b =>
-                {
-                    b.Navigation("FosterChild");
                 });
 #pragma warning restore 612, 618
         }
