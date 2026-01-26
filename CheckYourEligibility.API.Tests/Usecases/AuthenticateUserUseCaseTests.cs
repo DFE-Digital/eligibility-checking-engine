@@ -61,7 +61,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -153,7 +153,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -161,7 +161,7 @@ public class AuthenticateUserUseCaseTests
 
         // Assert
         result.Should().NotBeNull();
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Client, login.client_id), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null), Times.Once);
     }
 
     [Test]
@@ -175,7 +175,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -226,7 +226,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -269,7 +269,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -307,7 +307,7 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

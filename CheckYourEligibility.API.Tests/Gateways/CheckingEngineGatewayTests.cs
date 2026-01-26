@@ -163,7 +163,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -198,7 +198,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -226,7 +226,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -266,7 +266,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((capiResult, string.Empty));
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -294,7 +294,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -322,7 +322,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Pending - Keep checking" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -349,7 +349,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Manual process" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -378,7 +378,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -407,7 +407,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(value: null);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -437,7 +437,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -468,7 +468,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((result, string.Empty));
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -499,7 +499,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync((result, string.Empty));
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -532,7 +532,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(),It.IsAny<string>()))
             .ReturnsAsync((result, string.Empty));
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -563,7 +563,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
         var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -586,7 +586,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -614,7 +614,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             DateOfBirth = DateTime.ParseExact(fsm.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
@@ -653,7 +653,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -690,7 +690,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             DateOfBirth = DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -721,7 +721,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             DateOfBirth = DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
         _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -766,7 +766,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -816,7 +816,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -853,7 +853,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
@@ -886,7 +886,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         // Act
         var response = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
@@ -921,7 +921,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "", ValidityEndDate = DateTime.Today.AddDays(-1).ToString(), ValidityStartDate = DateTime.Today.AddDays(-2).ToString(), GracePeriodEndDate = DateTime.Today.AddDays(1).ToString() };
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -959,7 +959,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
@@ -1013,7 +1013,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         reconfirmedEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-10);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(reconfirmedEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
@@ -1067,7 +1067,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         reconfirmedEvent.DiscretionaryValidityStartDate = DateTime.Today.AddDays(-10);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(reconfirmedEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act
@@ -1148,7 +1148,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(prevReconfirmedEvent);
 
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
 
         // Act

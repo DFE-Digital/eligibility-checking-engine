@@ -91,7 +91,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id, null))
             .ReturnsAsync(_fixture.Create<string>()); // Act
         // The factory will convert any model to the correct type based on routeType
         // So this test should actually succeed now
@@ -132,7 +132,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .ReturnsAsync(responseData);
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id))
+            .Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -188,7 +188,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -219,7 +219,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -251,7 +251,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>()))
             .ReturnsAsync(responseData);
 
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -280,7 +280,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .WithMessage("Eligibility check not completed successfully.");
 
         // Verify audit service was not called
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(),null), Times.Never);
     }
 
     private CheckEligibilityRequest<CheckEligibilityRequestData> CreateValidCheckRequest()

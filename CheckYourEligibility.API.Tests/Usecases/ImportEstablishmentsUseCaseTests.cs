@@ -55,7 +55,7 @@ public class ImportEstablishmentsUseCaseTests : TestBase.TestBase
         fileMock.Setup(f => f.ContentType).Returns("text/csv");
 
         _mockGateway.Setup(s => s.ImportEstablishments(It.IsAny<List<EstablishmentRow>>())).Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

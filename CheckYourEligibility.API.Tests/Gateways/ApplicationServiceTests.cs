@@ -571,7 +571,7 @@ public class ApplicationServiceTests : TestBase.TestBase
     private async Task AddHash(CheckProcessData request,
         CheckEligibilityStatus status = CheckEligibilityStatus.eligible)
     {
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(),null)).ReturnsAsync("");
 
         var processItem = new CheckProcessData
         {

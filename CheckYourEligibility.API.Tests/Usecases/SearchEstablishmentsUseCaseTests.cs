@@ -39,7 +39,7 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
         string mat = null;
         var establishments = _fixture.CreateMany<Establishment>().ToList();
         _mockEstablishmentSearchGateway.Setup(es => es.Search(query, la, mat)).ReturnsAsync(establishments);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -59,7 +59,7 @@ public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
         var establishments = new List<Establishment>();
 
         _mockEstablishmentSearchGateway.Setup(es => es.Search(query, la, mat)).ReturnsAsync(establishments);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Establishment, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
 

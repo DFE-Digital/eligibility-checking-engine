@@ -35,7 +35,7 @@ public class CleanUpRateLimitEventsChecksUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(s => s.CleanUpRateLimitEvents()).Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

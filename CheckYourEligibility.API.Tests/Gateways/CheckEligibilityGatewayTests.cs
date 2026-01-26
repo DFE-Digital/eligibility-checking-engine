@@ -135,7 +135,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
             .ReturnsAsync((result, string.Empty));
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         //

@@ -88,7 +88,7 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         var request = _fixture.Create<EligibilityStatusUpdateRequest>();
 
         _mockCheckGateway
-            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data))
+            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null))
             .ReturnsAsync((CheckEligibilityStatusResponse)null);
 
         // Act
@@ -107,11 +107,11 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         var responseData = _fixture.Create<CheckEligibilityStatusResponse>();
 
         _mockCheckGateway
-            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data))
+            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null))
             .ReturnsAsync(responseData);
 
 
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(guid, request);
@@ -129,16 +129,16 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         var responseData = _fixture.Create<CheckEligibilityStatusResponse>();
 
         _mockCheckGateway
-            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data))
+            .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null))
             .ReturnsAsync(responseData);
 
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid)).ReturnsAsync(_fixture.Create<string>());
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
 
 
         // Act
         await _sut.Execute(guid, request);
 
         // Assert
-        _mockCheckGateway.Verify(s => s.UpdateEligibilityCheckStatus(guid, request.Data), Times.Once);
+        _mockCheckGateway.Verify(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null), Times.Once);
     }
 }

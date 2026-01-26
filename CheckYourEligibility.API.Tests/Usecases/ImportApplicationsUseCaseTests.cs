@@ -118,7 +118,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -169,7 +169,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -265,7 +265,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -319,7 +319,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x =>
                 x.BulkImportApplications(It.Is<IEnumerable<Application>>(apps => apps.Count() == 2)))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -379,7 +379,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -434,7 +434,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -471,11 +471,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
 
         // Setup audit mock - won't actually be called, but need to set it up for teardown
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Override verification for this test
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
 
         // Act
         var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
@@ -518,11 +518,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
 
         // Setup audit mock - won't actually be called, but need to set it up for teardown
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Override verification for this test
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
 
         // Act
         var result = await _sut.Execute(request, allowedLocalAuthorityIDs); // Assert
@@ -605,14 +605,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .ThrowsAsync(new Exception("Database error"));
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
         var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
 
         // Don't verify audit as it won't be called on exception
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null), Times.Never);
 
         // Assert
         result.Should().NotBeNull();
@@ -683,7 +683,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -747,7 +747,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -791,7 +791,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Callback<IEnumerable<Application>>(apps => capturedApplication = apps.First())
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -910,7 +910,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -984,7 +984,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1058,7 +1058,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1136,7 +1136,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x =>
                 x.BulkImportApplications(It.Is<IEnumerable<Application>>(apps => apps.Count() == 2)))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1234,7 +1234,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1328,7 +1328,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1403,11 +1403,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
 
         // Setup audit mock - won't actually be called, but need to set it up for teardown
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Override verification for this test
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
 
         // Act
         var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
@@ -1461,14 +1461,14 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .ThrowsAsync(new Exception("Database error"));
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
         var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
 
         // Don't verify audit as it won't be called on exception
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null), Times.Never);
 
         // Assert
         result.Should().NotBeNull();
@@ -1588,7 +1588,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1642,7 +1642,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
             .Callback<IEnumerable<Application>>(apps => capturedApplication = apps.First())
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Act
@@ -1693,11 +1693,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
 
         // Setup audit mock - won't actually be called, but need to set it up for teardown
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Override verification for this test
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
 
         // Act
         var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
@@ -1755,11 +1755,11 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(establishmentLookup);
 
         // Setup audit mock - won't actually be called, but need to set it up for teardown
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
         // Override verification for this test
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
 
         // Act
         var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);

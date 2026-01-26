@@ -58,7 +58,7 @@ public class HashGatewayTests : TestBase.TestBase
     public async Task Given_validRequest_Create_Exists_Should_Return_Hash()
     {
         // Arrange
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
@@ -78,7 +78,7 @@ public class HashGatewayTests : TestBase.TestBase
     public async Task Given_validRequest_Create_Exists_Should_Return_Hash_WorkingFamilies()
     {
         // Arrange
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         var wf = _fixture.Create<CheckEligibilityRequestData>();
         wf.DateOfBirth = "1990-01-01";
         wf.Type = CheckEligibilityType.WorkingFamilies;
@@ -99,7 +99,7 @@ public class HashGatewayTests : TestBase.TestBase
     public async Task Given_HashIsOld_Exists_Should_Return_null()
     {
         // Arrange
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
@@ -123,7 +123,7 @@ public class HashGatewayTests : TestBase.TestBase
     public async Task Given_WorkingFamilies_HashIsOld_Exists_Should_Return_null()
     {
         // Arrange
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>())).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
         var wf = _fixture.Create<CheckEligibilityRequestData>();
         wf.DateOfBirth = "1990-01-01";
         wf.Type = CheckEligibilityType.WorkingFamilies;
