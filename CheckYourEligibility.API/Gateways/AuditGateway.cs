@@ -25,7 +25,7 @@ public class AuditGateway : IAudit
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<string> AuditAdd(AuditData data, EligibilityCheckContext? dbContextFactory = null)
+    public async Task<string> AuditAdd(AuditData data, IEligibilityCheckContext? dbContextFactory = null)
     {
         try
         {
@@ -38,9 +38,9 @@ public class AuditGateway : IAudit
             await context.Audits.AddAsync(item);
 
             // Temp logs - delete later
-            if (dbContextFactory != null) {
-                Console.WriteLine(dbContextFactory.ChangeTracker.DebugView.LongView);
-            }
+            //if (dbContextFactory != null) {
+            //    Console.WriteLine(dbContextFactory.ChangeTracker.DebugView.LongView);
+            //}
             await context.SaveChangesAsync();
 
             return item.AuditID;
@@ -106,7 +106,7 @@ public class AuditGateway : IAudit
         }
     }
 
-    public async Task<string> CreateAuditEntry(AuditType type, string id, EligibilityCheckContext? dbContextFactory = null)
+    public async Task<string> CreateAuditEntry(AuditType type, string id, IEligibilityCheckContext? dbContextFactory = null)
     {
         try
         {

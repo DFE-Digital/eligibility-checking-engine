@@ -210,14 +210,15 @@ public class CheckEligibilityGateway : ICheckEligibility
     }
 
     public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,
-        EligibilityCheckStatusData data)
+        EligibilityCheckStatusData data, EligibilityCheckContext? dbContextFactory = null)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.Status != CheckEligibilityStatus.deleted);
+        var context = dbContextFactory ?? _db;
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.Status != CheckEligibilityStatus.deleted);
         if (result != null)
         {
             result.Status = data.Status;
             result.Updated = DateTime.UtcNow;
-            var updates = await _db.SaveChangesAsync();
+            var updates = await context.SaveChangesAsync();
             return new CheckEligibilityStatusResponse { Data = new StatusValue { Status = result.Status.ToString() } };
         }
 

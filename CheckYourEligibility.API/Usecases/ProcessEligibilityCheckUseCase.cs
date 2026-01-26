@@ -1,11 +1,7 @@
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -19,30 +15,26 @@ public interface IProcessEligibilityCheckUseCase
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
     /// <returns>Processed eligibility check status</returns>
-    Task<CheckEligibilityStatusResponse> Execute(string guid);
+    Task<CheckEligibilityStatusResponse> Execute(string guid, IEligibilityCheckContext? dbContextFactory = null);
 }
 
 public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly ICheckingEngine _checkingEngineGateway;
-    private readonly IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
-
     private readonly ILogger<ProcessEligibilityCheckUseCase> _logger;
 
     public ProcessEligibilityCheckUseCase(
         ICheckingEngine checkingEngineGateway,
         IAudit auditGateway,
-        ILogger<ProcessEligibilityCheckUseCase> logger,
-       IDbContextFactory<EligibilityCheckContext> dbContextFactory)
+        ILogger<ProcessEligibilityCheckUseCase> logger)
     {
-        _dbContextFactory   = dbContextFactory;
         _checkingEngineGateway = checkingEngineGateway;
         _auditGateway = auditGateway;
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityStatusResponse> Execute(string guid)
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, IEligibilityCheckContext? dbContextFactory = null)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
@@ -50,14 +42,11 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         {
             CheckEligibilityStatus? response = null;
       
-            using (var dbContext = _dbContextFactory.CreateDbContext())
-            {
                 // pass dbContext
                 var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-                response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate);
-                await _auditGateway.CreateAuditEntry(AuditType.Check, guid, dbContext);
-            }
-
+                response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate, dbContextFactory);
+                await _auditGateway.CreateAuditEntry(AuditType.Check, guid, dbContextFactory);
+            
             if (response == null)
             {
                 _logger.LogWarning(

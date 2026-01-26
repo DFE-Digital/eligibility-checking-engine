@@ -7,7 +7,7 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface IAudit
 {
-    Task<string> AuditAdd(AuditData auditData, EligibilityCheckContext? dbContextFactory = null);
+    Task<string> AuditAdd(AuditData auditData, IEligibilityCheckContext? dbContextFactory = null);
     AuditData? AuditDataGet(AuditType type, string id);
-    Task<string> CreateAuditEntry(AuditType type, string id, EligibilityCheckContext? dbContextFactory = null);
+    Task<string> CreateAuditEntry(AuditType type, string id, IEligibilityCheckContext? dbContextFactory = null);
 }

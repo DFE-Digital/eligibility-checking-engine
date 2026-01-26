@@ -1,14 +1,9 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Newtonsoft.Json;
-using System;
 using System.Diagnostics;
 using System.Text;
 
@@ -33,16 +28,18 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
     private readonly IStorageQueue _storageQueueGateway;
     private readonly IProcessEligibilityCheckUseCase _processEligibilityCheckUseCase;
     private ICheckEligibility _checkEligibilityGateway;
+    private IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
     private readonly ILogger<ProcessEligibilityBulkCheckUseCase> _logger;
 
     public ProcessEligibilityBulkCheckUseCase(IStorageQueue storageQueueGateway, ILogger<ProcessEligibilityBulkCheckUseCase> logger,
-        IProcessEligibilityCheckUseCase processEligibilityCheckUseCase, IConfiguration configuration, ICheckEligibility checkEligibilityGateway)
+        IProcessEligibilityCheckUseCase processEligibilityCheckUseCase, IConfiguration configuration, ICheckEligibility checkEligibilityGateway,
+        IDbContextFactory<EligibilityCheckContext> dbContextFactory)
     {
+        _dbContextFactory = dbContextFactory;
         _configuration = configuration;
         _storageQueueGateway = storageQueueGateway;
         _logger = logger;
         _processEligibilityCheckUseCase = processEligibilityCheckUseCase;
-        _logger = logger;
         _checkEligibilityGateway = checkEligibilityGateway;
     }
 
@@ -68,42 +65,47 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                 var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                 try
                 {
-                 
-                   var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid);
-                         
-                    i++;
+                    using (var dbContext = _dbContextFactory.CreateDbContext()) {
 
-                    Console.WriteLine(
-                    $"Item_No....{i} \n" +
-                    $"Process_Time....{sw.ElapsedMilliseconds:N0} ms \n" +
-                    $"Time_Elapsed....{st.ElapsedMilliseconds:N0} ms");
+                        var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid , dbContext);
 
-                    _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
+                        i++;
 
-                    if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
-                    {
-                        //If we've tried more than retry limit
-                        if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                        Console.WriteLine(
+                        $"Item_No....{i} \n" +
+                        $"Process_Time....{sw.ElapsedMilliseconds:N0} ms \n" +
+                        $"Time_Elapsed....{st.ElapsedMilliseconds:N0} ms");
+
+                        _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
+
+                        if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
                         {
-                            //Delete message and update status to error
-                            await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
-                                new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
+                            //If we've tried more than retry limit
+                            if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                            {
+                                //Delete message and update status to error
+                                await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
+                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
 
-                            await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                                await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+
+                                await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error deleting queue item");
+                            }
+
+
                         }
                     }
-                    else {
-                        try {
-
-                            await _storageQueueGateway.DeleteMessageAsync(item, queueName);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error deleting queue item");
-                        }
-                       
-
-                    }
+                        
                 }
 
                 catch (Exception ex)
