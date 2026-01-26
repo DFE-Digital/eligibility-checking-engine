@@ -65,6 +65,69 @@ public class MappingProfile : Profile
             .ReverseMap();
 
 
+        CreateMap<FosterFamilyRequestData, FosterCarer>()
+            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.CarerFirstName))
+            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.CarerLastName))
+            .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.CarerDateOfBirth))
+            .ForMember(dest => dest.NationalInsuranceNumber, opt => opt.MapFrom(src => src.CarerNationalInsuranceNumber))
+
+            .ForMember(dest => dest.HasPartner, opt => opt.MapFrom(src => src.HasPartner))
+            .ForMember(dest => dest.PartnerFirstName, opt => opt.MapFrom(src => src.PartnerFirstName))
+            .ForMember(dest => dest.PartnerLastName, opt => opt.MapFrom(src => src.PartnerLastName))
+            .ForMember(dest => dest.PartnerDateOfBirth, opt => opt.MapFrom(src => src.PartnerDateOfBirth))
+            .ForMember(dest => dest.PartnerNationalInsuranceNumber, opt => opt.MapFrom(src => src.PartnerNationalInsuranceNumber))
+
+            .ForPath(dest => dest.FosterChild.FirstName, opt => opt.MapFrom(src => src.ChildFirstName))
+            .ForPath(dest => dest.FosterChild.LastName, opt => opt.MapFrom(src => src.ChildLastName))
+            .ForPath(dest => dest.FosterChild.DateOfBirth, opt => opt.MapFrom(src => src.ChildDateOfBirth))
+            .ForPath(dest => dest.FosterChild.PostCode, opt => opt.MapFrom(src => src.ChildPostCode))
+
+            .ForPath(dest => dest.FosterChild.SubmissionDate,
+                opt => opt.MapFrom(src => src.SubmissionDate == default
+                    ? DateOnly.FromDateTime(DateTime.UtcNow)
+                    : src.SubmissionDate))
+
+            .ForPath(dest => dest.FosterChild.ValidityStartDate,
+                opt => opt.MapFrom(src => src.SubmissionDate == default
+                    ? DateOnly.FromDateTime(DateTime.UtcNow)
+                    : src.SubmissionDate))
+
+            .ForPath(dest => dest.FosterChild.ValidityEndDate,
+                opt => opt.MapFrom(src => (src.SubmissionDate == default
+                    ? DateOnly.FromDateTime(DateTime.UtcNow)
+                    : src.SubmissionDate).AddMonths(3)))
+
+            .ForMember(dest => dest.Created, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.Updated, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForPath(dest => dest.FosterChild.Created, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForPath(dest => dest.FosterChild.Updated, opt => opt.MapFrom(src => DateTime.UtcNow))
+
+            .ReverseMap();
+
+        CreateMap<FosterCarer, FosterFamilyResponse>()
+            .ForMember(dest => dest.FosterCarerId, opt => opt.MapFrom(src => src.FosterCarerId))
+            .ForMember(dest => dest.CarerFirstName, opt => opt.MapFrom(src => src.FirstName))
+            .ForMember(dest => dest.CarerLastName, opt => opt.MapFrom(src => src.LastName))
+            .ForMember(dest => dest.CarerDateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+            .ForMember(dest => dest.CarerNationalInsuranceNumber, opt => opt.MapFrom(src => src.NationalInsuranceNumber))
+
+            .ForMember(dest => dest.HasPartner, opt => opt.MapFrom(src => src.HasPartner))
+            .ForMember(dest => dest.PartnerFirstName, opt => opt.MapFrom(src => src.PartnerFirstName))
+            .ForMember(dest => dest.PartnerLastName, opt => opt.MapFrom(src => src.PartnerLastName))
+            .ForMember(dest => dest.PartnerDateOfBirth, opt => opt.MapFrom(src => src.PartnerDateOfBirth))
+            .ForMember(dest => dest.PartnerNationalInsuranceNumber, opt => opt.MapFrom(src => src.PartnerNationalInsuranceNumber))
+
+            .ForMember(dest => dest.ChildFirstName, opt => opt.MapFrom(src => src.FosterChild.FirstName))
+            .ForMember(dest => dest.ChildLastName, opt => opt.MapFrom(src => src.FosterChild.LastName))
+            .ForMember(dest => dest.ChildDateOfBirth, opt => opt.MapFrom(src => src.FosterChild.DateOfBirth))
+            .ForMember(dest => dest.ChildPostCode, opt => opt.MapFrom(src => src.FosterChild.PostCode))
+
+            .ForMember(dest => dest.SubmissionDate, opt => opt.MapFrom(src => src.FosterChild.SubmissionDate))
+            .ForMember(dest => dest.ValidityStartDate, opt => opt.MapFrom(src => src.FosterChild.ValidityStartDate))
+            .ForMember(dest => dest.ValidityEndDate, opt => opt.MapFrom(src => src.FosterChild.ValidityEndDate))
+            .ReverseMap();
+
+
         CreateMap<User, UserData>()
             .ReverseMap();
 

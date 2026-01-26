@@ -1,5 +1,6 @@
 ﻿using CheckYourEligibility.API.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 public interface IEligibilityCheckContext
 {
@@ -23,6 +24,8 @@ public interface IEligibilityCheckContext
     DbSet<FosterChild> FosterChildren { get; set; }
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data);
     Task<int> SaveChangesAsync();
+    DatabaseFacade Database { get; } 
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     int SaveChanges();
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
     void BulkInsert_Applications(IEnumerable<Application> data);

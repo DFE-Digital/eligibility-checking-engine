@@ -5,7 +5,7 @@ public class FosterChild
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public int FosterChildId { get; set; }
+    public Guid FosterChildId { get; set; }
 
     [Column(TypeName = "varchar(100)")] public string FirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string LastName { get; set; }
@@ -19,6 +19,6 @@ public class FosterChild
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
-    public int FosterCarerId { get; set; }
+    public Guid FosterCarerId { get; set; }
     public FosterCarer FosterCarer { get; set; } = null!;
 }
