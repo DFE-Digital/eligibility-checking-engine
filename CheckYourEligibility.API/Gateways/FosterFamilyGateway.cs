@@ -1,5 +1,6 @@
 using AutoMapper;
-using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 public class FosterFamilyGateway : IFosterFamily
 {
@@ -17,7 +18,6 @@ public class FosterFamilyGateway : IFosterFamily
         _db = db;
         _logger = logger;
     }
-
 
     public async Task<FosterFamilyResponse> PostFosterFamily(FosterFamilyRequestData data, CancellationToken cancellationToken = default)
     {
@@ -62,4 +62,30 @@ public class FosterFamilyGateway : IFosterFamily
         }
     }
 
+    public async Task<FosterFamilyResponse?> GetFosterFamily(string guid)
+    {
+
+        try
+        {
+            var query = await _db.FosterCarers
+           .AsNoTracking()
+           .Where(fc => fc.FosterCarerId.ToString() == guid)
+           .Include(fc => fc.FosterChild)
+           .FirstOrDefaultAsync();
+
+            if (query != null)
+            {
+                FosterFamilyResponse response = _mapper.Map<FosterFamilyResponse>(query);
+                return response;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving foster family with GUID: -", guid);
+            throw new NotFoundException($"Unable to find foster family: - {guid}, {ex.Message}");
+        }
+
+
+        return null;
+    }
 }

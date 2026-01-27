@@ -17,18 +17,22 @@ public class FosterFamilyController : BaseController
 {
     private readonly ILogger<FosterFamilyController> _logger;
     private readonly ICreateFosterFamilyUseCase _createFosterFamilyUseCase;
+    private readonly IGetFosterFamilyUseCase _getFosterFamilyUseCase;
     private readonly string _localAuthorityScopeName;
 
     public FosterFamilyController(
         ILogger<FosterFamilyController> logger,
         ICreateFosterFamilyUseCase createFosterFamilyUseCase,
+        IGetFosterFamilyUseCase getFosterFamilyUseCase,
         IAudit audit,
         IConfiguration configuration
-    )  : base(audit)
+    ) : base(audit)
     {
         _logger = logger;
         _createFosterFamilyUseCase = createFosterFamilyUseCase;
+        _getFosterFamilyUseCase = getFosterFamilyUseCase;
         _localAuthorityScopeName = _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
+        
     }
 
     /// <summary>
@@ -69,6 +73,50 @@ public class FosterFamilyController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster family");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+    }
+
+    /// <summary>
+    ///     Gets an foster family by guid
+    /// </summary>
+    /// <param name="guid"></param>
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/foster-family/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
+    public async Task<ActionResult> FosterFamily(string guid)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var response = await _getFosterFamilyUseCase.Execute(guid);
+
+            if (response == null) return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found", Detail = $"foster family with guid {guid} not found" }] });
+
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Error finding foster family for guid {guid?.Replace(Environment.NewLine, "")}");
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }

@@ -163,6 +163,7 @@ builder.Services.AddScoped<IImportWfHMRCDataUseCase, ImportWfHMRCDataUseCase>();
 builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
 builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
+builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>();
