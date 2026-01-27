@@ -1,3 +1,4 @@
+using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -19,6 +20,7 @@ public class FosterFamilyControllerTests : TestBase.TestBase
     //private new Fixture _fixture = null!; // Added 'new' keyword
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamilyUseCase = null!;
+    private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamilyUseCase = null!;
     private ILogger<FosterFamilyController> _mockLogger = null!;
     private FosterFamilyController _sut = null!;
     private FosterFamilyRequest fosterFamilyRequest = null!;
@@ -28,6 +30,7 @@ public class FosterFamilyControllerTests : TestBase.TestBase
     public void Setup()
     {
         _mockCreateFosterFamilyUseCase = new Mock<ICreateFosterFamilyUseCase>(MockBehavior.Strict);
+        _mockGetFosterFamilyUseCase = new Mock<IGetFosterFamilyUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<FosterFamilyController>>();
         //_fixture = new Fixture(); // Ensure _fixture is initialized
@@ -65,6 +68,7 @@ public class FosterFamilyControllerTests : TestBase.TestBase
         _sut = new FosterFamilyController(
             _mockLogger,
             _mockCreateFosterFamilyUseCase.Object,
+            _mockGetFosterFamilyUseCase.Object,
             _mockAuditGateway.Object,
             _configuration
             );
@@ -76,6 +80,8 @@ public class FosterFamilyControllerTests : TestBase.TestBase
         _mockCreateFosterFamilyUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
+
+    #region Post Foster Family
 
     [Test]
     public async Task FosterFamily_ShouldReturnCreatedResponse201_WhenUseCaseSucceeds()
@@ -155,8 +161,122 @@ public class FosterFamilyControllerTests : TestBase.TestBase
         var actionResult = await _sut.FosterFamily(new FosterFamilyRequest()); // Empty request to trigger validation errors 
 
         // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();  
+        actionResult.Should().BeOfType<BadRequestObjectResult>();
     }
+
+    #endregion
+
+    #region Get Foster Family
+    
+    [Test]
+    public async Task FosterFamily_Get_ShouldReturnNotFound_WhenFosterFamilyDoesNotExist()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+
+        _mockGetFosterFamilyUseCase
+            .Setup(uc => uc.Execute("1234"))
+            .ReturnsAsync((FosterFamilyResponse?)null);
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var actionResult = await _sut.FosterFamily("1234");
+
+        // Assert
+        actionResult.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task FosterFamily_Get_ShouldReturnOk_WhenFosterFamilyExists()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+        var expectedResponse = fosterFamilyRequest.Data;
+
+        _mockGetFosterFamilyUseCase
+            .Setup(uc => uc.Execute("1234"))
+            .ReturnsAsync(new FosterFamilyResponse
+            {
+                FosterCarerId = Guid.NewGuid(),
+                CarerFirstName = expectedResponse.CarerFirstName,
+                CarerLastName = expectedResponse.CarerLastName,
+                CarerDateOfBirth = expectedResponse.CarerDateOfBirth,
+                CarerNationalInsuranceNumber = expectedResponse.CarerNationalInsuranceNumber,
+                HasPartner = expectedResponse.HasPartner,
+                PartnerFirstName = expectedResponse.PartnerFirstName,
+                PartnerLastName = expectedResponse.PartnerLastName,
+                PartnerDateOfBirth = expectedResponse.PartnerDateOfBirth,
+                PartnerNationalInsuranceNumber = expectedResponse.PartnerNationalInsuranceNumber,
+                ChildFirstName = expectedResponse.ChildFirstName,
+                ChildLastName = expectedResponse.ChildLastName,
+                ChildDateOfBirth = expectedResponse.ChildDateOfBirth,
+                ChildPostCode = expectedResponse.ChildPostCode,
+                SubmissionDate = expectedResponse.SubmissionDate
+            });
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var actionResult = await _sut.FosterFamily("1234");
+
+
+        // Assert type and status code
+        actionResult.Should().BeOfType<ObjectResult>();
+        var objectResult = actionResult as ObjectResult;
+        objectResult!.StatusCode.Should().Be(StatusCodes.Status200OK);
+
+        // Assert payload
+        objectResult.Value.Should().BeEquivalentTo(expectedResponse);
+
+    }
+
+    [Test]
+    public async Task FosterFamily_Get_ShouldReturnBadRequest_WhenNoLocalAuthorityScopeFound()
+    {
+        // Arrange
+
+        // Setup controller without local authority scope
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var actionResult = await _sut.FosterFamily("1234");
+
+        // Assert
+        actionResult.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)actionResult;
+
+        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = (ErrorResponse)badRequestResult.Value;
+
+        errorResponse.Errors.Should().ContainSingle()
+            .Which.Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task FosterFamily_Get_ShouldReturnBadRequest_WhenExceptionThrown()
+    {
+        // Arrange
+        var localAuthorityIds = new List<int> { 1 };
+
+        _mockGetFosterFamilyUseCase
+            .Setup(uc => uc.Execute("1234"))
+            .ThrowsAsync(new Exception("Unexpected error"));
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        // Act
+        var actionResult = await _sut.FosterFamily("1234");
+
+        // Assert type and status code
+        actionResult.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)actionResult;
+
+        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
+        var errorResponse = (ErrorResponse)badRequestResult.Value;
+    }
+
+    #endregion
 
     private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
     {

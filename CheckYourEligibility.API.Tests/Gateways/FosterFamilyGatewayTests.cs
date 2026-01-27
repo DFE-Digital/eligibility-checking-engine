@@ -1,15 +1,17 @@
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NUnit.Framework.Internal;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
 [TestFixture]
-public class CreateApplicationUseCaseTests
+public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
 {
     private new Fixture _fixture = null!;
     private Mock<ILogger<FosterFamilyGateway>> _mockLogger = null!;
@@ -99,8 +101,53 @@ public class CreateApplicationUseCaseTests
         Assert.That(ex!.Message, Is.EqualTo("Mapping to FosterCarer returned null."));
     }
 
+    #endregion
 
+    #region Get Foster Family
 
+    [Test]
+    public async Task GetFosterFamily_ExistingId_ReturnsFosterFamilyResponse()
+    {
+        // Arrange
+        var fosterCarer = new FosterCarer
+        {
+            FosterCarerId = Guid.NewGuid(),
+            FirstName = "John",
+            LastName = "Doe",
+            DateOfBirth = new DateOnly(1980, 5, 15),
+            NationalInsuranceNumber = "AB123456C",
+            HasPartner = false,
+            FosterChild = new FosterChild
+            {
+                FirstName = "Emily",
+                LastName = "Doe",
+                DateOfBirth = new DateOnly(2015, 3, 10),
+                PostCode = "SW1A 1AA"
+            },
+            Created = DateTime.UtcNow,
+            Updated = DateTime.UtcNow
+        };
+
+        _dbContext.FosterCarers.Add(fosterCarer);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var actionResult = await _sut.GetFosterFamily(fosterCarer.FosterCarerId.ToString());
+
+        // Assert
+        Assert.That(actionResult, Is.TypeOf<FosterFamilyResponse>());
+
+    }
+
+    [Test]
+    public async Task GetFosterFamily_NonExistingId_ReturnsNull()
+    {
+        // Act
+        var actionResult = await _sut.GetFosterFamily(Guid.NewGuid().ToString());
+
+        // Assert
+        Assert.That(actionResult, Is.Null);
+    }
 
     #endregion
 }
