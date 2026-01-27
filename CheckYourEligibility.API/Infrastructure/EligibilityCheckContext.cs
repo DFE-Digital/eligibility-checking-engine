@@ -101,9 +101,12 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         using var transaction = base.Database.BeginTransaction();
 
-        try
-        {
-            this.BulkInsertOrUpdate(data, config => config.BatchSize = 30000);
+        try {
+            this.BulkInsertOrUpdate(data, config => 
+            {
+                config.BatchSize = 30000;
+                config.PropertiesToExcludeOnUpdate = new List<string> { nameof(Establishment.InPrivateBeta) };
+            });
             transaction.Commit();
 
         }
