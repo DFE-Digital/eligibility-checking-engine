@@ -85,7 +85,6 @@ public class FosterFamilyGateway : IFosterFamily
             throw new NotFoundException($"Unable to find foster family: - {guid}, {ex.Message}");
         }
 
-
         return null;
     }
 }
