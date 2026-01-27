@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260113171958_Add_FosterCarer_LocalAuthority_FK")]
+    partial class Add_FosterCarer_LocalAuthority_FK
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,9 +199,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.HasKey("AuditID");
-
-                    b.HasIndex(new[] { "Method" }, "idx_Method")
-                        .HasFilter("[Method] = 'POST' AND [Type] = 'Check'");
 
                     b.HasIndex(new[] { "TypeID" }, "idx_TypeId");
 
@@ -618,8 +618,8 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("FosterCarer", b =>
                 {
-                    b.Property<Guid>("FosterCarerId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("FosterCarerId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -669,8 +669,8 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("FosterChild", b =>
                 {
-                    b.Property<Guid>("FosterChildId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("FosterChildId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -682,8 +682,8 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
-                    b.Property<Guid>("FosterCarerId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("FosterCarerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("LastName")
                         .IsRequired()
