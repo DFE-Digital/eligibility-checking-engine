@@ -6,6 +6,9 @@ parameters:
     type: string
   - name: displayName
     type: string
+  - name: dotnetEfVersion # Version of dotnet-ef tool to use
+    type: string
+    default: '8.0.4'
   
 stages:
   - stage: ${{ parameters.stageName }}
@@ -26,6 +29,7 @@ stages:
         inputs:
           command: 'restore'
           projects: '$(solution)'
+          verbosityRestore: 'Minimal'
 
       - task: CmdLine@2
         displayName: 'Build migrations bundle'
@@ -33,24 +37,26 @@ stages:
         inputs:
           script: |
             export PATH="$PATH:$HOME/.dotnet/tools"
-            dotnet tool install --global dotnet-ef --version 8.0.4
+            dotnet tool install --global dotnet-ef --version ${{ parameters.dotnetEfVersion }}
             dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
             mv efbundle $(Build.ArtifactStagingDirectory)
+          failOnStderr: true
 
       - task: DotNetCoreCLI@2
         displayName: 'Build solution'
         inputs:
           command: 'build'
           projects: '$(solution)'
-          arguments: '--configuration $(buildConfiguration)'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
 
       - task: DotNetCoreCLI@2
         displayName: 'Run tests'
         inputs:
           command: 'test'
           projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
-          arguments: '--configuration $(buildConfiguration)'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
           publishTestResults: true
+          testRunTitle: 'Unit Tests'
 
       - task: DotNetCoreCLI@2
         inputs:

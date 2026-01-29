@@ -52,11 +52,11 @@ stages:
       displayName: 'Deploy App Test'
       deploymentName: 'testdeploy'
       environment: 'TEST'
-      ECE_KEY_VAULT_NAME: $(kvTest)
-      azureSubscription: $(subscriptionTest)
-      azureResourceGroup: $(resourceGroupTest)
-      sqlServerName: $(sqlServerTest)
-      webAppName: $(webAppNameTest)
+      ECE_KEY_VAULT_NAME: '$(kvTest)'
+      azureSubscription: '$(subscriptionTest)'
+      azureResourceGroup: '$(resourceGroupTest)'
+      sqlServerName: '$(sqlServerTest)'
+      webAppName: '$(webAppNameTest)'
       prefix: 's203t01'
 ## -- test deploy -- ##
 
@@ -79,11 +79,11 @@ stages:
       displayName: 'Deploy App Pre-prod'
       deploymentName: 'ppdeploy'
       environment: 'PRE-PROD'
-      ECE_KEY_VAULT_NAME: $(kvPreProd)
-      azureSubscription: $(subscriptionPreProd)
-      azureResourceGroup: $(resourceGroupPreProd)
-      sqlServerName: $(sqlServerPreProd)
-      webAppName: $(webAppNamePreProd)
+      ECE_KEY_VAULT_NAME: '$(kvPreProd)'
+      azureSubscription: '$(subscriptionPreProd)'
+      azureResourceGroup: '$(resourceGroupPreProd)'
+      sqlServerName: '$(sqlServerPreProd)'
+      webAppName: '$(webAppNamePreProd)'
       prefix: 's203t02'
 ## -- pp deploy -- ##
 
@@ -106,10 +106,10 @@ stages:
       displayName: 'Deploy App Production'
       deploymentName: 'deploy'
       environment: 'PROD'
-      ECE_KEY_VAULT_NAME: $(kvProd)
-      azureSubscription: $(subscriptionProd)
-      azureResourceGroup: $(resourceGroupProd)
-      sqlServerName: $(sqlServerProd)
-      webAppName: $(webAppNameProd)
+      ECE_KEY_VAULT_NAME: '$(kvProd)'
+      azureSubscription: '$(subscriptionProd)'
+      azureResourceGroup: '$(resourceGroupProd)'
+      sqlServerName: '$(sqlServerProd)'
+      webAppName: '$(webAppNameProd)'
       prefix: 's203p01'
 ## -- prod deploy -- ##
