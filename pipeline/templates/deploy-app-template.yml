@@ -26,7 +26,7 @@ stages:
   - deployment: ${{ parameters.deploymentName }}
     displayName: ${{ parameters.displayName }}
     pool:
-      name: Azure Pipelines
+      name: ${{ parameters.prefix }}-ECE-managed-devops-pool
       vmImage: 'windows-latest'
     environment: ${{ parameters.environment }}
     strategy:
