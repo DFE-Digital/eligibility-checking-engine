@@ -49,7 +49,8 @@ stages:
         inputs:
           command: 'test'
           projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
-          arguments: '--configuration $(buildConfiguration) --logger "trx;LogFileName=TestResults.trx" --results-directory $(Build.ArtifactStagingDirectory)/Test/Results'
+          arguments: '--configuration $(buildConfiguration)'
+          publishTestResults: true
 
       - task: DotNetCoreCLI@2
         inputs:
