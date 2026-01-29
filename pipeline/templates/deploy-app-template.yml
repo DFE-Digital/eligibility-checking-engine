@@ -29,7 +29,7 @@ stages:
     displayName: ${{ parameters.displayName }}
     pool:
       name: ${{ parameters.prefix }}-ECE-managed-devops-pool
-      vmImage: 'windows-latest'
+      vmImage: 'ubuntu-latest'
     environment: ${{ parameters.environment }}
     strategy:
       runOnce:
@@ -48,10 +48,9 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                az sql server firewall-rule create -g ${{ parameters.azureResourceGroup }} --server ${{ parameters.sqlServerName }} --name ADO-Deploy --start-ip-address $(curl ipinfo.io/ip) --end-ip-address $(curl ipinfo.io/ip) &&\
-                cd D:/a/1/checkYourEligibilityAPI &&\
-                ./efbundle.exe &&\
-                az sql server firewall-rule delete -g ${{ parameters.azureResourceGroup }} --server ${{ parameters.sqlServerName }} --name ADO-Deploy
+                cd $(Pipeline.Workspace)/checkYourEligibilityAPI && \
+                chmod +x ./efbundle && \
+                ./efbundle
         
         deploy:
           steps:
