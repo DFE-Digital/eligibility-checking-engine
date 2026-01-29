@@ -11,6 +11,8 @@ parameters:
     type: string
   - name: cypressEnv
     type: string
+  - name: prefix
+    type: string
 
 stages:
 - stage: ${{ parameters.stageName }}
@@ -19,6 +21,7 @@ stages:
     - job: 'SetUpCypress'
       displayName: 'SetUpTestsDev'
       pool:
+        name: ${{ parameters.prefix }}-ECE-managed-devops-pool
         vmImage: ubuntu-latest
       steps:
         - task: Bash@3

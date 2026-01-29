@@ -42,6 +42,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_DEV)'
       jwtPassword: '$(JWT_PASSWORD_DEV)'
       cypressEnv: 'DEV'
+      prefix: 's203d01'
 ## -- dev cypress tests -- ##
 
 ## -- test deploy -- ##
@@ -68,6 +69,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_TEST)'
       jwtPassword: '$(JWT_PASSWORD_TEST)'
       cypressEnv: 'TEST'
+      prefix: 's203t01'
 ## -- test cypress tests -- ##
 
 ## -- pp deploy -- ##
@@ -94,6 +96,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_PP)'
       jwtPassword: '$(JWT_PASSWORD_PP)'
       cypressEnv: 'PP'
+      prefix: 's203t02'
 ## -- pp cypress tests -- ##
 
 ## -- prod deploy -- ##
