@@ -164,6 +164,7 @@ builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstabl
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
 builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
+builder.Services.AddScoped<IUpdateFosterFamilyUseCase, UpdateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>();

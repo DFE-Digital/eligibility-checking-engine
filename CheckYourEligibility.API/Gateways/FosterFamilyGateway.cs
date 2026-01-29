@@ -1,4 +1,5 @@
 using AutoMapper;
+
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,15 +41,17 @@ public class FosterFamilyGateway : IFosterFamily
 
         try
         {
-            await _db.FosterCarers.AddAsync(fosterCarer, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-
             var workingEvent =
-                WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(fosterCarer);
+               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(fosterCarer);
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
 
+            fosterCarer.FosterChild.EligibilityCode = workingEvent.EligibilityCode;
+
+            await _db.FosterCarers.AddAsync(fosterCarer, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        
             await tx.CommitAsync(cancellationToken);
 
             // Return response
@@ -87,4 +90,48 @@ public class FosterFamilyGateway : IFosterFamily
 
         return null;
     }
+
+    public async Task<FosterFamilyResponse> UpdateFosterFamily(string guid, FosterFamilyUpdateRequest data, CancellationToken cancellationToken = default)
+    {
+
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // find and map foster family, carer + child
+            var fosterFamily = await _db.FosterCarers
+                .Include(fc => fc.FosterChild)
+                .FirstOrDefaultAsync(fc => fc.FosterCarerId.ToString() == guid, cancellationToken);
+
+            if (fosterFamily is null)
+                throw new NotFoundException("Unable to find the foster family");
+
+            _mapper.Map(data, fosterFamily);
+
+            // find and map working family event
+            var workingFamiliesEvent = await _db.WorkingFamiliesEvents
+                .FirstOrDefaultAsync(
+                    wf => wf.EligibilityCode == fosterFamily.FosterChild!.EligibilityCode,
+                    cancellationToken);
+
+            if (workingFamiliesEvent is null)
+                throw new NotFoundException("Unable to find the working family event");
+
+            _mapper.Map(data, workingFamiliesEvent);
+
+            // Save all changes
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            return _mapper.Map<FosterFamilyResponse>(fosterFamily);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Error updating foster family with GUID: {Guid}", guid);
+            throw new NotFoundException($"Unable to update foster family: {guid}, {ex.Message}");
+        }
+    }
+
+
+
 }
