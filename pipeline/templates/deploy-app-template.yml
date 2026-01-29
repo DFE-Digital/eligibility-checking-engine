@@ -29,7 +29,6 @@ stages:
     displayName: ${{ parameters.displayName }}
     pool:
       name: ${{ parameters.prefix }}-ECE-managed-devops-pool
-      vmImage: 'ubuntu-latest'
     environment: ${{ parameters.environment }}
     strategy:
       runOnce:
