@@ -17,6 +17,8 @@ parameters:
     type: string
   - name: webAppName
     type: string
+  - name: prefix
+    type: string
 
   
 stages:
