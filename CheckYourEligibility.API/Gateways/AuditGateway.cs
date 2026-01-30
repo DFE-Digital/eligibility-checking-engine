@@ -25,7 +25,7 @@ public class AuditGateway : IAudit
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<string> AuditAdd(AuditData data, IEligibilityCheckContext? dbContextFactory = null)
+    public async Task<string> AuditAdd(AuditData data, EligibilityCheckContext dbContextFactory = null)
     {
         try
         {
@@ -106,7 +106,7 @@ public class AuditGateway : IAudit
         }
     }
 
-    public async Task<string> CreateAuditEntry(AuditType type, string id, IEligibilityCheckContext? dbContextFactory = null)
+    public async Task<string> CreateAuditEntry(AuditType type, string id, EligibilityCheckContext dbContextFactory = null)
     {
         try
         {

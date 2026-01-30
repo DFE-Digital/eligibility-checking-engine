@@ -42,7 +42,7 @@ public class CheckingEngineGateway : ICheckingEngine
         _configuration = configuration;
     }
 
-    public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate, IEligibilityCheckContext? dbContextFactory = null)
+    public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
@@ -120,7 +120,7 @@ public class CheckingEngineGateway : ICheckingEngine
     /// <param name="checkData"></param>
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
-        string eligibilityCode, string nino, string lastName, IEligibilityCheckContext? dbContextFactory = null )
+        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null )
     {
         //TODO: This should probably be its own adapter
         var context = dbContextFactory ?? _db ;
@@ -202,7 +202,7 @@ public class CheckingEngineGateway : ICheckingEngine
     /// </summary>
     /// <returns></returns>
     private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
-        EligibilityCheck? result, CheckProcessData checkData, IEligibilityCheckContext? dbContextFactory = null)
+        EligibilityCheck? result, CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         //TODO: This should be cleaned up
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
@@ -319,7 +319,7 @@ public class CheckingEngineGateway : ICheckingEngine
         return laId;
     }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
-        CheckProcessData checkData, IEligibilityCheckContext? dbContextFactory = null)
+        CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;

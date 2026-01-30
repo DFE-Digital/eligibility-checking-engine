@@ -20,15 +20,18 @@ public static class ProgramExtensions
     {
         var connectionString = configuration.GetValue<string>("ConnectionString");
 
+        services.AddDbContextFactory<EligibilityCheckContext>(options =>
+          options.UseSqlServer(
+              connectionString,
+              x => x.MigrationsAssembly("CheckYourEligibility.API")),lifetime: ServiceLifetime.Scoped);
+
         services.AddDbContext<IEligibilityCheckContext, EligibilityCheckContext>(options =>
             options.UseSqlServer(
                 connectionString,
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
+
         );
-        services.AddDbContextFactory<EligibilityCheckContext>(options =>
-            options.UseSqlServer(
-                connectionString,
-                x => x.MigrationsAssembly("CheckYourEligibility.API")));
+      
 
 
         return services;

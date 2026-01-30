@@ -15,7 +15,7 @@ public interface IProcessEligibilityCheckUseCase
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
     /// <returns>Processed eligibility check status</returns>
-    Task<CheckEligibilityStatusResponse> Execute(string guid, IEligibilityCheckContext? dbContextFactory = null);
+    Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null);
 }
 
 public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
@@ -34,7 +34,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityStatusResponse> Execute(string guid, IEligibilityCheckContext? dbContextFactory = null)
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 

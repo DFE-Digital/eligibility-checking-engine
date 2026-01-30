@@ -56,7 +56,7 @@ public class HashGateway : IHash
     /// <returns></returns>
     /// <remarks>NOTE there is no save, Context should be saved in calling service</remarks>
     public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome,
-        ProcessEligibilityCheckSource source, AuditData auditDataTemplate,IEligibilityCheckContext? dbContextFactory = null )
+        ProcessEligibilityCheckSource source, AuditData auditDataTemplate,EligibilityCheckContext dbContextFactory = null )
     {
         var hash = item.GetHash();
 
