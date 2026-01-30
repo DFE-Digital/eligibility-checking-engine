@@ -5,18 +5,14 @@ public static class WorkingFamiliesEventHelper
 {
     public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterCarer data)
     {
-        DateTime ValidatityStartDate = data.FosterChild!.ValidityStartDate.ToDateTime(TimeOnly.FromDateTime(DateTime.Now));
-        DateTime ValidityEndDate = DateTime.SpecifyKind(data.FosterChild!.ValidityEndDate.ToDateTime(TimeOnly.FromDateTime(DateTime.Now)), DateTimeKind.Local).AddMonths(3);
-        DateTime ChildDateOfBirth = data.FosterChild!.DateOfBirth.ToDateTime(TimeOnly.FromDateTime(DateTime.MinValue));
-        DateTime SubmissionDate = data.FosterChild!.SubmissionDate.ToDateTime(TimeOnly.FromDateTime(DateTime.MinValue));
 
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
 
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
-            ValidityStartDate = ValidatityStartDate,
-            ValidityEndDate = ValidityEndDate,
+            ValidityStartDate = data.FosterChild.ValidityStartDate,
+            ValidityEndDate = data.FosterChild.ValidityEndDate,
 
             ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
             ParentFirstName = data.FirstName,
@@ -28,11 +24,11 @@ public static class WorkingFamiliesEventHelper
             ChildFirstName = data.FosterChild.FirstName,
             ChildLastName = data.FosterChild.LastName,
             ChildPostCode = data.FosterChild.PostCode,
-            ChildDateOfBirth = ChildDateOfBirth,
-            SubmissionDate = SubmissionDate,
+            ChildDateOfBirth = data.FosterChild.DateOfBirth,
+            SubmissionDate = data.FosterChild.SubmissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(ValidatityStartDate, SubmissionDate),
-            GracePeriodEndDate = GetGracePeriodEndDate(ValidityEndDate)
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChild.ValidityStartDate, data.FosterChild.SubmissionDate),
+            GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChild.ValidityEndDate)
         };
 
         return wfEvent;

@@ -32,7 +32,7 @@ public class CreateFosterFamilyUseCaseTests
             {
                 CarerFirstName = "John",
                 CarerLastName = "Doe",
-                CarerDateOfBirth = new DateOnly(1980, 5, 15), // autofixture does not support DateOnly great
+                CarerDateOfBirth = new DateTime(1980, 5, 15), 
                 CarerNationalInsuranceNumber = "AB123456C",
                 HasPartner = false,
                 PartnerFirstName = null,
@@ -41,9 +41,9 @@ public class CreateFosterFamilyUseCaseTests
                 PartnerNationalInsuranceNumber = null,
                 ChildFirstName = "Emily",
                 ChildLastName = "Doe",
-                ChildDateOfBirth = new DateOnly(2015, 3, 10),
+                ChildDateOfBirth = new DateTime(2015, 3, 10),
                 ChildPostCode = "SW1A 1AA",
-                SubmissionDate = DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                SubmissionDate = DateTime.UtcNow.Date
             }
             
         };

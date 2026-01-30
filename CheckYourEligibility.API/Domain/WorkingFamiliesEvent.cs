@@ -7,6 +7,7 @@ namespace CheckYourEligibility.API.Domain;
 public class WorkingFamiliesEvent
 {
     public string WorkingFamiliesEventID { get; set; }
+    
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; }
     [Column(TypeName = "varchar(100)")] public string ChildFirstName { get; set; }
 

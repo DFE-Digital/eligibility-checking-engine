@@ -20,6 +20,8 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
 
     private FosterFamilyGateway _sut = null!;
     private FosterFamilyRequest _testFosterFamily = null!;
+    private FosterFamilyUpdateRequest _testFosterFamilyUpdateRequest = null!;
+    private string myGuid = null!;
 
     [SetUp]
     public void Setup()
@@ -33,7 +35,7 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
             {
                 CarerFirstName = "John",
                 CarerLastName = "Doe",
-                CarerDateOfBirth = new DateOnly(1980, 5, 15),
+                CarerDateOfBirth = new DateTime(1980, 5, 15),
                 CarerNationalInsuranceNumber = "AB123456C",
                 HasPartner = false,
                 PartnerFirstName = null,
@@ -42,11 +44,33 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
                 PartnerNationalInsuranceNumber = null,
                 ChildFirstName = "Emily",
                 ChildLastName = "Doe",
-                ChildDateOfBirth = new DateOnly(2015, 3, 10),
+                ChildDateOfBirth = new DateTime(2015, 3, 10),
                 ChildPostCode = "SW1A 1AA",
-                SubmissionDate = DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                SubmissionDate = DateTime.UtcNow
             }
         };
+
+        myGuid = "ee0e0128-9887-4482-8df4-7922b8c8f53a";
+        _testFosterFamilyUpdateRequest =
+                new FosterFamilyUpdateRequest
+                {
+                    CarerFirstName = "Sarah",
+                    CarerLastName = "Thompson",
+                    CarerDateOfBirth = new DateTime(1985, 4, 12),
+                    CarerNationalInsuranceNumber = "AB123456C",
+
+                    HasPartner = true,
+
+                    PartnerFirstName = "David",
+                    PartnerLastName = "Thompson",
+                    PartnerDateOfBirth = new DateTime(1983, 11, 2),
+                    PartnerNationalInsuranceNumber = "ZX987654A",
+
+                    ChildFirstName = "Emily",
+                    ChildLastName = "Thompson",
+                    ChildDateOfBirth = new DateTime(2015, 6, 21),
+                    ChildPostCode = "LS12 4AB"
+                };
 
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -114,15 +138,16 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
             FosterCarerId = Guid.NewGuid(),
             FirstName = "John",
             LastName = "Doe",
-            DateOfBirth = new DateOnly(1980, 5, 15),
+            DateOfBirth = new DateTime(2015, 12, 25),
             NationalInsuranceNumber = "AB123456C",
             HasPartner = false,
             FosterChild = new FosterChild
             {
                 FirstName = "Emily",
                 LastName = "Doe",
-                DateOfBirth = new DateOnly(2015, 3, 10),
-                PostCode = "SW1A 1AA"
+                DateOfBirth = new DateTime(2015, 3, 10),
+                PostCode = "SW1A 1AA",
+                EligibilityCode = "123456789"
             },
             Created = DateTime.UtcNow,
             Updated = DateTime.UtcNow
@@ -150,4 +175,5 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
     }
 
     #endregion
+
 }
