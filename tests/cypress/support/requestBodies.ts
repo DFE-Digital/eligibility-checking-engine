@@ -148,7 +148,7 @@ export function validWorkingFamiliesRequestBody() {
         data: {
              nationalInsuranceNumber: "BB123456D",
              dateOfBirth: "2022-06-07",
-             eligibilityCode: "90292385678",
+             eligibilityCode: "90992385678",
              lastName: "Smith"
         }
     }
