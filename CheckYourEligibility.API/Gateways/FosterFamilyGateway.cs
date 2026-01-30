@@ -65,6 +65,11 @@ public class FosterFamilyGateway : IFosterFamily
     public async Task<FosterFamilyResponse?> GetFosterFamily(string guid)
     {
 
+        var safeGuid = guid?
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty)
+            .Trim();
+
         try
         {
             var query = await _db.FosterCarers
@@ -81,7 +86,7 @@ public class FosterFamilyGateway : IFosterFamily
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving foster family with GUID: -", guid);
+            _logger.LogError(ex, "Error retrieving foster family with GUID: -", safeGuid);
             throw new NotFoundException($"Unable to find foster family: - {guid}, {ex.Message}");
         }
 
