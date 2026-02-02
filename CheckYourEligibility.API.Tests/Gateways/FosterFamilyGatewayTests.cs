@@ -11,7 +11,7 @@ using NUnit.Framework.Internal;
 namespace CheckYourEligibility.API.Tests.Gateways;
 
 [TestFixture]
-public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
+public class FosterFamilyGatewayTests : TestBase.TestBase
 {
     private new Fixture _fixture = null!;
     private Mock<ILogger<FosterFamilyGateway>> _mockLogger = null!;

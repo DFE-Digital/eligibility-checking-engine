@@ -7,7 +7,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class CreateFosterFamilyUseCaseTests
+public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
 {
      private Mock<IFosterFamily> _mockFosterFamilyGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;
