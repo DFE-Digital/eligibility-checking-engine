@@ -99,6 +99,11 @@ public class FosterFamilyGateway : IFosterFamily
     public async Task<FosterFamilyResponse> UpdateFosterFamily(string guid, FosterFamilyUpdateRequest data, CancellationToken cancellationToken = default)
     {
 
+        var safeGuid = guid?
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty)
+            .Trim();
+
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -132,7 +137,7 @@ public class FosterFamilyGateway : IFosterFamily
         catch (Exception ex)
         {
             await tx.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error updating foster family with GUID: {Guid}", guid);
+            _logger.LogError(ex, "Error updating foster family with GUID: {Guid}", safeGuid);
             throw new NotFoundException($"Unable to update foster family: {guid}, {ex.Message}");
         }
     }
