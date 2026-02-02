@@ -2,6 +2,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -51,31 +52,32 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             return new MessageResponse { Data = "Invalid Request." };
         }
 
-     var retrievedItemsFromQueue =  await _storageQueueGateway.ProcessQueueAsync(queueName);
+        var retrievedItemsFromQueue = await _storageQueueGateway.ProcessQueueAsync(queueName);
         var sw = Stopwatch.StartNew();
         var st = Stopwatch.StartNew();
-        int i = 0;
-        if (retrievedItemsFromQueue.Count() > 0) {
+        int i = 1;
+        if (retrievedItemsFromQueue.Count() > 0)
+        {
 
             var tasks = retrievedItemsFromQueue.Select(async item =>
-            
+
             {
-
-                sw.Restart();
-                var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
-                try
+                using (var dbContext = _dbContextFactory.CreateDbContext())
                 {
-                    using (var dbContext = _dbContextFactory.CreateDbContext()) {
+                    sw.Restart();
+                    var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
+                    try
+                    {
 
-                        var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid , dbContext);
+                        var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid, dbContext);
 
-                        i++;
-
-                        Console.WriteLine(
+                     
+                       _logger.LogDebug(
+                        $"TimesStamp: {DateTime.UtcNow}\n"+
                         $"Item_No....{i} \n" +
                         $"Process_Time....{sw.ElapsedMilliseconds:N0} ms \n" +
                         $"Time_Elapsed....{st.ElapsedMilliseconds:N0} ms");
-
+                        i++;
                         _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
 
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
@@ -85,7 +87,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                             {
                                 //Delete message and update status to error
                                 await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
-                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
+                                    new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, dbContext);
 
                                 await _storageQueueGateway.DeleteMessageAsync(item, queueName);
                             }
@@ -104,30 +106,32 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
 
                         }
+
+
                     }
-                        
+
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Queue processing");
+                        // If we've had exceptions on this item more than retry limit
+                        if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                        {
+                            await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
+                                new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, dbContext);
+                            await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                        }
+                        else
+                        {
+                            // update message invisibility by 5 seocnds
+                            await _storageQueueGateway.UpdateMessageAsync(item, queueName, 5);
+                        }
+                    }
+
+                    _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
                 }
 
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Queue processing");
-                    // If we've had exceptions on this item more than retry limit
-                    if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
-                    {
-                        await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
-                            new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error });
-                        await _storageQueueGateway.DeleteMessageAsync(item, queueName);
-                    }
-                    else
-                    {
-                        // update message invisibility by 5 seocnds
-                        await _storageQueueGateway.UpdateMessageAsync(item, queueName, 5);
-                    }
-                }
-
-                _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
             }
-            
+
             );
 
             await Task.WhenAll(tasks);
@@ -136,7 +140,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
             _logger.LogInformation(
                 $"Queue {queueName.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} processed successfully");
-        
+
 
         }
         return new MessageResponse { Data = "Queue Processed." };
