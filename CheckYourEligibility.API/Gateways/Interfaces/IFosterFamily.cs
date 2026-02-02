@@ -13,4 +13,12 @@ public interface IFosterFamily
     /// <param name="guid">Foster family GUID</param>
     /// <returns>Foster family response or null if not found</returns>
     Task<FosterFamilyResponse?> GetFosterFamily(string guid);
+
+    /// <summary>
+    /// Updates an Foster Family
+    /// </summary>
+    /// <param name="guid">Foster Carer GUID</param>
+    /// <param name="data">Update data</param>
+    /// <returns>Update response</returns>
+    Task<FosterFamilyResponse> UpdateFosterFamily(string guid, FosterFamilyUpdateRequest data, CancellationToken cancellationToken = default);
 }
