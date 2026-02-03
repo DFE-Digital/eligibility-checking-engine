@@ -31,6 +31,11 @@ public class CheckingEngineGateway : ICheckingEngine
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
 
+    private readonly string isEligiblePrefix;
+    private readonly string isInGracePeriodPrefix;
+    private readonly string isNotYetEligiblePrefix;
+    private readonly string isExpiredPrefix;
+
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway)
     {
@@ -40,6 +45,11 @@ public class CheckingEngineGateway : ICheckingEngine
         _dwpAdapter = dwpAdapter;
         _hashGateway = hashGateway;
         _configuration = configuration;
+
+        isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
+        isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
+        isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
+        isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
     }
 
     public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
@@ -52,8 +62,8 @@ public class CheckingEngineGateway : ICheckingEngine
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-            if (result.Status != CheckEligibilityStatus.queuedForProcessing)
-                return result.Status;
+            //if (result.Status != CheckEligibilityStatus.queuedForProcessing)
+            //    return result.Status;
             
             //TODO: This should live in the use case
             switch (result.Type)
@@ -163,35 +173,64 @@ public class CheckingEngineGateway : ICheckingEngine
     /// <summary>
     /// This method is used for generating test data in runtime
     /// If code starts with 900 it will generate an event record that must return Eligible
-    /// If code starts with 901 it will generate an event record that must return notEligible
-    /// If code starts with 902 it will generate an event record that must return NotFound
-    /// If code starts with 903 it will generate an event record that must return Error
+    /// If code starts with 901 it will generate an event record that must return Eligible in grace period
+    /// If code starts with 902 it will generate an event record that must return NotEligible as it has not reached VSD yet
+    /// If code starts with 903 it will generate an event record that must return NotEligible as the GPED has passed
+    /// If code starts with 904 it will generate an event record that must return NotFound
+    /// If code starts with 905 it will generate an event record that must return Error
     /// </summary>
     /// <param name="checkData"></param>
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData)
     {
         string eligibilityCode = checkData.EligibilityCode;
-        var prefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
-        bool isEligiblePrefix = !prefix.IsNullOrEmpty() && eligibilityCode.StartsWith(prefix);
-        DateTime today = DateTime.UtcNow;
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-        if (isEligiblePrefix)
+
+        // Parse date offsets from eligibility code
+        int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
+        int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
+        int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
+
+        // Apply date offsets based on scenario type
+        if (!isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix))
         {
-            wfEvent.ValidityStartDate = today.AddDays(-1);
-            wfEvent.DiscretionaryValidityStartDate = today.AddDays(-1);
-            wfEvent.ValidityEndDate = today.AddMonths(3);
-            wfEvent.GracePeriodEndDate = today.AddMonths(6);
-            wfEvent.SubmissionDate = new DateTime(today.Year, today.AddMonths(-1).Month, 25);
-            wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
-            wfEvent.EligibilityCode = eligibilityCode;
+            wfEvent.ValidityStartDate = DateTime.Today.AddDays(-vsdOffset);
+            wfEvent.ValidityEndDate = DateTime.Today.AddDays(vedOffset);
+            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
+        }
+        else if (!isInGracePeriodPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isInGracePeriodPrefix))
+        {
+            wfEvent.ValidityEndDate = DateTime.Today.AddDays(-vedOffset);
+            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
+            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(gpedOffset);
+        }
+        else if (!isNotYetEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isNotYetEligiblePrefix))
+        {
+            wfEvent.ValidityStartDate = DateTime.Today.AddDays(vsdOffset);
+            wfEvent.ValidityEndDate = wfEvent.ValidityStartDate.AddDays(vedOffset);
+            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
+        }
+        else if (!isExpiredPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isExpiredPrefix))
+        {
+            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-gpedOffset);
+            wfEvent.ValidityEndDate = wfEvent.GracePeriodEndDate.AddDays(-vedOffset);
+            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
         }
         else
         {
-            wfEvent = null;
+            // If not matching a test data sceenario return null = notFound
+            return wfEvent;
         }
+        
+        // Populate the rest of the test record
+        wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
+        wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
+        wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
+        wfEvent.EligibilityCode = eligibilityCode;
+
         return wfEvent;
     }
+
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
