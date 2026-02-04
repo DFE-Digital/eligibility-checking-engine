@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260122125226_recreate_foster_family_tables_with_guids")]
+    partial class recreate_foster_family_tables_with_guids
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,9 +199,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.HasKey("AuditID");
-
-                    b.HasIndex(new[] { "Method" }, "idx_Method")
-                        .HasFilter("[Method] = 'POST' AND [Type] = 'Check'");
 
                     b.HasIndex(new[] { "TypeID" }, "idx_TypeId");
 
@@ -613,8 +613,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("WorkingFamiliesEventID");
 
-                    b.HasIndex("EligibilityCode");
-
                     b.ToTable("WorkingFamiliesEvents");
                 });
 
@@ -626,8 +624,8 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -647,8 +645,8 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<DateTime?>("PartnerDateOfBirth")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly?>("PartnerDateOfBirth")
+                        .HasColumnType("date");
 
                     b.Property<string>("PartnerFirstName")
                         .HasColumnType("varchar(100)");
@@ -677,12 +675,8 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EligibilityCode")
-                        .IsRequired()
-                        .HasColumnType("nchar(11)");
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -699,21 +693,19 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("SubmissionDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("SubmissionDate")
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ValidityEndDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("ValidityEndDate")
+                        .HasColumnType("date");
 
-                    b.Property<DateTime>("ValidityStartDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("ValidityStartDate")
+                        .HasColumnType("date");
 
                     b.HasKey("FosterChildId");
-
-                    b.HasIndex("EligibilityCode");
 
                     b.HasIndex("FosterCarerId")
                         .IsUnique();

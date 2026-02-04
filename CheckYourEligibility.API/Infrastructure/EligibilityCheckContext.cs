@@ -40,11 +40,46 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Audit> Audits { get; set; }
-
+    public virtual DbSet<FosterCarer> FosterCarers { get; set; }
+    public virtual DbSet<FosterChild> FosterChildren { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
+        
         return base.SaveChangesAsync();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        StampAuditFields();   
+        return base.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Automatically sets audit fields for any entity implementing IAuditable.
+    /// - When an entity is Added: sets Created and Updated to the current UTC timestamp.
+    /// - When an entity is Modified: sets Updated to the current UTC timestamp.
+    /// - No timestamps are changed if the entity has no tracked modifications.
+    /// </summary>
+    private void StampAuditFields()
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<IAuditable>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.Created = now;
+                    entry.Entity.Updated = now;
+                    break;
+
+                case EntityState.Modified:
+                    // Only entities with actual property diffs get here
+                    entry.Entity.Updated = now;
+                    break;
+            }
+        }
     }
 
     public void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data)
@@ -77,7 +112,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         this.BulkInsert(data);
     }
-    public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data) {
+    public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data)
+    {
 
         using var transaction = base.Database.BeginTransaction();
         try
@@ -87,18 +123,21 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             transaction.Commit();
         }
 
-        catch (Exception ex) {
-       
+        catch (Exception ex)
+        {
+
             transaction.Rollback();
-        }        
+        }
 
     }
-    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data) {
+    public void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data)
+    {
 
         using var transaction = base.Database.BeginTransaction();
 
-        try {
-            this.BulkInsertOrUpdate(data, config => 
+        try
+        {
+            this.BulkInsertOrUpdate(data, config =>
             {
                 config.BatchSize = 30000;
                 config.PropertiesToExcludeOnUpdate = new List<string> { nameof(Establishment.InPrivateBeta) };
@@ -107,11 +146,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         }
         catch (Exception ex)
-        {          
+        {
             transaction.Rollback();
         }
-       
-        
+
+
     }
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
@@ -124,6 +163,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             transaction.Commit();
         }
     }
+
+
+
+    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -155,6 +198,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .WithMany()
             .HasForeignKey(b => b.LocalAuthorityID)
             .IsRequired(false);
+
 
         // EligibilityCheck to BulkCheck relationship
         modelBuilder.Entity<EligibilityCheck>()
@@ -195,12 +239,30 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<Audit>()
             .HasIndex(a => a.Method, "idx_Method")
-            .HasFilter("[Method] = 'POST' AND [Type] = 'Check'"); 
+            .HasFilter("[Method] = 'POST' AND [Type] = 'Check'");
 
         modelBuilder.Entity<EligibilityCheckHash>()
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
+
+        modelBuilder.Entity<FosterChild>()
+            .HasOne(fc => fc.FosterCarer)
+            .WithOne(c => c.FosterChild)
+            .HasForeignKey<FosterChild>(fc => fc.FosterCarerId)
+            .IsRequired();
+        
+        
+        modelBuilder.Entity<FosterChild>()
+            .HasIndex(fc => fc.EligibilityCode);
+       
+        modelBuilder.Entity<WorkingFamiliesEvent>()
+            .HasIndex(e => e.EligibilityCode);
+
+
+
     }
 }
+        
+        
