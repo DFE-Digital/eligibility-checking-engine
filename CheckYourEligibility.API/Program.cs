@@ -162,6 +162,9 @@ builder.Services.AddScoped<IImportFsmHMRCDataUseCase, ImportFsmHMRCDataUseCase>(
 builder.Services.AddScoped<IImportWfHMRCDataUseCase, ImportWfHMRCDataUseCase>();
 builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
+builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
+builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
+builder.Services.AddScoped<IUpdateFosterFamilyUseCase, UpdateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>();
@@ -188,7 +191,7 @@ builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEvent
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
 builder.Services.AddTransient<INotificationClient>(x =>
-    new NotificationClient(!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty()?builder.Configuration.GetValue<string>("Notify:Key"):"key"));
+    new NotificationClient(!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty() ? builder.Configuration.GetValue<string>("Notify:Key") : "key"));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });
