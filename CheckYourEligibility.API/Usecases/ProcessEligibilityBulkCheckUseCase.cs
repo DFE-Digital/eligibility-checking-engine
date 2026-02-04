@@ -72,7 +72,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                         var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid, dbContext);
 
                      
-                       _logger.LogDebug(
+                       _logger.LogInformation(
                         $"TimesStamp: {DateTime.UtcNow}\n"+
                         $"Item_No....{i} \n" +
                         $"Process_Time....{sw.ElapsedMilliseconds:N0} ms \n" +
