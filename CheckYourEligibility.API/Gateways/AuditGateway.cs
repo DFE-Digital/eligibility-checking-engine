@@ -3,6 +3,8 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -23,7 +25,7 @@ public class AuditGateway : IAudit
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<string> AuditAdd(AuditData data)
+    public async Task<string> AuditAdd(AuditData data, EligibilityCheckContext dbContextFactory = null)
     {
         try
         {
@@ -31,8 +33,15 @@ public class AuditGateway : IAudit
             item.AuditID = Guid.NewGuid().ToString();
             item.TimeStamp = DateTime.UtcNow;
 
-            await _db.Audits.AddAsync(item);
-            await _db.SaveChangesAsync();
+            var context = dbContextFactory ?? _db;
+
+            await context.Audits.AddAsync(item);
+
+            // Temp logs - delete later
+            //if (dbContextFactory != null) {
+            //    Console.WriteLine(dbContextFactory.ChangeTracker.DebugView.LongView);
+            //}
+            await context.SaveChangesAsync();
 
             return item.AuditID;
         }
@@ -97,7 +106,7 @@ public class AuditGateway : IAudit
         }
     }
 
-    public async Task<string> CreateAuditEntry(AuditType type, string id)
+    public async Task<string> CreateAuditEntry(AuditType type, string id, EligibilityCheckContext dbContextFactory = null)
     {
         try
         {
@@ -111,7 +120,7 @@ public class AuditGateway : IAudit
             }
 
             // Add it to the database
-            return await AuditAdd(auditData);
+            return await AuditAdd(auditData, dbContextFactory);
         }
         catch (Exception ex)
         {
@@ -120,4 +129,5 @@ public class AuditGateway : IAudit
             return string.Empty;
         }
     }
+
 }

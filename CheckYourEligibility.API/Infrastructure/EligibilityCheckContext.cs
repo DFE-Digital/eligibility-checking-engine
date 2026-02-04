@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using ApplicationStatus = CheckYourEligibility.API.Domain.ApplicationStatus;
 
 [ExcludeFromCodeCoverage(Justification = "framework")]

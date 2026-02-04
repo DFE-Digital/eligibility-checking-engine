@@ -83,8 +83,8 @@ public class StorageQueueGatewayTests : TestBase.TestBase
         _queueClientService = new Mock<QueueServiceClient>();
 
 
-        _sut = new StorageQueueGateway(new NullLoggerFactory(), _fakeInMemoryDb, _queueClientService.Object,
-            _configuration, _moqCheckEligibilityGateway.Object, _moqCheckingEngineGateway.Object);
+        _sut = new StorageQueueGateway(new NullLoggerFactory(), _queueClientService.Object,
+            _configuration);
     }
 
     [TearDown]

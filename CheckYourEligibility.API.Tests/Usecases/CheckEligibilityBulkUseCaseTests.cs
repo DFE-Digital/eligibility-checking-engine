@@ -126,7 +126,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
 
@@ -142,7 +142,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
             s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Once);
     }
 
     [Test]
@@ -168,7 +168,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
 
@@ -184,7 +184,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
             s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Once);
     }
 
     [Test]
@@ -212,7 +212,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
                 d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -253,7 +253,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Verify(
             s => s.PostCheck(It.IsAny<IEnumerable<CheckEligibilityRequestData>>(), It.IsAny<string>()),
             Times.Never);
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>()), Times.Never);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Never);
     }
 }
 

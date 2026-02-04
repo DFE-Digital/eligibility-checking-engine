@@ -75,7 +75,7 @@ public class ImportFsmHMRCDataUseCaseTests : TestBase.TestBase
             .Returns(new MemoryStream(Encoding.UTF8.GetBytes(Resources.exampleHMRC)));
 
         _mockGateway.Setup(s => s.ImportHMRCData(It.IsAny<List<FreeSchoolMealsHMRC>>())).Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

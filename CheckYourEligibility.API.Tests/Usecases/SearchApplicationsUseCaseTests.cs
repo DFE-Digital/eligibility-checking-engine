@@ -147,7 +147,7 @@ public class SearchApplicationsUseCaseTests
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -235,7 +235,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(0); // Could not find a MAT for the establishment
             _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -269,7 +269,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustId);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -304,7 +304,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -339,7 +339,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(0);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -374,7 +374,7 @@ public class SearchApplicationsUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetMultiAcademyTrustIdForEstablishment(establishmentId))
             .ReturnsAsync(multiAcademyTrustIdFromEstablishment);
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -460,7 +460,7 @@ public class SearchApplicationsUseCaseTests
         var response = _fixture.Create<ApplicationSearchResponse>();
 
         _mockApplicationGateway.Setup(s => s.GetApplications(model)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -469,6 +469,6 @@ public class SearchApplicationsUseCaseTests
         // Assert
         result.Should().Be(response);
         _mockApplicationGateway.Verify(s => s.GetApplications(model), Times.Once);
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Administration, string.Empty), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null), Times.Once);
     }
 }
