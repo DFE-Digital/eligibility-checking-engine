@@ -31,6 +31,8 @@ public class BulkCheck : BulkCheckResponseLinks
     public string Status { get; set; } = string.Empty;
     public string Filename {  get; set; } = string.Empty;
     public string SubmittedBy {  get; set; } = string.Empty;
+    public string FinalNameInCheck { get; set; } = string.Empty;
+    public int NumberOfRecords { get; set; }
 }
 
 public class CheckEligibilityBulkStatusesResponse
