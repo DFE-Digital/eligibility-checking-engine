@@ -10,6 +10,15 @@ namespace CheckYourEligibility.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Drop existing tables if they exist (from previous migrations)
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID(N'[dbo].[FosterChildren]', N'U') IS NOT NULL
+                    DROP TABLE [dbo].[FosterChildren];
+                
+                IF OBJECT_ID(N'[dbo].[FosterCarers]', N'U') IS NOT NULL
+                    DROP TABLE [dbo].[FosterCarers];
+            ");
+
             migrationBuilder.CreateTable(
                 name: "FosterCarers",
                 columns: table => new
