@@ -62,9 +62,10 @@ public class CheckingEngineGateway : ICheckingEngine
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
+
             //if (result.Status != CheckEligibilityStatus.queuedForProcessing)
             //    return result.Status;
-            
+
             //TODO: This should live in the use case
             switch (result.Type)
             {
