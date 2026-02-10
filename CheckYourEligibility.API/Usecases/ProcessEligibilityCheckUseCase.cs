@@ -67,8 +67,8 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                 }
             };
             // When status is Queued For Processing, i.e. not error
-               if (response.Value == CheckEligibilityStatus.queuedForProcessing)
-                throw new ApplicationException("Eligibility check still queued for processing.");
+               //if (response.Value == CheckEligibilityStatus.queuedForProcessing)
+               // throw new ApplicationException("Eligibility check still queued for processing.");
 
             return resultResponse;
         }
