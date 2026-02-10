@@ -113,7 +113,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             Status = BulkCheckStatus.InProgress,
             SubmittedDate = DateTime.UtcNow,
             LocalAuthorityID = model.Meta?.LocalAuthorityId,
-            FinalNameInCheck = bulkData[index - 1].LastName,
+            FinalNameInCheck = bulkData[index - 1].LastName ?? string.Empty,
             NumberOfRecords = bulkData.Count
         };
 

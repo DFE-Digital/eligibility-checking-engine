@@ -116,7 +116,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
                 NationalInsuranceNumber = "AB123456C"
             }
         };
-        var model = new CheckEligibilityRequestWorkingFamiliesBulk { Data = data, Meta = {}};
+        var model = new CheckEligibilityRequestWorkingFamiliesBulk { Data = data, Meta = { } };
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .Returns(new ValidationResult());
@@ -151,7 +151,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         // Arrange
         var data = new List<CheckEligibilityRequestBulkData>
         {
-            new() 
+            new()
             {
                 LastName = "Smith",
                 DateOfBirth = "1990-01-01",
@@ -254,6 +254,36 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
             s => s.PostCheck(It.IsAny<IEnumerable<CheckEligibilityRequestData>>(), It.IsAny<string>()),
             Times.Never);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_sets_FinalNameInCheck_to_empty_string_when_LastName_Of_LastRecord_is_null()
+    {
+        // Arrange
+        var data = new List<CheckEligibilityRequestBulkData>
+        {
+            new() { LastName = null, DateOfBirth = "1990-01-01", NationalInsuranceNumber = "AB123456C" },
+        };
+        var model = new CheckEligibilityRequestBulk { Data = data };
+
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
+            .Returns(new ValidationResult());
+
+        BulkCheck capturedBulkCheck = null;
+        _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
+            .Callback<BulkCheck>(b => capturedBulkCheck = b)
+            .ReturnsAsync("bulk-check-id");
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+
+        // Assert
+        capturedBulkCheck.Should().NotBeNull();
+        capturedBulkCheck.FinalNameInCheck.Should().Be("");
     }
 }
 
