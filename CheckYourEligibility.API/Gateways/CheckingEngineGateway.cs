@@ -447,7 +447,7 @@ public class CheckingEngineGateway : ICheckingEngine
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
+                var organisation = await context.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
                     CorrelationID = correlationId,
