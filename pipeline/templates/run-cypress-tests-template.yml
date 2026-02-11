@@ -17,7 +17,7 @@ stages:
   displayName: ${{ parameters.displayName }}
   jobs:
     - job: 'SetUpCypress'
-      displayName: 'SetUpTestsDev'
+      displayName: 'Cypress Tests ${{ paramters.cypressEnv }}'
       pool:
         vmImage: ubuntu-latest
       steps:
