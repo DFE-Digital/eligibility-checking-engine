@@ -125,13 +125,15 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
 
         _logger.LogInformation($"Bulk eligibility check created with group ID: {groupId}");
-
         return new CheckEligibilityResponseBulk
         {
             Data = new StatusValue { Status = $"{Messages.Processing}" },
             Links = new CheckEligibilityResponseBulkLinks
             {
                 Get_Progress_Check = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.BulkCheckProgress}",
+
+                Get_BulkCheck_Status = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.Status}{Messages.Processing}",
+                
                 Get_BulkCheck_Results = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.BulkCheckResults}"
             }
         };
