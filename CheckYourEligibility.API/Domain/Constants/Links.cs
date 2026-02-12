@@ -6,7 +6,7 @@ public static class CheckLinks
 {
     public const string GetLink = "/check/";
     public const string ProcessLink = "/engine/process/";
-    public const string Status = "status : ";
+    public const string Status = "/status/";
 
     public const string BulkCheckLink = "/bulk-check/";
     public const string BulkCheckProgress = "/progress";
