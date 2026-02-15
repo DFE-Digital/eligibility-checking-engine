@@ -4,5 +4,5 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface ILocalAuthority
 {
-    Task<LocalAuthority?> GetLocalAuthority(int localAuthorityId);
+    Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId);
 }

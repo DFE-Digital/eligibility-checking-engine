@@ -13,7 +13,7 @@ public class LocalAuthorityGateway : ILocalAuthority
         _db = dbContext;
     }
 
-    public Task<LocalAuthority?> GetLocalAuthority(int localAuthorityId)
+    public Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId)
     {
         return _db.LocalAuthorities
             .AsNoTracking()

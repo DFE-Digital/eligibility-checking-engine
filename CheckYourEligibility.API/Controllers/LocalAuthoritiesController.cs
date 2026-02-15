@@ -26,7 +26,7 @@ public class LocalAuthoritiesController : BaseController
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> GetSettings(int laCode)
     {
-        var la = await _localAuthority.GetLocalAuthority(laCode);
+        var la = await _localAuthority.GetLocalAuthorityById(laCode);
 
         if (la == null)
         {
