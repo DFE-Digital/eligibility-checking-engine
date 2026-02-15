@@ -1,8 +1,9 @@
-﻿using System.Net;
-using CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace CheckYourEligibility.API.Controllers;
 
@@ -22,6 +23,7 @@ public class LocalAuthoritiesController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/local-authorities/{laCode:int}/settings")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> GetSettings(int laCode)
     {
         var la = await _localAuthority.GetLocalAuthority(laCode);
