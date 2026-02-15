@@ -15,9 +15,9 @@ namespace CheckYourEligibility.API.Controllers;
 [Authorize]
 public class LocalAuthoritiesController : ControllerBase
 {
-    private readonly ILocalAuthorityGateway _localAuthorityGateway;
+    private readonly ILocalAuthority _localAuthorityGateway;
 
-    public LocalAuthoritiesController(ILocalAuthorityGateway localAuthorityGateway)
+    public LocalAuthoritiesController(ILocalAuthority localAuthorityGateway)
     {
         _localAuthorityGateway = localAuthorityGateway;
     }

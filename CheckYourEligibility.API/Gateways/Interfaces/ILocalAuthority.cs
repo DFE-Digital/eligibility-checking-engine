@@ -2,7 +2,7 @@
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
 
-public interface ILocalAuthorityGateway
+public interface ILocalAuthority
 {
-    Task<LocalAuthority?> GetById(int localAuthorityId);
+    Task<LocalAuthority?> GetLocalAuthority(int localAuthorityId);
 }
