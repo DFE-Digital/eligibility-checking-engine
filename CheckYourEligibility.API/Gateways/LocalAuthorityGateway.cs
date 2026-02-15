@@ -6,16 +6,16 @@ namespace CheckYourEligibility.API.Gateways;
 
 public class LocalAuthorityGateway : ILocalAuthority
 {
-    private readonly CheckYourEligibilityContext _context;
+    private readonly IEligibilityCheckContext _db;
 
-    public LocalAuthorityGateway(CheckYourEligibilityContext context)
+    public LocalAuthorityGateway(IEligibilityCheckContext dbContext)
     {
-        _context = context;
+        _db = dbContext;
     }
 
-    public Task<LocalAuthority?> GetById(int localAuthorityId)
+    public Task<LocalAuthority?> GetLocalAuthority(int localAuthorityId)
     {
-        return _context.LocalAuthorities
+        return _db.LocalAuthorities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
     }
