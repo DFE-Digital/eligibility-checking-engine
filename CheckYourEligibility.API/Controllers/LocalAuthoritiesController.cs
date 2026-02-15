@@ -1,39 +1,30 @@
 ﻿using System.Net;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CheckYourEligibility.API.Controllers;
 
-/// <summary>
-///     Local Authorities Controller
-/// </summary>
 [ApiController]
 [Route("[controller]")]
 [Authorize]
 public class LocalAuthoritiesController : ControllerBase
 {
-    private readonly ILocalAuthority _localAuthorityGateway;
+    private readonly ILocalAuthority _localAuthority;
 
-    public LocalAuthoritiesController(ILocalAuthority localAuthorityGateway)
+    public LocalAuthoritiesController(ILocalAuthority localAuthority)
     {
-        _localAuthorityGateway = localAuthorityGateway;
+        _localAuthority = localAuthority;
     }
 
-    /// <summary>
-    ///     Returns settings for a given Local Authority (by LA code / LocalAuthorityID).
-    /// </summary>
-    /// <param name="laCode">Local authority code (maps to LocalAuthorityID)</param>
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/local-authorities/{laCode:int}/settings")]
-    [Authorize(Policy = PolicyNames.RequireAdminScope)] // <— remove if schools must call this directly
     public async Task<ActionResult> GetSettings(int laCode)
     {
-        var la = await _localAuthorityGateway.GetLocalAuthorityById(laCode);
+        var la = await _localAuthority.GetLocalAuthority(laCode);
 
         if (la == null)
         {
@@ -50,9 +41,6 @@ public class LocalAuthoritiesController : ControllerBase
     }
 }
 
-/// <summary>
-///     Local authority settings response
-/// </summary>
 public class LocalAuthoritySettingsResponse
 {
     public bool SchoolCanReviewEvidence { get; set; }
