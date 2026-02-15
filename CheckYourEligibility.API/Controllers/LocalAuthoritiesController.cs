@@ -13,7 +13,7 @@ public class LocalAuthoritiesController : BaseController
 {
     private readonly ILocalAuthority _localAuthority;
 
-    public LocalAuthoritiesController(ILocalAuthority localAuthority)
+    public LocalAuthoritiesController(ILocalAuthority localAuthority, IAudit audit) : base(audit)
     {
         _localAuthority = localAuthority;
     }
