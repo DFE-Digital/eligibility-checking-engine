@@ -9,7 +9,7 @@ namespace CheckYourEligibility.API.Controllers;
 [ApiController]
 [Route("[controller]")]
 [Authorize]
-public class LocalAuthoritiesController : ControllerBase
+public class LocalAuthoritiesController : BaseController
 {
     private readonly ILocalAuthority _localAuthority;
 
