@@ -44,10 +44,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
-        
+
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureCreatedAsync();
@@ -129,11 +130,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
             .ReturnsAsync(citizenResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
             .ReturnsAsync((result, string.Empty));
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
@@ -293,7 +294,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         item.EligibilityCheckHash = null;
         item.EligibilityCheckHashID = null;
         item.BulkCheck = null;
-        
+
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = type; // Ensure both have the same type
@@ -394,9 +395,9 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With5Records_Should_Delete5Records()
     {
         // Arrange
-        var groupId = Guid.NewGuid().ToString();        
+        var groupId = Guid.NewGuid().ToString();
 
-        for(var i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -421,7 +422,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item2);
 
         await _fakeInMemoryDb.SaveChangesAsync();
-        
+
         // Verify records were actually saved
         var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
         savedCount.Should().Be(5, "All 5 records should be saved before deletion");
@@ -463,8 +464,29 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         Func<Task> act = async () => await _sut.DeleteByBulkCheckId(Guid.NewGuid().ToString());
 
         // Assert
-        act.Should().ThrowExactlyAsync<ValidationException>();        
+        act.Should().ThrowExactlyAsync<ValidationException>();
     }
+
+
+    [Test]
+    public async Task GenerateEligibilityReport_Should_Throw_NotFoundException_When_No_Matching_Bulk_Checks()
+    {
+        // Arrange
+        var request = new EligibilityCheckReportRequest
+        {
+            LocalAuthorityID = null,
+            StartDate = DateTime.UtcNow.AddDays(1), // Future date
+            EndDate = DateTime.UtcNow.AddDays(-1)
+        };
+
+        // Act
+        Func<Task> act = async () => await _sut.GenerateEligibilityCheckReports(request);
+
+        // Assert
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    #region Private Helper Methods
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
@@ -492,4 +514,6 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             Type = CheckEligibilityType.WorkingFamilies
         };
     }
+
+    #endregion
 }

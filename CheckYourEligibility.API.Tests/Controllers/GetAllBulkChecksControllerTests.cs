@@ -2,6 +2,7 @@ using System.Security.Claims;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,14 +35,15 @@ namespace CheckYourEligibility.API.Tests.Controllers
             // Create minimal mocks - only create the ones that are actually needed
             var mockAudit = new Mock<IAudit>();
 
+
             _controller = new BulkCheckController(
-                _mockLogger.Object,
+                    _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
-                // Pass nulls for dependencies we're not testing
-                null!, null!, null!, null!, null!, 
-                _mockUseCase.Object
-            );
+                    null!, null!, null!, null!, null!, null!,
+                    _mockUseCase.Object
+                );
+
         }
 
         [Test]
@@ -52,8 +54,8 @@ namespace CheckYourEligibility.API.Tests.Controllers
             {
                 Checks = new List<BulkCheck>
                 {
-                    new BulkCheck 
-                    { 
+                    new BulkCheck
+                    {
                         Id = "test-guid-1",
                         SubmittedDate = DateTime.UtcNow,
                         EligibilityType = "FreeSchoolMeals",
