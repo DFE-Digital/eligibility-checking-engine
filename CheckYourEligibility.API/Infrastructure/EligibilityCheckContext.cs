@@ -43,6 +43,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<Audit> Audits { get; set; }
     public virtual DbSet<FosterCarer> FosterCarers { get; set; }
     public virtual DbSet<FosterChild> FosterChildren { get; set; }
+    public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
