@@ -44,7 +44,7 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -66,7 +66,7 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -183,7 +183,7 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -206,7 +206,7 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -229,14 +229,14 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(expectedAuditId);
 
         // Act
         await _sut.Execute(guid, localAuthorityIds);
 
         // Assert
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Application, guid), Times.Once);
+        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Application, guid,null), Times.Once);
     }
 
     [Test]
@@ -255,7 +255,7 @@ public class DeleteApplicationUseCaseTests
             .Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
         _mockAuditGateway.InSequence(sequence)
-            .Setup(x => x.CreateAuditEntry(AuditType.Application, guid))
+            .Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -278,7 +278,7 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(stringGuid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, stringGuid))
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, stringGuid, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

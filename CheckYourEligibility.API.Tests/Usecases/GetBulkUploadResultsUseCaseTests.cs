@@ -86,7 +86,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(bulkCheck);
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -111,7 +111,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(bulkCheck);
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -136,14 +136,14 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(bulkCheck);
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid,null), Times.Once);
     }
 
     [Test]
@@ -181,7 +181,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
             .ReturnsAsync(bulkCheck);
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
             .ReturnsAsync(resultItems);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.CheckBulkResults, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

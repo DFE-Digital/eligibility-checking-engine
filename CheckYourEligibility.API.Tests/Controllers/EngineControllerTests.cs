@@ -226,7 +226,7 @@ public class EngineControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityStatusResponse();
 
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid)).ThrowsAsync(new NotFoundException());
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid, null)).ThrowsAsync(new NotFoundException());
 
         // Act
         var response = await _sut.Process(guid);
@@ -244,7 +244,7 @@ public class EngineControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityStatusResponse();
 
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid))
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid, null))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -264,7 +264,7 @@ public class EngineControllerTests : TestBase.TestBase
         var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
         var executionResult = statusResponse;
 
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid))
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid,null))
             .ThrowsAsync(new ApplicationException("Service unavailable"));
 
         // Act
@@ -275,6 +275,26 @@ public class EngineControllerTests : TestBase.TestBase
         var objectResult = (ObjectResult)response;
         objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
     }
+    [Test]
+    public async Task Process_returns_503_when_use_case_returns_status_queue_for_processing()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
+        statusResponse.Data.Status = "queuedForProcessing";
+        var executionResult = statusResponse;
+
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid, null)).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.Process(guid);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        ((ErrorResponse)objectResult.Value).Errors.First().Title.Should().Be("Eligibility check still queued for processing");
+    }
 
     [Test]
     public async Task Process_returns_ok_with_response_when_use_case_returns_valid_result()
@@ -282,9 +302,10 @@ public class EngineControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var statusResponse = _fixture.Create<CheckEligibilityStatusResponse>();
+        statusResponse.Data.Status = "eligible";
         var executionResult = statusResponse;
 
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid)).ReturnsAsync(executionResult);
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid,null)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.Process(guid);
@@ -302,7 +323,7 @@ public class EngineControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
 
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid)).ThrowsAsync(new ProcessCheckException());
+        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid,null)).ThrowsAsync(new ProcessCheckException());
 
         // Act
         var response = await _sut.Process(guid);

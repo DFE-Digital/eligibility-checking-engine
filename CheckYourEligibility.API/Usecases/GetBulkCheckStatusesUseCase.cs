@@ -62,6 +62,8 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
                 EligibilityType = bc.EligibilityType.ToString(),
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
+                FinalNameInCheck = bc.FinalNameInCheck,
+                NumberOfRecords = bc.NumberOfRecords,
                 SubmittedBy = bc.SubmittedBy,
                 Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}/results"
             })

@@ -1,11 +1,13 @@
 ﻿using CheckYourEligibility.API.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 public interface IEligibilityCheckContext
 {
     DbSet<ECSConflict> ECSConflicts { get; set; }
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     DbSet<EligibilityCheck> CheckEligibilities { get; set; }
+    DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
     DbSet<BulkCheck> BulkChecks { get; set; }
     DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
     DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
@@ -19,8 +21,12 @@ public interface IEligibilityCheckContext
     DbSet<RateLimitEvent> RateLimitEvents { get; set; }
     DbSet<User> Users { get; set; }
     DbSet<Audit> Audits { get; set; }
+    DbSet<FosterCarer> FosterCarers { get; set; }
+    DbSet<FosterChild> FosterChildren { get; set; }
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data);
     Task<int> SaveChangesAsync();
+    DatabaseFacade Database { get; } 
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     int SaveChanges();
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
     void BulkInsert_Applications(IEnumerable<Application> data);

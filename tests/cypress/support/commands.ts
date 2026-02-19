@@ -84,12 +84,13 @@ Cypress.Commands.add('verifyPostEligibilityBulkCheckResponse', (response) => {
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
 
   // Verfiy total number of elements
-  cy.verifyTotalElements(totalElements, 3);
+  cy.verifyTotalElements(totalElements, 4);
 
   // Verify response elements
   expect(response.body.data).to.have.property('status');
   expect(response.body.links).to.have.property('get_Progress_Check');
   expect(response.body.links).to.have.property('get_BulkCheck_Results');
+  expect(response.body.links).to.have.property('get_BulkCheck_Status');
 });
 
 Cypress.Commands.add('extractGuid', (response) => {

@@ -16,4 +16,5 @@ public class CheckEligibilityResponseBulkLinks
 {
     public string Get_Progress_Check { get; set; }
     public string Get_BulkCheck_Results { get; set; }
+    public string Get_BulkCheck_Status { get; set; }
 }

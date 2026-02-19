@@ -1,28 +1,19 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Configuration;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
-using AutoMapper;
 using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -61,18 +52,20 @@ public class CheckingEngineGateway : ICheckingEngine
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
     }
 
-    public async Task<CheckEligibilityStatus?> ProcessCheck(string guid, AuditData auditDataTemplate)
+    public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
+        var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            x.Status != CheckEligibilityStatus.deleted);
 
         if (result != null)
         {
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
+
             //if (result.Status != CheckEligibilityStatus.queuedForProcessing)
             //    return result.Status;
-            
+
             //TODO: This should live in the use case
             switch (result.Type)
             {
@@ -80,12 +73,12 @@ public class CheckingEngineGateway : ICheckingEngine
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
                 {
-                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
                 }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
                 {
-                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData);
+                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
                 }
                     break;
             }
@@ -138,11 +131,12 @@ public class CheckingEngineGateway : ICheckingEngine
     /// <param name="checkData"></param>
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
-        string eligibilityCode, string nino, string lastName)
+        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null )
     {
         //TODO: This should probably be its own adapter
+        var context = dbContextFactory ?? _db ;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var wfRecords = await _db.WorkingFamiliesEvents.Where(x =>
+        var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
             x.EligibilityCode == eligibilityCode &&
             (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
@@ -174,7 +168,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 break;
             }
         }
-
         return wfEvent;
     }
 
@@ -249,7 +242,7 @@ public class CheckingEngineGateway : ICheckingEngine
     /// </summary>
     /// <returns></returns>
     private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
-        EligibilityCheck? result, CheckProcessData checkData)
+        EligibilityCheck? result, CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         //TODO: This should be cleaned up
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
@@ -317,12 +310,13 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate);
+            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate, dbContextFactory);
 
+        var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request if a record has been found
         if (wfEvent != null && result.Status != CheckEligibilityStatus.notFound)
-        {
+        {          
             wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
@@ -330,11 +324,12 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
-            _db.CheckEligibilities.Update(result);
+            context.CheckEligibilities.Update(result);
         }
 
         result.Updated = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await context.SaveChangesAsync();
+      
     }
     /// <summary>
     /// Extract LA Id from scope if it exists
@@ -364,14 +359,18 @@ public class CheckingEngineGateway : ICheckingEngine
         return laId;
     }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
-        CheckProcessData checkData)
+        CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
+        var context = dbContextFactory ?? _db;
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkResult = CheckEligibilityStatus.parentNotFound;
         CAPIClaimResponse capiClaimResponse = new();
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
-        string correlationId = Guid.NewGuid().ToString(); // for CAPI request to track request from DWP side
+
+        // For CAPI request to track request conflicts from DWP side
+        string correlationId = Guid.NewGuid().ToString();
+
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
             checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
@@ -384,7 +383,7 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 //To ensure correct LA ID is passed when using ECS for checks
                 string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
-                checkResult = await HMRC_Check(checkData);
+                checkResult = await HMRC_Check(checkData, dbContextFactory);
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
                     var sw = Stopwatch.StartNew();
@@ -426,7 +425,7 @@ public class CheckingEngineGateway : ICheckingEngine
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
             {
-                checkResult = await HO_Check(checkData);
+                checkResult = await HO_Check(checkData, dbContextFactory);
                 source = ProcessEligibilityCheckSource.HO;
             }
         }
@@ -442,13 +441,13 @@ public class CheckingEngineGateway : ICheckingEngine
         else
         {
             result.EligibilityCheckHashID =
-                await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate);
+               await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate, dbContextFactory);
 
             //If CAPI returns a different result from ECS
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await _db.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
+                var organisation = await context.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
                     CorrelationID = correlationId,
@@ -466,11 +465,11 @@ public class CheckingEngineGateway : ICheckingEngine
 
 
                 };
-                await _db.ECSConflicts.AddAsync(ecsConflictRecord);
+                await context.ECSConflicts.AddAsync(ecsConflictRecord);
 
             }
 
-            await _db.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
@@ -524,18 +523,21 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     //TODO: These two could be adapters
-    private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
     {
-        var checkReults = _db.FreeSchoolMealsHO.Where(x =>
+        var context = dbContextFactory ?? _db;
+        var checkReults = context.FreeSchoolMealsHO.Where(x =>
                 x.NASS == data.NationalAsylumSeekerServiceNumber
                 && x.DateOfBirth == DateTime.ParseExact(data.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None))
             .Select(x => x.LastName);
+
         return CheckSurname(data.LastName, checkReults);
     }
 
-    private async Task<CheckEligibilityStatus> HMRC_Check(CheckProcessData data)
+    private async Task<CheckEligibilityStatus> HMRC_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
     {
-        var checkReults = _db.FreeSchoolMealsHMRC.Where(x =>
+        var context = dbContextFactory ?? _db;
+        var checkReults = context.FreeSchoolMealsHMRC.Where(x =>
                 x.FreeSchoolMealsHMRCID == data.NationalInsuranceNumber
                 && x.DateOfBirth == DateTime.ParseExact(data.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None))
             .Select(x => x.Surname);

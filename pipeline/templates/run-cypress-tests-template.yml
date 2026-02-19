@@ -19,7 +19,7 @@ stages:
   displayName: ${{ parameters.displayName }}
   jobs:
     - job: 'SetUpCypress'
-      displayName: 'SetUpTestsDev'
+      displayName: 'Cypress Tests ${{ parameters.cypressEnv }}'
       pool:
         name: ${{ parameters.prefix }}-ECE-managed-devops-pool
       steps:
@@ -36,10 +36,10 @@ stages:
             targetType: inline
             script: |
               cd tests
-              export CYPRESS_API_HOST=${{ parameters.cypressApiHost }}
-              export CYPRESS_JWT_USERNAME=${{ parameters.jwtUsername }}
-              export CYPRESS_JWT_PASSWORD=${{ parameters.jwtPassword }}
-              export CYPRESS_ENV=${{ parameters.cypressEnv }}
+              export CYPRESS_API_HOST="${{ parameters.cypressApiHost }}"
+              export CYPRESS_JWT_USERNAME="${{ parameters.jwtUsername }}"
+              export CYPRESS_JWT_PASSWORD="${{ parameters.jwtPassword }}"
+              export CYPRESS_ENV="${{ parameters.cypressEnv }}"
               npm run e2e:electron
         - task: Bash@3
           condition: always()

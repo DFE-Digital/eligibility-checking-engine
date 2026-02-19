@@ -32,6 +32,9 @@ public class BulkCheck
     /// Navigation property to the Local Authority
     /// </summary>
     public virtual LocalAuthority? LocalAuthority { get; set; }
-    
+
     public virtual ICollection<EligibilityCheck> EligibilityChecks { get; set; } = new List<EligibilityCheck>();
+
+    public string FinalNameInCheck { get; set; } = string.Empty;
+    public int NumberOfRecords { get; set; } 
 }

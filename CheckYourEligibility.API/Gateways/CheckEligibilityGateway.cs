@@ -1,27 +1,16 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using AutoMapper;
-using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
-using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -221,14 +210,15 @@ public class CheckEligibilityGateway : ICheckEligibility
     }
 
     public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,
-        EligibilityCheckStatusData data)
+        EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.Status != CheckEligibilityStatus.deleted);
+        var context = dbContextFactory ?? _db;
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.Status != CheckEligibilityStatus.deleted);
         if (result != null)
         {
             result.Status = data.Status;
             result.Updated = DateTime.UtcNow;
-            var updates = await _db.SaveChangesAsync();
+            var updates = await context.SaveChangesAsync();
             return new CheckEligibilityStatusResponse { Data = new StatusValue { Status = result.Status.ToString() } };
         }
 

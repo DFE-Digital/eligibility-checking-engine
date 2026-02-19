@@ -15,7 +15,7 @@ public interface IProcessEligibilityCheckUseCase
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
     /// <returns>Processed eligibility check status</returns>
-    Task<CheckEligibilityStatusResponse> Execute(string guid);
+    Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null);
 }
 
 public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
@@ -34,15 +34,19 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityStatusResponse> Execute(string guid)
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null)
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
         try
         {
-            var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-            var response = await _checkingEngineGateway.ProcessCheck(guid, auditItemTemplate);
-
+            CheckEligibilityStatus? response = null;
+      
+                // pass dbContext
+                var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
+                response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate, dbContextFactory);
+                await _auditGateway.CreateAuditEntry(AuditType.Check, guid, dbContextFactory);
+            
             if (response == null)
             {
                 _logger.LogWarning(
@@ -50,7 +54,7 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                 throw new NotFoundException(guid);
             }
 
-            await _auditGateway.CreateAuditEntry(AuditType.Check, guid);
+        
 
             _logger.LogInformation(
                 $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {response.Value}");
@@ -62,9 +66,9 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
                     Status = response.Value.ToString()
                 }
             };
-
-            if (response.Value == CheckEligibilityStatus.queuedForProcessing)
-                throw new ApplicationException("Eligibility check still queued for processing.");
+            // When status is Queued For Processing, i.e. not error
+               //if (response.Value == CheckEligibilityStatus.queuedForProcessing)
+               // throw new ApplicationException("Eligibility check still queued for processing.");
 
             return resultResponse;
         }

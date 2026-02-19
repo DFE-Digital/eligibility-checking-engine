@@ -39,7 +39,7 @@ public class SendNotificationUseCaseTests
         // Arrange
         var request = _fixture.Create<NotificationRequest>();
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -58,14 +58,14 @@ public class SendNotificationUseCaseTests
         var auditId = _fixture.Create<string>();
 
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
             .ReturnsAsync(auditId);
 
         // Act
         await _sut.Execute(request);
 
         // Assert
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null), Times.Once);
     }
 
     [Test]
@@ -75,7 +75,7 @@ public class SendNotificationUseCaseTests
         var request = _fixture.Create<NotificationRequest>();
 
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

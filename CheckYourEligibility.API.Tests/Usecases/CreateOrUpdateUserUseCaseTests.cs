@@ -39,7 +39,7 @@ public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
         var responseId = _fixture.Create<string>();
 
         _mockUserGateway.Setup(us => us.Create(request.Data)).ReturnsAsync(responseId);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.User, responseId))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.User, responseId, null))
             .ReturnsAsync(_fixture.Create<string>());
 
         var expectedResponse = new UserSaveItemResponse { Data = responseId };

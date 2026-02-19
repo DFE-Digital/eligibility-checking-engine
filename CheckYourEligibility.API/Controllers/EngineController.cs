@@ -1,12 +1,14 @@
-using System.Net;
+using Azure;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -112,7 +114,13 @@ public class EngineController : BaseController
         try
         {
             var result = await _processEligibilityCheckUseCase.Execute(guid);
+            
+            if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), result.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
+            {
+              return StatusCode(StatusCodes.Status503ServiceUnavailable,
+              new ErrorResponse { Errors = [new Error { Title = "Eligibility check still queued for processing" }] });
 
+            }
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
         catch (NotFoundException)
@@ -127,6 +135,7 @@ public class EngineController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
+
         catch (ApplicationException ex)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,

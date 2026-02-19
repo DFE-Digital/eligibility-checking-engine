@@ -63,7 +63,7 @@ public class GetApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -87,7 +87,7 @@ public class GetApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -110,7 +110,7 @@ public class GetApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -152,7 +152,7 @@ public class GetApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForApplication(guid))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.GetApplication(guid)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid))
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid,null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act

@@ -14,6 +14,6 @@ public interface ICheckEligibility
 
     Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type);
 
-    Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data);
+    Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null);
     Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId);
 }

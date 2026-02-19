@@ -20,11 +20,19 @@ public static class ProgramExtensions
     {
         var connectionString = configuration.GetValue<string>("ConnectionString");
 
+        services.AddDbContextFactory<EligibilityCheckContext>(options =>
+          options.UseSqlServer(
+              connectionString,
+              x => x.MigrationsAssembly("CheckYourEligibility.API")),lifetime: ServiceLifetime.Scoped);
+
         services.AddDbContext<IEligibilityCheckContext, EligibilityCheckContext>(options =>
             options.UseSqlServer(
                 connectionString,
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
+
         );
+      
+
 
         return services;
     }
@@ -52,6 +60,7 @@ public static class ProgramExtensions
         services.AddTransient<IAudit, AuditGateway>();
         services.AddTransient<IHash, HashGateway>();
         services.AddTransient<IRateLimit, RateLimitGateway>();
+        services.AddTransient<IFosterFamily, FosterFamilyGateway>();
         return services;
     }
 

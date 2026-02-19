@@ -13,5 +13,6 @@ public enum AuditType
     Administration,
     BulkCheck,
     CheckBulkResults,
-    Notification
+    Notification,
+    FosterFamily
 }
