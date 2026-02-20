@@ -36,7 +36,7 @@ public class GenerateEligibilityCheckReportUseCase : IGenerateEligibilityCheckRe
 
         if (response == null)
         {
-            _logger.LogError("Failed to generate eligibility check report for request: {@Request}", model);
+            _logger.LogError("Failed to generate eligibility check report", model);
             throw new Exception("Failed to generate eligibility check report");
         } 
 
