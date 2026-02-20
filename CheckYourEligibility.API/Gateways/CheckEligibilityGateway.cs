@@ -242,7 +242,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                                                        x.SubmittedDate >= request.StartDate &&
                                                        x.SubmittedDate <= request.EndDate).Include(ec => ec.EligibilityChecks).ToListAsync();
 
-            if (bulkChecks == null || bulkChecks.Count == 0)
+            if (bulkChecks == null)
             {
                 _logger.LogInformation($"No bulk checks found for LocalAuthorityID: {request.LocalAuthorityID} between {request.StartDate} and {request.EndDate}");
                 throw new Exception($"No bulk checks found");
