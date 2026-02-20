@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Azure;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using System.Text.Json;
 
 public interface IGenerateEligibilityCheckReportUseCase
 {
@@ -36,7 +37,8 @@ public class GenerateEligibilityCheckReportUseCase : IGenerateEligibilityCheckRe
 
         if (response == null)
         {
-            _logger.LogError("Failed to generate eligibility check report for request: {@Request}", model);
+            var sanitizedRequest = JsonSerializer.Serialize(model);
+            _logger.LogError("Failed to generate eligibility check report for request: {SanitizedRequest}", sanitizedRequest);
             throw new Exception("Failed to generate eligibility check report");
         } 
 
