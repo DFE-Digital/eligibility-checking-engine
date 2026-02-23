@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -112,10 +113,15 @@ public class BulkCheckController : BaseController
     /// <param name="model"></param>
     /// PolicyNames.RequireLaOrMatOrSchoolScope ensures at least one org with id is found in scope, unless it is local_authority
     /// <returns></returns>
+    /// <remarks>
+    /// The type of eligibility check is determined by the endpoint path (/bulk-check/free-school-meals).
+    /// You do not need to include a 'type' field in the request body.
+    /// </remarks>
     [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequestBulk), typeof(CheckFSMBulkModelExample))]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
@@ -171,10 +177,15 @@ public class BulkCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
+    /// <remarks>
+    /// The type of eligibility check is determined by the endpoint path (/bulk-check/two-year-offer).
+    /// You do not need to include a 'type' field in the request body.
+    /// </remarks>
     [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/two-year-offer")]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequestBulk), typeof(Check2YOBulkModelExample))]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulk2yo([FromBody] CheckEligibilityRequestBulk model)
@@ -219,10 +230,15 @@ public class BulkCheckController : BaseController
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
+    /// <remarks>
+    /// The type of eligibility check is determined by the endpoint path (/bulk-check/early-year-pupil-premium).
+    /// You do not need to include a 'type' field in the request body.
+    /// </remarks>
     [ProducesResponseType(typeof(CheckEligibilityResponseBulk), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/early-year-pupil-premium")]
+    [SwaggerRequestExample(typeof(CheckEligibilityRequestBulk), typeof(CheckEYPPBulkModelExample))]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkEypp([FromBody] CheckEligibilityRequestBulk model)

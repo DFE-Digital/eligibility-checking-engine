@@ -31,6 +31,37 @@ public class Oauth2Controller : Controller
     {
         try
         {
+            // Extract credentials from Basic Auth header first (standard OAuth2 ClientCredentials)
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var encodedCredentials = authHeader.Substring("Basic ".Length).Trim();
+                    var decodedCredentials = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encodedCredentials));
+                    var parts = decodedCredentials.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        credentials.client_id = parts[0];
+                        credentials.client_secret = parts[1];
+                        _logger.LogDebug($"Extracted credentials from Basic Auth header for client: {parts[0].Replace(Environment.NewLine, "")}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"Failed to decode Basic Auth header: {ex.Message}");
+                }
+            }
+
+            // Validate required credentials (replaces automatic model validation lost by making fields nullable)
+            if (string.IsNullOrEmpty(credentials.client_id) || string.IsNullOrEmpty(credentials.client_secret))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "invalid_request", Detail = "client_id and client_secret are required" }]
+                });
+            }
+
             var response = await _authenticateUserUseCase.Execute(credentials);
 
             _logger.LogInformation($"{credentials.client_id?.Replace(Environment.NewLine, "")} authenticated");
