@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -34,6 +35,12 @@ public class Oauth2ControllerTests : TestBase.TestBase
         _mockAuthenticateUserUseCase = new Mock<IAuthenticateUserUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<Oauth2Controller>>();
         _sut = new Oauth2Controller(_mockLogger, _mockAuthenticateUserUseCase.Object);
+
+        // Set up HttpContext so Request.Headers is available
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
 
         // Setup authentication for user credentials
         _mockAuthenticateUserUseCase
