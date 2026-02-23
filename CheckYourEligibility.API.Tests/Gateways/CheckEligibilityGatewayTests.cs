@@ -44,10 +44,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
-        
+
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureCreatedAsync();
@@ -129,11 +130,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             DateOfBirth = DateTime.Parse(request.DateOfBirth)
         });
         await _fakeInMemoryDb.SaveChangesAsync();
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
             .ReturnsAsync(citizenResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(),It.IsAny<Guid>().ToString()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
             .ReturnsAsync((result, string.Empty));
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
@@ -293,7 +294,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         item.EligibilityCheckHash = null;
         item.EligibilityCheckHashID = null;
         item.BulkCheck = null;
-        
+
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = type; // Ensure both have the same type
@@ -394,9 +395,9 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_With5Records_Should_Delete5Records()
     {
         // Arrange
-        var groupId = Guid.NewGuid().ToString();        
+        var groupId = Guid.NewGuid().ToString();
 
-        for(var i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var item = _fixture.Create<EligibilityCheck>();
             item.EligibilityCheckID = Guid.NewGuid().ToString();
@@ -421,7 +422,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.CheckEligibilities.Add(item2);
 
         await _fakeInMemoryDb.SaveChangesAsync();
-        
+
         // Verify records were actually saved
         var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
         savedCount.Should().Be(5, "All 5 records should be saved before deletion");
@@ -463,8 +464,87 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         Func<Task> act = async () => await _sut.DeleteByBulkCheckId(Guid.NewGuid().ToString());
 
         // Assert
-        act.Should().ThrowExactlyAsync<ValidationException>();        
+        act.Should().ThrowExactlyAsync<ValidationException>();
     }
+
+
+    [Test]
+    public async Task GenerateEligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
+    {
+        // Arrange
+        var request = new EligibilityCheckReportRequest
+        {
+            LocalAuthorityID = null,
+            StartDate = DateTime.UtcNow.AddDays(1), // Future date
+            EndDate = DateTime.UtcNow.AddDays(-1)
+        };
+
+        // Act
+        Func<Task> act = async () => await _sut.GenerateEligibilityCheckReports(request);
+
+        // Assert
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    [Test]
+    public async Task GenerateEligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
+    {
+        // Arrange
+        var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
+        reportRequest.StartDate = DateTime.UtcNow.AddDays(-7);
+        reportRequest.EndDate = DateTime.UtcNow.AddDays(7);
+        reportRequest.LocalAuthorityID = 948; // Ensure it matches all records
+
+        // 3 bulk checks with 5 eligibility checks each should be sufficient to test the report generation and performance with multiple records
+        for (var i = 0; i < 3; i++)
+        {
+            var item = GetBulkCheckWithEligibilityChecks(5, CheckEligibilityType.FreeSchoolMeals, 948).EligibilityChecks.First();
+            _fakeInMemoryDb.BulkChecks.Add(item.BulkCheck);
+            await _fakeInMemoryDb.SaveChangesAsync();
+        }
+
+        // Act
+        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+        
+        // Assert
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
+        response.Should().NotBeNull();
+        response.Count().Should().Be(15); // 3 bulk checks with 5 eligibility checks each should result in 15 report items
+    }
+
+    [Test]
+    public async Task GenerateEligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
+    {
+        // Arrange
+        var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
+        reportRequest.StartDate = DateTime.UtcNow.AddDays(-7);
+        reportRequest.EndDate = DateTime.UtcNow.AddDays(7);
+        reportRequest.LocalAuthorityID = 948; // Ensure it matches all records
+
+        // Add a bulk check with no eligibility checks to test the scenario where bulk checks exist but no eligibility checks are found
+        var bulkCheck = new Domain.BulkCheck
+        {
+            BulkCheckID = Guid.NewGuid().ToString(),
+            Filename = "test.csv",
+            EligibilityType = CheckEligibilityType.FreeSchoolMeals,
+            LocalAuthorityID = 948,
+            SubmittedDate = DateTime.UtcNow,
+            Status = BulkCheckStatus.InProgress,
+            EligibilityChecks = new List<EligibilityCheck>() // No eligibility checks
+        };
+        _fakeInMemoryDb.BulkChecks.Add(bulkCheck);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+
+        // Assert
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
+        response.Should().NotBeNull();
+        response.Count().Should().Be(0); // No eligibility checks should result in an empty report
+    }
+
+    #region Private Helper Methods
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
@@ -492,4 +572,38 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             Type = CheckEligibilityType.WorkingFamilies
         };
     }
+
+    private Domain.BulkCheck GetBulkCheckWithEligibilityChecks(int numberOfChecks, CheckEligibilityType type, int localAuthorityId)
+    {
+        var bulkCheck = new Domain.BulkCheck
+        {
+            BulkCheckID = Guid.NewGuid().ToString(),
+            Filename = "test.csv",
+            EligibilityType = type,
+            LocalAuthorityID = localAuthorityId,
+            SubmittedDate = DateTime.UtcNow,
+            Status = BulkCheckStatus.InProgress,
+            EligibilityChecks = new List<EligibilityCheck>()
+        };
+
+        for (var i = 0; i < numberOfChecks; i++)
+        {
+            var request = _fixture.Create<CheckEligibilityRequestData>();
+            request.DateOfBirth = DateTime.UtcNow.AddYears(-18).ToString("yyyy-MM-dd"); // Always valid date
+            var eligibilityCheck = new EligibilityCheck
+            {
+                EligibilityCheckID = Guid.NewGuid().ToString(),
+                Type = type,
+                Status = CheckEligibilityStatus.eligible,
+                CheckData = JsonConvert.SerializeObject(GetCheckProcessData(request)),
+                BulkCheckID = bulkCheck.BulkCheckID, // Set FK
+                BulkCheck = bulkCheck                // Set navigation property
+            };
+            bulkCheck.EligibilityChecks.Add(eligibilityCheck);
+        }
+
+        return bulkCheck;
+    }
+
+    #endregion
 }

@@ -27,6 +27,7 @@ public class BulkCheckController : BaseController
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
+    private readonly IGenerateEligibilityCheckReportUseCase _generateEligibilityCheckReportUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
 
@@ -39,6 +40,7 @@ public class BulkCheckController : BaseController
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
+        IGenerateEligibilityCheckReportUseCase generateEligibilityCheckReportUseCase,
         IGetAllBulkChecksUseCase getAllBulkChecksUseCase
     )
         : base(audit)
@@ -53,7 +55,10 @@ public class BulkCheckController : BaseController
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
+        _generateEligibilityCheckReportUseCase = generateEligibilityCheckReportUseCase;
     }
+
+
 
     /// <summary>
     ///     Posts the array of WF checks
@@ -81,7 +86,7 @@ public class BulkCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (model.Meta == null) model.Meta = new CheckEligibilityRequestBulkBase();
             if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
                 model.Meta.LocalAuthorityId = localAuthorityIds[0];
@@ -112,7 +117,7 @@ public class BulkCheckController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/bulk-check/free-school-meals")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)] 
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> CheckEligibilityBulkFsm([FromBody] CheckEligibilityRequestBulk model)
     {
         try
@@ -141,7 +146,7 @@ public class BulkCheckController : BaseController
             // NOTE: To not disturb current business rules around local authoriy we also allow generic local_authoriy scope to be passed here
             // If no school or mat scope found then we record the Id of the local_authority if one is passed
             // else do not pass anything as this was the logic previously.
-            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (model.Meta == null) model.Meta = new CheckEligibilityRequestBulkBase();
             if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityId != null && localAuthorityId != 0)
             {
                 model.Meta.LocalAuthorityId = localAuthorityId;
@@ -159,7 +164,7 @@ public class BulkCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
-    } 
+    }
 
     /// <summary>
     ///     Posts the array of 2YO checks
@@ -189,7 +194,7 @@ public class BulkCheckController : BaseController
             // 
             // Set LocalAuthorityId if not provided and if only one id is found.
             // lili: (there should never be a case where more the one id is found according to the business rules in auth use case )
-            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (model.Meta == null) model.Meta = new CheckEligibilityRequestBulkBase();
             if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
                 model.Meta.LocalAuthorityId = localAuthorityIds[0];
@@ -235,7 +240,7 @@ public class BulkCheckController : BaseController
             }
 
             // Set LocalAuthorityId if not provided and user has access to only one LA
-            if(model.Meta==null) model.Meta = new CheckEligibilityRequestBulkBase(); 
+            if (model.Meta == null) model.Meta = new CheckEligibilityRequestBulkBase();
             if (!model.Meta.LocalAuthorityId.HasValue && localAuthorityIds.Count == 1 && localAuthorityIds[0] != 0)
             {
                 model.Meta.LocalAuthorityId = localAuthorityIds[0];
@@ -363,9 +368,9 @@ public class BulkCheckController : BaseController
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(new ErrorResponse 
-            { 
-                Errors = [new Error { Title = ex.Message }] 
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
             });
         }
         catch (FluentValidation.ValidationException ex)
@@ -410,15 +415,15 @@ public class BulkCheckController : BaseController
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(new ErrorResponse 
-            { 
-                Errors = [new Error { Title = ex.Message }] 
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
             });
         }
         catch (NotFoundException)
         {
             return NotFound(new ErrorResponse
-                { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
+            { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
 
         catch (FluentValidation.ValidationException ex)
@@ -476,4 +481,55 @@ public class BulkCheckController : BaseController
             return StatusCode(StatusCodes.Status403Forbidden, new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
+
+    /// <summary>
+    ///     Returns reports of asscioated bulk checks between a set time period
+    /// </summary>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityBulkDeleteResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/check-eligibility/report")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> EligibilityCheckReportRequest([FromBody] EligibilityCheckReportRequest model)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await _generateEligibilityCheckReportUseCase.Execute(model);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
+            });
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse
+            { Errors = [new Error { Status = StatusCodes.Status404NotFound }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+
 }
