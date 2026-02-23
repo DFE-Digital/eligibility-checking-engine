@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Adapters;
+
 public interface IEcsAdapter
 {
     public string UseEcsforChecks { get; }
@@ -17,7 +18,7 @@ public interface IEcsAdapter
 }
 
 [ExcludeFromCodeCoverage]
-public class EcsAdapter: IEcsAdapter
+public class EcsAdapter : IEcsAdapter
 {
     private readonly IConfiguration _configuration;
     private readonly string EcsHost;
@@ -68,6 +69,11 @@ public class EcsAdapter: IEcsAdapter
                 {
                     _httpClient.DefaultRequestHeaders.Add("SOAPAction",
                         "http://www.dcsf.gov.uk/20090308/OnlineQueryService/SubmitSingleQuery");
+
+                    // Add User-Agent header to identify ECE traffic
+                    var version = typeof(EcsAdapter).Assembly.GetName().Version?.ToString() ?? "1.0";
+                    _httpClient.DefaultRequestHeaders.Add("User-Agent", $"ece/{version}");
+                    
                     _ran = true;
                 }
 
@@ -113,11 +119,11 @@ public class EcsAdapter: IEcsAdapter
 
     public async Task<SoapCheckResponse?> EcsCheck(CheckProcessData eligibilityCheck, CheckEligibilityType eligibilityType, string LaId)
     {
-        
+
         var soapMessage = Resources.EcsSoapFsm;
         soapMessage = soapMessage.Replace("{{SystemId}}", EcsSystemId);
         soapMessage = soapMessage.Replace("{{Password}}", EcsPassword);
-        soapMessage = soapMessage.Replace("{{LAId}}", string.IsNullOrEmpty(LaId) ? EcsLAId: LaId);
+        soapMessage = soapMessage.Replace("{{LAId}}", string.IsNullOrEmpty(LaId) ? EcsLAId : LaId);
         soapMessage = soapMessage.Replace("{{ServiceVersion}}", EcsServiceVersion);
         soapMessage = soapMessage.Replace("<ns:Surname>WEB</ns:Surname>",
             $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
@@ -126,13 +132,13 @@ public class EcsAdapter: IEcsAdapter
         soapMessage = soapMessage.Replace("<ns:NiNo>NN668767B</ns:NiNo>",
             $"<ns:NiNo>{eligibilityCheck.NationalInsuranceNumber}</ns:NiNo>");
 
-        if(eligibilityType==CheckEligibilityType.TwoYearOffer)
+        if (eligibilityType == CheckEligibilityType.TwoYearOffer)
         {
             soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
                 $"<ns:EligibilityCheckType>EY</ns:EligibilityCheckType>");
         }
 
-        if(eligibilityType==CheckEligibilityType.EarlyYearPupilPremium)
+        if (eligibilityType == CheckEligibilityType.EarlyYearPupilPremium)
         {
             soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
                 $"<ns:EligibilityCheckType>EYPP</ns:EligibilityCheckType>");
