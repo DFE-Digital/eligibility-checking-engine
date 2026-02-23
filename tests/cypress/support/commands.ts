@@ -5,9 +5,11 @@ declare namespace Cypress {
     saveBearerToken(): Chainable<any>;
     apiRequest(method: string, url: string, requestBody: any, bearerToken?: string | null, failOnStatusCode?: boolean, contentType?: string | null): Chainable<any>;
     verifyPostEligibilityCheckResponse(response: any): Chainable<any>;
+
     verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
+    verifyPostEligibilityReportResponse(response: any): Chainable<void>;
     verifyGetEligibilityWFCheckResponseDataNotFound(response: any, requestData: any): Chainable<void>;
     verifyGetEligibilityWFCheckResponseDataFound(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
@@ -138,6 +140,25 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
   expect(responseLinks).to.have.property('put_EligibilityCheckProcess');
   expect(responseLinks).to.have.property('get_EligibilityCheckStatus');
 });
+
+
+Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
+
+  expect(response.body).to.have.property('data');
+  
+  const responseData = response.body.data;
+
+  expect(responseData).to.be.an('array').and.not.be.empty;
+
+  const first = responseData[0];
+
+  expect(first).to.have.property('nationalInsuranceNumber');
+  expect(first).to.have.property('LastName');
+  expect(first).to.have.property('dateOfBirth');
+  expect(first).to.have.property('dateCheckSubmitted');
+
+});
+
 
 Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataNotFound', (response, requestData) => {
   // Verify body has data and links properties
