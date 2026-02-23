@@ -42,8 +42,3 @@ public class LocalAuthoritiesController : BaseController
         });
     }
 }
-
-public class LocalAuthoritySettingsResponse
-{
-    public bool SchoolCanReviewEvidence { get; set; }
-}
