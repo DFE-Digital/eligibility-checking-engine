@@ -53,6 +53,15 @@ public class Oauth2Controller : Controller
                 }
             }
 
+            // Validate required credentials (replaces automatic model validation lost by making fields nullable)
+            if (string.IsNullOrEmpty(credentials.client_id) || string.IsNullOrEmpty(credentials.client_secret))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "invalid_request", Detail = "client_id and client_secret are required" }]
+                });
+            }
+
             var response = await _authenticateUserUseCase.Execute(credentials);
 
             _logger.LogInformation($"{credentials.client_id?.Replace(Environment.NewLine, "")} authenticated");

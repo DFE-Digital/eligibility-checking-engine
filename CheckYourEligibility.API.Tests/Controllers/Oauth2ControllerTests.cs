@@ -202,9 +202,9 @@ public class Oauth2ControllerTests : TestBase.TestBase
         var response = await _sut.LoginForm(request);
 
         // Assert
-        response.Should().BeOfType<UnauthorizedObjectResult>();
-        var unauthorizedResult = (UnauthorizedObjectResult)response;
-        ((ErrorResponse)unauthorizedResult.Value).Errors.First().Title.Should().Be("invalid_request");
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("invalid_request");
     }
 
     [Test]
@@ -252,9 +252,9 @@ public class Oauth2ControllerTests : TestBase.TestBase
         var response = await _sut.LoginForm(request);
 
         // Assert
-        response.Should().BeOfType<UnauthorizedObjectResult>();
-        var unauthorizedResult = (UnauthorizedObjectResult)response;
-        ((ErrorResponse)unauthorizedResult.Value).Errors.First().Title.Should().Be("invalid_request");
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("invalid_request");
     }
 
     [Test]
