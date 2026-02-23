@@ -12,6 +12,10 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 
     public string? DateOfBirth { get; set; }
     public string? LastName { get; set; }
+    /// <summary>
+    /// The type of eligibility check. This field is optional and determined by the endpoint path.
+    /// When submitting requests, you can omit this field as the endpoint route automatically sets the correct type.
+    /// </summary>
     public CheckEligibilityType Type
     {
         get => baseType;
@@ -94,22 +98,20 @@ public class CheckWFBulkModelExample : IExamplesProvider<CheckEligibilityRequest
             {
                 new CheckEligibilityRequestWorkingFamiliesBulkData
                 {
-                    Type = CheckEligibilityType.WorkingFamilies,
-                    EligibilityCode = "50012345678",
-                    DateOfBirth = "2022-01-01",
+                    EligibilityCode = "90246760112",
+                    DateOfBirth = "2019-05-15",
                     NationalInsuranceNumber = "AB123456C",
                     ClientIdentifier = "12345",
                     GracePeriodEndDate = null,
-                    LastName = "Smith",
+                    LastName = "Johnson",
                     ValidityStartDate = null,
                     ValidityEndDate = null
                 },
                 new CheckEligibilityRequestWorkingFamiliesBulkData
                 {
-                    Type = CheckEligibilityType.WorkingFamilies,
-                    EligibilityCode = "50012345679",
-                    DateOfBirth = "2022-01-02",
-                    NationalInsuranceNumber = "AB123456D",
+                    EligibilityCode = "90312345678",
+                    DateOfBirth = "2020-08-22",
+                    NationalInsuranceNumber = "CD987654B",
                     ClientIdentifier = "12346",
                     GracePeriodEndDate = null,
                     LastName = "Smith",
@@ -130,11 +132,10 @@ public class
         {
             Data = new CheckEligibilityRequestWorkingFamiliesData
             {
-                Type = CheckEligibilityType.WorkingFamilies,
                 NationalInsuranceNumber = "AB123456C",
-                DateOfBirth = "2024-01-01",
-                EligibilityCode = "50012345678",
-                LastName = "Smith",
+                DateOfBirth = "2019-05-15",
+                EligibilityCode = "90246760112",
+                LastName = "Johnson",
                 ValidityStartDate = null,
                 ValidityEndDate = null,
                 GracePeriodEndDate = null
@@ -151,11 +152,9 @@ public class CheckFSMModelExample : IExamplesProvider<CheckEligibilityRequest<Ch
         {
             Data = new CheckEligibilityRequestData
             {
-                NationalInsuranceNumber = "AB123456C",
-                NationalAsylumSeekerServiceNumber = "AB123456C",
-                LastName = "Smith",
-                DateOfBirth = "2024-01-01",
-                Type = CheckEligibilityType.FreeSchoolMeals,
+                NationalInsuranceNumber = "NN123456C",
+                LastName = "Tester",
+                DateOfBirth = "2010-06-15"
             }
         };
     }
@@ -170,10 +169,8 @@ public class CheckEYPPModelExample : IExamplesProvider<CheckEligibilityRequest<C
             Data = new CheckEligibilityRequestData
             {
                 NationalInsuranceNumber = "AB123456C",
-                NationalAsylumSeekerServiceNumber = "AB123456C",
-                LastName = "Smith",
-                DateOfBirth = "2024-01-01",
-                Type = CheckEligibilityType.EarlyYearPupilPremium,
+                LastName = "Johnson",
+                DateOfBirth = "2021-03-10"
             }
         };
     }
@@ -187,11 +184,90 @@ public class Check2YOModelExample : IExamplesProvider<CheckEligibilityRequest<Ch
         {
             Data = new CheckEligibilityRequestData
             {
-                NationalInsuranceNumber = "AB123456C",
-                NationalAsylumSeekerServiceNumber = "AB123456C",
-                LastName = "Smith",
-                DateOfBirth = "2024-01-01",
-                Type = CheckEligibilityType.TwoYearOffer,
+                NationalInsuranceNumber = "CD987654B",
+                LastName = "Williams",
+                DateOfBirth = "2022-08-20"
+            }
+        };
+    }
+}
+
+public class CheckFSMBulkModelExample : IExamplesProvider<CheckEligibilityRequestBulk>
+{
+    public CheckEligibilityRequestBulk GetExamples()
+    {
+        return new CheckEligibilityRequestBulk
+        {
+            Data = new List<CheckEligibilityRequestBulkData>
+            {
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "NN123456C",
+                    LastName = "Tester",
+                    DateOfBirth = "2010-06-15",
+                    ClientIdentifier = "12345"
+                },
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "NN654321A",
+                    LastName = "Ahmed",
+                    DateOfBirth = "2011-09-22",
+                    ClientIdentifier = "12346"
+                }
+            }
+        };
+    }
+}
+
+public class CheckEYPPBulkModelExample : IExamplesProvider<CheckEligibilityRequestBulk>
+{
+    public CheckEligibilityRequestBulk GetExamples()
+    {
+        return new CheckEligibilityRequestBulk
+        {
+            Data = new List<CheckEligibilityRequestBulkData>
+            {
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "AB123456C",
+                    LastName = "Johnson",
+                    DateOfBirth = "2021-03-10",
+                    ClientIdentifier = "12345"
+                },
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "CD654321B",
+                    LastName = "Patel",
+                    DateOfBirth = "2020-11-05",
+                    ClientIdentifier = "12346"
+                }
+            }
+        };
+    }
+}
+
+public class Check2YOBulkModelExample : IExamplesProvider<CheckEligibilityRequestBulk>
+{
+    public CheckEligibilityRequestBulk GetExamples()
+    {
+        return new CheckEligibilityRequestBulk
+        {
+            Data = new List<CheckEligibilityRequestBulkData>
+            {
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "CD987654B",
+                    LastName = "Williams",
+                    DateOfBirth = "2022-08-20",
+                    ClientIdentifier = "12345"
+                },
+                new CheckEligibilityRequestBulkData
+                {
+                    NationalInsuranceNumber = "EF654321C",
+                    LastName = "Khan",
+                    DateOfBirth = "2022-12-15",
+                    ClientIdentifier = "12346"
+                }
             }
         };
     }

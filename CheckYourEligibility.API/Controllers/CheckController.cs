@@ -43,7 +43,11 @@ public class CheckController : BaseController
     ///     Posts a FSM Eligibility Check to the processing queue
     /// </summary>
     /// <param name="model"></param>
-    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    /// <remarks>
+    /// If the check has already been submitted, then the stored Hash is returned.
+    /// The check type is determined by the endpoint path (/check/free-school-meals).
+    /// The 'type' field in the request body is optional and can be omitted.
+    /// </remarks>
     [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(CheckFSMModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
@@ -72,7 +76,11 @@ public class CheckController : BaseController
     ///     Posts a 2YO Eligibility Check to the processing queue
     /// </summary>
     /// <param name="model"></param>
-    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    /// <remarks>
+    /// If the check has already been submitted, then the stored Hash is returned.
+    /// The check type is determined by the endpoint path (/check/two-year-offer).
+    /// The 'type' field in the request body is optional and can be omitted.
+    /// </remarks>
     [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(Check2YOModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
@@ -101,7 +109,11 @@ public class CheckController : BaseController
     ///     Posts a EYPP Eligibility Check to the processing queue
     /// </summary>
     /// <param name="model"></param>
-    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks>
+    /// <remarks>
+    /// If the check has already been submitted, then the stored Hash is returned.
+    /// The check type is determined by the endpoint path (/check/early-year-pupil-premium).
+    /// The 'type' field in the request body is optional and can be omitted.
+    /// </remarks>
     [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestData>), typeof(CheckEYPPModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
@@ -130,7 +142,11 @@ public class CheckController : BaseController
     /// Posts a WF Eligibility Check to the processing queue
     /// </summary>
     /// <param name="model"></param>
-    /// <remarks>If the check has already been submitted, then the stored Hash is returned</remarks> 
+    /// <remarks>
+    /// If the check has already been submitted, then the stored Hash is returned.
+    /// The check type is determined by the endpoint path (/check/working-families).
+    /// The 'type' field in the request body is optional and can be omitted.
+    /// </remarks> 
     [SwaggerRequestExample(typeof(CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>),
         typeof(CheckWFModelExample))]
     [ProducesResponseType(typeof(CheckEligibilityResponse), (int)HttpStatusCode.Accepted)]

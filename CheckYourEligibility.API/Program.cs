@@ -99,7 +99,7 @@ builder.Services.AddSwaggerGen(c =>
             Type = SecuritySchemeType.OAuth2,
             Flows = new OpenApiOAuthFlows
             {
-                AuthorizationCode = new OpenApiOAuthFlow
+                ClientCredentials = new OpenApiOAuthFlow
                 {
                     TokenUrl = new Uri(builder.Configuration.GetValue<string>("Host") + "/oauth2/token"),
                     Scopes = builder.Configuration.GetSection("Jwt").GetSection("Scopes").Get<List<string>>()
@@ -116,7 +116,7 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Reference = new OpenApiReference
                     {
-                        Id = "oauth2", //The name of the previously defined security scheme.
+                        Id = "oauth2",
                         Type = ReferenceType.SecurityScheme
                     }
                 },
@@ -139,6 +139,7 @@ builder.Services.AddSwaggerGen(c =>
     var filePath = Path.Combine(AppContext.BaseDirectory, "CheckYourEligibility.API.xml");
     c.IncludeXmlComments(filePath);
     c.ExampleFilters();
+    c.DocumentFilter<CheckYourEligibility.API.Filters.RemoveTypeFromRequestExamplesFilter>();
 });
 
 builder.Services.AddSwaggerExamplesFromAssemblyOf<IEligibilityServiceType>();
