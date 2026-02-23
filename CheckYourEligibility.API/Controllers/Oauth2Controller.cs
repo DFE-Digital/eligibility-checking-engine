@@ -44,7 +44,7 @@ public class Oauth2Controller : Controller
                     {
                         credentials.client_id = parts[0];
                         credentials.client_secret = parts[1];
-                        _logger.LogDebug($"Extracted credentials from Basic Auth header for client: {parts[0]}");
+                        _logger.LogDebug($"Extracted credentials from Basic Auth header for client: {parts[0].Replace(Environment.NewLine, "")}");
                     }
                 }
                 catch (Exception ex)
