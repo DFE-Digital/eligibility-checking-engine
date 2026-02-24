@@ -10,6 +10,7 @@ declare namespace Cypress {
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
     verifyPostEligibilityReportResponse(response: any): Chainable<void>;
+    verifyEligibilityReportHistoryResponse(response: any): Chainable<void>;
     verifyGetEligibilityWFCheckResponseDataNotFound(response: any, requestData: any): Chainable<void>;
     verifyGetEligibilityWFCheckResponseDataFound(response: any, requestData: any): Chainable<void>;
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
@@ -157,6 +158,23 @@ Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
   expect(first).to.have.property('dateOfBirth');
   expect(first).to.have.property('dateCheckSubmitted');
 
+});
+
+Cypress.Commands.add('verifyEligibilityReportHistoryResponse', (response) => {
+
+  expect(response.body).to.have.property('data');
+  
+  const responseData = response.body.data;
+
+  expect(responseData).to.be.an('array').and.not.be.empty;
+
+  const first = responseData[0];
+
+  expect(first).to.have.property('reportGeneratedDate');
+  expect(first).to.have.property('startDate');
+  expect(first).to.have.property('endDate');
+  expect(first).to.have.property('generatedBy');
+  expect(first).to.have.property('numberOfResults');
 });
 
 

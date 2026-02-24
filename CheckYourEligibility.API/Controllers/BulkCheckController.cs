@@ -28,6 +28,7 @@ public class BulkCheckController : BaseController
     private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
     private readonly IGenerateEligibilityCheckReportUseCase _generateEligibilityCheckReportUseCase;
+    private readonly IGetEligibilityReportHistoryUseCase _getEligibilityReportHistoryUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
 
@@ -41,6 +42,7 @@ public class BulkCheckController : BaseController
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
         IGenerateEligibilityCheckReportUseCase generateEligibilityCheckReportUseCase,
+        IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
         IGetAllBulkChecksUseCase getAllBulkChecksUseCase
     )
         : base(audit)
@@ -54,8 +56,9 @@ public class BulkCheckController : BaseController
         _getBulkUploadProgressUseCase = getBulkUploadProgressUseCase;
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
-        _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
         _generateEligibilityCheckReportUseCase = generateEligibilityCheckReportUseCase;
+        _getEligibilityReportHistoryUseCase = getEligibilityReportHistoryUseCase;
+        _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
     }
 
 
@@ -486,7 +489,7 @@ public class BulkCheckController : BaseController
     ///     Returns reports of asscioated bulk checks between a set time period
     /// </summary>
     /// <returns></returns>
-    [ProducesResponseType(typeof(CheckEligibilityBulkDeleteResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check-eligibility/report")]
@@ -520,6 +523,50 @@ public class BulkCheckController : BaseController
         {
             return NotFound(new ErrorResponse
             { Errors = [new Error { Status = StatusCodes.Status404NotFound }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Gets all report history for a given LA
+    /// </summary>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(EligibilityCheckReportHistoryResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check-eligibility/report-history/{localAuthorityId}")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> GetAllReportHistory(string localAuthorityId)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await _getEligibilityReportHistoryUseCase.Execute(localAuthorityId, localAuthorityIds);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
+            });
         }
         catch (FluentValidation.ValidationException ex)
         {
