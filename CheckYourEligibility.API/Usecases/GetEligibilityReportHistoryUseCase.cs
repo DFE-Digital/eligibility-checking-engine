@@ -29,13 +29,16 @@ public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryU
 
         var response = await _checkEligibilityGateway.GetEligibilityCheckReportHistory(localAuthorityId);
 
+        // Sanitize user-provided Local Authority ID before logging to prevent log forging
+        var sanitizedLocalAuthorityId = localAuthorityId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+
         if (response == null)
         {
-            _logger.LogError("Failed to retrieve eligibility check report history for Local Authority ID: {LocalAuthorityId}", localAuthorityId);
+            _logger.LogError("Failed to retrieve eligibility check report history for Local Authority ID: {LocalAuthorityId}", sanitizedLocalAuthorityId);
             throw new Exception("Failed to retrieve eligibility check report history");
         }
 
-        _logger.LogInformation("Successfully generated eligibility check report history for Local Authority ID: {LocalAuthorityId}", localAuthorityId);
+        _logger.LogInformation("Successfully generated eligibility check report history for Local Authority ID: {LocalAuthorityId}", sanitizedLocalAuthorityId);
 
         return new EligibilityCheckReportHistoryResponse
         {
