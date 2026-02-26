@@ -3,10 +3,6 @@ trigger:
 
 pr: none
 
-pool:
-  name: Azure Pipelines
-  vmImage: 'windows-latest'
-
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
@@ -34,6 +30,7 @@ stages:
       azureResourceGroup: '$(resourceGroupDev)'
       sqlServerName: '$(sqlServerDev)'
       webAppName: '$(webAppNameDev)'
+      prefix: 's203d01'
 ## -- dev deploy -- ##
 
 ## -- dev cypress tests -- ##
@@ -45,6 +42,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_DEV)'
       jwtPassword: '$(JWT_PASSWORD_DEV)'
       cypressEnv: 'DEV'
+      prefix: 's203d01'
 ## -- dev cypress tests -- ##
 
 ## -- test deploy -- ##
@@ -54,11 +52,12 @@ stages:
       displayName: 'Deploy App Test'
       deploymentName: 'testdeploy'
       environment: 'TEST'
-      ECE_KEY_VAULT_NAME: $(kvTest)
-      azureSubscription: $(subscriptionTest)
-      azureResourceGroup: $(resourceGroupTest)
-      sqlServerName: $(sqlServerTest)
-      webAppName: $(webAppNameTest)
+      ECE_KEY_VAULT_NAME: '$(kvTest)'
+      azureSubscription: '$(subscriptionTest)'
+      azureResourceGroup: '$(resourceGroupTest)'
+      sqlServerName: '$(sqlServerTest)'
+      webAppName: '$(webAppNameTest)'
+      prefix: 's203t01'
 ## -- test deploy -- ##
 
 ## -- test cypress tests -- ##
@@ -70,6 +69,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_TEST)'
       jwtPassword: '$(JWT_PASSWORD_TEST)'
       cypressEnv: 'TEST'
+      prefix: 's203t01'
 ## -- test cypress tests -- ##
 
 ## -- pp deploy -- ##
@@ -79,11 +79,12 @@ stages:
       displayName: 'Deploy App Pre-prod'
       deploymentName: 'ppdeploy'
       environment: 'PRE-PROD'
-      ECE_KEY_VAULT_NAME: $(kvPreProd)
-      azureSubscription: $(subscriptionPreProd)
-      azureResourceGroup: $(resourceGroupPreProd)
-      sqlServerName: $(sqlServerPreProd)
-      webAppName: $(webAppNamePreProd)
+      ECE_KEY_VAULT_NAME: '$(kvPreProd)'
+      azureSubscription: '$(subscriptionPreProd)'
+      azureResourceGroup: '$(resourceGroupPreProd)'
+      sqlServerName: '$(sqlServerPreProd)'
+      webAppName: '$(webAppNamePreProd)'
+      prefix: 's203t02'
 ## -- pp deploy -- ##
 
 ## -- pp cypress tests -- ##
@@ -95,6 +96,7 @@ stages:
       jwtUsername: '$(JWT_USERNAME_PP)'
       jwtPassword: '$(JWT_PASSWORD_PP)'
       cypressEnv: 'PP'
+      prefix: 's203t02'
 ## -- pp cypress tests -- ##
 
 ## -- prod deploy -- ##
@@ -104,9 +106,10 @@ stages:
       displayName: 'Deploy App Production'
       deploymentName: 'deploy'
       environment: 'PROD'
-      ECE_KEY_VAULT_NAME: $(kvProd)
-      azureSubscription: $(subscriptionProd)
-      azureResourceGroup: $(resourceGroupProd)
-      sqlServerName: $(sqlServerProd)
-      webAppName: $(webAppNameProd)
+      ECE_KEY_VAULT_NAME: '$(kvProd)'
+      azureSubscription: '$(subscriptionProd)'
+      azureResourceGroup: '$(resourceGroupProd)'
+      sqlServerName: '$(sqlServerProd)'
+      webAppName: '$(webAppNameProd)'
+      prefix: 's203p01'
 ## -- prod deploy -- ##

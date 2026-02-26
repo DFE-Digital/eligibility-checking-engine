@@ -6,57 +6,63 @@ parameters:
     type: string
   - name: displayName
     type: string
+  - name: dotnetEfVersion # Version of dotnet-ef tool to use
+    type: string
+    default: '8.0.4'
   
 stages:
   - stage: ${{ parameters.stageName }}
     displayName: ${{ parameters.displayName }}
     jobs:
-    - job: 
+    - job:
       pool:
         name: Azure Pipelines
-        vmImage: 'windows-latest'
+        vmImage: 'ubuntu-latest'
       steps:
-      - task: NuGetToolInstaller@1
-
-      - task: NuGetCommand@2
+      - task: UseDotNet@2
         inputs:
-          restoreSolution: '$(solution)'
+          packageType: 'sdk'
+          version: '8.0.x'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore'
+        inputs:
+          command: 'restore'
+          projects: '$(solution)'
+          verbosityRestore: 'Minimal'
 
       - task: CmdLine@2
         displayName: 'Build migrations bundle'
         condition: eq(${{ parameters.isDeployRun }}, true) # Task only runs for deployment pipeline runs
         inputs:
           script: |
-            dotnet tool install --global dotnet-ef --version 8.0.4
-            dotnet ef migrations bundle --verbose --self-contained -r win-x86 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
-            mv efbundle.exe $(Build.ArtifactStagingDirectory)
+            export PATH="$PATH:$HOME/.dotnet/tools"
+            dotnet tool install --global dotnet-ef --version ${{ parameters.dotnetEfVersion }}
+            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
+            mv efbundle $(Build.ArtifactStagingDirectory)
+          failOnStderr: true
 
-      - task: VSBuild@1
+      - task: DotNetCoreCLI@2
+        displayName: 'Build solution'
         inputs:
-          solution: '$(solution)'
-          msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-          platform: '$(buildPlatform)'
-          configuration: '$(buildConfiguration)'
+          command: 'build'
+          projects: '$(solution)'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
 
-      - task: VSTest@2
+      - task: DotNetCoreCLI@2
+        displayName: 'Run tests'
         inputs:
-          platform: '$(buildPlatform)'
-          configuration: '$(buildConfiguration)'
-          runSettingsFile: 'CheckYourEligibility.API.Tests/.runsettings'
-          resultsFolder: '$(build.ArtifactStagingDirectory)/Test/Results'
-          otherConsoleOptions: '/collect:"Code Coverage;Format=Cobertura"'  # <<<< this is the important bit
-          codeCoverageEnabled: True
-
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: 'Cobertura'
-          summaryFileLocation: '$(build.ArtifactStagingDirectory)/Test/Results/**/*.xml'
+          command: 'test'
+          projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'Unit Tests'
 
       - task: DotNetCoreCLI@2
         inputs:
           command: publish
           publishWebProjects: True
-          arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+          arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
           zipAfterPublish: True
 
       - task: CopyFiles@2

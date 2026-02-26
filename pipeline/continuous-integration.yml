@@ -5,10 +5,6 @@ pr: # enable PR trigger for all branches i.e. run this pipeline on all PR create
     include:
       - '*'
 
-pool:
-  name: Azure Pipelines
-  vmImage: 'windows-latest'
-
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'

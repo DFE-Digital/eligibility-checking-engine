@@ -11,6 +11,8 @@ parameters:
     type: string
   - name: cypressEnv
     type: string
+  - name: prefix
+    type: string
 
 stages:
 - stage: ${{ parameters.stageName }}
@@ -19,14 +21,15 @@ stages:
     - job: 'SetUpCypress'
       displayName: 'Cypress Tests ${{ parameters.cypressEnv }}'
       pool:
-        vmImage: ubuntu-latest
+        name: ${{ parameters.prefix }}-ECE-managed-devops-pool
       steps:
         - task: Bash@3
+          displayName: 'Install npm dependencies'
           inputs:
             targetType: inline
             script: |
               cd tests
-              npm install
+              npm install --verbose
         - task: Bash@3
           displayName: 'RunTests'
           inputs:
@@ -56,5 +59,6 @@ stages:
           condition: always()
           displayName: 'Publish test results'
           inputs:
+            testResultsFormat: 'JUnit'
             testResultsFiles: '**/combined-report.xml'
             searchFolder: 'tests'
