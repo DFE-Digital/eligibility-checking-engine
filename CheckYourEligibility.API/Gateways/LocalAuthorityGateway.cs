@@ -19,4 +19,19 @@ public class LocalAuthorityGateway : ILocalAuthority
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
     }
+
+    public async Task<LocalAuthority?> UpdateSchoolCanReviewEvidence(int localAuthorityId, bool value)
+    {
+        var la = await _db.LocalAuthorities
+            .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
+
+        if (la == null)
+            return null;
+
+        la.SchoolCanReviewEvidence = value;
+
+        await _db.SaveChangesAsync();
+
+        return la;
+    }
 }
