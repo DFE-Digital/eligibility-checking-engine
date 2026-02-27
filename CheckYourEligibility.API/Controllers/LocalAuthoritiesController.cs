@@ -23,7 +23,7 @@ public class LocalAuthoritiesController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/local-authorities/{laCode:int}/settings")]
-    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrAdminScope)]
     public async Task<ActionResult> GetSettings(int laCode)
     {
         var la = await _localAuthority.GetLocalAuthorityById(laCode);
