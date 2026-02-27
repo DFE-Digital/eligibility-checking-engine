@@ -176,6 +176,11 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireNotificationScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScope(configuration["Jwt:Scopes:notification"] ?? "notification")));
+
+            options.AddPolicy(PolicyNames.RequireLaOrAdminScope, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority") ||
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
         });
         return services;
     }
