@@ -15,6 +15,8 @@ namespace CheckYourEligibility.API.Controllers;
 public class LocalAuthoritiesController : BaseController
 {
     private readonly ILocalAuthority _localAuthority;
+    private const string AdminScope = "admin";
+    private const string LocalAuthorityScope = "local_authority";
 
     public LocalAuthoritiesController(ILocalAuthority localAuthority, IAudit audit) : base(audit)
     {
@@ -46,7 +48,7 @@ public class LocalAuthoritiesController : BaseController
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
-    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType((int)HttpStatusCode.Forbidden)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/local-authorities/{laCode:int}/settings")]
     [Authorize(Policy = PolicyNames.RequireLaOrAdminScope)]
@@ -55,15 +57,15 @@ public class LocalAuthoritiesController : BaseController
     [FromBody] LocalAuthoritySettingsUpdateRequest request)
     {
         // In addition to the policy, enforce "affected LA only" unless Admin
-        var isAdmin = User.HasScope("admin");
+        var isAdmin = User.HasScope(AdminScope);
 
         if (!isAdmin)
         {
-            var laIdFromToken = User.GetSingleScopeId("local_authority");
+            var laIdFromToken = User.GetSingleScopeId(LocalAuthorityScope);
 
             // null => invalid scope state (multiple LAs or mixed), 0 => general LA access (all)
             if (laIdFromToken is null || laIdFromToken == 0 || laIdFromToken != laCode)
-                return Unauthorized();
+                return Forbid();
         }
 
         var updated = await _localAuthority.UpdateSchoolCanReviewEvidence(laCode, request.SchoolCanReviewEvidence);
