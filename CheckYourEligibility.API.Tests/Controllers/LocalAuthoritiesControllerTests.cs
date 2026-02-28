@@ -127,7 +127,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_UpdateSettings_When_NonAdminAndScopeDoesNotMatch_Should_Return401()
+    public async Task Given_UpdateSettings_When_NonAdminAndScopeDoesNotMatch_Should_Return403()
     {
         // Arrange
         const int requestedLa = 894;
@@ -140,7 +140,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
         var result = await _sut.UpdateSettings(requestedLa, request);
 
         // Assert
-        result.Should().BeOfType<UnauthorizedResult>();
+        result.Should().BeOfType<ForbidResult>();
     }
 
     [Test]
