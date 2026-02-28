@@ -3,6 +3,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
@@ -59,7 +60,8 @@ public class CheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals);
+            CheckMetaData meta = User.CalculateMetaData();
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -92,7 +94,8 @@ public class CheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.TwoYearOffer);
+            CheckMetaData meta = User.CalculateMetaData();
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.TwoYearOffer, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -125,7 +128,8 @@ public class CheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium);
+            CheckMetaData meta = User.CalculateMetaData();
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -159,7 +163,8 @@ public class CheckController : BaseController
     {
         try
         {
-            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies);
+            CheckMetaData meta = User.CalculateMetaData();
+            var result = await _checkEligibilityUseCase.Execute(model, CheckEligibilityType.WorkingFamilies, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)

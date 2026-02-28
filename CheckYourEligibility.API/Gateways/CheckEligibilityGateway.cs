@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -36,18 +37,19 @@ public class CheckEligibilityGateway : ICheckEligibility
         _configuration = configuration;
     }
 
-    public async Task PostCheck<T>(T data, string groupId) where T : IEnumerable<IEligibilityServiceType>
+    public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
-        foreach (var item in data) await PostCheck(item);
+        foreach (var item in data) await PostCheck(item, meta);
     }
 
-    public async Task<PostCheckResult> PostCheck<T>(T data) where T : IEligibilityServiceType
+    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
     {
         var item = _mapper.Map<EligibilityCheck>(data);
 
         try
         {
+           
             var baseType = data as CheckEligibilityRequestDataBase;
 
             item.CheckData = JsonConvert.SerializeObject(data);
@@ -59,6 +61,13 @@ public class CheckEligibilityGateway : ICheckEligibility
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
             item.Status = CheckEligibilityStatus.queuedForProcessing;
+            if (meta != null)
+            {
+                item.OrganisationID = meta.OrganisationID;
+                item.OrganisationType = !string.IsNullOrEmpty(meta.OrganisationType) ? meta.OrganisationType : null;
+                item.Source = meta.Source;
+                item.UserName = meta.UserName;
+            }
             var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
 
             //TODO: The hashing logic should sit in the use case, targeting the hash gateway
@@ -66,11 +75,13 @@ public class CheckEligibilityGateway : ICheckEligibility
                 await _hashGateway.Exists(checkData);
             if (checkHashResult != null)
             {
+                
                 CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
                 item.Status = hashedStatus;
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
                 item.EligibilityCheckHash = checkHashResult;
 
+                // Find check data of last hashed result for Working families
                 if (data.Type == CheckEligibilityType.WorkingFamilies && (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
                 {
                     try

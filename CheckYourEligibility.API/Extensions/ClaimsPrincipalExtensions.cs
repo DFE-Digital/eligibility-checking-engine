@@ -1,12 +1,62 @@
+using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Domain.Constants;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
-    private static readonly string _localAuthorityScope = "local_authority";
+    private static readonly string _localAuthority = "local_authority";
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
+
+
+    /// <summary>
+    /// Check passed orgs ID
+    /// and map OrgID and Type
+    /// if multiple Ids found orgId = 0 and Orgtype = ambiguous
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    public static CheckMetaData CalculateMetaData(this ClaimsPrincipal user) {
+        
+        CheckMetaData meta = new();
+        meta.OrganisationID = 0;
+        meta.OrganisationType = OrganisationType.ambiguous;
+
+        // if orgs scopes found return orgId = 0 OrgType = unspecified
+        if (!user.HasScope(_localAuthority) || !user.HasScope(_multiAcademyTrust) || !user.HasScope(_establishment)) { 
+
+            meta.OrganisationType = OrganisationType.unspecified;
+            return meta;
+        }
+
+        //returns null if more than one Id is found per scope
+       // return 0 if only generic scope is passed
+       // else it returns the ID.
+        int? matId = user.GetSingleScopeId(_multiAcademyTrust);
+        int? laId = user.GetSingleScopeId(_localAuthority);
+        int? establishmentId = user.GetSingleScopeId(_establishment);
+
+
+        // if at least one of the org scopes have more than one ID  passed
+        if (laId == null || matId == null || establishmentId == null)
+        {
+            return meta;
+
+        }
+        // if different Orgs IDs detected then orgID = 0 and orgType = ambiguous
+        else if ((establishmentId == null && laId == null) || (establishmentId == null && matId == null) || (laId == null && matId == null)) { return meta; }
+        else if (laId > 0) { meta.OrganisationID = laId; meta.OrganisationType= OrganisationType.local_authority; }
+        else if (matId > 0) { meta.OrganisationID = matId; meta.OrganisationType = OrganisationType.multi_academy_trust; }
+        else if (establishmentId > 0) { meta.OrganisationID = establishmentId; meta.OrganisationType = OrganisationType.establishment; }
+        else { meta.OrganisationType = OrganisationType.unspecified; }
+
+            return meta;
+     
+    }
+
     /// <summary>
     /// Gets all specific scope ids from the user's claims.
     /// Returns a list of ids for 'local_authority:xx' scopes, or a list with 0 if 'local_authority' (all) is present.
