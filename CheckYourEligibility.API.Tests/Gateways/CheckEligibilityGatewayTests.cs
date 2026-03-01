@@ -500,12 +500,13 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         {
             var item = GetBulkCheckWithEligibilityChecks(5, CheckEligibilityType.FreeSchoolMeals, 948).EligibilityChecks.First();
             _fakeInMemoryDb.BulkChecks.Add(item.BulkCheck);
+
             await _fakeInMemoryDb.SaveChangesAsync();
         }
 
         // Act
         var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
-        
+
         // Assert
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
         response.Should().NotBeNull();
@@ -542,6 +543,55 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
         response.Should().NotBeNull();
         response.Count().Should().Be(0); // No eligibility checks should result in an empty report
+    }
+
+    [Test]
+    public async Task GetReportHistory_Should_Return_Report_History_For_Local_AuthorityAsync()
+    {
+        // Arrange
+        _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+        {
+            LocalAuthorityID = 948,
+            StartDate = DateTime.UtcNow.AddDays(-7),
+            EndDate = DateTime.UtcNow.AddDays(7),
+            GeneratedBy = "peterB",
+            NumberOfResults = 15
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetEligibilityCheckReportHistory("948");
+
+        // Assert
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportHistoryItem>>();
+        response.Count().Should().Be(1);  // only one report record been added.
+    }
+
+    [Test]
+    public async Task GetReportHistory_Should_Return_Empty_History_When_No_Reports_FoundAsync()
+    {
+        // Arrange
+        // No reports added to the database to ensure it returns an empty history
+
+        // Act
+        var response = await _sut.GetEligibilityCheckReportHistory("948");
+
+        // Assert
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportHistoryItem>>();
+        response.Count().Should().Be(0);  // No reports should result in an empty history
+    }
+
+    [Test]
+    public async Task GetReportHistory_Should_Throw_Exception_For_Empty_Local_AuthorityIdAsync()
+    {
+        // Arrange
+        var empty = "";
+
+        // Act
+        Func<Task> act = async () => await _sut.GetEligibilityCheckReportHistory(empty);
+
+        // Assert
+        await act.Should().ThrowAsync<Exception>();
     }
 
     #region Private Helper Methods

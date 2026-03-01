@@ -16,5 +16,6 @@ public interface ICheckEligibility
 
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null);
     Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId);
-    Task<IEnumerable<EligibilityCheckReportItem>> GenerateEligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default); 
+    Task<IEnumerable<EligibilityCheckReportItem>> GenerateEligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default);
+    Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId); 
 }
