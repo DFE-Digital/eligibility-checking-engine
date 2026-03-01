@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260215132347_AddSchoolCanReviewEvidenceToLocalAuthority")]
+    partial class AddSchoolCanReviewEvidenceToLocalAuthority
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -628,40 +631,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("WorkingFamiliesEvents");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReport", b =>
-                {
-                    b.Property<Guid>("EligibilityCheckReportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("CheckType")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GeneratedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("LocalAuthorityID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("NumberOfResults")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReportGeneratedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("EligibilityCheckReportId");
-
-                    b.HasIndex("LocalAuthorityID");
-
-                    b.ToTable("EligibilityCheckReports");
-                });
-
             modelBuilder.Entity("FosterCarer", b =>
                 {
                     b.Property<Guid>("FosterCarerId")
@@ -865,15 +834,6 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired();
 
                     b.Navigation("MultiAcademyTrust");
-                });
-
-            modelBuilder.Entity("EligibilityCheckReport", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
-                        .WithMany()
-                        .HasForeignKey("LocalAuthorityID");
-
-                    b.Navigation("LocalAuthority");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
