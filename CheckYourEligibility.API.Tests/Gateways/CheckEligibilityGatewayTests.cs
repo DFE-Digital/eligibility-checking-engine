@@ -94,6 +94,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
 
@@ -105,7 +106,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .ThrowsAsync(new Exception());
 
         // Act
-        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request);
+        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request,meta);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();
@@ -117,6 +118,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
         var key = string.IsNullOrEmpty(request.NationalInsuranceNumber)
@@ -139,10 +141,10 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
-        //
+        
         var groupId = Guid.NewGuid().ToString();
         var data = new List<CheckEligibilityRequestData> { request };
-        await _sut.PostCheck(data, groupId);
+        await _sut.PostCheck(data, groupId, meta);
         Assert.Pass();
     }
 
@@ -152,10 +154,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
 
         // Act
-        var response = _sut.PostCheck(request);
+        var response = _sut.PostCheck(request, meta);
 
         // Assert
         response.Result.Id.Should().NotBeNullOrEmpty();

@@ -117,7 +117,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Create mock HttpContext with ClaimsPrincipal
         var httpContext = new DefaultHttpContext();
         var claims = new List<Claim>();
-
+        claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "unit-test-bulk-check-controller"));
         // Add appropriate scope claims based on localAuthorityIds
         if (localAuthorityIds.Contains(0))
         {
@@ -146,7 +146,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), meta))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -173,7 +173,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), meta))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -219,7 +219,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),meta))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -261,7 +261,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),meta))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act

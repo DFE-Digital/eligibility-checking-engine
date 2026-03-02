@@ -84,6 +84,8 @@ public class CheckControllerTests : TestBase.TestBase
         {
             HttpContext = httpContext
         };
+        // Setup user context
+        SetupControllerWithLocalAuthorityIds([1]);
     }
 
     [TearDown]
@@ -109,7 +111,7 @@ public class CheckControllerTests : TestBase.TestBase
         // Create mock HttpContext with ClaimsPrincipal
         var httpContext = new DefaultHttpContext();
         var claims = new List<Claim>();
-
+        claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "unit-test-check-controller"));
         // Add appropriate scope claims based on localAuthorityIds
         if (localAuthorityIds.Contains(0))
         {
@@ -130,9 +132,10 @@ public class CheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestData>>();
+        var meta = _fixture.Create<CheckMetaData>();
         var executionResult = new CheckEligibilityResponse();
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals, It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -150,9 +153,10 @@ public class CheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestData>>();
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
+        var meta = _fixture.Create<CheckMetaData>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals, It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -176,7 +180,8 @@ public class CheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies))
+        var meta = _fixture.Create<CheckMetaData>();
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies, It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         var response = await _sut.CheckEligibilityWF(request);
@@ -197,9 +202,10 @@ public class CheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData>>();
         var statusResponse = _fixture.Create<CheckEligibilityResponse>();
+        var meta = _fixture.Create<CheckMetaData>();
         var executionResult = statusResponse;
 
-        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies))
+        _mockCheckEligibilityUseCase.Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies, It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
