@@ -11,7 +11,13 @@ public static class ClaimsPrincipalExtensions
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
 
+    private static string GetCheckSourceFromAuthentication(this ClaimsPrincipal user) {
+        string source = CheckSource.api_enduser;
+        var auth = user.Identity;
+        
+        return source;
 
+    }
     /// <summary>
     /// Check passed orgs ID
     /// and map OrgID and Type
@@ -56,6 +62,7 @@ public static class ClaimsPrincipalExtensions
             return meta;
      
     }
+
 
     /// <summary>
     /// Gets all specific scope ids from the user's claims.
