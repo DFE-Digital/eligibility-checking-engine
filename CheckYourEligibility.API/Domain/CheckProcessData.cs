@@ -29,34 +29,19 @@ public class CheckProcessData
     /// <returns>String of hashed values</returns>
     public string GetHash()
     {
-        // string input = $"""
-        //                 {LastName?.ToUpper()}
-        //                 {(NationalInsuranceNumber.IsNullOrEmpty() ?
-        //                     NationalAsylumSeekerServiceNumber?.ToUpper() : NationalInsuranceNumber?.ToUpper())}
-        //                 {DateOfBirth}
-        //                 {Type}
-        //                 """;
-
-         var key = string.IsNullOrEmpty(NationalInsuranceNumber)
+        var key = string.IsNullOrEmpty(NationalInsuranceNumber)
             ? NationalAsylumSeekerServiceNumber?.ToUpper()
             : NationalInsuranceNumber?.ToUpper();
+
         var input = $"{LastName?.ToUpper()}{key}{DateOfBirth}{Type}";
 
         switch (this.Type)
         {
             case CheckEligibilityType.WorkingFamilies:
-                input += $"""           
-                          {EligibilityCode}
-                          {GracePeriodEndDate}
-                          {ValidityStartDate}
-                          {ValidityEndDate}
-                          {SubmissionDate}
-                          """;
+                input += $"{EligibilityCode}{GracePeriodEndDate}{ValidityStartDate}{ValidityEndDate}{SubmissionDate}";
                 break;
         }
 
-
-        // var inputBytes = Encoding.UTF8.GetBytes(input.Replace(Environment.NewLine, ""));
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var inputHash = SHA256.HashData(inputBytes);
         return Convert.ToHexString(inputHash);
