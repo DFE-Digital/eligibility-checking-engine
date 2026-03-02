@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Constants;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.Spreadsheet;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Extensions;
@@ -10,12 +11,55 @@ public static class ClaimsPrincipalExtensions
     private static readonly string _localAuthority = "local_authority";
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
+    private static readonly string _admin = "admin";
 
-    private static string GetCheckSourceFromAuthentication(this ClaimsPrincipal user) {
-        string source = CheckSource.api_enduser;
-        var auth = user.Identity;
-        
-        return source;
+    /// <summary>
+    /// gets username from clientid - if no ':' found then userName = null
+    /// else it returns the found userName that is passed from the portals
+    /// if username = null AND clientId is not from the portals then userName = clientID
+    /// Check if client_id is of portal- return appropriate source
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns>source of check and username</returns>
+    private static (string, string?) GetCheckSourceAndUserNameFromClientId(this ClaimsPrincipal user)
+    {
+
+        string source = string.Empty;
+        string clientId = user.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
+        bool scopehasAdmin = user.HasScope(_admin);
+
+        string? userName = user.PortalUserName(clientId);
+
+        if (clientId.Contains("childcare-admin"))
+        {
+            source = CheckSource.childcare_admin_portal;
+        }
+        else if (clientId.Contains("free-school-meals-frontend"))
+        {
+            source = CheckSource.fsm_parent_portal;
+        }
+
+        else if (clientId.Contains("free-school-meals-admin"))
+        {
+
+            source = CheckSource.fsm_admin_portal;
+        }
+        else if (clientId.Contains("eligibility-checking-engine-support"))
+        {
+            source = CheckSource.support_portal;
+        }
+        else if (scopehasAdmin)
+        {
+            source = CheckSource.api_admin;
+            userName = clientId;
+        }
+        else if (!scopehasAdmin)
+        {
+
+            source = CheckSource.api_enduser;
+            userName = clientId;
+        }
+        return (source, userName);
 
     }
     /// <summary>
@@ -25,22 +69,27 @@ public static class ClaimsPrincipalExtensions
     /// </summary>
     /// <param name="user"></param>
     /// <returns></returns>
-    public static CheckMetaData CalculateMetaData(this ClaimsPrincipal user) {
-        
+    public static CheckMetaData CalculateMetaData(this ClaimsPrincipal user)
+    {
+
+        var sourceAndUserName = user.GetCheckSourceAndUserNameFromClientId();
         CheckMetaData meta = new();
         meta.OrganisationID = 0;
         meta.OrganisationType = OrganisationType.ambiguous;
+        meta.Source = sourceAndUserName.Item1;
+        meta.UserName = sourceAndUserName.Item2;
 
         // if orgs scopes found return orgId = 0 OrgType = unspecified
-        if (!user.HasScope(_localAuthority) || !user.HasScope(_multiAcademyTrust) || !user.HasScope(_establishment)) { 
+        if (!user.HasScope(_localAuthority) || !user.HasScope(_multiAcademyTrust) || !user.HasScope(_establishment))
+        {
 
             meta.OrganisationType = OrganisationType.unspecified;
             return meta;
         }
 
         //returns null if more than one Id is found per scope
-       // return 0 if only generic scope is passed
-       // else it returns the ID.
+        // return 0 if only generic scope is passed
+        // else it returns the ID.
         int? matId = user.GetSingleScopeId(_multiAcademyTrust);
         int? laId = user.GetSingleScopeId(_localAuthority);
         int? establishmentId = user.GetSingleScopeId(_establishment);
@@ -54,13 +103,13 @@ public static class ClaimsPrincipalExtensions
         }
         // if different Orgs IDs detected then orgID = 0 and orgType = ambiguous
         else if ((establishmentId == null && laId == null) || (establishmentId == null && matId == null) || (laId == null && matId == null)) { return meta; }
-        else if (laId > 0) { meta.OrganisationID = laId; meta.OrganisationType= OrganisationType.local_authority; }
+        else if (laId > 0) { meta.OrganisationID = laId; meta.OrganisationType = OrganisationType.local_authority; }
         else if (matId > 0) { meta.OrganisationID = matId; meta.OrganisationType = OrganisationType.multi_academy_trust; }
         else if (establishmentId > 0) { meta.OrganisationID = establishmentId; meta.OrganisationType = OrganisationType.establishment; }
         else { meta.OrganisationType = OrganisationType.unspecified; }
 
-            return meta;
-     
+        return meta;
+
     }
 
 
@@ -93,9 +142,24 @@ public static class ClaimsPrincipalExtensions
         return ids;
     }
 
+
+    private static string? PortalUserName(this ClaimsPrincipal user, string clientId)
+    {
+        string? userName = null;
+
+        // if no colon found - return then userName = null;
+        if (!clientId.Contains(":")) return userName;
+        // else substring everything after colon
+        int startIndex = clientId.IndexOf(":");
+        userName = clientId.Substring(startIndex + 1, clientId.Length);
+        return userName;
+
+    }
+
     /// <summary>
     /// Checks if the user has a scope with a colon (e.g., 'scope:xx').
     /// </summary>
+    ///   
     public static bool HasScopeWithColon(this ClaimsPrincipal user, string scopeValue)
     {
         var scopeClaims = user.Claims.Where(c => c.Type == "scope");
@@ -135,15 +199,15 @@ public static class ClaimsPrincipalExtensions
         var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
         var hasGeneralScope = false;
         var specificIds = new List<int>();
-        
+
         foreach (var claim in scopeClaims)
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            
+
             // Check for general scope
             if (scopes.Contains(scopeName))
                 hasGeneralScope = true;
-                
+
             // Collect specific IDs
             foreach (var scope in scopes)
             {
@@ -155,7 +219,7 @@ public static class ClaimsPrincipalExtensions
                 }
             }
         }
-        
+
         // Valid scenarios:
         // 1. Has general scope AND no specific IDs
         // 2. Has exactly one specific ID AND no general scope
@@ -163,13 +227,13 @@ public static class ClaimsPrincipalExtensions
         // - Both general and specific scopes present
         // - Multiple specific IDs
         // - No scopes at all
-        
+
         if (hasGeneralScope && specificIds.Count > 0)
             return false; // Reject if both general and specific scopes are present
-            
+
         if (hasGeneralScope && specificIds.Count == 0)
             return true; // General scope only
-            
+
         return specificIds.Count == 1; // Exactly one specific ID only
     }
 
@@ -182,15 +246,15 @@ public static class ClaimsPrincipalExtensions
         var scopeClaims = user.Claims.Where(c => c.Type == "scope").ToList();
         var hasGeneralScope = false;
         var specificIds = new List<int>();
-        
+
         foreach (var claim in scopeClaims)
         {
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            
+
             // Check for general scope
             if (scopes.Contains(scopeName))
                 hasGeneralScope = true;
-                
+
             // Collect specific IDs
             foreach (var scope in scopes)
             {
@@ -202,19 +266,19 @@ public static class ClaimsPrincipalExtensions
                 }
             }
         }
-        
+
         // Return null for invalid scenarios
         if (hasGeneralScope && specificIds.Count > 0)
             return null; // Both general and specific scopes present
-            
+
         // Return 0 for general scope only
         if (hasGeneralScope && specificIds.Count == 0)
             return 0;
-            
+
         // Return the single ID if exactly one exists
         if (specificIds.Count == 1)
             return specificIds[0];
-            
+
         // Return null for other invalid scenarios (no scope or multiple IDs)
         return null;
     }
