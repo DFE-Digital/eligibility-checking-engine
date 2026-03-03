@@ -2,7 +2,6 @@ using System.Security.Claims;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +39,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
                     _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
-                    null!, null!, null!, null!, null!, null!,
+                    null!, null!, null!, null!, null!, null!, null!,
                     _mockUseCase.Object
                 );
 

@@ -38,6 +38,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
     private Mock<IGenerateEligibilityCheckReportUseCase> _mockGenerateEligibilityCheckReportUseCase;
+    private Mock<IGetEligibilityReportHistoryUseCase> _mockGetEligibilityReportHistoryUseCase;
 
     private BulkCheckController _sut;
 
@@ -57,6 +58,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
         _mockGenerateEligibilityCheckReportUseCase = new Mock<IGenerateEligibilityCheckReportUseCase>(MockBehavior.Strict);
+        _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<BulkCheckController>>();
 
@@ -78,6 +80,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
             _mockGenerateEligibilityCheckReportUseCase.Object,
+            _mockGetEligibilityReportHistoryUseCase.Object,
             _mockGetAllBulkChecksUseCase.Object
         );
 
@@ -109,6 +112,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockGenerateEligibilityCheckReportUseCase.VerifyAll();
+        _mockGetEligibilityReportHistoryUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -599,5 +603,47 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Test]
+    public async Task GetEligibilityReportHistory_returns_ok_with_response_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var localAuthorityId = "201";
+        var reportHistory = _fixture.CreateMany<EligibilityCheckReportHistoryItem>(3).ToList();
+        var executionResult = new EligibilityCheckReportHistoryResponse { Data = reportHistory };
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockGetEligibilityReportHistoryUseCase.Setup(u => u.Execute(localAuthorityId, It.Is<IList<int>>(ids => ids.Contains(201)))).ReturnsAsync(executionResult);
+
+        // Act
+        var response = await _sut.GetAllReportHistory(localAuthorityId);
+
+        // Assert
+        response.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)response;
+
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeEquivalentTo(executionResult);
+    }
+
+    [Test]
+    public async Task GetAllReportHistory_returns_bad_request_when_no_local_authority_scope_found()
+    {
+        // Arrange
+        var localAuthorityId = "201";
+
+        // Set up controller with NO local authority context (empty scopes)
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var response = await _sut.GetAllReportHistory(localAuthorityId);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)response;
+        var errorResponse = (ErrorResponse)badRequestResult.Value!;
+        errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
     }
 }

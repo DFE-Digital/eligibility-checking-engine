@@ -9,6 +9,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -274,6 +275,8 @@ public class CheckEligibilityGateway : ICheckEligibility
                 .Where(item => item != null)
                 .ToList();
 
+            
+
             // Save audit of report generated in EligibilityCheckReportRequests
             var reportAudit = new EligibilityCheckReport
             {
@@ -299,7 +302,37 @@ public class CheckEligibilityGateway : ICheckEligibility
     }
 
 
+    public async Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId)
+    {
+        if (string.IsNullOrEmpty(localAuthorityId))
+            throw new ArgumentNullException(nameof(localAuthorityId));
 
+        
+
+        try
+        {
+
+            var reportHistory = await _db.EligibilityCheckReports
+                .Where(r => r.LocalAuthorityID.ToString() == localAuthorityId)
+                .OrderByDescending(r => r.ReportGeneratedDate)
+                .Select(r => new EligibilityCheckReportHistoryItem
+                {
+                    ReportGeneratedDate = r.ReportGeneratedDate,
+                    StartDate = r.StartDate,
+                    EndDate = r.EndDate,
+                    GeneratedBy = r.GeneratedBy,
+                    NumberOfResults = r.NumberOfResults
+                })
+                .ToListAsync();
+
+            return reportHistory;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving eligibility check report history");
+            throw new Exception($"Error retrieving eligibility check report history: {ex.Message}");
+        }
+    }
     public static string GetHash(CheckProcessData item)
     {
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
