@@ -14,26 +14,18 @@ public class StorageQueueGateway : IStorageQueue
 
     private readonly ILogger _logger;
     private string _groupId;
-    private QueueClient _queueClientBulk;
-    private QueueClient _queueClientStandard;
+    private Dictionary<string, QueueClient> _queues;
+    private QueueServiceClient _queueServiceClient;
 
 
 
     public StorageQueueGateway(ILoggerFactory logger,
-        QueueServiceClient queueClientGateway,
+        QueueServiceClient queueServiceClient,
         IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _configuration = configuration;
-
-        var standardQueueName = _configuration.GetValue<string>("QueueFsmCheckStandard");
-        var bulkQueueName = _configuration.GetValue<string>("QueueFsmCheckBulk");
-
-        if (standardQueueName != "notSet")
-            _queueClientStandard = queueClientGateway.GetQueueClient(standardQueueName);
-
-        if (bulkQueueName != "notSet")
-            _queueClientBulk = queueClientGateway.GetQueueClient(bulkQueueName);
+        _queueServiceClient = queueServiceClient;
     }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
@@ -41,23 +33,23 @@ public class StorageQueueGateway : IStorageQueue
     {
 
         QueueMessage[] retrievedMessages = [];
-        QueueClient queueClient = SetQueueClient(queName);
-
-        retrievedMessages = await queueClient.ReceiveMessagesAsync(_configuration.GetValue<int>("QueueFetchSize"));
+        
+        QueueClient queueClient = GetQueueClient(queName);
+        retrievedMessages = await queueClient.ReceiveMessagesAsync(_configuration.GetValue<int>($"Queue:Settings:{queName}:FetchSize"));
         return retrievedMessages;
     }
 
     public async Task DeleteMessageAsync(QueueMessage message, string queueName)
     {
 
-        QueueClient queueClient = SetQueueClient(queueName);
+        QueueClient queueClient = GetQueueClient(queueName);
         await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
 
     }
     public async Task UpdateMessageAsync(QueueMessage message, string queueName, int visibilityTimeout)
     {
 
-        QueueClient queueClient = SetQueueClient(queueName);
+        QueueClient queueClient = GetQueueClient(queueName);
         await queueClient.UpdateMessageAsync(
                            message.MessageId,
                            message.PopReceipt,
@@ -67,25 +59,13 @@ public class StorageQueueGateway : IStorageQueue
 
     }
 
-    #region Private
-    private QueueClient SetQueueClient(string queueName)
+    private QueueClient GetQueueClient(string queueName)
     {
-
-        if (queueName == _configuration.GetValue<string>("QueueFsmCheckStandard"))
+        if (!_queues.ContainsKey(queueName))
         {
-            return _queueClientStandard;
+            _queues[queueName] = _queueServiceClient.GetQueueClient(queueName);
         }
 
-        else if (queueName == _configuration.GetValue<string>("QueueFsmCheckBulk"))
-        {
-            return _queueClientBulk;
-        }
-
-        else
-        {
-            throw new Exception($"invalid queue {queueName}.");
-        }
-
+        return _queues[queueName];
     }
-    #endregion
 }

@@ -24,82 +24,49 @@ public class StorageQueueMessageGateway : IStorageQueueMessage
 
     private readonly ILogger _logger;
     private string _groupId;
-    private QueueClient _queueClientBulk;
-    private QueueClient _queueClientStandard;
+    private QueueServiceClient _queueServiceClient;
+    private Dictionary<string,QueueClient> _queues;
 
 
     public StorageQueueMessageGateway(ILoggerFactory logger,
-        QueueServiceClient queueClientGateway,
+        QueueServiceClient queueServiceClient,
         IConfiguration configuration)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _configuration = configuration;
-
-        setQueueStandard(_configuration.GetValue<string>("QueueFsmCheckStandard"), queueClientGateway);
-        setQueueBulk(_configuration.GetValue<string>("QueueFsmCheckBulk"), queueClientGateway);
+        _queueServiceClient = queueServiceClient;
     }
 
     #region Private
-
-    [ExcludeFromCodeCoverage]
-    //TODO: These two methods are ridiculously ugly. Do it in the constructor instead
-    private void setQueueStandard(string queName, QueueServiceClient queueClientGateway)
-    {
-        if (queName != "notSet") _queueClientStandard = queueClientGateway.GetQueueClient(queName);
-    }
-
-    [ExcludeFromCodeCoverage]
-    private void setQueueBulk(string queName, QueueServiceClient queueClientGateway)
-    {
-        if (queName != "notSet") _queueClientBulk = queueClientGateway.GetQueueClient(queName);
-    }
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
     //TODO: Ideally this method and whole class would live in the StorageQueue gateway
     public async Task<string> SendMessage(EligibilityCheck item)
     {
-        var queueName = string.Empty;
-        if (_queueClientStandard != null)
-        {
-            if (item.BulkCheckID.IsNullOrEmpty())
-            {
-                await _queueClientStandard.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
+        var queueName = _configuration[$"Queue:{(item.BulkCheckID.IsNullOrEmpty()?"Single":"Bulk")}:{item.Type.ToString()}"];
 
-                LogQueueCount(_queueClientStandard);
-                queueName = _queueClientStandard.Name;
-            }
-            else
+        QueueClient queueClient = GetQueueClient(queueName);
+        
+        await queueClient.SendMessageAsync(
+            JsonConvert.SerializeObject(new QueueMessageCheck
             {
-                await _queueClientBulk.SendMessageAsync(
-                    JsonConvert.SerializeObject(new QueueMessageCheck
-                    {
-                        Type = item.Type.ToString(),
-                        Guid = item.EligibilityCheckID,
-                        ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
-                        SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
-                    }));
-                LogQueueCount(_queueClientBulk);
-                queueName = _queueClientBulk.Name;
-            }
-        }
+                Type = item.Type.ToString(),
+                Guid = item.EligibilityCheckID,
+                ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
+                SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
+            }));
 
-        return queueName;
+        return queueClient.Name;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    private void LogQueueCount(QueueClient queue)
+    private QueueClient GetQueueClient(string queueName)
     {
-        QueueProperties properties = queue.GetProperties();
+        if (!_queues.ContainsKey(queueName))
+        {
+            _queues[queueName] = _queueServiceClient.GetQueueClient(queueName);
+        }
 
-        // Retrieve the cached approximate message count
-        var cachedMessagesCount = properties.ApproximateMessagesCount;
+        return _queues[queueName];
     }
 
     #endregion
