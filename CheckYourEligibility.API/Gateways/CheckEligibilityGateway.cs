@@ -307,13 +307,11 @@ public class CheckEligibilityGateway : ICheckEligibility
         if (string.IsNullOrEmpty(localAuthorityId))
             throw new ArgumentNullException(nameof(localAuthorityId));
 
-        
-
         try
         {
-
             var reportHistory = await _db.EligibilityCheckReports
-                .Where(r => r.LocalAuthorityID.ToString() == localAuthorityId)
+                .Where(x => x.ReportGeneratedDate > DateTime.UtcNow.AddDays(-7))
+                .Where(r => r.LocalAuthorityID == int.Parse(localAuthorityId))
                 .OrderByDescending(r => r.ReportGeneratedDate)
                 .Select(r => new EligibilityCheckReportHistoryItem
                 {
