@@ -14,7 +14,7 @@ public class StorageQueueGateway : IStorageQueue
 
     private readonly ILogger _logger;
     private string _groupId;
-    private Dictionary<string, QueueClient> _queues;
+    private Dictionary<string, QueueClient> _queues = new();
     private QueueServiceClient _queueServiceClient;
 
 
