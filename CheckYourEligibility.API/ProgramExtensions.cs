@@ -39,7 +39,7 @@ public static class ProgramExtensions
 
     public static IServiceCollection AddAzureClients(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetValue<string>("QueueConnectionString");
+        var connectionString = configuration.GetValue<string>("Queue:ConnectionString");
         services.AddAzureClients(builder => { builder.AddQueueServiceClient(connectionString); });
         return services;
     }
