@@ -83,7 +83,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
                         {
                             //If we've tried more than retry limit
-                            if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                            if (item.DequeueCount >= _configuration.GetValue<int>($"Queue:Settings:{queueName}:Retries"))
                             {
                                 //Delete message and update status to error
                                 await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
