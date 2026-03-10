@@ -101,15 +101,15 @@ public static class ClaimsPrincipalExtensions
         bool hasMultipleLAId = false;
 
         // Check if at least one of the org scopes have more than one ID  passed
-        if ((laId == null && hasLaScope) || (matId == null && hasMatScope)  || (establishmentId == null && hasEstScope))
+        if ((laId == null && hasLaScope) || (matId == null && hasMatScope) || (establishmentId == null && hasEstScope))
         {
             return meta;
 
         }
         // If different Orgs IDs detected then orgID = 0 and orgType = ambiguous
-        else if (((establishmentId != null && establishmentId > 0 ) && (laId != null && laId > 0)) || 
-                ((establishmentId != null && establishmentId > 0) && (matId != null && matId > 0)) || 
-                ((laId != null && establishmentId > 0) && (matId != null && matId > 0))) { return meta; }
+        else if (((establishmentId != null && establishmentId > 0) && (laId != null && laId > 0)) ||
+                ((establishmentId != null && establishmentId > 0) && (matId != null && matId > 0)) ||
+                ((laId != null && laId > 0) && (matId != null && matId > 0))) { return meta; }
         else if (laId > 0) { meta.OrganisationID = laId; meta.OrganisationType = OrganisationType.local_authority; }
         else if (matId > 0) { meta.OrganisationID = matId; meta.OrganisationType = OrganisationType.multi_academy_trust; }
         else if (establishmentId > 0) { meta.OrganisationID = establishmentId; meta.OrganisationType = OrganisationType.establishment; }
@@ -158,7 +158,7 @@ public static class ClaimsPrincipalExtensions
         if (!clientId.Contains(":")) return userName;
         // else substring everything after colon
         int startIndex = clientId.IndexOf(":");
-        userName = clientId.Substring(startIndex + 1, clientId.Length);
+        userName = clientId.Substring(startIndex + 1);
         return userName;
 
     }
@@ -193,6 +193,15 @@ public static class ClaimsPrincipalExtensions
             var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             if (scopes.Contains(scopeValue)) return true;
+
+            else
+            {
+                foreach (var scope in scopes)
+                {
+                    if (scope.Contains(scopeValue)) return true;
+                }
+
+            }
         }
 
         return false;
