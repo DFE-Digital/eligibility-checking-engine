@@ -21,6 +21,7 @@ public class CheckController : BaseController
     private readonly ICheckEligibilityUseCase _checkEligibilityUseCase;
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
     private readonly IGetEligibilityCheckStatusUseCase _getEligibilityCheckStatusUseCase;
+    private readonly IGetEligibilityCodeHistoryUseCase _getEligibilityCodeHistoryUseCase;
     private readonly ILogger<CheckController> _logger;
 
     public CheckController(
@@ -28,7 +29,8 @@ public class CheckController : BaseController
         IAudit audit,
         ICheckEligibilityUseCase checkEligibilityUseCase,
         IGetEligibilityCheckStatusUseCase getEligibilityCheckStatusUseCase,
-        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase
+        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase,
+        IGetEligibilityCodeHistoryUseCase getEligibilityCodeHistoryUseCase
     )
         : base(audit)
     {
@@ -37,6 +39,7 @@ public class CheckController : BaseController
         _checkEligibilityUseCase = checkEligibilityUseCase;
         _getEligibilityCheckStatusUseCase = getEligibilityCheckStatusUseCase;
         _getEligibilityCheckItemUseCase = getEligibilityCheckItemUseCase;
+        _getEligibilityCodeHistoryUseCase = getEligibilityCodeHistoryUseCase;
     }
 
     /// <summary>
@@ -307,4 +310,41 @@ public class CheckController : BaseController
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
     }
+
+    /// <summary>
+    ///     Gets history of the given eligibility code
+    /// </summary>
+    /// <param name="eligibilityCode"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(EligibilityCodeHistoryResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check/history/{eligibilityCode}")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    public async Task<ActionResult> GetEligibilityCodeHistory(string eligibilityCode)
+    {
+        try
+        {
+            var result = await _getEligibilityCodeHistoryUseCase.Execute(eligibilityCode);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = eligibilityCode }] });
+        }
+
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+
+
+
 }

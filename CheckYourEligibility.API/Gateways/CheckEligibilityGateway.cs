@@ -331,6 +331,26 @@ public class CheckEligibilityGateway : ICheckEligibility
             throw new Exception($"Error retrieving eligibility check report history: {ex.Message}");
         }
     }
+
+    public async Task<IEnumerable<EligibilityCodeHistoryResponseItem>> GetEligibilityCodeHistory(string eligibilityCode)
+    {
+        if (string.IsNullOrEmpty(eligibilityCode))
+            throw new ArgumentNullException(nameof(eligibilityCode));
+
+        try
+        {
+            /// do linq here
+            /// 
+            // return reportHistory;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving eligibility code history");
+            throw new Exception($"Error retrieving eligibility code history: {ex.Message}");
+        }
+    }
+
     public static string GetHash(CheckProcessData item)
     {
         var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
