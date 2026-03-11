@@ -24,24 +24,24 @@ namespace CheckYourEligibility.API.Tests.Extensions
         }
 
         [Test]
-        public void Api_admin_returns_orgID_0_unspecified()
+        public void Api_admin_returns_orgID_0_orgType_Null()
         {
             string user = "Nunit-admin";
             var principal = CreatePrincipal(user, "admin");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType,Is.EqualTo(OrganisationType.unspecified));
+            Assert.That(meta.OrganisationType,Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(user));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.api_admin));
         }
 
         [Test]
-        public void Api_admin_with_multiple_orgIDs_returns_ambiguous_orgID_0()
+        public void Api_admin_with_multiple_orgIDs_returns_orgType_null_orgID_0()
         {
             string user = "Nunit-admin";
             var principal = CreatePrincipal(user, "admin", "local_authority:894", "multi_academy_trust:2044");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.ambiguous));
+            Assert.That(meta.OrganisationType, Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(user));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.api_admin));
@@ -72,24 +72,24 @@ namespace CheckYourEligibility.API.Tests.Extensions
         }
 
         [Test]
-        public void Api_end_user_returns_unspecified_id_0()
+        public void Api_end_user_noID_found_returns_orgType_null_id_0()
         {
             string user = "Nunit-admin";
             var principal = CreatePrincipal(user,"local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
+            Assert.That(meta.OrganisationType, Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(user));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.api_enduser));
         }
 
         [Test]
-        public void Api_fsm_admin_portal_returns_userName_null_local_unspecified_id_0()
+        public void Api_fsm_admin_portal_noID_found_returns_userName_null_orgType_null_id_0()
         {
             string user = "free-school-meals-admin";
             var principal = CreatePrincipal(user, "local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
+            Assert.That(meta.OrganisationType, Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.fsm_admin_portal));
@@ -132,24 +132,24 @@ namespace CheckYourEligibility.API.Tests.Extensions
         }
 
         [Test]
-        public void Api_fsm_parent_portal_returns_userName_null_unspecified_id_0()
+        public void Api_fsm_parent_portal_returns_userName_null_OrgType_null_id_0()
         {
             string user = "free-school-meals-frontend";
             var principal = CreatePrincipal(user, "establishment local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
+            Assert.That(meta.OrganisationType, Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.fsm_parent_portal));
         }
 
         [Test]
-        public void Api_childcare_admin_portal_returns_userName_null_unspecified_id_0()
+        public void Api_childcare_admin_portal_returns_userName_null_orgType_null_id_0()
         {
             string user = "childcare-admin";
             var principal = CreatePrincipal(user, "local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
+            Assert.That(meta.OrganisationType, Is.EqualTo(null));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.childcare_admin_portal));

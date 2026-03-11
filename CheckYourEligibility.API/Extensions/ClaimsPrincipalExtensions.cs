@@ -65,7 +65,7 @@ public static class ClaimsPrincipalExtensions
     /// <summary>
     /// Check passed orgs ID
     /// and map OrgID and Type
-    /// if multiple Ids found orgId = 0 and Orgtype = ambiguous
+    /// if multiple Ids found orgId = 0 and Orgtype = null
     /// </summary>
     /// <param name="user"></param>
     /// <returns></returns>
@@ -75,7 +75,7 @@ public static class ClaimsPrincipalExtensions
         var sourceAndUserName = user.GetCheckSourceAndUserNameFromClientId();
         CheckMetaData meta = new();
         meta.OrganisationID = 0;
-        meta.OrganisationType = OrganisationType.ambiguous;
+        meta.OrganisationType = null;
         meta.Source = sourceAndUserName.Item1;
         meta.UserName = sourceAndUserName.Item2;
 
@@ -83,11 +83,9 @@ public static class ClaimsPrincipalExtensions
         bool hasMatScope = user.HasScope(_multiAcademyTrust);
         bool hasEstScope = user.HasScope(_establishment);
 
-        // If orgs scopes not found return orgId = 0 OrgType = unspecified
+        // If orgs scopes not found return orgId = 0 OrgType = null
         if (!hasLaScope && !hasMatScope && !hasEstScope)
         {
-
-            meta.OrganisationType = OrganisationType.unspecified;
             return meta;
         }
 
@@ -98,22 +96,19 @@ public static class ClaimsPrincipalExtensions
         int? laId = user.GetSingleScopeId(_localAuthority);
         int? establishmentId = user.GetSingleScopeId(_establishment);
 
-        bool hasMultipleLAId = false;
-
         // Check if at least one of the org scopes have more than one ID  passed
         if ((laId == null && hasLaScope) || (matId == null && hasMatScope) || (establishmentId == null && hasEstScope))
         {
             return meta;
 
         }
-        // If different Orgs IDs detected then orgID = 0 and orgType = ambiguous
+        // If different Orgs IDs detected then orgID = 0 and orgType = null
         else if (((establishmentId != null && establishmentId > 0) && (laId != null && laId > 0)) ||
                 ((establishmentId != null && establishmentId > 0) && (matId != null && matId > 0)) ||
                 ((laId != null && laId > 0) && (matId != null && matId > 0))) { return meta; }
         else if (laId > 0) { meta.OrganisationID = laId; meta.OrganisationType = OrganisationType.local_authority; }
         else if (matId > 0) { meta.OrganisationID = matId; meta.OrganisationType = OrganisationType.multi_academy_trust; }
         else if (establishmentId > 0) { meta.OrganisationID = establishmentId; meta.OrganisationType = OrganisationType.establishment; }
-        else { meta.OrganisationType = OrganisationType.unspecified; }
 
         return meta;
 
