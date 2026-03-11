@@ -72,24 +72,24 @@ namespace CheckYourEligibility.API.Tests.Extensions
         }
 
         [Test]
-        public void Api_end_user_returns_local_authority_id_0()
+        public void Api_end_user_returns_unspecified_id_0()
         {
             string user = "Nunit-admin";
             var principal = CreatePrincipal(user,"local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.local_authority));
+            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(user));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.api_enduser));
         }
 
         [Test]
-        public void Api_fsm_admin_portal_returns_userName_null_local_authority_0()
+        public void Api_fsm_admin_portal_returns_userName_null_local_unspecified_id_0()
         {
             string user = "free-school-meals-admin";
             var principal = CreatePrincipal(user, "local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.local_authority));
+            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.fsm_admin_portal));
@@ -132,24 +132,24 @@ namespace CheckYourEligibility.API.Tests.Extensions
         }
 
         [Test]
-        public void Api_fsm_parent_portal_returns_userName_null_establishment_0()
+        public void Api_fsm_parent_portal_returns_userName_null_unspecified_id_0()
         {
             string user = "free-school-meals-frontend";
-            var principal = CreatePrincipal(user, "establishment");
+            var principal = CreatePrincipal(user, "establishment local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.establishment));
+            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.fsm_parent_portal));
         }
 
         [Test]
-        public void Api_childcare_admin_portal_returns_userName_null_local_authority_0()
+        public void Api_childcare_admin_portal_returns_userName_null_unspecified_id_0()
         {
             string user = "childcare-admin";
             var principal = CreatePrincipal(user, "local_authority");
             var meta = principal.CalculateMetaData();
-            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.local_authority));
+            Assert.That(meta.OrganisationType, Is.EqualTo(OrganisationType.unspecified));
             Assert.That(meta.OrganisationID, Is.EqualTo(0));
             Assert.That(meta.UserName, Is.EqualTo(null));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.childcare_admin_portal));
@@ -178,86 +178,5 @@ namespace CheckYourEligibility.API.Tests.Extensions
             Assert.That(meta.UserName, Is.EqualTo("Nunit.test@test.co.uk"));
             Assert.That(meta.Source, Is.EqualTo(CheckSource.childcare_admin_portal));
         }
-
-        //[Test]
-        //public void SingleEstablishmentScopeWithId()
-        //{
-        //    var principal = CreatePrincipal("clientid", "establishment:789");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(OrganisationType.establishment, meta.OrganisationType);
-        //    Assert.AreEqual(789, meta.OrganisationID);
-        //}
-
-        //[Test]
-        //public void GeneralScopeOnly_ReturnsZeroId()
-        //{
-        //    var principal = CreatePrincipal("clientid", "local_authority");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(OrganisationType.local_authority, meta.OrganisationType);
-        //    Assert.AreEqual(0, meta.OrganisationID);
-        //}
-
-        //[Test]
-        //public void InvalidClientId_Throws()
-        //{
-        //    var claims = new List<Claim>();
-        //    var identity = new ClaimsIdentity(claims, "mock");
-        //    var principal = new ClaimsPrincipal(identity);
-        //    Assert.Throws<System.NullReferenceException>(() => principal.CalculateMetaData());
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_ParentPortal()
-        //{
-        //    var principal = CreatePrincipal("free-school-meals-frontend:username", "local_authority:1");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.fsm_parent_portal, meta.Source);
-        //    Assert.AreEqual("username", meta.UserName);
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_AdminPortal()
-        //{
-        //    var principal = CreatePrincipal("free-school-meals-admin:adminuser", "local_authority:1");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.fsm_admin_portal, meta.Source);
-        //    Assert.AreEqual("adminuser", meta.UserName);
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_ChildcareAdmin()
-        //{
-        //    var principal = CreatePrincipal("childcare-admin:ccadmin", "local_authority:1");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.childcare_admin_portal, meta.Source);
-        //    Assert.AreEqual("ccadmin", meta.UserName);
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_SupportPortal()
-        //{
-        //    var principal = CreatePrincipal("eligibility-checking-engine-support:support", "local_authority:1");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.support_portal, meta.Source);
-        //    Assert.AreEqual("support", meta.UserName);
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_ApiAdmin()
-        //{
-        //    var principal = CreatePrincipal("adminclientid", "admin");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.api_admin, meta.Source);
-        //    Assert.AreEqual("adminclientid", meta.UserName);
-        //}
-
-        //[Test]
-        //public void SourceAndUserName_ApiEndUser()
-        //{
-        //    var principal = CreatePrincipal("enduserclientid", "local_authority:1");
-        //    var meta = principal.CalculateMetaData();
-        //    Assert.AreEqual(CheckSource.api_enduser, meta.Source);
-        //    Assert.AreEqual("enduserclientid", meta.UserName);
-        //}
     }
 }
