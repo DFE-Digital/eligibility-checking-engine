@@ -83,8 +83,7 @@ public class EligibilityCheck
     /// <summary>
     /// What type of organisation is making the check
     /// It can be local-authority, establishment multi-academy-trust
-    /// unspecified (if no organisation ID is passed in scope)
-    /// ambiguous (if more than one  organisation ID is passed in scope)
+    /// else it will be set to NULL
     /// </summary>
     [Column(TypeName = "nvarchar(20)")]
     public string? OrganisationType { get; set; }
