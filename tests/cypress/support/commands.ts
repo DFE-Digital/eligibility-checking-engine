@@ -241,7 +241,8 @@ Cypress.Commands.add('verifyApiResponseCode', (response, expectedStatus) => {
     202: 'Accepted',
     400: 'Bad Request',
     401: 'Unauthorized',
-    404: 'Not Found'
+    404: 'Not Found',
+    409: 'Conflict'
   };
 
   const expectedStatusText = statusTextMap[expectedStatus];

@@ -31,6 +31,12 @@ public class WorkingFamiliesEvent
     public DateTime DiscretionaryValidityStartDate { get; set; }
     public DateTime GracePeriodEndDate { get; set; }
 
+    [Column(TypeName = "nvarchar(450)")] public string? HMRCEligibilityEventId { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedDateTime { get; set; }
+    public DateTime? CreatedDateTime { get; set; }
+    public DateTime? EventDateTime { get; set; }
+
     public string getHash()
     {
         //Exclude event Id

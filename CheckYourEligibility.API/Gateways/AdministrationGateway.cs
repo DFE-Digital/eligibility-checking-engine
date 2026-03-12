@@ -119,9 +119,11 @@ public class AdministrationGateway : IAdministration
 
     public async Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data)
     {
-        // Don't insert exact duplicates
+        // Don't insert exact duplicates; exclude soft-deleted records from the comparison
         var codesToInsert = data.Select(x => x.EligibilityCode).ToList();
-        var codeEvents = await _db.WorkingFamiliesEvents.Where(x => codesToInsert.Contains(x.EligibilityCode)).ToListAsync();
+        var codeEvents = await _db.WorkingFamiliesEvents
+            .Where(x => codesToInsert.Contains(x.EligibilityCode) && !x.IsDeleted)
+            .ToListAsync();
         var codeHashes = codeEvents.Select(x => x.getHash());
         data = data.Where(x => !codeHashes.Contains(x.getHash()));
         _db.BulkInsert_WorkingFamiliesEvent(data);

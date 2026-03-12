@@ -262,6 +262,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<WorkingFamiliesEvent>()
             .HasIndex(e => e.EligibilityCode);
 
+        modelBuilder.Entity<WorkingFamiliesEvent>()
+            .HasIndex(e => e.HMRCEligibilityEventId, "idx_WorkingFamiliesEvents_HMRCEligibilityEventId");
+
 
 
     }
