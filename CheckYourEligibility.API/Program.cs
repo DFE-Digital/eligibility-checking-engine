@@ -180,7 +180,6 @@ builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUse
 builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
 builder.Services.AddScoped<IGenerateEligibilityCheckReportUseCase, GenerateEligibilityCheckReportUseCase>();
 builder.Services.AddScoped<IGetEligibilityReportHistoryUseCase, GetEligibilityReportHistoryUseCase>();
-builder.Services.AddScoped<IGetEligibilityCodeHistoryUseCase, GetEligibilityCodeHistoryUseCase>();
 builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
 builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
