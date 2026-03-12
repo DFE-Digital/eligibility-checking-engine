@@ -11,55 +11,27 @@ public static class ClaimsPrincipalExtensions
     private static readonly string _localAuthority = "local_authority";
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
-    private static readonly string _admin = "admin";
-
     /// <summary>
-    /// gets username from clientid - if no ':' found then userName = null
-    /// else it returns the found userName that is passed from the portals
-    /// if username = null AND clientId is not from the portals then userName = clientID
-    /// Check if client_id is of portal- return appropriate source
+    /// Check for colon in claim of type nameidentifier 
+    /// if found -  source = left side of the colon , userName = right side of the colon
+    /// else  - source = null, userName =  claim of type nameidentifier
     /// </summary>
     /// <param name="user"></param>
     /// <returns>source of check and username</returns>
-    private static (string, string?) GetCheckSourceAndUserNameFromClientId(this ClaimsPrincipal user)
+    private static (string?, string) GetCheckSourceAndUserNameFromClientId(this ClaimsPrincipal user)
     {
 
-        string source = string.Empty;
-        string clientId = user.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
-        bool scopehasAdmin = user.HasScope(_admin);
+        string userName = user.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
+        string? source = userName;
 
-        string? userName = user.PortalUserName(clientId);
-
-        if (clientId.Contains("childcare-admin"))
+        if (userName.Contains(":"))
         {
-            source = CheckSource.childcare_admin_portal;
-        }
-        else if (clientId.Contains("free-school-meals-frontend"))
-        {
-            source = CheckSource.fsm_parent_portal;
+            int index = userName.IndexOf(':');
+            source = userName.Substring(0, index );
+            userName = userName.Substring(index + 1);
         }
 
-        else if (clientId.Contains("free-school-meals-admin"))
-        {
-
-            source = CheckSource.fsm_admin_portal;
-        }
-        else if (clientId.Contains("eligibility-checking-engine-support"))
-        {
-            source = CheckSource.support_portal;
-        }
-        else if (scopehasAdmin)
-        {
-            source = CheckSource.api_admin;
-            userName = clientId;
-        }
-        else if (!scopehasAdmin)
-        {
-
-            source = CheckSource.api_enduser;
-            userName = clientId;
-        }
-        return (source, userName);
+            return (source, userName);
 
     }
     /// <summary>
@@ -142,20 +114,6 @@ public static class ClaimsPrincipalExtensions
         }
 
         return ids;
-    }
-
-
-    private static string? PortalUserName(this ClaimsPrincipal user, string clientId)
-    {
-        string? userName = null;
-
-        // if no colon found - return then userName = null;
-        if (!clientId.Contains(":")) return userName;
-        // else substring everything after colon
-        int startIndex = clientId.IndexOf(":");
-        userName = clientId.Substring(startIndex + 1);
-        return userName;
-
     }
 
     /// <summary>
