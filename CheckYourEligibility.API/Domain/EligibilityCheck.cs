@@ -65,7 +65,7 @@ public class EligibilityCheck
     /// <summary>
     /// Source of check
     /// </summary>
-    [Column(TypeName = "varchar(25)")]
+    [Column(TypeName = "varchar(50)")]
     public string? Source { get; set; }
 
     /// <summary>
