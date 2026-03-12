@@ -20,7 +20,7 @@ public interface ICheckEligibilityUseCase
     /// <param name="model">Eligibility check request</param>
     /// <param name="routeType">The type of eligibility check to perform</param>
     /// <returns>Check eligibility response or validation errors</returns>
-    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType)
+    Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model, CheckEligibilityType routeType, CheckMetaData meta)
         where T : IEligibilityServiceType;
 }
 
@@ -44,7 +44,7 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
     }
 
     public async Task<CheckEligibilityResponse> Execute<T>(CheckEligibilityRequest<T> model,
-        CheckEligibilityType routeType) where T : IEligibilityServiceType
+        CheckEligibilityType routeType, CheckMetaData meta) where T : IEligibilityServiceType
     {
         if (model == null || model.Data == null)
         {
@@ -75,7 +75,7 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
                 throw new ValidationException(errors, string.Empty);
             }
             // Execute the check
-            var response = await _checkGateway.PostCheck(modelData.Data);
+            var response = await _checkGateway.PostCheck(modelData.Data, meta);
             if (response != null)
             {
                 await _auditGateway.CreateAuditEntry(AuditType.Check, response.Id);

@@ -7,8 +7,8 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface ICheckEligibility
 {
-    Task<PostCheckResult> PostCheck<T>(T data) where T : IEligibilityServiceType;
-    Task PostCheck<T>(T data, string bulkCheckId) where T : IEnumerable<IEligibilityServiceType>;
+    Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType;
+    Task PostCheck<T>(T data, string bulkCheckId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>;
     Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false)
         where T : CheckEligibilityItem;
 

@@ -121,7 +121,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Create mock HttpContext with ClaimsPrincipal
         var httpContext = new DefaultHttpContext();
         var claims = new List<Claim>();
-
+        claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "unit-test-bulk-check-controller"));
         // Add appropriate scope claims based on localAuthorityIds
         if (localAuthorityIds.Contains(0))
         {
@@ -143,13 +143,14 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
         var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
+        var meta= _fixture.Create<CheckMetaData>();
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -166,6 +167,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var meta = _fixture.Create<CheckMetaData>();
         var bulkResponse = _fixture.Create<CheckEligibilityResponseBulk>();
         var executionResult = bulkResponse;
         var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
@@ -175,7 +177,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.FreeSchoolMeals,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -205,6 +207,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Set up HttpContext for bulk check path
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/working-families");
+        var meta = _fixture.Create<CheckMetaData>();
         httpContext.Request.Path = path;
         
         // Preserve the existing user context and add the path
@@ -220,7 +223,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -237,6 +240,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     public async Task CheckEligibilityBulk_WF_returns_bad_request_when_use_case_returns_invalid_result()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         var request = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulk>();
         var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
 
@@ -261,7 +265,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit")))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act

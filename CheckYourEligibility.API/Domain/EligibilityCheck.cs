@@ -62,4 +62,29 @@ public class EligibilityCheck
     /// The serialized check data
     /// </summary>
     public string CheckData { get; set; } = string.Empty;
+    /// <summary>
+    /// Source of check
+    /// </summary>
+    [Column(TypeName = "varchar(25)")]
+    public string? Source { get; set; }
+
+    /// <summary>
+    /// API username or portal user email address
+    /// </summary>
+    [Column(TypeName = "varchar(254)")]
+    public string? UserName { get; set; }
+    /// <summary>
+    /// ID of Organisation if found in scope
+    /// else OrganisationID = 0
+    /// </summary>
+    [Column(TypeName = "int")]
+    public int? OrganisationID{ get; set; }
+
+    /// <summary>
+    /// What type of organisation is making the check
+    /// It can be local-authority, establishment multi-academy-trust
+    /// else it will be set to NULL
+    /// </summary>
+    [Column(TypeName = "nvarchar(20)")]
+    public string? OrganisationType { get; set; }
 }
