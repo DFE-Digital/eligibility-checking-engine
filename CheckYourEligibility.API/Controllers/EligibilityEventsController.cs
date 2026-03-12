@@ -40,11 +40,12 @@ public class EligibilityEventsController : BaseController
     [HttpPut("/efe/api/v1/eligibility-events/{id}")]
     public async Task<IActionResult> EligibilityEvents(string id, [FromBody] EligibilityEventRequest model)
     {
-        _logger.LogInformation("PUT eligibility-events request received for id: {Id}", id);
+        var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        _logger.LogInformation("PUT eligibility-events request received for id: {Id}", safeId);
 
         if (!ModelState.IsValid || model?.EligibilityEvent == null)
         {
-            _logger.LogWarning("PUT eligibility-events bad request for id: {Id}", id);
+            _logger.LogWarning("PUT eligibility-events bad request for id: {Id}", safeId);
             var firstError = ModelState.Values
                 .SelectMany(v => v.Errors)
                 .FirstOrDefault()?.ErrorMessage ?? "Bad Request";
@@ -58,18 +59,18 @@ public class EligibilityEventsController : BaseController
         }
         catch (InvalidOperationException ex) when (ex.Message == "CONFLICT")
         {
-            _logger.LogWarning("PUT eligibility-events conflict for id: {Id} — DERN mismatch", id);
+            _logger.LogWarning("PUT eligibility-events conflict for id: {Id} — DERN mismatch", safeId);
             return Conflict(new { error = "Eligibility Event has a different DERN from previous request with same id" });
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning("PUT eligibility-events validation error for id: {Id}: {Message}", id, ex.Message);
+            _logger.LogWarning("PUT eligibility-events validation error for id: {Id}: {Message}", safeId, ex.Message);
             return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
             var logId = Guid.NewGuid().ToString();
-            _logger.LogError(ex, "PUT eligibility-events unexpected error for id: {Id}, logId: {LogId}", id, logId);
+            _logger.LogError(ex, "PUT eligibility-events unexpected error for id: {Id}, logId: {LogId}", safeId, logId);
             return new ContentResult { Content = logId, ContentType = "text/plain", StatusCode = (int)HttpStatusCode.InternalServerError };
         }
     }
@@ -84,14 +85,15 @@ public class EligibilityEventsController : BaseController
     [HttpDelete("/efe/api/v1/eligibility-events/{id}")]
     public async Task<IActionResult> DeleteEligibilityEvent(string id)
     {
-        _logger.LogInformation("DELETE eligibility-events request received for id: {Id}", id);
+        var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        _logger.LogInformation("DELETE eligibility-events request received for id: {Id}", safeId);
 
         try
         {
             var deleted = await _deleteUseCase.Execute(id);
             if (!deleted)
             {
-                _logger.LogWarning("DELETE eligibility-events not found for id: {Id}", id);
+                _logger.LogWarning("DELETE eligibility-events not found for id: {Id}", safeId);
                 return NotFound();
             }
 
@@ -100,7 +102,7 @@ public class EligibilityEventsController : BaseController
         catch (Exception ex)
         {
             var logId = Guid.NewGuid().ToString();
-            _logger.LogError(ex, "DELETE eligibility-events unexpected error for id: {Id}, logId: {LogId}", id, logId);
+            _logger.LogError(ex, "DELETE eligibility-events unexpected error for id: {Id}, logId: {LogId}", safeId, logId);
             return new ContentResult { Content = logId, ContentType = "text/plain", StatusCode = (int)HttpStatusCode.InternalServerError };
         }
     }

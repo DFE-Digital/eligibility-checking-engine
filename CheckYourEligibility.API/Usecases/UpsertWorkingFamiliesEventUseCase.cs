@@ -67,7 +67,8 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
 
         await _auditGateway.CreateAuditEntry(AuditType.WorkingFamilies, hmrcId);
 
-        _logger.LogInformation("Working families event upserted for HMRC id {HMRCId}", hmrcId);
+        var safeId = hmrcId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        _logger.LogInformation("Working families event upserted for HMRC id {HMRCId}", safeId);
 
         return result;
     }

@@ -34,7 +34,8 @@ public class DeleteWorkingFamiliesEventUseCase : IDeleteWorkingFamiliesEventUseC
         if (deleted)
         {
             await _auditGateway.CreateAuditEntry(AuditType.WorkingFamilies, hmrcId);
-            _logger.LogInformation("Working families event soft-deleted for HMRC id {HMRCId}", hmrcId);
+            var safeId = hmrcId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            _logger.LogInformation("Working families event soft-deleted for HMRC id {HMRCId}", safeId);
         }
 
         return deleted;
