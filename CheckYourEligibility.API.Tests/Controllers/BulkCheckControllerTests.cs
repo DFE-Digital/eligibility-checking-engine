@@ -37,7 +37,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
-    private Mock<IGenerateEligibilityCheckReportUseCase> _mockGenerateEligibilityCheckReportUseCase;
+    private Mock<IEligibilityCheckReportUseCase> _mockEligibilityCheckReportUseCase;
     private Mock<IGetEligibilityReportHistoryUseCase> _mockGetEligibilityReportHistoryUseCase;
 
     private BulkCheckController _sut;
@@ -57,7 +57,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
         _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
-        _mockGenerateEligibilityCheckReportUseCase = new Mock<IGenerateEligibilityCheckReportUseCase>(MockBehavior.Strict);
+        _mockEligibilityCheckReportUseCase = new Mock<IEligibilityCheckReportUseCase>(MockBehavior.Strict);
         _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<BulkCheckController>>();
@@ -79,7 +79,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
-            _mockGenerateEligibilityCheckReportUseCase.Object,
+            _mockEligibilityCheckReportUseCase.Object,
             _mockGetEligibilityReportHistoryUseCase.Object,
             _mockGetAllBulkChecksUseCase.Object
         );
@@ -111,7 +111,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase.VerifyAll();
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
-        _mockGenerateEligibilityCheckReportUseCase.VerifyAll();
+        _mockEligibilityCheckReportUseCase.VerifyAll();
         _mockGetEligibilityReportHistoryUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
@@ -558,7 +558,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        _mockGenerateEligibilityCheckReportUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
+        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
 
         // Act
         var response = await _sut.EligibilityCheckReportRequest(request);
@@ -579,7 +579,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        _mockGenerateEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
+        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -599,7 +599,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        _mockGenerateEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
+        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
             .ThrowsAsync(new UnauthorizedAccessException());
 
         // Act

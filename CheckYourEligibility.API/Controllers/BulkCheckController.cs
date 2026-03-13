@@ -28,7 +28,7 @@ public class BulkCheckController : BaseController
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
-    private readonly IGenerateEligibilityCheckReportUseCase _generateEligibilityCheckReportUseCase;
+    private readonly IEligibilityCheckReportUseCase _eligibilityCheckReportUseCase;
     private readonly IGetEligibilityReportHistoryUseCase _getEligibilityReportHistoryUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
@@ -42,7 +42,7 @@ public class BulkCheckController : BaseController
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
-        IGenerateEligibilityCheckReportUseCase generateEligibilityCheckReportUseCase,
+        IEligibilityCheckReportUseCase eligibilityCheckReportUseCase,
         IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
         IGetAllBulkChecksUseCase getAllBulkChecksUseCase
     )
@@ -57,7 +57,7 @@ public class BulkCheckController : BaseController
         _getBulkUploadProgressUseCase = getBulkUploadProgressUseCase;
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
-        _generateEligibilityCheckReportUseCase = generateEligibilityCheckReportUseCase;
+        _eligibilityCheckReportUseCase = eligibilityCheckReportUseCase;
         _getEligibilityReportHistoryUseCase = getEligibilityReportHistoryUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
     }
@@ -528,7 +528,7 @@ public class BulkCheckController : BaseController
                 });
             }
 
-            var result = await _generateEligibilityCheckReportUseCase.Execute(model);
+            var result = await _eligibilityCheckReportUseCase.Execute(model);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
