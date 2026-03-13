@@ -14,8 +14,8 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
     public void Setup()
     {
         _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
-        _mockLogger = new Mock<ILogger<GenerateEligibilityCheckReportUseCase>>(MockBehavior.Loose);
-        _sut = new GenerateEligibilityCheckReportUseCase(_mockCheckGateway.Object, _mockLogger.Object);
+        _mockLogger = new Mock<ILogger<EligibilityCheckReportUseCase>>(MockBehavior.Loose);
+        _sut = new EligibilityCheckReportUseCase(_mockCheckGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
 
     }
@@ -28,8 +28,8 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
 
 
     private Mock<ICheckEligibility> _mockCheckGateway;
-    private Mock<ILogger<GenerateEligibilityCheckReportUseCase>> _mockLogger;
-    private GenerateEligibilityCheckReportUseCase _sut;
+    private Mock<ILogger<EligibilityCheckReportUseCase>> _mockLogger;
+    private EligibilityCheckReportUseCase _sut;
     private new Fixture _fixture = null!;
 
     [Test]
@@ -72,7 +72,7 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
         var reportItems = _fixture.CreateMany<EligibilityCheckReportItem>(3).ToList();
         var executionResult = new EligibilityCheckReportResponse { Data = reportItems };
 
-        _mockCheckGateway.Setup(u => u.GenerateEligibilityCheckReports(It.IsAny<EligibilityCheckReportRequest>(), It.IsAny<CancellationToken>()))
+        _mockCheckGateway.Setup(u => u.EligibilityCheckReports(It.IsAny<EligibilityCheckReportRequest>(), It.IsAny<CancellationToken>()))
     .Returns(Task.FromResult<IEnumerable<EligibilityCheckReportItem>>(reportItems));
 
         // Act
