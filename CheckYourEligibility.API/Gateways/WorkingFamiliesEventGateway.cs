@@ -62,6 +62,19 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
     }
 
     /// <inheritdoc />
+    public async Task<List<WorkingFamiliesEvent>> GetOverlappingEventsByDern(
+        string dern, string excludeHmrcId, DateTime validityStart, DateTime validityEnd)
+    {
+        return await _db.WorkingFamiliesEvents
+            .Where(e => e.EligibilityCode.Trim() == dern.Trim()
+                     && e.HMRCEligibilityEventId != excludeHmrcId
+                     && !e.IsDeleted
+                     && e.ValidityStartDate < validityEnd
+                     && e.ValidityEndDate > validityStart)
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
     public async Task<bool> DeleteWorkingFamiliesEvent(string hmrcId)
     {
         var existing = await _db.WorkingFamiliesEvents

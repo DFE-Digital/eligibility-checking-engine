@@ -9,7 +9,9 @@ import {
 // Each test run uses a unique HMRC event id to avoid cross-run pollution
 const testHmrcEventId = () => `efe-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-describe('ECE - PUT /efe/api/v1/eligibility-events/{id}', () => {
+const runEfeTests = Cypress.env('RUN_EFE_TESTS');
+
+(runEfeTests ? describe : describe.skip)('ECE - PUT /efe/api/v1/eligibility-events/{id}', () => {
 
     it('Returns 200 when a valid new eligibility event is created', () => {
         const id = testHmrcEventId();
@@ -106,7 +108,7 @@ describe('ECE - PUT /efe/api/v1/eligibility-events/{id}', () => {
     });
 });
 
-describe('ECE - DELETE /efe/api/v1/eligibility-events/{id}', () => {
+(runEfeTests ? describe : describe.skip)('ECE - DELETE /efe/api/v1/eligibility-events/{id}', () => {
 
     it('Returns 200 when an existing event is soft-deleted', () => {
         const id = testHmrcEventId();

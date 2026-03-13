@@ -35,6 +35,25 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
         if (existing != null && existing.EligibilityCode.Trim() != eventData.Dern.Trim())
             throw new InvalidOperationException("CONFLICT");
 
+        // Overlap check: different HMRC id, same DERN, overlapping validity dates → 400
+        var overlapping = await _gateway.GetOverlappingEventsByDern(
+            eventData.Dern, hmrcId, eventData.ValidityStartDate, eventData.ValidityEndDate);
+        if (overlapping.Count > 0)
+        {
+            var overlaps = overlapping.Select(o => new OverlapDetail
+            {
+                EligibilityEventId = o.HMRCEligibilityEventId!,
+                Dern = o.EligibilityCode.Trim(),
+                ValidityStartDate = o.ValidityStartDate,
+                ValidityEndDate = o.ValidityEndDate
+            }).ToList();
+
+            throw new DernOverlapException(
+                hmrcId, eventData.Dern,
+                eventData.ValidityStartDate, eventData.ValidityEndDate,
+                overlaps);
+        }
+
         var domain = new WorkingFamiliesEvent
         {
             WorkingFamiliesEventID = existing?.WorkingFamiliesEventID ?? Guid.NewGuid().ToString(),
