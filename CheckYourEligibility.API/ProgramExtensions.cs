@@ -62,6 +62,7 @@ public static class ProgramExtensions
         services.AddTransient<IHash, HashGateway>();
         services.AddTransient<IRateLimit, RateLimitGateway>();
         services.AddTransient<IFosterFamily, FosterFamilyGateway>();
+        services.AddTransient<IWorkingFamiliesReporting, WorkingFamiliesReportingGateway>();
         return services;
     }
 
