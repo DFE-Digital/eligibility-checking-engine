@@ -106,7 +106,12 @@ public class EligibilityEventsController : BaseController
                     _logger.LogWarning(
                         "PUT eligibility-events ECS returned non-success for id: {Id}, StatusCode: {StatusCode}, Body: {Body}",
                         safeId, (int)ecsResponse.StatusCode, ecsBody);
-                    return StatusCode((int)ecsResponse.StatusCode, new { error = $"ECS returned {(int)ecsResponse.StatusCode}", detail = ecsBody });
+                    return new ContentResult
+                    {
+                        StatusCode = (int)ecsResponse.StatusCode,
+                        Content = JsonConvert.SerializeObject(new { error = $"ECS returned {(int)ecsResponse.StatusCode}", detail = ecsBody }),
+                        ContentType = "application/json"
+                    };
                 }
             }
 
@@ -201,7 +206,12 @@ public class EligibilityEventsController : BaseController
                     _logger.LogWarning(
                         "DELETE eligibility-events ECS returned non-success for id: {Id}, StatusCode: {StatusCode}, Body: {Body}",
                         safeId, (int)ecsResponse.StatusCode, ecsBody);
-                    return StatusCode((int)ecsResponse.StatusCode, new { error = $"ECS returned {(int)ecsResponse.StatusCode}", detail = ecsBody });
+                    return new ContentResult
+                    {
+                        StatusCode = (int)ecsResponse.StatusCode,
+                        Content = JsonConvert.SerializeObject(new { error = $"ECS returned {(int)ecsResponse.StatusCode}", detail = ecsBody }),
+                        ContentType = "application/json"
+                    };
                 }
             }
 

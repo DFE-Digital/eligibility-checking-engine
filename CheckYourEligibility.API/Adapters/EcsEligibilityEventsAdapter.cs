@@ -61,14 +61,14 @@ public class EcsEligibilityEventsAdapter : IEcsEligibilityEventsAdapter
     public async Task<HttpResponseMessage> ForwardPutAsync(string id, EligibilityEventRequest request)
     {
         var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
-        var url = $"{_baseUrl.TrimEnd('/')}/efe/api/v1/eligibility-events/{Uri.EscapeDataString(id)}";
+        var url = $"{_baseUrl.TrimEnd('/')}/efe/api/v1/eligibility-events/{Uri.EscapeDataString(safeId!)}";
 
-        _logger.LogInformation("Forwarding PUT eligibility-event to ECS — URL: {Url}, Id: {Id}", url, safeId);
+        _logger.LogInformation("Forwarding PUT eligibility-event to ECS — Id: {Id}", safeId);
 
         var stopwatch = Stopwatch.StartNew();
 
         var json = JsonConvert.SerializeObject(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PutAsync(url, content);
 
@@ -84,9 +84,9 @@ public class EcsEligibilityEventsAdapter : IEcsEligibilityEventsAdapter
     public async Task<HttpResponseMessage> ForwardDeleteAsync(string id)
     {
         var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
-        var url = $"{_baseUrl.TrimEnd('/')}/efe/api/v1/eligibility-events/{Uri.EscapeDataString(id)}";
+        var url = $"{_baseUrl.TrimEnd('/')}/efe/api/v1/eligibility-events/{Uri.EscapeDataString(safeId!)}";
 
-        _logger.LogInformation("Forwarding DELETE eligibility-event to ECS — URL: {Url}, Id: {Id}", url, safeId);
+        _logger.LogInformation("Forwarding DELETE eligibility-event to ECS — Id: {Id}", safeId);
 
         var stopwatch = Stopwatch.StartNew();
 

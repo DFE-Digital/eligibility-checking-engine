@@ -143,11 +143,12 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
             });
 
         // Act
-        var result = await _sut.EligibilityEvents(ValidHmrcId, ValidRequest) as ObjectResult;
+        var result = await _sut.EligibilityEvents(ValidHmrcId, ValidRequest) as ContentResult;
 
         // Assert — should NOT call upsert use case
         result.Should().NotBeNull();
         result!.StatusCode.Should().Be(500);
+        result.ContentType.Should().Be("application/json");
     }
 
     [Test]
@@ -366,11 +367,12 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
             });
 
         // Act
-        var result = await _sut.DeleteEligibilityEvent(ValidHmrcId) as ObjectResult;
+        var result = await _sut.DeleteEligibilityEvent(ValidHmrcId) as ContentResult;
 
         // Assert — should NOT call delete use case
         result.Should().NotBeNull();
         result!.StatusCode.Should().Be(503);
+        result.ContentType.Should().Be("application/json");
     }
 
     [Test]
