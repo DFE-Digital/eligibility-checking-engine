@@ -211,6 +211,26 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Add Authorization
 builder.Services.AddAuthorization(builder.Configuration);
 
+// Certificate forwarding for Azure App Service (reads X-ARR-ClientCert header)
+builder.Services.AddCertificateForwarding(options =>
+{
+    options.CertificateHeader = "X-ARR-ClientCert";
+    options.HeaderConverter = headerValue =>
+    {
+        if (string.IsNullOrWhiteSpace(headerValue))
+            return null!;
+        try
+        {
+            var bytes = Convert.FromBase64String(headerValue);
+            return new System.Security.Cryptography.X509Certificates.X509Certificate2(bytes);
+        }
+        catch (FormatException)
+        {
+            return null!;
+        }
+    };
+});
+
 builder.Services.AddSwaggerGen(c => { c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); });
 
 var app = builder.Build();
@@ -236,6 +256,9 @@ else
 
 // 2.2. HTTPS Redirection
 app.UseHttpsRedirection();
+
+// 2.2.1. Certificate Forwarding (Azure App Service sends client certs via X-ARR-ClientCert header)
+app.UseCertificateForwarding();
 
 // 2.3. Authentication & Authorization
 app.UseAuthentication();

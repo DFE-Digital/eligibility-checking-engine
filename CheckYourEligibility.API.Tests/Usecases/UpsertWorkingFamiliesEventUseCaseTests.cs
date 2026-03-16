@@ -51,6 +51,14 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         _mockAuditGateway.VerifyAll();
     }
 
+    private void SetupNoOverlaps()
+    {
+        _mockGateway
+            .Setup(g => g.GetOverlappingEventsByDern(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(new List<WorkingFamiliesEvent>());
+    }
+
     [Test]
     public async Task Execute_ShouldThrowConflict_WhenExistingEventHasDifferentDern()
     {
@@ -76,6 +84,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -105,6 +114,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             CreatedDateTime = new DateTime(2026, 1, 1)
         };
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync(existing);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -124,6 +134,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         var before = DateTime.UtcNow.AddSeconds(-1);
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -152,6 +163,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             CreatedDateTime = new DateTime(2026, 1, 1)
         };
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync(existing);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -170,6 +182,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -190,6 +203,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -209,6 +223,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -241,6 +256,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             }
         };
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -260,6 +276,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     {
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -279,6 +296,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         var auditCalled = false;
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway
@@ -299,6 +317,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         var eventDt = new DateTime(2026, 1, 20, 10, 0, 0, DateTimeKind.Utc);
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
@@ -309,5 +328,60 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
 
         // Assert
         result.EventDateTime.Should().Be(eventDt);
+    }
+
+    [Test]
+    public async Task Execute_ShouldThrowDernOverlap_WhenOverlappingEventExists()
+    {
+        // Arrange — no same-id conflict, but another event with same DERN has overlapping dates
+        const string otherHmrcId = "other-hmrc-id-999";
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        _mockGateway
+            .Setup(g => g.GetOverlappingEventsByDern(
+                ValidDern, HmrcId,
+                new DateTime(2026, 1, 21), new DateTime(2026, 4, 23)))
+            .ReturnsAsync(new List<WorkingFamiliesEvent>
+            {
+                new WorkingFamiliesEvent
+                {
+                    HMRCEligibilityEventId = otherHmrcId,
+                    EligibilityCode = ValidDern,
+                    ValidityStartDate = new DateTime(2026, 1, 20),
+                    ValidityEndDate = new DateTime(2026, 4, 23)
+                }
+            });
+
+        // Act
+        Func<Task> act = async () => await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        var ex = (await act.Should().ThrowExactlyAsync<DernOverlapException>()).Which;
+        ex.Dern.Should().Be(ValidDern);
+        ex.IncomingEventId.Should().Be(HmrcId);
+        ex.Overlaps.Should().HaveCount(1);
+        ex.Overlaps[0].EligibilityEventId.Should().Be(otherHmrcId);
+    }
+
+    [Test]
+    public async Task Execute_ShouldProceed_WhenNoOverlappingEventsExist()
+    {
+        // Arrange — same DERN but no overlapping dates (empty list returned)
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        _mockGateway
+            .Setup(g => g.GetOverlappingEventsByDern(
+                ValidDern, HmrcId,
+                new DateTime(2026, 1, 21), new DateTime(2026, 4, 23)))
+            .ReturnsAsync(new List<WorkingFamiliesEvent>());
+        _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
+            .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
+        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
+            .ReturnsAsync(string.Empty);
+
+        // Act
+        var result = await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.EligibilityCode.Should().Be(ValidDern);
     }
 }
