@@ -25,7 +25,7 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
     private IConfiguration _configuration = null!;
     private EligibilityEventsController _sut = null!;
 
-    private const string ValidHmrcId = "hmrc-event-guid-001";
+    private const string ValidHmrcId = "21ec3021-31ec-1068-a1dd-08002b40309a";
 
     private EligibilityEventRequest ValidRequest => new EligibilityEventRequest
     {
@@ -75,6 +75,17 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
     }
 
     #region PUT
+
+    [Test]
+    public async Task EligibilityEvents_PUT_ShouldReturn400_WhenIdIsNotValidGuid()
+    {
+        // Act
+        var result = await _sut.EligibilityEvents("not-a-guid", ValidRequest) as BadRequestObjectResult;
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.StatusCode.Should().Be(400);
+    }
 
     [Test]
     public async Task EligibilityEvents_PUT_ShouldReturn200_WhenEcsSucceedsAndUpsertSucceeds()
@@ -289,6 +300,17 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
     #endregion
 
     #region DELETE
+
+    [Test]
+    public async Task DeleteEligibilityEvent_ShouldReturn400_WhenIdIsNotValidGuid()
+    {
+        // Act
+        var result = await _sut.DeleteEligibilityEvent("not-a-guid") as BadRequestObjectResult;
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.StatusCode.Should().Be(400);
+    }
 
     [Test]
     public async Task DeleteEligibilityEvent_ShouldReturn200_WhenEcsSucceedsAndEventDeleted()

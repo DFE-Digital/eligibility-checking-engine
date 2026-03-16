@@ -6,6 +6,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
 
@@ -55,6 +56,12 @@ public class EligibilityEventsController : BaseController
         var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
         _logger.LogInformation("PUT eligibility-events request received for id: {Id}", safeId);
         var requestStopwatch = Stopwatch.StartNew();
+
+        if (!Guid.TryParse(id, out _))
+        {
+            _logger.LogWarning("PUT eligibility-events invalid GUID format for id: {Id}", safeId);
+            return BadRequest(new { error = "id must be a valid GUID" });
+        }
 
         if (!ModelState.IsValid || model?.EligibilityEvent == null)
         {
@@ -112,13 +119,14 @@ public class EligibilityEventsController : BaseController
         catch (DernOverlapException ex)
         {
             _logger.LogWarning("PUT eligibility-events overlap for id: {Id} — DERN {Dern} dates overlap", safeId, ex.Dern);
-            return BadRequest(new
+            var detail = JsonConvert.SerializeObject(new
             {
                 EligibilityEvent = id,
                 ex.Dern,
                 ex.Overlaps,
                 error = ex.Message
             });
+            return BadRequest(new { error = "ECE returned 400", detail });
         }
         catch (InvalidOperationException ex) when (ex.Message == "CONFLICT")
         {
@@ -152,6 +160,12 @@ public class EligibilityEventsController : BaseController
         var safeId = id?.Replace("\r", string.Empty).Replace("\n", string.Empty);
         _logger.LogInformation("DELETE eligibility-events request received for id: {Id}", safeId);
         var requestStopwatch = Stopwatch.StartNew();
+
+        if (!Guid.TryParse(id, out _))
+        {
+            _logger.LogWarning("DELETE eligibility-events invalid GUID format for id: {Id}", safeId);
+            return BadRequest(new { error = "id must be a valid GUID" });
+        }
 
         try
         {
