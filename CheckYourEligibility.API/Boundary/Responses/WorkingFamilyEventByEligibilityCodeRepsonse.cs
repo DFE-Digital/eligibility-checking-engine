@@ -5,11 +5,11 @@ public class WorkingFamilyEventByEligibilityCodeRepsonse
     public List<WorkingFamilyEventByEligibilityCodeRepsonseItem> Data;
 }
 
-public class WorkingFamilyEventByEligibilityCodeRepsonseItem : WorkingFamiliesEvent
+public class WorkingFamilyEventByEligibilityCodeRepsonseItem
 { 
     
     public WorkingFamilyEventType Event  { get; set; }
-
+    public WorkingFamiliesEvent Record { get; set; }
 }
 
 public enum WorkingFamilyEventType
