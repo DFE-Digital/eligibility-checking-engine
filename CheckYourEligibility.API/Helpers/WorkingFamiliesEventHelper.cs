@@ -63,7 +63,7 @@ public static class WorkingFamiliesEventHelper
         return wfEvent;
     }
 
-    private static DateTime GetGracePeriodEndDate(DateTime validityEndDate)
+    public static DateTime GetGracePeriodEndDate(DateTime validityEndDate)
     {
         if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 10, 22)) >= 0)
         {
@@ -83,7 +83,7 @@ public static class WorkingFamiliesEventHelper
         }
     }
 
-    private static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
+    public static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
     {
         var firstTermStart = new DateTime(validityStartDate.Year, 9, 1);
         var secondTermStart = new DateTime(validityStartDate.Year, 1, 1);

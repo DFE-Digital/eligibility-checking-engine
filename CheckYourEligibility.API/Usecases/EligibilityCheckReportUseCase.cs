@@ -3,7 +3,7 @@ using Azure;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using System.Text.Json;
 
-public interface IGenerateEligibilityCheckReportUseCase
+public interface IEligibilityCheckReportUseCase
 {
     /// <summary>
     /// Generates a reports for bulk checks based on the provided request model
@@ -13,12 +13,12 @@ public interface IGenerateEligibilityCheckReportUseCase
     Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model);
 }
 
-public class GenerateEligibilityCheckReportUseCase : IGenerateEligibilityCheckReportUseCase
+public class EligibilityCheckReportUseCase : IEligibilityCheckReportUseCase
 {
     private readonly  ICheckEligibility _checkEligibilityGateway;
-    private readonly ILogger<GenerateEligibilityCheckReportUseCase> _logger;
+    private readonly ILogger<EligibilityCheckReportUseCase> _logger;
 
-    public GenerateEligibilityCheckReportUseCase(ICheckEligibility checkEligibilityGateway, ILogger<GenerateEligibilityCheckReportUseCase> logger)
+    public EligibilityCheckReportUseCase(ICheckEligibility checkEligibilityGateway, ILogger<EligibilityCheckReportUseCase> logger)
     {
         _checkEligibilityGateway = checkEligibilityGateway;
         _logger = logger;
@@ -33,7 +33,7 @@ public class GenerateEligibilityCheckReportUseCase : IGenerateEligibilityCheckRe
 
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
 
-        var response = await _checkEligibilityGateway.GenerateEligibilityCheckReports(model);
+        var response = await _checkEligibilityGateway.EligibilityCheckReports(model);
 
         if (response == null)
         {

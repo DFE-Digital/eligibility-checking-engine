@@ -28,7 +28,7 @@ public class BulkCheckController : BaseController
     private readonly IGetBulkUploadResultsUseCase _getBulkUploadResultsUseCase;
     private readonly IDeleteBulkCheckUseCase _deleteBulkUploadUseCase;
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
-    private readonly IGenerateEligibilityCheckReportUseCase _generateEligibilityCheckReportUseCase;
+    private readonly IEligibilityCheckReportUseCase _eligibilityCheckReportUseCase;
     private readonly IGetEligibilityReportHistoryUseCase _getEligibilityReportHistoryUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
@@ -42,7 +42,7 @@ public class BulkCheckController : BaseController
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
-        IGenerateEligibilityCheckReportUseCase generateEligibilityCheckReportUseCase,
+        IEligibilityCheckReportUseCase eligibilityCheckReportUseCase,
         IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
         IGetAllBulkChecksUseCase getAllBulkChecksUseCase
     )
@@ -57,7 +57,7 @@ public class BulkCheckController : BaseController
         _getBulkUploadProgressUseCase = getBulkUploadProgressUseCase;
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
-        _generateEligibilityCheckReportUseCase = generateEligibilityCheckReportUseCase;
+        _eligibilityCheckReportUseCase = eligibilityCheckReportUseCase;
         _getEligibilityReportHistoryUseCase = getEligibilityReportHistoryUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
     }
@@ -79,6 +79,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            CheckMetaData meta = User.CalculateMetaData();
             // Extract local authority IDs from user claims
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
@@ -97,7 +98,7 @@ public class BulkCheckController : BaseController
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.WorkingFamilies,
-                _bulkUploadRecordCountLimit);
+                _bulkUploadRecordCountLimit, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -131,6 +132,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            CheckMetaData meta = User.CalculateMetaData();
             // Extract local authority IDs from user claims
             var localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
             //   var matId = User.GetSingleScopeId(_multiAcademyTrustScopeName);
@@ -162,7 +164,7 @@ public class BulkCheckController : BaseController
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.FreeSchoolMeals,
-                _bulkUploadRecordCountLimit);
+                _bulkUploadRecordCountLimit, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -195,6 +197,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            CheckMetaData meta = User.CalculateMetaData();
             // Check which org and extract local authority IDs from user claims
             // If result is 0 that means that only general scope is used.
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
@@ -215,7 +218,7 @@ public class BulkCheckController : BaseController
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.TwoYearOffer,
-                _bulkUploadRecordCountLimit);
+                _bulkUploadRecordCountLimit, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -248,6 +251,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            CheckMetaData meta = User.CalculateMetaData();
             // Extract local authority IDs from user claims
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
@@ -266,7 +270,7 @@ public class BulkCheckController : BaseController
             }
 
             var result = await _checkEligibilityBulkUseCase.Execute(model, CheckEligibilityType.EarlyYearPupilPremium,
-                _bulkUploadRecordCountLimit);
+                _bulkUploadRecordCountLimit, meta);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (FluentValidation.ValidationException ex)
@@ -524,7 +528,7 @@ public class BulkCheckController : BaseController
                 });
             }
 
-            var result = await _generateEligibilityCheckReportUseCase.Execute(model);
+            var result = await _eligibilityCheckReportUseCase.Execute(model);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }

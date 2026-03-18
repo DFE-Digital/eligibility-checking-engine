@@ -17,7 +17,8 @@ public interface ICheckEligibilityBulkUseCase
     Task<CheckEligibilityResponseBulk> Execute<T>(
         T model,
         CheckEligibilityType type,
-        int recordCountLimit) where T : CheckEligibilityRequestBulk;
+        int recordCountLimit,
+        CheckMetaData metaData) where T : CheckEligibilityRequestBulk;
 }
 
 /// <summary>
@@ -52,7 +53,8 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
     public async Task<CheckEligibilityResponseBulk> Execute<T>(
         T model,
         CheckEligibilityType type,
-        int recordCountLimit) where T : CheckEligibilityRequestBulk
+        int recordCountLimit,
+        CheckMetaData meta) where T : CheckEligibilityRequestBulk
     {
         var modelBulk = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
         var bulkData = (modelBulk as dynamic).Data;
@@ -119,7 +121,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
 
         await _bulkCheckGateway.CreateBulkCheck(bulkCheck);
 
-        await _checkEligibilityGateway.PostCheck(bulkData, groupId);
+        await _checkEligibilityGateway.PostCheck(bulkData, groupId, meta);
 
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 

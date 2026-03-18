@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260310143806_AddNewColumnsToEligibilityCheck")]
+    partial class AddNewColumnsToEligibilityCheck
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,7 +106,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex(new[] { "Reference" }, "idx_Reference")
                         .IsUnique();
 
-                    b.ToTable("Applications", (string)null);
+                    b.ToTable("Applications");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationEvidence", b =>
@@ -134,7 +137,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex(new[] { "ApplicationID" }, "idx_ApplicationEvidence_ApplicationID");
 
-                    b.ToTable("ApplicationEvidence", (string)null);
+                    b.ToTable("ApplicationEvidence");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationStatus", b =>
@@ -157,7 +160,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("ApplicationID");
 
-                    b.ToTable("ApplicationStatuses", (string)null);
+                    b.ToTable("ApplicationStatuses");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Audit", b =>
@@ -202,7 +205,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex(new[] { "TypeID" }, "idx_TypeId");
 
-                    b.ToTable("Audits", (string)null);
+                    b.ToTable("Audits");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
@@ -239,7 +242,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("LocalAuthorityID");
 
-                    b.ToTable("BulkChecks", (string)null);
+                    b.ToTable("BulkChecks");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.ECSConflict", b =>
@@ -300,7 +303,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("EligibilityCheckHashID");
 
-                    b.ToTable("ECSConflicts", (string)null);
+                    b.ToTable("ECSConflicts");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
@@ -328,7 +331,7 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Source")
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("varchar(25)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -381,7 +384,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex(new[] { "Hash" }, "idx_EligibilityCheckHash");
 
-                    b.ToTable("EligibilityCheckHashes", (string)null);
+                    b.ToTable("EligibilityCheckHashes");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Establishment", b =>
@@ -430,7 +433,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("LocalAuthorityID");
 
-                    b.ToTable("Establishments", (string)null);
+                    b.ToTable("Establishments");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.FreeSchoolMealsHMRC", b =>
@@ -450,7 +453,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("FreeSchoolMealsHMRCID");
 
-                    b.ToTable("FreeSchoolMealsHMRC", (string)null);
+                    b.ToTable("FreeSchoolMealsHMRC");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.FreeSchoolMealsHO", b =>
@@ -471,7 +474,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("FreeSchoolMealsHOID");
 
-                    b.ToTable("FreeSchoolMealsHO", (string)null);
+                    b.ToTable("FreeSchoolMealsHO");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.LocalAuthority", b =>
@@ -486,12 +489,9 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("SchoolCanReviewEvidence")
-                        .HasColumnType("bit");
-
                     b.HasKey("LocalAuthorityID");
 
-                    b.ToTable("LocalAuthorities", (string)null);
+                    b.ToTable("LocalAuthorities");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
@@ -505,7 +505,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("MultiAcademyTrustID");
 
-                    b.ToTable("MultiAcademyTrusts", (string)null);
+                    b.ToTable("MultiAcademyTrusts");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustEstablishment", b =>
@@ -526,7 +526,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("MultiAcademyTrustID");
 
-                    b.ToTable("MultiAcademyTrustEstablishments", (string)null);
+                    b.ToTable("MultiAcademyTrustEstablishments");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
@@ -549,7 +549,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("RateLimitEventID");
 
-                    b.ToTable("RateLimitEvents", (string)null);
+                    b.ToTable("RateLimitEvents");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
@@ -570,7 +570,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex("Email", "Reference")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.WorkingFamiliesEvent", b =>
@@ -592,12 +592,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("ChildPostCode")
                         .HasColumnType("nvarchar(9)");
 
-                    b.Property<DateTime?>("CreatedDateTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedDateTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("DiscretionaryValidityStartDate")
                         .HasColumnType("datetime2");
 
@@ -605,17 +599,8 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired()
                         .HasColumnType("nchar(11)");
 
-                    b.Property<DateTime?>("EventDateTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("GracePeriodEndDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("HMRCEligibilityEventId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("ParentFirstName")
                         .IsRequired()
@@ -652,9 +637,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("EligibilityCode");
 
-                    b.HasIndex(new[] { "HMRCEligibilityEventId" }, "idx_WorkingFamiliesEvents_HMRCEligibilityEventId");
-
-                    b.ToTable("WorkingFamiliesEvents", (string)null);
+                    b.ToTable("WorkingFamiliesEvents");
                 });
 
             modelBuilder.Entity("EligibilityCheckReport", b =>
@@ -688,7 +671,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("LocalAuthorityID");
 
-                    b.ToTable("EligibilityCheckReports", (string)null);
+                    b.ToTable("EligibilityCheckReports");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -739,7 +722,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("LocalAuthorityID");
 
-                    b.ToTable("FosterCarers", (string)null);
+                    b.ToTable("FosterCarers");
                 });
 
             modelBuilder.Entity("FosterChild", b =>
@@ -791,7 +774,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex("FosterCarerId")
                         .IsUnique();
 
-                    b.ToTable("FosterChildren", (string)null);
+                    b.ToTable("FosterChildren");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>

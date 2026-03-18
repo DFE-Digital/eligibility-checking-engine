@@ -379,3 +379,50 @@ export function invalidNinoWorkingFamiliesBulkRequestBody() {
     ],
   };
 }
+
+// ── ECE Eligibility Events (PUT/DELETE) 
+
+export function validEligibilityEventRequestBody() {
+  return {
+    eligibilityEvent: {
+      dern: "50009000005",
+      submissionDate: "2026-01-20",
+      validityStartDate: "2026-01-21",
+      validityEndDate: "2026-04-23",
+      parent: {
+        nino: "AA123456A",
+        dob: "1980-06-15",
+        forename: "John",
+        surname: "Smith",
+      },
+      child: {
+        forename: "Charles",
+        surname: "Smith",
+        dob: "2012-04-23",
+        postCode: "A11 1AA",
+      },
+      partner: {
+        nino: "AA987654B",
+        dob: "1982-03-10",
+        forename: "Mary",
+        surname: "Smith",
+      },
+      eventDateTime: "2026-01-20T10:00:00.000Z",
+    },
+  };
+}
+
+export function conflictingEligibilityEventRequestBody() {
+  return {
+    eligibilityEvent: {
+      ...validEligibilityEventRequestBody().eligibilityEvent,
+      dern: "99999999999", // Different DERN — should trigger 409
+    },
+  };
+}
+
+export function missingDernEligibilityEventRequestBody() {
+  const body = validEligibilityEventRequestBody() as any;
+  delete body.eligibilityEvent.dern;
+  return body;
+}

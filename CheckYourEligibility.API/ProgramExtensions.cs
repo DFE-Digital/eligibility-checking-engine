@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Extensions;
+using CheckYourEligibility.API.Filters;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -63,6 +64,7 @@ public static class ProgramExtensions
         services.AddTransient<IRateLimit, RateLimitGateway>();
         services.AddTransient<IFosterFamily, FosterFamilyGateway>();
         services.AddTransient<IWorkingFamiliesReporting, WorkingFamiliesReportingGateway>();
+        services.AddTransient<IWorkingFamiliesEvent, WorkingFamiliesEventGateway>();
         return services;
     }
 
@@ -83,6 +85,29 @@ public static class ProgramExtensions
             var config = sp.GetRequiredService<IConfiguration>();
             return new DwpAdapter(loggerFactory, httpClient, config);
         });
+
+        // Register ECS Eligibility Events adapter for forwarding to ECS via Barracuda
+        var ecsBaseUrl = configuration["Ecs:EligibilityEvents:BaseUrl"];
+        if (!string.IsNullOrEmpty(ecsBaseUrl))
+        {
+            services.AddHttpClient("EcsEligibilityEvents", client =>
+            {
+                client.BaseAddress = new Uri(ecsBaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+            services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();
+                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient("EcsEligibilityEvents");
+                var config = sp.GetRequiredService<IConfiguration>();
+                return new EcsEligibilityEventsAdapter(logger, httpClient, config);
+            });
+        }
+
+        // Register client certificate validation filter
+        services.AddScoped<ClientCertificateValidationFilter>();
 
         return services;
     }

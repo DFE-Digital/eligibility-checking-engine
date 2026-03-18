@@ -54,10 +54,10 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var model = new CheckEligibilityRequestBulk { Data = null };
-
+        var meta = _fixture.Create<CheckMetaData>();
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, data is required.");
@@ -70,10 +70,11 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         var limit = 5;
         var data = _fixture.CreateMany<CheckEligibilityRequestBulkData>(limit + 1).ToList();
         var model = new CheckEligibilityRequestBulk { Data = data };
+        var meta = _fixture.Create<CheckMetaData>();
 
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, limit);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, limit , meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>()
@@ -84,6 +85,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     public async Task Execute_returns_failure_when_validation_errors_exist()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         // Create a request with invalid data that will fail validation
         var data = new List<CheckEligibilityRequestBulkData>
         {
@@ -96,7 +98,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>();
@@ -106,6 +108,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     public async Task Execute_calls_gateways_with_correct_parameters_when_valid_WF()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         var data = new List<CheckEligibilityRequestWorkingFamiliesBulkData>
         {
             new()
@@ -124,14 +127,14 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s =>
-                s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
+                s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
 
         // Act
-        var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies, _recordCountLimit);
+        var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies, _recordCountLimit, meta);
 
         // Assert
         result.Data.Status.Should().Be(Messages.Processing);
@@ -141,7 +144,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
-            s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
+            s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta), Times.Once);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Once);
     }
 
@@ -149,6 +152,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     public async Task Execute_calls_gateways_with_correct_parameters_when_valid()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         var data = new List<CheckEligibilityRequestBulkData>
         {
             new()
@@ -166,14 +170,14 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s =>
-                s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
+                s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
 
         // Act
-        var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+        var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         result.Data.Status.Should().Be(Messages.Processing);
@@ -183,7 +187,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(
-            s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()), Times.Once);
+            s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta), Times.Once);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Once);
     }
 
@@ -192,6 +196,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var nino = "ab123456c";
+        var meta = _fixture.Create<CheckMetaData>();
         var model = new CheckEligibilityRequestBulk
         {
             Data = new List<CheckEligibilityRequestBulkData>()
@@ -210,24 +215,25 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
         _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
-                d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>()))
+                d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>(), meta))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
         _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
-            d => d.First().NationalInsuranceNumber == "AB123456C"), It.IsAny<string>()), Times.Once);
+            d => d.First().NationalInsuranceNumber == "AB123456C"), It.IsAny<string>(), meta), Times.Once);
     }
 
     [Test]
     public async Task Execute_returns_failure_when_model_type_is_not_expected()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         // Create a derived class to simulate wrong type
         var data = new List<CheckEligibilityRequestBulkData>
         {
@@ -244,14 +250,14 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit,meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage($"Unknown request type:-{model.GetType()}");
 
         // Verify no services were called
         _mockCheckGateway.Verify(
-            s => s.PostCheck(It.IsAny<IEnumerable<CheckEligibilityRequestData>>(), It.IsAny<string>()),
+            s => s.PostCheck(It.IsAny<IEnumerable<CheckEligibilityRequestData>>(), It.IsAny<string>(), meta),
             Times.Never);
         _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null), Times.Never);
     }
@@ -260,6 +266,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     public async Task Execute_sets_FinalNameInCheck_to_empty_string_when_LastName_Of_LastRecord_is_null()
     {
         // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
         var data = new List<CheckEligibilityRequestBulkData>
         {
             new() { LastName = null, DateOfBirth = "1990-01-01", NationalInsuranceNumber = "AB123456C" },
@@ -273,13 +280,13 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .Callback<BulkCheck>(b => capturedBulkCheck = b)
             .ReturnsAsync("bulk-check-id");
-        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>()))
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync("audit-id");
 
         // Act
-        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit);
+        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         capturedBulkCheck.Should().NotBeNull();

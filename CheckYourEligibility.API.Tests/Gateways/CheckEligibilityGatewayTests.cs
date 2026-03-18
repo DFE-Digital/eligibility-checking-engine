@@ -94,6 +94,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
 
@@ -105,7 +106,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .ThrowsAsync(new Exception());
 
         // Act
-        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request);
+        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request,meta);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();
@@ -117,6 +118,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
         request.NationalAsylumSeekerServiceNumber = null;
         var key = string.IsNullOrEmpty(request.NationalInsuranceNumber)
@@ -139,10 +141,10 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
-        //
+        
         var groupId = Guid.NewGuid().ToString();
         var data = new List<CheckEligibilityRequestData> { request };
-        await _sut.PostCheck(data, groupId);
+        await _sut.PostCheck(data, groupId, meta);
         Assert.Pass();
     }
 
@@ -152,10 +154,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
 
         // Act
-        var response = _sut.PostCheck(request);
+        var response = _sut.PostCheck(request, meta);
 
         // Assert
         response.Result.Id.Should().NotBeNullOrEmpty();
@@ -469,7 +472,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
+    public async Task EligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
     {
         // Arrange
         var request = new EligibilityCheckReportRequest
@@ -480,14 +483,14 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         };
 
         // Act
-        Func<Task> act = async () => await _sut.GenerateEligibilityCheckReports(request);
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(request);
 
         // Assert
         await act.Should().ThrowAsync<Exception>();
     }
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
+    public async Task EligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
     {
         // Arrange
         var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
@@ -505,7 +508,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         }
 
         // Act
-        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+        var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
@@ -514,7 +517,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
+    public async Task EligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
     {
         // Arrange
         var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
@@ -537,7 +540,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+        var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
