@@ -19,7 +19,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         if (EF.IsDesignTime)
         {
-            optionsBuilder.UseSqlServer(opt => opt.CommandTimeout(3600));
+            optionsBuilder.UseSqlServer(opt => opt.CommandTimeout(7200));
         }
         base.OnConfiguring(optionsBuilder);
     }
