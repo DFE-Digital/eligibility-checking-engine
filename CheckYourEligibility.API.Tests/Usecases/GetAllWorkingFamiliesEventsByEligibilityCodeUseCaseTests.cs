@@ -1,5 +1,6 @@
 using AutoFixture;
 using Castle.Core.Logging;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -34,6 +35,50 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
         _mockAuditGateway.VerifyAll();
     }
 
+
+    [Test]
+    public async Task Execute_returns_success_with_correct_wf_blocks()
+    {
+        // arrange
+        var eligibilityCode = "ABC12345678";
+        var localAuthorityIds = new List<int> { 123, 456 };
+
+        // single app
+        var wfResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
+        {
+            Data = new List<WorkingFamilyEventByEligibilityCodeRepsonseItem>
+        {
+            new()
+            {
+                Event = WorkingFamilyEventType.Application,
+                Record = new WorkingFamiliesEvent
+                {
+                    WorkingFamiliesEventID = "E1",
+                    EligibilityCode = eligibilityCode,
+                    SubmissionDate = DateTime.UtcNow
+                }
+            }
+        }
+        };
+
+        _mockWorkingFamiliesReportingGateway
+            .Setup(g => g.GetAllWorkingFamiliesEventsByEligibilityCode(eligibilityCode))
+            .ReturnsAsync(wfResponse);
+
+        // act
+        var result = await _sut.Execute(eligibilityCode, localAuthorityIds);
+
+        // assert
+        result.Should().NotBeNull();
+        result.Data.Should().HaveCount(1);
+        result.Data.First().Record.WorkingFamiliesEventID.Should().Be("E1");
+
+        _mockWorkingFamiliesReportingGateway.Verify(
+            g => g.GetAllWorkingFamiliesEventsByEligibilityCode(eligibilityCode),
+            Times.Once);
+    }
+
+
     [Test]
     public async Task Execute_returns_failure_when_eligibilityCode_and_LAs_is_null()
     {
@@ -43,5 +88,5 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
         await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, Eligibility Code is required.");
     }
 
-   
+
 }

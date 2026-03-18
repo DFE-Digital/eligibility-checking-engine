@@ -23,10 +23,9 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
 
     public async Task<WorkingFamilyEventByEligibilityCodeRepsonse> GetAllWorkingFamiliesEventsByEligibilityCode(string eligibilityCode)
     {
-
         try
         {
-            var wfRecords = await _db.WorkingFamiliesEvents.Where(x => x.EligibilityCode == eligibilityCode).OrderBy(x => x.DiscretionaryValidityStartDate).ToListAsync();
+            var wfRecords = await _db.WorkingFamiliesEvents.Where(x => x.EligibilityCode == eligibilityCode && x.).OrderBy(x => x.DiscretionaryValidityStartDate).ToListAsync();
 
             if (!wfRecords.Any())
                 throw new Exception($"No working family events found");
@@ -100,8 +99,8 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
             return new WorkingFamilyEventByEligibilityCodeRepsonse
             {
                 Data = blocks
-                .SelectMany(b => b)
-                .OrderByDescending(x => x.Record.SubmissionDate)
+                .OrderByDescending(block => block[0].Record.SubmissionDate)
+                .SelectMany(e => e)
                 .ToList()
             };
 
