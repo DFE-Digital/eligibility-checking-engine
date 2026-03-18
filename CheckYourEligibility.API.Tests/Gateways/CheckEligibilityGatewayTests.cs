@@ -472,7 +472,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
+    public async Task EligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
     {
         // Arrange
         var request = new EligibilityCheckReportRequest
@@ -483,14 +483,14 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         };
 
         // Act
-        Func<Task> act = async () => await _sut.GenerateEligibilityCheckReports(request);
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(request);
 
         // Assert
         await act.Should().ThrowAsync<Exception>();
     }
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
+    public async Task EligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
     {
         // Arrange
         var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
@@ -508,7 +508,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         }
 
         // Act
-        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+        var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
@@ -517,7 +517,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task GenerateEligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
+    public async Task EligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
     {
         // Arrange
         var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
@@ -540,7 +540,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GenerateEligibilityCheckReports(reportRequest);
+        var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
         response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();

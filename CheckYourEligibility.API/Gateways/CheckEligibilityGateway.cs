@@ -50,7 +50,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
         try
         {
-           
+
             var baseType = data as CheckEligibilityRequestDataBase;
 
             item.CheckData = JsonConvert.SerializeObject(data);
@@ -76,7 +76,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                 await _hashGateway.Exists(checkData);
             if (checkHashResult != null)
             {
-                
+
                 CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
                 item.Status = hashedStatus;
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
@@ -240,7 +240,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
 
 
-    public async Task<IEnumerable<EligibilityCheckReportItem>> GenerateEligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<EligibilityCheckReportItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
     {
         if (request is null)
             throw new ArgumentNullException(nameof(request));
@@ -254,7 +254,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                                                        x.SubmittedDate >= request.StartDate &&
                                                        x.SubmittedDate <= request.EndDate).Include(ec => ec.EligibilityChecks).ToListAsync();
 
-            if (bulkChecks == null)
+            if (bulkChecks == null || bulkChecks.Count == 0)
             {
                 _logger.LogInformation($"No bulk checks found for LocalAuthorityID: {request.LocalAuthorityID} between {request.StartDate} and {request.EndDate}");
                 throw new Exception($"No bulk checks found");
@@ -286,20 +286,22 @@ public class CheckEligibilityGateway : ICheckEligibility
                 .Where(item => item != null)
                 .ToList();
 
-            
 
-            // Save audit of report generated in EligibilityCheckReportRequests
-            var reportAudit = new EligibilityCheckReport
+            if (request.SaveRequestAudit)
             {
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                GeneratedBy = request.GeneratedBy,
-                LocalAuthorityID = request.LocalAuthorityID,
-                NumberOfResults = bulkChecks.Count
-            };
+                // Save audit of report generated in EligibilityCheckReportRequests
+                var reportAudit = new EligibilityCheckReport
+                {
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    GeneratedBy = request.GeneratedBy,
+                    LocalAuthorityID = request.LocalAuthorityID,
+                    NumberOfResults = bulkChecks.Count
+                };
 
-            await _db.EligibilityCheckReports.AddAsync(reportAudit);
-            await _db.SaveChangesAsync();
+                await _db.EligibilityCheckReports.AddAsync(reportAudit);
+                await _db.SaveChangesAsync();
+            }
 
             await tx.CommitAsync(cancellationToken);
             return reportItems;
