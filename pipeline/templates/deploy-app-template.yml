@@ -30,6 +30,7 @@ stages:
     pool:
       name: ${{ parameters.prefix }}-ECE-managed-devops-pool
     environment: ${{ parameters.environment }}
+    timeoutInMinutes: 120
     strategy:
       runOnce:
         preDeploy:
