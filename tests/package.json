@@ -7,6 +7,12 @@
     "open": "^10.1.0",
     "typescript": "^5.4.5"
   },
+  "overrides": {
+  "jsonwebtoken": {
+    "jws": "3.2.3"
+  },
+  "jws": "4.0.1"
+  },
   "scripts": {
     "e2e:electron": "cypress run --browser electron",
     "combine:reports": "jrm results/combined-report.xml \"results/*.xml\""
