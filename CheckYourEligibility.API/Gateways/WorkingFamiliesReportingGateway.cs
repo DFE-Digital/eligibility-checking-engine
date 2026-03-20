@@ -111,7 +111,8 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error fetching all working family events for ${eligibilityCode}");
+            var sanitizedEligibilityCode = eligibilityCode?.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
+            _logger.LogError(ex, $"Error fetching all working family events for ${sanitizedEligibilityCode}");
             throw;
         }
 
