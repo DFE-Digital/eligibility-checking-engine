@@ -80,6 +80,17 @@ export function invalidLastNameRequestBody() {
   };
 }
 
+export function validCurlyApostropheLastNameRequestBody() {
+  return {
+    data: {
+      nationalInsuranceNumber: "AB123456C",
+      lastName: "O\u2019Brien",
+      dateOfBirth: "2000-01-01",
+      nationalAsylumSeekerServiceNumber: "",
+    },
+  };
+}
+
 export function noNIAndNASSNRequestBody() {
   return {
     data: {

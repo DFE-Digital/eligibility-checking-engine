@@ -1,6 +1,6 @@
 ///FreeSchoolMeals
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validWorkingFamiliesRequestBody,validLoginRequestBody, validHMRCRequestBody, validHomeOfficeRequestBody, invalidHMRCRequestBody, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody, validWorkingFamiliesNullLastnameRequestBody } from '../../support/requestBodies';
+import { validWorkingFamiliesRequestBody,validLoginRequestBody, validHMRCRequestBody, validHomeOfficeRequestBody, invalidHMRCRequestBody, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody, validWorkingFamiliesNullLastnameRequestBody, validCurlyApostropheLastNameRequestBody } from '../../support/requestBodies';
 
 
 describe('Post Eligibility Check - Valid Requests', () => {
@@ -9,6 +9,7 @@ describe('Post Eligibility Check - Valid Requests', () => {
   const validHomeOfficeRequest = validHomeOfficeRequestBody();
   const validWorkingFamiliesRequest  = validWorkingFamiliesRequestBody();
   const validWorkingFamiliesNullLastnameRequest = validWorkingFamiliesNullLastnameRequestBody();
+  const validCurlyApostropheLastNameRequest = validCurlyApostropheLastNameRequestBody();
 
   it('Verify 202 Accepted response is returned with valid working families data', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
@@ -47,6 +48,17 @@ describe('Post Eligibility Check - Valid Requests', () => {
   it('Verify 202 Accepted response is returned with valid Home Office data', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', validHomeOfficeRequest, token).then((response) => {
+        // Assert the status and statusText
+        cy.verifyApiResponseCode(response, 202)
+        // Assert the response body data
+        cy.verifyPostEligibilityCheckResponse(response)
+      });
+    });
+  });
+
+  it('Verify 202 Accepted response is returned when last name contains a curly apostrophe', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+      cy.apiRequest('POST', 'check/free-school-meals', validCurlyApostropheLastNameRequest, token).then((response) => {
         // Assert the status and statusText
         cy.verifyApiResponseCode(response, 202)
         // Assert the response body data
