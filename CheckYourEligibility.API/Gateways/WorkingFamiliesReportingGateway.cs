@@ -25,7 +25,11 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
     {
         try
         {
-            var wfRecords = await _db.WorkingFamiliesEvents.Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted).OrderBy(x => x.DiscretionaryValidityStartDate).ToListAsync();
+            var wfRecords = await _db.WorkingFamiliesEvents
+                .Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted)
+                .OrderBy(x => x.DiscretionaryValidityStartDate)
+                .AsNoTracking()
+                .ToListAsync();
 
             if (!wfRecords.Any())
                 throw new Exception($"No working family events found");

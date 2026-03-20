@@ -45,17 +45,6 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
            _mockAuditGateway.Object,
            _configuration
         );
-
-        // Setup default HttpContext with a Mock HttpRequest
-        var httpContext = new DefaultHttpContext();
-        var request = new Mock<HttpRequest>();
-        var path = new PathString("/check/free-school-meals");
-        request.Setup(r => r.Path).Returns(path);
-        httpContext.Request.Path = path;
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext
-        };
     }
 
     [TearDown]
@@ -63,27 +52,6 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
     {
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }
-
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
 
@@ -115,7 +83,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         };
 
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
-            .Setup(x => x.Execute(eligibilityCode, localAuthorityIds))
+            .Setup(x => x.Execute(eligibilityCode))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -201,7 +169,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         };
 
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
-            .Setup(x => x.Execute(eligibilityCode, localAuthorityIds))
+            .Setup(x => x.Execute(eligibilityCode))
             .ReturnsAsync(multiBlockResponse);
 
         // Act
@@ -229,7 +197,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
 
         // Use case called once
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase.Verify(
-            x => x.Execute(eligibilityCode, It.IsAny<List<int>>()),
+            x => x.Execute(eligibilityCode),
             Times.Once);
     }
 
@@ -244,7 +212,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
-            .Setup(u => u.Execute(eligibilityCode, localAuthorityIds))
+            .Setup(u => u.Execute(eligibilityCode))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -255,6 +223,38 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value!).Errors.First().Title.Should().Be("Validation error");
     }
+
+
+     #region Helper methods
+    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
+    {
+        // Create mock HttpContext with ClaimsPrincipal
+        var httpContext = new DefaultHttpContext();
+        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
+
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+    }
+
+    private List<Claim> SetupSpecificScopeIdClaims(List<int> ids, string scopeName)
+
+    {
+        var claims = new List<Claim>();
+
+        // Add appropriate scope claims based on ids
+        if (ids.Contains(0))
+        {
+            claims.Add(new Claim("scope", scopeName));
+        }
+        else
+        {
+            var scopeValue = string.Join(" ", ids.Select(id => $"{scopeName}:{id}"));
+            claims.Add(new Claim("scope", scopeValue));
+        }
+
+        return claims;
+    }
+    #endregion
 
 
 }

@@ -15,7 +15,6 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
 {
     private Mock<IWorkingFamiliesReporting> _mockWorkingFamiliesReportingGateway;
     private Mock<ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>> _mockLogger;
-    private Mock<IAudit> _mockAuditGateway = null!;
     private GetAllWorkingFamiliesEventsByEligibilityCodeUseCase _sut;
     private Fixture _fixture = null!;
 
@@ -24,15 +23,13 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
     {
         _mockWorkingFamiliesReportingGateway = new Mock<IWorkingFamiliesReporting>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>>(MockBehavior.Loose);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new GetAllWorkingFamiliesEventsByEligibilityCodeUseCase(_mockWorkingFamiliesReportingGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _sut = new GetAllWorkingFamiliesEventsByEligibilityCodeUseCase(_mockWorkingFamiliesReportingGateway.Object, _mockLogger.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
         _mockWorkingFamiliesReportingGateway.VerifyAll();
-        _mockAuditGateway.VerifyAll();
     }
 
 
@@ -66,7 +63,7 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
             .ReturnsAsync(wfResponse);
 
         // act
-        var result = await _sut.Execute(eligibilityCode, localAuthorityIds);
+        var result = await _sut.Execute(eligibilityCode);
 
         // assert
         result.Should().NotBeNull();
@@ -80,10 +77,10 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
 
 
     [Test]
-    public async Task Execute_returns_failure_when_eligibilityCode_and_LAs_is_null()
+    public async Task Execute_returns_failure_when_eligibilityCode_is_null_or_empty()
     {
         // Act
-        Func<Task> act = async () => await _sut.Execute(null, null);
+        Func<Task> act = async () => await _sut.Execute(null);
         // Assert
         await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid Request, Eligibility Code is required.");
     }

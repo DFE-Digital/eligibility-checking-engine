@@ -38,7 +38,6 @@ public class WorkingFamiliesReportingController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/working-families-reporting/{eligibilityCode}")]
-    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
     [Authorize(Policy = PolicyNames.RequireLocalAuthorityScope)]
     public async Task<ActionResult> GetAllWorkingFamiliesEventsByEligibilityCode(string eligibilityCode)
     {
@@ -53,7 +52,7 @@ public class WorkingFamiliesReportingController : BaseController
                 });
             }
 
-            var response = await _getAllWorkingFamiliesEventsByEligibilityCodeUseCase.Execute(eligibilityCode, localAuthorityIds);
+            var response = await _getAllWorkingFamiliesEventsByEligibilityCodeUseCase.Execute(eligibilityCode);
 
             if (response == null)
                 return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found", Detail = $"Working family events with code {eligibilityCode} not found" }] });
@@ -76,6 +75,4 @@ public class WorkingFamiliesReportingController : BaseController
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
-
-
 }

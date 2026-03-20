@@ -13,32 +13,25 @@ public interface IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
     /// </summary>
     /// <param name="eligibilityCode"></param>
     /// <returns>returns a list of WorkingFamilyEventByEligibilityCodeRepsonseItems </returns>
-    Task<WorkingFamilyEventByEligibilityCodeRepsonse> Execute(string eligibilityCode, IList<int> allowedLocalAuthorityIds);
+    Task<WorkingFamilyEventByEligibilityCodeRepsonse> Execute(string eligibilityCode);
 }
 
 
 public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCase : IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
 {
     private readonly IWorkingFamiliesReporting _workingFamiliesReportingGateway;
-    private readonly IAudit _auditGateway;
     private readonly ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase> _logger;
 
-    public GetAllWorkingFamiliesEventsByEligibilityCodeUseCase(IWorkingFamiliesReporting workingFamiliesReportingGateway, IAudit auditGateway, ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase> logger)
+    public GetAllWorkingFamiliesEventsByEligibilityCodeUseCase(IWorkingFamiliesReporting workingFamiliesReportingGateway, ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase> logger)
     {
         _workingFamiliesReportingGateway = workingFamiliesReportingGateway;
-        _auditGateway = auditGateway;
         _logger = logger;
     }
 
-    public async Task<WorkingFamilyEventByEligibilityCodeRepsonse> Execute(string eligibilityCode, IList<int> allowedLocalAuthorityIds)
+    public async Task<WorkingFamilyEventByEligibilityCodeRepsonse> Execute(string eligibilityCode)
     {
         if (string.IsNullOrEmpty(eligibilityCode))
             throw new ValidationException(null, "Invalid Request, Eligibility Code is required.");
-
-        if (allowedLocalAuthorityIds == null || allowedLocalAuthorityIds.Count == 0)
-        {
-            throw new UnauthorizedAccessException("You do not have permission to access working families reporting");
-        }
 
         var response = await _workingFamiliesReportingGateway.GetAllWorkingFamiliesEventsByEligibilityCode(eligibilityCode);
         if (response == null)
