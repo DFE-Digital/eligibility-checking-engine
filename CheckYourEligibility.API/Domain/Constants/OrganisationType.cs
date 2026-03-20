@@ -3,6 +3,7 @@
     /// <summary>
     /// What type of organisation is making the check
     /// It can be local-authority, establishment multi-academy-trust
+    /// </summary>
     public static class OrganisationType
     {
         public const string local_authority = "local-authority";
