@@ -11,6 +11,9 @@
     "e2e:electron": "cypress run --browser electron",
     "combine:reports": "jrm results/combined-report.xml \"results/*.xml\""
   },
+  "overrides": {
+  "qs": "6.15.0"
+  },
   "devDependencies": {
     "@faker-js/faker": "^9.2.0",
     "cypress": "^13.17.0"
