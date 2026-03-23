@@ -35,9 +35,9 @@ public class EligibilityEventsControllerTests : TestBase.TestBase
             SubmissionDate = new DateTime(2026, 1, 20),
             ValidityStartDate = new DateTime(2026, 1, 21),
             ValidityEndDate = new DateTime(2026, 4, 23),
-            Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith" },
+            Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith", Dob = new DateTime(1980, 1, 1) },
             Child = new ChildData { Forename = "Charles", Surname = "Smith", Dob = new DateTime(2012, 4, 23), PostCode = "A11 1AA" },
-            Partner = new ParentPartnerData { Nino = "AA987654B", Forename = "Mary", Surname = "Smith" },
+            Partner = new ParentPartnerData { Nino = "AA987654B", Forename = "Mary", Surname = "Smith", Dob = new DateTime(1980, 1, 1) },
             EventDateTime = new DateTime(2026, 1, 20, 10, 0, 0, DateTimeKind.Utc)
         }
     };

@@ -28,9 +28,9 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             SubmissionDate = new DateTime(2026, 1, 20),
             ValidityStartDate = new DateTime(2026, 1, 21),
             ValidityEndDate = new DateTime(2026, 4, 23),
-            Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith" },
+            Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith", Dob = new DateTime(1980, 1, 1) },
             Child = new ChildData { Forename = "Charles", Surname = "Smith", Dob = new DateTime(2012, 4, 23), PostCode = "A11 1AA" },
-            Partner = new ParentPartnerData { Nino = "AA987654B", Forename = "Mary", Surname = "Smith" },
+            Partner = new ParentPartnerData { Nino = "AA987654B", Forename = "Mary", Surname = "Smith", Dob = new DateTime(1980, 1, 1) },
             EventDateTime = new DateTime(2026, 1, 20, 10, 0, 0, DateTimeKind.Utc)
         }
     };
@@ -216,6 +216,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         result.ParentFirstName.Should().Be("John");
         result.ParentLastName.Should().Be("Smith");
         result.ParentNationalInsuranceNumber.Should().Be("AA123456A");
+        result.ParentDateOfBirth.Should().Be(new DateTime(1980, 1, 1));
     }
 
     [Test]
@@ -236,6 +237,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         result.PartnerFirstName.Should().Be("Mary");
         result.PartnerLastName.Should().Be("Smith");
         result.PartnerNationalInsuranceNumber.Should().Be("AA987654B");
+        result.PartnerDateOfBirth.Should().Be(new DateTime(1980, 1, 1));
     }
 
     [Test]
@@ -250,7 +252,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
                 SubmissionDate = new DateTime(2026, 1, 20),
                 ValidityStartDate = new DateTime(2026, 1, 21),
                 ValidityEndDate = new DateTime(2026, 4, 23),
-                Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith" },
+                Parent = new ParentPartnerData { Nino = "AA123456A", Forename = "John", Surname = "Smith", Dob = new DateTime(1980, 1, 1) },
                 Child = new ChildData { Forename = "Charles", Surname = "Smith", Dob = new DateTime(2012, 4, 23) },
                 Partner = null
             }
@@ -269,6 +271,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         result.PartnerFirstName.Should().BeEmpty();
         result.PartnerLastName.Should().BeEmpty();
         result.PartnerNationalInsuranceNumber.Should().BeNull();
+        result.PartnerDateOfBirth.Should().Be(default);
     }
 
     [Test]

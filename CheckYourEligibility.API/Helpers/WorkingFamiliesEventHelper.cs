@@ -17,9 +17,11 @@ public static class WorkingFamiliesEventHelper
             ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
             ParentFirstName = data.FirstName,
             ParentLastName = data.LastName,
+            ParentDateOfBirth = data.DateOfBirth,
             PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber ?? string.Empty,
             PartnerFirstName = data.PartnerFirstName ?? string.Empty,
             PartnerLastName = data.PartnerLastName ?? string.Empty,
+            PartnerDateOfBirth = data.PartnerDateOfBirth ?? DateTime.MinValue,
 
             ChildFirstName = data.FosterChild.FirstName,
             ChildLastName = data.FosterChild.LastName,
@@ -48,6 +50,7 @@ public static class WorkingFamiliesEventHelper
             ParentNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Parent NINO")],
             ParentFirstName = eventProps[columnHeaders.IndexOf("Parent Forename")],
             ParentLastName = eventProps[columnHeaders.IndexOf("Parent Surname")],
+            ParentDateOfBirth = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Parent DOB")])),
             ChildFirstName = eventProps[columnHeaders.IndexOf("Child Forename")],
             ChildLastName = eventProps[columnHeaders.IndexOf("Child Surname")],
             ChildPostCode = eventProps[columnHeaders.IndexOf("Child Postcode")],
@@ -55,6 +58,7 @@ public static class WorkingFamiliesEventHelper
             PartnerNationalInsuranceNumber = eventProps[columnHeaders.IndexOf("Partner NINO")],
             PartnerFirstName = eventProps[columnHeaders.IndexOf("Partner Forename")],
             PartnerLastName = eventProps[columnHeaders.IndexOf("Partner Surname")],
+            PartnerDateOfBirth = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Partner DOB")])),
             SubmissionDate = submissionDate,
             DiscretionaryValidityStartDate = GetDiscretionaryStartDate(validityStartDate, submissionDate),
             GracePeriodEndDate = GetGracePeriodEndDate(validityEndDate)

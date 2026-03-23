@@ -750,6 +750,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
@@ -797,6 +798,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = requestLastName;
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
@@ -846,6 +848,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
@@ -881,6 +884,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "doe";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
@@ -915,6 +919,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "doe";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
         wfEvent.ValidityStartDate = DateTime.Today.AddDays(-2);
@@ -952,6 +957,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(1);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(1);
@@ -993,6 +999,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-10);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-10);
@@ -1005,6 +1012,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         reconfirmedEvent.EligibilityCode = "50012345678";
         reconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
         reconfirmedEvent.ParentLastName = "smith";
+        reconfirmedEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         reconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         reconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(10);
         reconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(10);
@@ -1047,6 +1055,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-15);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-15);
@@ -1059,6 +1068,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         reconfirmedEvent.EligibilityCode = "50012345678";
         reconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
         reconfirmedEvent.ParentLastName = "smith";
+        reconfirmedEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         reconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         reconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(10);
         reconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(10);
@@ -1102,6 +1112,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         wfEvent.EligibilityCode = "50012345678";
         wfEvent.ParentNationalInsuranceNumber = "AB123456C";
         wfEvent.ParentLastName = "smith";
+        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         wfEvent.ValidityEndDate = DateTime.Today.AddDays(-10);
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-10);
@@ -1114,6 +1125,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         reconfirmedEvent.EligibilityCode = "50012345678";
         reconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
         reconfirmedEvent.ParentLastName = "smith";
+        reconfirmedEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         reconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         reconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(10);
         reconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(10);
@@ -1127,6 +1139,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         prevWfEvent.EligibilityCode = "50012345678";
         prevWfEvent.ParentNationalInsuranceNumber = "AB123456C";
         prevWfEvent.ParentLastName = "smith";
+        prevWfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         prevWfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         prevWfEvent.ValidityEndDate = DateTime.Today.AddDays(-35);
         prevWfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-35);
@@ -1139,6 +1152,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         prevReconfirmedEvent.EligibilityCode = "50012345678";
         prevReconfirmedEvent.ParentNationalInsuranceNumber = "AB123456C";
         prevReconfirmedEvent.ParentLastName = "smith";
+        prevReconfirmedEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
         prevReconfirmedEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
         prevReconfirmedEvent.ValidityEndDate = DateTime.Today.AddDays(-25);
         prevReconfirmedEvent.GracePeriodEndDate = DateTime.Today.AddDays(-25);
