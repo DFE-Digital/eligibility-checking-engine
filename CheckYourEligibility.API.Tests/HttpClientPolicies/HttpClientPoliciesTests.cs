@@ -51,7 +51,6 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
         [Test]
         public async Task HttpClient_Retries_OnTaskCancellationError()
         {
-            // Arrange: Mock handler to fail twice, then succeed
             var handlerMock = new Mock<HttpMessageHandler>();
             int callCount = 0;
             handlerMock.Protected()
