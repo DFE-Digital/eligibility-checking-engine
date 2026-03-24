@@ -21,6 +21,8 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
             .NotEmpty().WithMessage("Parent " + ValidationMessages.FirstName);
         RuleFor(x => x.ParentLastName)
             .NotEmpty().WithMessage("Parent " + ValidationMessages.LastName);
+        RuleFor(x => x.ParentDateOfBirth)
+            .NotEmpty().WithMessage("Parent " + ValidationMessages.DOB);
         RuleFor(x => x.ChildFirstName)
             .NotEmpty().WithMessage("Child " + ValidationMessages.ChildFirstName);
         RuleFor(x => x.ChildLastName)
@@ -39,6 +41,8 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
                 .NotEmpty().WithMessage("Partner " + ValidationMessages.FirstName);
             RuleFor(x => x.PartnerLastName)
                 .NotEmpty().WithMessage("Partner " + ValidationMessages.LastName);
+            RuleFor(x => x.PartnerDateOfBirth)
+                .NotEmpty().WithMessage("Partner " + ValidationMessages.DOB);
         });
 
         RuleFor(x => x.SubmissionDate)

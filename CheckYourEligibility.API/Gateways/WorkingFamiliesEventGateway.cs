@@ -39,9 +39,11 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
             existing.ParentFirstName = data.ParentFirstName;
             existing.ParentLastName = data.ParentLastName;
             existing.ParentNationalInsuranceNumber = data.ParentNationalInsuranceNumber;
+            existing.ParentDateOfBirth = data.ParentDateOfBirth;
             existing.PartnerFirstName = data.PartnerFirstName;
             existing.PartnerLastName = data.PartnerLastName;
             existing.PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber;
+            existing.PartnerDateOfBirth = data.PartnerDateOfBirth;
             existing.SubmissionDate = data.SubmissionDate;
             existing.ValidityStartDate = data.ValidityStartDate;
             existing.ValidityEndDate = data.ValidityEndDate;
