@@ -41,7 +41,5 @@ namespace CheckYourEligibility.API
                 minimumThroughput:100,
                 durationOfBreak: TimeSpan.FromSeconds(5));
         }
-       public static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy(int timeOut) =>
-            Policy.TimeoutAsync<HttpResponseMessage>(timeOut);
     }
 }

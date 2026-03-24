@@ -82,7 +82,7 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
             var response = await client.GetAsync("http://test");
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(4, Is.EqualTo(callCount)); // Should retry 3 times before succeedding
+            Assert.That(4, Is.EqualTo(callCount));
         }
 
         private static Exception CreateHttpClientTimeoutLikeException()
