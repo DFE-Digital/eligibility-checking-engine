@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using CheckYourEligibility.API.Adapters;
+﻿using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Extensions;
@@ -11,7 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
-
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 namespace CheckYourEligibility.API;
 
 [ExcludeFromCodeCoverage(Justification = "extension of program")]
@@ -32,9 +31,7 @@ public static class ProgramExtensions
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
 
         );
-      
-
-
+     
         return services;
     }
 
@@ -67,13 +64,18 @@ public static class ProgramExtensions
         return services;
     }
 
+
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
     {
+
+
         // Register HttpClient normally
         services.AddHttpClient("Dwp", client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
-        });
+        })
+          .AddPolicyHandler(HttpClientPolicies.GetRetryPolicyWithJitter())
+          .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
 
         // Register DwpAdapter as singleton, inject IHttpClientFactory
         services.AddSingleton<IDwpAdapter>(sp =>
@@ -93,8 +95,11 @@ public static class ProgramExtensions
             {
                 client.BaseAddress = new Uri(ecsBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
-            });
-
+               
+            })
+            .AddPolicyHandler(HttpClientPolicies.GetRetryPolicyWithJitter())
+            .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
+            
             services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();

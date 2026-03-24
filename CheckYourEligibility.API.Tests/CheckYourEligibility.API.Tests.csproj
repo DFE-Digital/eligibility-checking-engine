@@ -15,8 +15,8 @@
         <PackageReference Include="AutoFixture" Version="4.18.1" />
         <PackageReference Include="AutoFixture.AutoMoq" Version="4.18.1" />
         <PackageReference Include="AutoFixture.Idioms" Version="4.18.1" />
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="NUnit" Version="4.1.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.6" />
@@ -45,8 +45,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent.xlsm"/>
-        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent_invalid.xlsm"/>
+        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent.xlsm" />
+        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent_invalid.xlsm" />
     </ItemGroup>
 
 </Project>
