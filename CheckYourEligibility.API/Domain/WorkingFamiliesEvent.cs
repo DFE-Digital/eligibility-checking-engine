@@ -25,9 +25,9 @@ public class WorkingFamiliesEvent
 
     public DateTime? PartnerDateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string PartnerFirstName { get; set; }
+    [Column(TypeName = "varchar(100)")] public string? PartnerFirstName { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string PartnerLastName { get; set; }
+    [Column(TypeName = "varchar(100)")] public string? PartnerLastName { get; set; }
 
     [Column(TypeName = "varchar(10)")] public string? PartnerNationalInsuranceNumber { get; set; }
     public DateTime SubmissionDate { get; set; }
