@@ -143,8 +143,7 @@ public class EcsAdapter : IEcsAdapter
             soapMessage = soapMessage.Replace("<ns:EligibilityCheckType>FSM</ns:EligibilityCheckType>",
                 $"<ns:EligibilityCheckType>EYPP</ns:EligibilityCheckType>");
         }
-        string logSoapMessage = soapMessage.Replace(EcsPassword, "RemovedFromLogs");
-        _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
+        _logger.LogInformation("ECS SOAP request generated for eligibility check type {CheckType}.", eligibilityType);
         return await executeEcsCheck(soapMessage);
     }
 
