@@ -165,8 +165,7 @@ public class EcsAdapter : IEcsAdapter
             soapMessage = soapMessage.Replace("<ns:Surname/>",
                 $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");
         }
-        string logSoapMessage = soapMessage.Replace(EcsPassword, "RemovedFromLogs");
-        _logger.LogInformation($"ECS soap message generated: {logSoapMessage}");
+        _logger.LogInformation("ECS SOAP request generated for warm flag check.");
         return await executeEcsCheck(soapMessage);
     }
 }
