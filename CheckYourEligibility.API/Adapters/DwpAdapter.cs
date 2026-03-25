@@ -307,7 +307,6 @@ public class DwpAdapter: IDwpAdapter
             // ECS_Conflict helper logic to better track conflicts
             citizenResponse.CAPIResponseCode = response.StatusCode;
           
-
             if (response.IsSuccessStatusCode)
             {
                 var responseData =

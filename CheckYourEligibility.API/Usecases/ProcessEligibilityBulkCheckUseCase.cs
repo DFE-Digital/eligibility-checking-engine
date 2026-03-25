@@ -107,7 +107,6 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
                         }
 
-
                     }
 
                     catch (Exception ex)
