@@ -157,6 +157,7 @@ Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
   expect(first).to.have.property('LastName');
   expect(first).to.have.property('dateOfBirth');
   expect(first).to.have.property('dateCheckSubmitted');
+  expect(first).to.have.property('outcome');
 
 });
 

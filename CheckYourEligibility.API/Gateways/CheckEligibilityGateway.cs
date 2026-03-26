@@ -252,7 +252,9 @@ public class CheckEligibilityGateway : ICheckEligibility
             // Get bulk checks between the specified dates for the given local authority
             var bulkChecks = await _db.BulkChecks.Where(x => x.LocalAuthorityID == request.LocalAuthorityID &&
                                                        x.SubmittedDate >= request.StartDate &&
-                                                       x.SubmittedDate <= request.EndDate).Include(ec => ec.EligibilityChecks).ToListAsync();
+                                                       x.SubmittedDate <= request.EndDate)
+                                                       .Include(ec => ec.EligibilityChecks)
+                                                       .ToListAsync();
 
             if (bulkChecks == null || bulkChecks.Count == 0)
             {
@@ -271,6 +273,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                         try
                         {
                             parsedCheck = JsonConvert.DeserializeObject<EligibilityCheckReportItem>(check.CheckData);
+                            parsedCheck.Outcome = check.Status;
                         }
                         catch (Exception ex)
                         {
