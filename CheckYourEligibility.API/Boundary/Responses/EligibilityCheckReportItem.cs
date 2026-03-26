@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Domain.Enums;
 using Newtonsoft.Json;
 
 public class EligibilityCheckReportItem
@@ -7,6 +8,7 @@ public class EligibilityCheckReportItem
    public string NationalInsuranceNumber { get; set; }
    public DateTime DateOfBirth { get; set; }
    public DateTime DateCheckSubmitted { get; set; }
+   public CheckEligibilityStatus Outcome { get; set; }
    public CheckType CheckType { get; set; } = CheckType.BulkChecks;
    public string CheckedBy { get; set; }  
 }
