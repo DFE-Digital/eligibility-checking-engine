@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 namespace CheckYourEligibility.API;
 
@@ -66,6 +68,14 @@ public static class ProgramExtensions
     }
 
 
+    private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
+        HttpRequestMessage httpRequestMsg,
+        X509Certificate2 certificate,
+        X509Chain x509Chain,
+        SslPolicyErrors policyErrors)
+    {
+        return true;
+    }
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
     {
 
@@ -74,9 +84,20 @@ public static class ProgramExtensions
         services.AddHttpClient("Dwp", client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
+        }).ConfigurePrimaryHttpMessageHandler(() => {
+
+            var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
+            var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
+            var handler = new HttpClientHandler();
+            handler.ClientCertificates.Add(cert);
+            handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
+            return handler;
         })
-          .AddPolicyHandler(HttpClientPolicies.GetRetryPolicyWithJitter())
-          .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
+    .AddPolicyHandler((sp, msg) =>  
+    {
+       var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
+        return HttpClientPolicies.GetRetryPolicyWithJitter(logger);
+    }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
 
         // Register DwpAdapter as singleton, inject IHttpClientFactory
         services.AddSingleton<IDwpAdapter>(sp =>
@@ -97,8 +118,12 @@ public static class ProgramExtensions
                 client.BaseAddress = new Uri(ecsBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
                
+            }).AddPolicyHandler((sp, msg) =>
+            {
+                var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
+                return HttpClientPolicies.GetRetryPolicyWithJitter(logger);
             })
-            .AddPolicyHandler(HttpClientPolicies.GetRetryPolicyWithJitter())
+
             .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
             
             services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>

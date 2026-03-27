@@ -68,19 +68,6 @@ public class DwpAdapter: IDwpAdapter
 
         _httpClient = httpClient;
 
-        if (_UseEcsforChecks!="true")
-        {
-            var privateKeyBytes = Convert.FromBase64String(_configuration["Dwp:ApiCertificate"]);
-            _DWP_ApiCertificate = new X509Certificate2(privateKeyBytes, (string)null,
-                X509KeyStorageFlags.MachineKeySet);
-
-            var handler = new HttpClientHandler();
-            handler.ClientCertificates.Add(_DWP_ApiCertificate);
-            handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
-
-            _httpClient = new HttpClient(handler);
-        }
-
         _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"];
         _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];      
         _DWP_ApiContext = _configuration["Dwp:ApiContext"];
@@ -92,15 +79,6 @@ public class DwpAdapter: IDwpAdapter
             Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
         _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
             Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
-    }
-
-    private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
-        HttpRequestMessage httpRequestMsg,
-        X509Certificate2 certificate,
-        X509Chain x509Chain,
-        SslPolicyErrors policyErrors)
-    {
-        return true;
     }
 
     #region Citizen Api Rest

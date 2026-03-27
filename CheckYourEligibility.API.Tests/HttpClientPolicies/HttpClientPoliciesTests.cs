@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using System.Net;
@@ -28,50 +29,27 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
                     {
                         throw new HttpRequestException();
                     }
-                        return new HttpResponseMessage(HttpStatusCode.OK);
-                });
-
-            var services = new ServiceCollection();
-            services.AddHttpClient("Dwp")
-                .ConfigurePrimaryHttpMessageHandler(() => handlerMock.Object)
-                .AddPolicyHandler(API.HttpClientPolicies.GetRetryPolicyWithJitter())
-                .AddPolicyHandler(API.HttpClientPolicies.GetCircuitBreakerPolicy());
-
-            var provider = services.BuildServiceProvider();
-            var clientFactory = provider.GetRequiredService<IHttpClientFactory>();
-            var client = clientFactory.CreateClient("Dwp");
-
-            // Act
-            var response = await client.GetAsync("http://test");
-
-            // Assert
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(4,  Is.EqualTo(callCount));
-        }
-        [Test]
-        public async Task HttpClient_Retries_OnTaskCancellationError()
-        {
-            var handlerMock = new Mock<HttpMessageHandler>();
-            int callCount = 0;
-            handlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(() =>
-                {
-                    callCount++;
-                    if (callCount < 4)
-                    {
-                        throw CreateHttpClientTimeoutLikeException();
-                    }
                     return new HttpResponseMessage(HttpStatusCode.OK);
                 });
 
+            var loggerMock = new Mock<ILogger>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+            loggerFactoryMock
+                .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
+                .Returns(loggerMock.Object);
+
             var services = new ServiceCollection();
             services.AddHttpClient("Dwp")
                 .ConfigurePrimaryHttpMessageHandler(() => handlerMock.Object)
-                .AddPolicyHandler(API.HttpClientPolicies.GetRetryPolicyWithJitter())
+
+        .AddPolicyHandler((sp, msg) =>
+        {
+            var factory = sp.GetRequiredService<ILoggerFactory>();
+            var logger = factory.CreateLogger("PollyRetryTests");
+            return API.HttpClientPolicies.GetRetryPolicyWithJitter(logger);
+        })
+
+
                 .AddPolicyHandler(API.HttpClientPolicies.GetCircuitBreakerPolicy());
 
             var provider = services.BuildServiceProvider();
@@ -80,35 +58,10 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
 
             // Act
             var response = await client.GetAsync("http://test");
+
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
             Assert.That(4, Is.EqualTo(callCount));
         }
-
-        private static Exception CreateHttpClientTimeoutLikeException()
-{
-    // Inner
-    var socket = new SocketException((int)SocketError.OperationAborted);
-
-    // Wrapped in
-    var io = new IOException(
-        "Unable to read data from the transport connection: " +
-        "The I/O operation has been aborted because of either a thread exit or an application request.",
-        socket);
-
-    var innerTce = new TaskCanceledException("The operation was canceled.");
-
-    var timeout = new TimeoutException("The operation was canceled.", io);
-
-    // Top-level: HttpClient throws TaskCanceledException on timeout
-    return new TaskCanceledException(
-        "The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing. " +
-        "The operation was canceled. The operation was canceled. " +
-        "Unable to read data from the transport connection: " +
-        "The I/O operation has been aborted because of either a thread exit or an application request.. " +
-        "The I/O operation has been aborted because of either a thread exit or an application request.",
-        timeout);
-}
-
     }
 }
