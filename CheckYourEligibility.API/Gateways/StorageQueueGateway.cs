@@ -18,7 +18,6 @@ public class StorageQueueGateway : IStorageQueue
     private QueueServiceClient _queueServiceClient;
 
 
-
     public StorageQueueGateway(ILoggerFactory logger,
         QueueServiceClient queueServiceClient,
         IConfiguration configuration)

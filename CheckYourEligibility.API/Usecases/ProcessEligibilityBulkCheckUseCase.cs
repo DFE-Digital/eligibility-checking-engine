@@ -68,17 +68,15 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                     var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
                     try
                     {
+                        await Task.Delay(3);
 
                         var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid, dbContext);
 
-                     
-                       _logger.LogInformation(
-                        $"TimesStamp: {DateTime.UtcNow}\n"+
-                        $"Item_No....{i} \n" +
-                        $"Process_Time....{sw.ElapsedMilliseconds:N0} ms \n" +
-                        $"Time_Elapsed....{st.ElapsedMilliseconds:N0} ms");
-                        i++;
-                        _logger.LogInformation($"Reading queue item in {sw.ElapsedMilliseconds} ms");
+                        _logger.LogInformation(
+                          $"Task_No....{i}\n" +
+                          $"Check:{checkData.Guid}\n" +
+                          $"Time_Elapsed: {st.ElapsedMilliseconds:N0} ms\n");
+                          i++;
 
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
                         {
@@ -129,9 +127,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                     _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
                 }
 
-            }
-
-            );
+            });
 
             await Task.WhenAll(tasks);
 
