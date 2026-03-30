@@ -46,7 +46,7 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
         {
             var factory = sp.GetRequiredService<ILoggerFactory>();
             var logger = factory.CreateLogger("PollyRetryTests");
-            return API.HttpClientPolicies.GetRetryPolicyWithJitter(logger);
+            return API.HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
         })
 
 
