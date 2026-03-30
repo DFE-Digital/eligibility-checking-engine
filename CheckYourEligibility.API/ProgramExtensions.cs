@@ -96,7 +96,7 @@ public static class ProgramExtensions
     .AddPolicyHandler((sp, msg) =>  
     {
        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-        return HttpClientPolicies.GetRetryPolicyWithJitter(logger);
+        return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
     }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
 
         // Register DwpAdapter as singleton, inject IHttpClientFactory
@@ -121,7 +121,7 @@ public static class ProgramExtensions
             }).AddPolicyHandler((sp, msg) =>
             {
                 var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-                return HttpClientPolicies.GetRetryPolicyWithJitter(logger);
+                return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "ECS");
             })
 
             .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());

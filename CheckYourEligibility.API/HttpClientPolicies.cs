@@ -12,7 +12,7 @@ namespace CheckYourEligibility.API
         /// </summary>
         /// <param name="retryCount">How many times a single request will be retried before giving up</param>
         /// <returns></returns>
-        public static IAsyncPolicy<HttpResponseMessage> GetRetryPolicyWithJitter(ILogger logger)
+        public static IAsyncPolicy<HttpResponseMessage> GetRetryPolicyWithJitter(ILogger logger, string clientName)
         {
             var delay = Backoff.DecorrelatedJitterBackoffV2(medianFirstRetryDelay: TimeSpan.FromSeconds(2), retryCount: 3);
 
@@ -22,10 +22,12 @@ namespace CheckYourEligibility.API
                     onRetryAsync: async (outcome, timespan, retryAttempt, context) =>
                     {
                         logger.LogWarning(
-                            "Retry attempt {RetryAttempt} will wait {Delay}s. Reason: {ExceptionMessage}",
+                            "{clientName}:Retry attempt {RetryAttempt} will wait {Delay}s. Reason: {ExceptionMessage}",
+                            clientName,
                             retryAttempt,
                             timespan.TotalSeconds,
                             outcome.Exception?.Message ?? outcome.Result?.ReasonPhrase);
+                                
 
                         await Task.CompletedTask;
                     });
