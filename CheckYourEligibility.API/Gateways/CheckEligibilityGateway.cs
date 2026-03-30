@@ -299,7 +299,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     EndDate = request.EndDate,
                     GeneratedBy = request.GeneratedBy,
                     LocalAuthorityID = request.LocalAuthorityID,
-                    NumberOfResults = bulkChecks.Count
+                    NumberOfResults = reportItems.Count
                 };
 
                 await _db.EligibilityCheckReports.AddAsync(reportAudit);
