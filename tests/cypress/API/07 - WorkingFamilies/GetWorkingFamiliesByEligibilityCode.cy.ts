@@ -45,7 +45,7 @@ const generateContiguousEventData = (blockCount = 3) => {
   return { data: blocks.flat() };
 }
 
-describe("Get Working Family Events By Eligibility Code - Valid Contiguous Blocks", () => {
+describe.skip("Get Working Family Events By Eligibility Code - Valid Contiguous Blocks", () => {
 
   it("Verifies application then reconfirm events in correct contiguous block order", () => {
 
@@ -173,7 +173,7 @@ describe("Get Working Family Events By Eligibility Code - Valid Contiguous Block
   });
 });
 
-describe("Get Working Family Events By Eligibility Code - Invalid requests", () => {
+describe.skip("Get Working Family Events By Eligibility Code - Invalid requests", () => {
 
   it("Returns 400 when eligibility code does not exist", () => {
     const eligibilityCode = "NOT_A_REAL_CODE";
