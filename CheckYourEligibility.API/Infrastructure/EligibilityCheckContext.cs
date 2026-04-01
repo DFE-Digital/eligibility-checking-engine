@@ -25,8 +25,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     }
 
     public virtual DbSet<ECSConflict> ECSConflicts { get; set; }
-    public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
-    public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
+	public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
+	public virtual DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
+	public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     public virtual DbSet<BulkCheck> BulkChecks { get; set; }
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
@@ -266,8 +267,13 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasIndex(e => e.HMRCEligibilityEventId, "idx_WorkingFamiliesEvents_HMRCEligibilityEventId");
 
 
+		modelBuilder.Entity<WorkingFamiliesEventSummary>()
+			.HasIndex(e => e.EligibilityCode);
 
-    }
+		modelBuilder.Entity<WorkingFamiliesEventSummary>()
+			.HasIndex(e => e.OwningLocalAuthorityId);
+
+	}
 }
         
         
