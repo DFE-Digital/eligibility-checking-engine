@@ -96,4 +96,40 @@ public class EstablishmentControllerTests : TestBase.TestBase
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
     }
+
+    [Test]
+    public async Task Given_GetMultiAcademyTrustId_Should_Return_Status200OK()
+    {
+        // Arrange
+        var establishmentId = _fixture.Create<int>();
+        var matId = _fixture.Create<int>();
+
+        _mockApplicationGateway
+            .Setup(x => x.GetMultiAcademyTrustIdForEstablishment(establishmentId))
+            .ReturnsAsync(matId);
+
+        var expectedResult = new ObjectResult(matId)
+        {
+            StatusCode = StatusCodes.Status200OK
+        };
+
+        // Act
+        var response = await _sut.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_GetMultiAcademyTrustId_With_Invalid_Id_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var establishmentId = 0;
+
+        // Act
+        var response = await _sut.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+    }
 }
