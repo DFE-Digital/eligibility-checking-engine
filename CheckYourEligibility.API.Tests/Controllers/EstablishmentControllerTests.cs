@@ -15,6 +15,7 @@ public class EstablishmentControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
+    private Mock<IApplication> _mockApplicationGateway;
     private ILogger<EstablishmentController> _mockLogger;
     private Mock<ISearchEstablishmentsUseCase> _mockSearchUseCase;
     private EstablishmentController _sut;
@@ -25,7 +26,12 @@ public class EstablishmentControllerTests : TestBase.TestBase
         _mockSearchUseCase = new Mock<ISearchEstablishmentsUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EstablishmentController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new EstablishmentController(_mockLogger, _mockSearchUseCase.Object, _mockAuditGateway.Object);
+        _mockApplicationGateway = new Mock<IApplication>(MockBehavior.Strict);
+        _sut = new EstablishmentController(
+            _mockLogger,
+            _mockSearchUseCase.Object,
+            _mockAuditGateway.Object,
+            _mockApplicationGateway.Object);
         _fixture = new Fixture();
     }
 
@@ -33,6 +39,7 @@ public class EstablishmentControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockSearchUseCase.VerifyAll();
+        _mockApplicationGateway.VerifyAll();
     }
 
     [Test]
@@ -88,5 +95,41 @@ public class EstablishmentControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_GetMultiAcademyTrustId_Should_Return_Status200OK()
+    {
+        // Arrange
+        var establishmentId = _fixture.Create<int>();
+        var matId = _fixture.Create<int>();
+
+        _mockApplicationGateway
+            .Setup(x => x.GetMultiAcademyTrustIdForEstablishment(establishmentId))
+            .ReturnsAsync(matId);
+
+        var expectedResult = new ObjectResult(matId)
+        {
+            StatusCode = StatusCodes.Status200OK
+        };
+
+        // Act
+        var response = await _sut.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_GetMultiAcademyTrustId_With_Invalid_Id_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var establishmentId = 0;
+
+        // Act
+        var response = await _sut.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
     }
 }

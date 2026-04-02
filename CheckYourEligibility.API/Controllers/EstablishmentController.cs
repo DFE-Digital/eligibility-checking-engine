@@ -15,15 +15,18 @@ public class EstablishmentController : BaseController
 {
     private readonly ILogger<EstablishmentController> _logger;
     private readonly ISearchEstablishmentsUseCase _searchUseCase;
+    private readonly IApplication _applicationGateway;
 
     public EstablishmentController(
-        ILogger<EstablishmentController> logger,
-        ISearchEstablishmentsUseCase searchUseCase,
-        IAudit audit)
-        : base(audit)
+    ILogger<EstablishmentController> logger,
+    ISearchEstablishmentsUseCase searchUseCase,
+    IAudit audit,
+    IApplication applicationGateway)
+    : base(audit)
     {
         _logger = logger;
         _searchUseCase = searchUseCase;
+        _applicationGateway = applicationGateway;
     }
 
     [ProducesResponseType(typeof(IEnumerable<Establishment>), (int)HttpStatusCode.OK)]
@@ -41,5 +44,33 @@ public class EstablishmentController : BaseController
 
         return new ObjectResult(new EstablishmentSearchResponse { Data = results })
             { StatusCode = StatusCodes.Status200OK };
+    }
+
+    /// <summary>
+    /// Gets the multi academy trust ID for a given establishment
+    /// </summary>
+    /// <param name="establishmentId">Establishment ID</param>
+    /// <returns>Multi academy trust ID, or 0 if the establishment is not part of a MAT</returns>
+    [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/establishment/{establishmentId}/multi-academy-trust-id")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> GetMultiAcademyTrustIdForEstablishment(int establishmentId)
+    {
+        if (establishmentId <= 0)
+        {
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = "A valid establishmentId is required." }]
+            });
+        }
+
+        var matId = await _applicationGateway.GetMultiAcademyTrustIdForEstablishment(establishmentId);
+
+        return new ObjectResult(matId)
+        {
+            StatusCode = StatusCodes.Status200OK
+        };
     }
 }
