@@ -39,6 +39,7 @@ public class EstablishmentControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockSearchUseCase.VerifyAll();
+        _mockApplicationGateway.VerifyAll();
     }
 
     [Test]
