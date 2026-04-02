@@ -15,6 +15,7 @@ public class EstablishmentControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
+    private Mock<IApplication> _mockApplicationGateway;
     private ILogger<EstablishmentController> _mockLogger;
     private Mock<ISearchEstablishmentsUseCase> _mockSearchUseCase;
     private EstablishmentController _sut;
@@ -25,7 +26,12 @@ public class EstablishmentControllerTests : TestBase.TestBase
         _mockSearchUseCase = new Mock<ISearchEstablishmentsUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EstablishmentController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new EstablishmentController(_mockLogger, _mockSearchUseCase.Object, _mockAuditGateway.Object);
+        _mockApplicationGateway = new Mock<IApplication>(MockBehavior.Strict);
+        _sut = new EstablishmentController(
+            _mockLogger,
+            _mockSearchUseCase.Object,
+            _mockAuditGateway.Object,
+            _mockApplicationGateway.Object);
         _fixture = new Fixture();
     }
 
