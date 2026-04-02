@@ -15,15 +15,18 @@ public class EstablishmentController : BaseController
 {
     private readonly ILogger<EstablishmentController> _logger;
     private readonly ISearchEstablishmentsUseCase _searchUseCase;
+    private readonly IApplication _applicationGateway;
 
     public EstablishmentController(
-        ILogger<EstablishmentController> logger,
-        ISearchEstablishmentsUseCase searchUseCase,
-        IAudit audit)
-        : base(audit)
+    ILogger<EstablishmentController> logger,
+    ISearchEstablishmentsUseCase searchUseCase,
+    IAudit audit,
+    IApplication applicationGateway)
+    : base(audit)
     {
         _logger = logger;
         _searchUseCase = searchUseCase;
+        _applicationGateway = applicationGateway;
     }
 
     [ProducesResponseType(typeof(IEnumerable<Establishment>), (int)HttpStatusCode.OK)]
