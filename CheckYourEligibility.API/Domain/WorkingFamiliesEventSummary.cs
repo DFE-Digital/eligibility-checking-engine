@@ -10,7 +10,7 @@ public class WorkingFamiliesEventSummary
     
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; }
 
-	public int OwningLocalAuthorityId { get; set; }
+	public int? OwningLocalAuthorityId { get; set; }
 
     public bool HasCodeBeenCheckedByOwningLA { get; set; }
 
