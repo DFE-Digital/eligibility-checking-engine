@@ -9,10 +9,8 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
-using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -41,10 +39,25 @@ public class CheckEligibilityGateway : ICheckEligibility
     public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
-        foreach (var item in data) await PostCheck(item, meta);
-    }
+        List<EligibilityCheck> mappedBulkedChecks = new(); 
+        foreach (var d in data) {
+           
+           var item = await MapCheck(d, meta);
+            mappedBulkedChecks.Add(item);
+        } 
 
-    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
+       _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+    }
+    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
+
+        var item = await MapCheck(data, meta);
+        await _db.CheckEligibilities.AddAsync(item);
+        await _db.SaveChangesAsync();
+
+        return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
+
+    }
+    public async Task<EligibilityCheck> MapCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
     {
         var item = _mapper.Map<EligibilityCheck>(data);
 
@@ -102,16 +115,12 @@ public class CheckEligibilityGateway : ICheckEligibility
                     }
                 }
             }
-
-            await _db.CheckEligibilities.AddAsync(item);
-            await _db.SaveChangesAsync();
-            //TODO: The message queueing logic should sit in the use case, targeting the storage queue gateway
             if (checkHashResult == null)
             {
                 var queue = await _storageQueueMessageGateway.SendMessage(item);
             }
 
-            return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
+            return item;
         }
         catch (Exception ex)
         {
