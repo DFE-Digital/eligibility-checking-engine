@@ -125,7 +125,7 @@ public class CheckEligibilityGateway : ICheckEligibility
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            (type == CheckEligibilityType.None ||
                                                                             type == x.Type) &&
-                                                                           x.Status != CheckEligibilityStatus.deleted);
+                                                                           x.IsDeleted == false);
         if (result != null) return result.Status;
         return null;
     }
@@ -155,10 +155,10 @@ public class CheckEligibilityGateway : ICheckEligibility
                 throw new NotFoundException(bulkCheckId);
             }
 
-            // Soft delete the EligibilityCheck records by setting status to deleted
+            // Soft delete the EligibilityCheck records by setting IsDeleted to true, and updating the Updated timestamp
             foreach (var record in records)
             {
-                record.Status = CheckEligibilityStatus.deleted;
+                record.IsDeleted = true;
                 record.Updated = DateTime.UtcNow;
             }
 
@@ -182,7 +182,7 @@ public class CheckEligibilityGateway : ICheckEligibility
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            (type == CheckEligibilityType.None ||
                                                                             type == x.Type) &&
-                                                                           x.Status != CheckEligibilityStatus.deleted);
+                                                                           x.IsDeleted == false);
 
 
         var item = _mapper.Map<CheckEligibilityItem>(result);
@@ -226,7 +226,7 @@ public class CheckEligibilityGateway : ICheckEligibility
         EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
-        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.Status != CheckEligibilityStatus.deleted);
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.IsDeleted == false);
         if (result != null)
         {
             result.Status = data.Status;

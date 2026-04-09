@@ -57,7 +57,7 @@ public class CheckingEngineGateway : ICheckingEngine
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
         var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-                                                                           x.Status != CheckEligibilityStatus.deleted);
+                                                                           x.IsDeleted == false);
 
         if (result != null)
         {

@@ -251,6 +251,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var audit = _fixture.Create<Audit>();
@@ -642,6 +643,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.IsDeleted = false;
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.FreeSchoolMealsHMRC.Add(new FreeSchoolMealsHMRC
@@ -673,6 +675,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.EligibilityCheckHash = null;
         item.EligibilityCheckHashID = null;
         item.BulkCheck = null;
+        item.IsDeleted = false;
         
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -744,6 +747,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
@@ -842,6 +846,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
@@ -878,6 +883,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
@@ -1049,6 +1055,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
@@ -1105,6 +1112,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.WorkingFamilies;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
+        item.IsDeleted = false;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
 
         //Active block
