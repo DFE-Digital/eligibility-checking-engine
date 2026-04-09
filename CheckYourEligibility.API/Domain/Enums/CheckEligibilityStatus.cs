@@ -38,7 +38,9 @@ public enum CheckEligibilityStatus
     notFound,
     
     /// <summary>
-    /// The record has been deleted (soft delete)
+    /// This is now redundant
+    /// but we want to keep it for historical records.
+    /// We now use IsDeleted flag to indicate if a record is soft deleted, so this status is not used for new records.    
     /// </summary>
     deleted
 }

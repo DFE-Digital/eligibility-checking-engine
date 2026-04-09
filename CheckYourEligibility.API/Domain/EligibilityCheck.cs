@@ -87,4 +87,9 @@ public class EligibilityCheck
     /// </summary>
     [Column(TypeName = "nvarchar(20)")]
     public string? OrganisationType { get; set; }
+    
+    /// <summary>
+    /// Soft delete flag - if true, the record is considered deleted and should be ignored in queries
+    /// </summary>
+    public bool IsDeleted { get; set; } 
 }

@@ -427,7 +427,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Verify records were actually saved
-        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.Status != CheckEligibilityStatus.deleted);
+        var savedCount = await _fakeInMemoryDb.CheckEligibilities.CountAsync(x => x.BulkCheckID == groupId && x.IsDeleted == false);
         savedCount.Should().Be(5, "All 5 records should be saved before deletion");
 
         var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
@@ -469,6 +469,8 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Assert
         act.Should().ThrowExactlyAsync<ValidationException>();
     }
+
+
 
 
     [Test]
