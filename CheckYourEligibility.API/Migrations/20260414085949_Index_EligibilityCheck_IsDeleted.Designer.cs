@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    [Migration("20260414084808_Index_EligibilityCheck_IsDeleted")]
+    [Migration("20260414085949_Index_EligibilityCheck_IsDeleted")]
     partial class Index_EligibilityCheck_IsDeleted
     {
         /// <inheritdoc />

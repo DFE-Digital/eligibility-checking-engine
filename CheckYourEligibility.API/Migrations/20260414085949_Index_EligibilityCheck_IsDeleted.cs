@@ -10,7 +10,7 @@ namespace CheckYourEligibility.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-             migrationBuilder.Sql(@"
+            migrationBuilder.Sql(@"
                 CREATE NONCLUSTERED INDEX [IX_EligibilityCheck_IsDeleted]
                 ON [dbo].[EligibilityCheck]
                 (
@@ -19,7 +19,7 @@ namespace CheckYourEligibility.API.Migrations
                 WITH (
                     STATISTICS_NORECOMPUTE = OFF,
                     DROP_EXISTING = OFF,
-                    ONLINE = OFF,
+                    ONLINE = ON,
                     OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF
                 );
             ");
