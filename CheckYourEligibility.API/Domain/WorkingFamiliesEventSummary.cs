@@ -16,21 +16,21 @@ public class WorkingFamiliesEventSummary
 
 	public DateTime ChildDateOfBirth { get; set; }
 
-	[Column(TypeName = "nvarchar(9)")] public string? ChildPostCode { get; set; }
+	[Column(TypeName = "nvarchar(9)")] public string ChildPostCode { get; set; }
 
-	[Column(TypeName = "varchar(100)")] public string ChildFirstName { get; set; }
+	[Column(TypeName = "nvarchar(100)")] public string ChildFirstName { get; set; }
 
-    [Column(TypeName = "varchar(26)")] public string ChildFirstNameTruncated { get; set; }
+    [Column(TypeName = "nvarchar(26)")] public string ChildFirstNameTruncated { get; set; }
 
-	[Column(TypeName = "varchar(10)")] public string? ParentNationalInsuranceNumber { get; set; }
+	[Column(TypeName = "nvarchar(9)")] public string ParentNationalInsuranceNumber { get; set; }
 
-	[Column(TypeName = "varchar(10)")] public string? PartnerNationalInsuranceNumber { get; set; }
+	[Column(TypeName = "nvarchar(9)")] public string? PartnerNationalInsuranceNumber { get; set; }
 
     public DateTime ValidityStartDate { get; set; }
 
     public DateTime ValidityEndDate { get; set; }
 
-	public DateTime GracePeriodEndDate { get; set; }
+	public DateTime? GracePeriodEndDate { get; set; }
 
 	public DateTime LastUpdatedDate { get; set; }
 
