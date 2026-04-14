@@ -64,7 +64,7 @@ public class BulkCheckGateway : IBulkCheck
     {
         IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
         var resultList = _db.CheckEligibilities
-            .Where(x => x.BulkCheckID == guid && x.Status != CheckEligibilityStatus.deleted).ToList();
+            .Where(x => x.BulkCheckID == guid && x.IsDeleted == false).ToList();
         if (resultList != null && resultList.Any())
         {
             var type = typeof(T);
@@ -92,7 +92,7 @@ public class BulkCheckGateway : IBulkCheck
     public async Task<BulkStatus?> GetBulkStatus(string guid)
     {
         var results = _db.CheckEligibilities
-            .Where(x => x.BulkCheckID == guid && x.Status != CheckEligibilityStatus.deleted)
+            .Where(x => x.BulkCheckID == guid && x.IsDeleted == false)
             .GroupBy(n => n.Status)
             .Select(n => new { Status = n.Key, ct = n.Count() });
         if (results.Any())
@@ -174,7 +174,7 @@ public class BulkCheckGateway : IBulkCheck
             {
                 // Filter out deleted eligibility checks for status calculation
                 var eligibilityStatuses = bulkCheck.EligibilityChecks
-                    .Where(x => x.Status != CheckEligibilityStatus.deleted)
+                    .Where(x => x.IsDeleted == false)
                     .Select(x => x.Status).ToList();
 
                 // Use more efficient status checking
