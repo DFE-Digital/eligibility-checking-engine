@@ -6,7 +6,8 @@ public interface IEligibilityCheckContext
 {
     DbSet<ECSConflict> ECSConflicts { get; set; }
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
-    DbSet<EligibilityCheck> CheckEligibilities { get; set; }
+	DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
+	DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
     DbSet<BulkCheck> BulkChecks { get; set; }
     DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
