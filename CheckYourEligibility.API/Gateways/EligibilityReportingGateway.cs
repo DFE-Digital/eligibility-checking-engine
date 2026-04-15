@@ -206,7 +206,9 @@ public class EligibilityReportingGateway : IEligibilityReporting
                     .Select(c => new RawCheck(
                         c.CheckData,
                         c.Status,
-                        null, // submittedby still needs sorting on single check
+                        c.BulkCheck != null
+                            ? c.BulkCheck.SubmittedBy
+                            : "", // submittedby still needs sorting on single check, so will only return for bulk checks
                         c.Created
                     )),
 
