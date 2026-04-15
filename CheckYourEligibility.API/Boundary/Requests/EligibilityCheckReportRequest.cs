@@ -4,6 +4,5 @@ public class EligibilityCheckReportRequest
     public DateTime EndDate { get; set; }
     public string GeneratedBy { get; set; }
     public int? LocalAuthorityID { get; set; }
-    public bool SaveRequestAudit { get; set; }
-    public CheckType CheckType { get; set; } = CheckType.BulkChecks;
+    public CheckType CheckType { get; set; }
 }

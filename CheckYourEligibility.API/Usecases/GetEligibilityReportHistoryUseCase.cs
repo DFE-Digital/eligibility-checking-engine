@@ -8,12 +8,12 @@ public interface IGetEligibilityReportHistoryUseCase
 
 public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryUseCase
 {
-    private readonly  ICheckEligibility _checkEligibilityGateway;
+    private readonly  IEligibilityReporting _eligibilityReportingGateway;
     private readonly ILogger<GetEligibilityReportHistoryUseCase> _logger;
 
-    public GetEligibilityReportHistoryUseCase(ICheckEligibility checkEligibilityGateway, ILogger<GetEligibilityReportHistoryUseCase> logger)
+    public GetEligibilityReportHistoryUseCase(IEligibilityReporting eligibilityReportingGateway, ILogger<GetEligibilityReportHistoryUseCase> logger)
     {
-        _checkEligibilityGateway = checkEligibilityGateway;
+        _eligibilityReportingGateway = eligibilityReportingGateway;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryU
                 "You do not have permission to view report history for this Local Authority");
         };
 
-        var response = await _checkEligibilityGateway.GetEligibilityCheckReportHistory(localAuthorityId);
+        var response = await _eligibilityReportingGateway.GetEligibilityCheckReportHistory(localAuthorityId);
 
         // Sanitize user-provided Local Authority ID before logging to prevent log forging
         var sanitizedLocalAuthorityId = localAuthorityId?.Replace("\r", string.Empty).Replace("\n", string.Empty);

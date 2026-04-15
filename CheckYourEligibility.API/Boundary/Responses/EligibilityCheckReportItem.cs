@@ -9,6 +9,6 @@ public class EligibilityCheckReportItem
    public DateTime DateOfBirth { get; set; }
    public DateTime DateCheckSubmitted { get; set; }
    public CheckEligibilityStatus Outcome { get; set; }
-   public CheckType CheckType { get; set; } = CheckType.BulkChecks;
+   public CheckType CheckType { get; set; }
    public string CheckedBy { get; set; }  
 }

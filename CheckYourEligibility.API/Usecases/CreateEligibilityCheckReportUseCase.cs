@@ -3,28 +3,28 @@ using Azure;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using System.Text.Json;
 
-public interface IEligibilityCheckReportUseCase
+public interface ICreateEligibilityCheckReportUseCase
 {
     /// <summary>
-    /// Generates a reports for bulk checks based on the provided request model
+    /// Generates a reports for checks based on the provided request model
     /// </summary>
     /// <param name="model">The request model containing parameters for report generation</param>
     /// <returns>A stream containing the generated report</returns>
-    Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model);
+    Task<string> Execute(EligibilityCheckReportRequest model);
 }
 
-public class EligibilityCheckReportUseCase : IEligibilityCheckReportUseCase
+public class CreateEligibilityCheckReportUseCase : ICreateEligibilityCheckReportUseCase
 {
-    private readonly  ICheckEligibility _checkEligibilityGateway;
-    private readonly ILogger<EligibilityCheckReportUseCase> _logger;
+    private readonly IEligibilityReporting _eligibilityReportingGateway;
+    private readonly ILogger<CreateEligibilityCheckReportUseCase> _logger;
 
-    public EligibilityCheckReportUseCase(ICheckEligibility checkEligibilityGateway, ILogger<EligibilityCheckReportUseCase> logger)
+    public CreateEligibilityCheckReportUseCase(IEligibilityReporting eligibilityReportingGateway, ILogger<CreateEligibilityCheckReportUseCase> logger)
     {
-        _checkEligibilityGateway = checkEligibilityGateway;
+        _eligibilityReportingGateway = eligibilityReportingGateway;
         _logger = logger;
     }
 
-    public async Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model)
+    public async Task<string> Execute(EligibilityCheckReportRequest model)
     {
         if (model == null) throw new ValidationException("Invalid request, model is required");
 
@@ -33,21 +33,18 @@ public class EligibilityCheckReportUseCase : IEligibilityCheckReportUseCase
 
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
 
-        var response = await _checkEligibilityGateway.EligibilityCheckReports(model);
+        var response = await _eligibilityReportingGateway.CreateEligibilityCheckReport(model);
 
         if (response == null)
         {
             var sanitizedRequest = JsonSerializer.Serialize(model);
             _logger.LogError("Failed to generate eligibility check report for request: {SanitizedRequest}", sanitizedRequest);
             throw new Exception("Failed to generate eligibility check report");
-        } 
+        }
 
         _logger.LogInformation("Successfully generated eligibility check report");
 
-        return new EligibilityCheckReportResponse
-        {
-           Data = response
-        };
+        return response;
     }
-}
 
+}

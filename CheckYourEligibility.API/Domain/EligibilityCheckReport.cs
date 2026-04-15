@@ -14,5 +14,5 @@ public class EligibilityCheckReport
     public int NumberOfResults { get; set; }
     public int? LocalAuthorityID { get; set; }
     public virtual LocalAuthority? LocalAuthority { get; set; }
-    public CheckType CheckType { get; set; } = CheckType.BulkChecks;
+    public CheckType CheckType { get; set; } 
 }
