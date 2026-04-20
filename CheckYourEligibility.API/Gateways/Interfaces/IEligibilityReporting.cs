@@ -2,7 +2,7 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface IEligibilityReporting
 {
-    Task<string> CreateEligibilityCheckReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default);
+    Task<EligibilityCheckReportResponse> CreateEligibilityCheckReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default);
     Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId);
 
     Task<EligibilityCheckReportResponse> GetEligibilityCheckReport(

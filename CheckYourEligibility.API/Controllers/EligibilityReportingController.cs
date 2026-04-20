@@ -58,15 +58,6 @@ public class EligibilityReportingController : BaseController
                 });
             }
 
-
-            if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(model.LocalAuthorityID.Value))
-            {
-                return Unauthorized(new ErrorResponse
-                {
-                    Errors = [new Error { Title = "You do not have permission to generate a report for this Local Authority" }]
-                });
-            }
-
             var result = await _createEligibilityCheckReportUseCase.Execute(model);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };

@@ -10,7 +10,7 @@ public interface ICreateEligibilityCheckReportUseCase
     /// </summary>
     /// <param name="model">The request model containing parameters for report generation</param>
     /// <returns>A stream containing the generated report</returns>
-    Task<string> Execute(EligibilityCheckReportRequest model);
+    Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model);
 }
 
 public class CreateEligibilityCheckReportUseCase : ICreateEligibilityCheckReportUseCase
@@ -24,7 +24,7 @@ public class CreateEligibilityCheckReportUseCase : ICreateEligibilityCheckReport
         _logger = logger;
     }
 
-    public async Task<string> Execute(EligibilityCheckReportRequest model)
+    public async Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model)
     {
         if (model == null) throw new ValidationException("Invalid request, model is required");
 

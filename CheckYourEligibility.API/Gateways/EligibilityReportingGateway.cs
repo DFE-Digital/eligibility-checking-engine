@@ -20,7 +20,7 @@ public class EligibilityReportingGateway : IEligibilityReporting
         _db = db;
     }
 
-    public async Task<string> CreateEligibilityCheckReport(
+    public async Task<EligibilityCheckReportResponse> CreateEligibilityCheckReport(
     EligibilityCheckReportRequest request,
     CancellationToken ct)
     {
@@ -29,10 +29,11 @@ public class EligibilityReportingGateway : IEligibilityReporting
 
         // determine if there are results before we persist the report 
         // if more then one record, valid report, if zero records, don't create report and return error
-        // this avoids creating empty reports and also validates the query parameters
         var query = BuildQuery(request);
         if (!await query.Take(1).AnyAsync(ct))
             throw new Exception("No results");
+
+        var sql = query.ToQueryString();
 
         // only now do we persist
         var audit = new EligibilityCheckReport
@@ -49,7 +50,8 @@ public class EligibilityReportingGateway : IEligibilityReporting
         _db.EligibilityCheckReports.Add(audit);
         await _db.SaveChangesAsync(ct);
 
-        return audit.EligibilityCheckReportId.ToString();
+        // return first page of results 
+        return await GetEligibilityCheckReport(audit.EligibilityCheckReportId, request.LocalAuthorityID, 1, ct);
     }
 
 
@@ -78,7 +80,7 @@ public class EligibilityReportingGateway : IEligibilityReporting
         // Rebuild the query using persisted parameters
         var request = new EligibilityCheckReportRequest
         {
-            LocalAuthorityID = reportAudit.LocalAuthorityID,
+            LocalAuthorityID = (int)reportAudit.LocalAuthorityID,
             StartDate = reportAudit.StartDate,
             EndDate = reportAudit.EndDate,
             CheckType = reportAudit.CheckType,
@@ -99,19 +101,18 @@ public class EligibilityReportingGateway : IEligibilityReporting
             .Where(item => item != null)
             .ToList()!;
 
-        // Calculate total pages based on the count in the audit record
+        // Calculate number of results per page
         var responsePageSize = defaultPageSize;
         if (reportItems.Count < defaultPageSize)
         {
             responsePageSize = reportItems.Count;
         }
 
-        // Calculate total pages based on the count in the audit record
+        // Calculate total pages
         var totalPages = reportAudit.NumberOfResults == 0
             ? 0
             : (reportAudit.NumberOfResults + defaultPageSize - 1) / defaultPageSize;
 
-        // Return paged response
         return new EligibilityCheckReportResponse
         {
             Data = reportItems,
@@ -159,81 +160,73 @@ public class EligibilityReportingGateway : IEligibilityReporting
     string CheckData,
     CheckEligibilityStatus Status,
     string? CheckedBy,
+    CheckType CheckType,
     DateTime SubmittedDate
     );
 
-    private IQueryable<RawCheck> BuildQuery(EligibilityCheckReportRequest request)
+    private IQueryable<RawCheck> BuildQuery(
+    EligibilityCheckReportRequest request)
+{
+    return request.CheckType switch
     {
-        return request.CheckType switch
-        {
-            CheckType.BulkChecks =>
-                _db.CheckEligibilities
-                    .Where(c =>
-                        c.BulkCheck != null &&
-                        c.BulkCheck.LocalAuthorityID == request.LocalAuthorityID &&
-                        c.BulkCheck.SubmittedDate >= request.StartDate &&
-                        c.BulkCheck.SubmittedDate <= request.EndDate)
-                    .OrderBy(c => c.BulkCheck!.SubmittedDate)
+        CheckType.BulkChecks =>
+            _db.BulkChecks
+                .Where(b =>
+                    b.LocalAuthorityID == request.LocalAuthorityID &&
+                    b.SubmittedDate >= request.StartDate &&
+                    b.SubmittedDate <= request.EndDate)
+                .Include(b => b.EligibilityChecks)
+                .SelectMany(b => b.EligibilityChecks!
+                    .Where(ec => !string.IsNullOrWhiteSpace(ec.CheckData))
                     .Select(c => new RawCheck(
                         c.CheckData,
                         c.Status,
-                        c.BulkCheck!.SubmittedBy,
-                        c.BulkCheck.SubmittedDate
-                    )),
+                        b.SubmittedBy,
+                        CheckType.BulkChecks, // always bulk
+                        b.SubmittedDate
+                    )))
+                .AsNoTracking(),
 
-            CheckType.IndividualChecks =>
-                _db.CheckEligibilities
-                    .Where(c =>
-                        c.BulkCheck == null &&
-                        c.OrganisationID == request.LocalAuthorityID &&
-                        c.Created >= request.StartDate &&
-                        c.Created <= request.EndDate)
-                    .OrderBy(c => c.Created)
-                    .Select(c => new RawCheck(
-                        c.CheckData,
-                        c.Status,
-                        null, // submittedby still needs sorting on single check
-                        c.Created
-                    )),
+        CheckType.IndividualChecks =>
+            _db.CheckEligibilities
+                .Where(c =>
+                    c.BulkCheck == null &&
+                    c.OrganisationID == request.LocalAuthorityID &&
+                    c.Created >= request.StartDate &&
+                    c.Created <= request.EndDate)
+                .OrderBy(c => c.Created)
+                .Select(c => new RawCheck(
+                    c.CheckData,
+                    c.Status,
+                    null,
+                    CheckType.IndividualChecks,
+                    c.Created
+                ))
+                .AsNoTracking(),
 
-            CheckType.AllChecks =>
-                _db.CheckEligibilities
-                    .Where(c =>
-                        c.OrganisationID == request.LocalAuthorityID &&
-                        c.Created >= request.StartDate &&
-                        c.Created <= request.EndDate)
-                    .OrderBy(c => c.Created)
-                    .Select(c => new RawCheck(
-                        c.CheckData,
-                        c.Status,
-                        c.BulkCheck != null
-                            ? c.BulkCheck.SubmittedBy
-                            : "", // submittedby still needs sorting on single check, so will only return for bulk checks
-                        c.Created
-                    )),
+        CheckType.AllChecks =>
+            _db.CheckEligibilities
+                .Where(c =>
+                    c.OrganisationID == request.LocalAuthorityID &&
+                    c.Created >= request.StartDate &&
+                    c.Created <= request.EndDate)
+                .OrderBy(c => c.Created)
+                .Select(c => new RawCheck(
+                    c.CheckData,
+                    c.Status,
+                    c.BulkCheck != null
+                        ? c.BulkCheck.SubmittedBy
+                        : null,
+                    c.BulkCheck != null
+                        ? CheckType.BulkChecks
+                        : CheckType.IndividualChecks, // if bulk check exists, it's bulk, otherwise individual
+                    c.Created
+                ))
+                .AsNoTracking(),
 
-            _ => throw new ArgumentOutOfRangeException(nameof(request.CheckType))
-        };
-    }
-
-    private async Task SaveAuditAsync(
-    EligibilityCheckReportRequest request,
-    int numberOfResults,
-    CancellationToken cancellationToken)
-    {
-        var reportAudit = new EligibilityCheckReport
-        {
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            GeneratedBy = request.GeneratedBy,
-            LocalAuthorityID = request.LocalAuthorityID,
-            NumberOfResults = numberOfResults
-        };
-
-        _db.EligibilityCheckReports.Add(reportAudit);
-        await _db.SaveChangesAsync(cancellationToken);
-    }
-
+        _ => throw new ArgumentOutOfRangeException(nameof(request.CheckType))
+    };
+}
     private EligibilityCheckReportItem? ParseCheck(RawCheck raw)
     {
         if (string.IsNullOrWhiteSpace(raw.CheckData))
@@ -248,6 +241,7 @@ public class EligibilityReportingGateway : IEligibilityReporting
             parsed.Outcome = raw.Status;
             parsed.CheckedBy = raw.CheckedBy ?? string.Empty;
             parsed.DateCheckSubmitted = raw.SubmittedDate;
+            parsed.CheckType = raw.CheckType;
 
             return parsed;
         }
