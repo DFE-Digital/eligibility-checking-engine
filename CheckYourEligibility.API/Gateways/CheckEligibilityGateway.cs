@@ -75,6 +75,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
             item.Status = CheckEligibilityStatus.queuedForProcessing;
+
             if (meta != null)
             {
                 item.OrganisationID = meta.OrganisationID;
