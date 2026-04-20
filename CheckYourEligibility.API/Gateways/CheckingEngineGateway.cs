@@ -292,22 +292,27 @@ public class CheckingEngineGateway : ICheckingEngine
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
-        
-        // If event is returned initiate business logic. 
-        if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
-        {
-            //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
-            var currentDate = DateTime.UtcNow.Date;
 
-            if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
+        // If event is returned initiate business logic.
+        if (wfEvent != null)
+        {
+            // DELETE  statement after we stop going to ECS.
+            if (result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
             {
-                result.Status = CheckEligibilityStatus.eligible;
-            }
-            else
-            {
-                result.Status = CheckEligibilityStatus.notEligible;
+                //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
+                var currentDate = DateTime.UtcNow.Date;
+
+                if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
+                {
+                    result.Status = CheckEligibilityStatus.eligible;
+                }
+                else
+                {
+                    result.Status = CheckEligibilityStatus.notEligible;
+                }
             }
         }
+        
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
             await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate, dbContextFactory);
@@ -315,17 +320,22 @@ public class CheckingEngineGateway : ICheckingEngine
         var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request if a record has been found
-        if (wfEvent != null && result.Status != CheckEligibilityStatus.notFound)
-        {          
-            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
-            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.LastName = wfEvent.ParentLastName;
-            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+        if (wfEvent != null) {
 
-            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
-            context.CheckEligibilities.Update(result);
+            // DELETE  statement after we stop going to ECS.
+            if (result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
+            {
+                wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+                wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+                wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+                wfCheckData.LastName = wfEvent.ParentLastName;
+                wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+
+                result.CheckData = JsonConvert.SerializeObject(wfCheckData);
+                context.CheckEligibilities.Update(result);
+            }
         }
+        
 
         result.Updated = DateTime.UtcNow;
         await context.SaveChangesAsync();
