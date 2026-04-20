@@ -111,7 +111,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                     {
                         _logger.LogError(ex, "Queue processing");
                         // If we've had exceptions on this item more than retry limit
-                        if (item.DequeueCount >= _configuration.GetValue<int>("QueueRetries"))
+                        if (item.DequeueCount >= _configuration.GetValue<int>($"Queue:Settings:{queueName}:Retries"))
                         {
                             await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                 new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, dbContext);

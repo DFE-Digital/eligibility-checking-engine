@@ -46,13 +46,27 @@ public class CheckEligibilityGateway : ICheckEligibility
             mappedBulkedChecks.Add(item);
         } 
 
-       _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+        // Insert all rows into the DB BEFORE sending any queue messages,
+        // so the engine never processes a message for a row that doesn't exist yet.
+        _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+
+        // Now send queue messages for records that weren't resolved from the hash cache.
+        foreach (var item in mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing))
+        {
+            await _storageQueueMessageGateway.SendMessage(item);
+        }
     }
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
 
         var item = await MapCheck(data, meta);
         await _db.CheckEligibilities.AddAsync(item);
         await _db.SaveChangesAsync();
+
+        // Send queue message after the row is committed to the DB.
+        if (item.Status == CheckEligibilityStatus.queuedForProcessing)
+        {
+            await _storageQueueMessageGateway.SendMessage(item);
+        }
 
         return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
 
@@ -117,7 +131,8 @@ public class CheckEligibilityGateway : ICheckEligibility
             }
             if (checkHashResult == null)
             {
-                var queue = await _storageQueueMessageGateway.SendMessage(item);
+                // Queue message will be sent by the caller (PostCheck bulk) after BulkInsert,
+                // or directly here for single checks.
             }
 
             return item;
@@ -200,6 +215,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
             if (isBatchRecord)
             {
+                item.EligibilityCheckID = result.EligibilityCheckID;
                 item.Status = result.Status.ToString();
                 item.Created = result.Created;
                 item.ClientIdentifier = CheckData.ClientIdentifier;

@@ -101,6 +101,19 @@ public class BulkCheckGateway : IBulkCheck
                 Total = results.Sum(s => s.ct),
                 Complete = results.Where(a => a.Status != CheckEligibilityStatus.queuedForProcessing).Sum(s => s.ct)
             };
+
+        // EligibilityCheck rows are inserted asynchronously after the BulkCheck record
+        // is created. If none exist yet, fall back to the BulkChecks table so that
+        // progress returns "0 of N complete" rather than 404.
+        var bulkCheck = await _db.BulkChecks
+            .FirstOrDefaultAsync(x => x.BulkCheckID == guid);
+        if (bulkCheck != null)
+            return new BulkStatus
+            {
+                Total = bulkCheck.NumberOfRecords,
+                Complete = 0
+            };
+
         return null;
     }
 
