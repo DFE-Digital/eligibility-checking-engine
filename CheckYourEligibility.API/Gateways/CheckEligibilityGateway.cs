@@ -1,6 +1,7 @@
 ﻿// Ignore Spelling: Fsm
 
 using AutoMapper;
+using Azure.Storage.Queues;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
@@ -51,9 +52,16 @@ public class CheckEligibilityGateway : ICheckEligibility
         _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
 
         // Now send queue messages for records that weren't resolved from the hash cache.
-        foreach (var item in mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing))
+        // Reuse a single QueueClient for all bulk messages — they share the same queue.
+        var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
+        if (queuedBulkItems.Any())
         {
-            await _storageQueueMessageGateway.SendMessage(item);
+            var bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+            var bulkQueueClient = _storageQueueMessageGateway.GetQueueClient(bulkQueueName);
+            foreach (var item in queuedBulkItems)
+            {
+                await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
+            }
         }
     }
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
@@ -65,7 +73,9 @@ public class CheckEligibilityGateway : ICheckEligibility
         // Send queue message after the row is committed to the DB.
         if (item.Status == CheckEligibilityStatus.queuedForProcessing)
         {
-            await _storageQueueMessageGateway.SendMessage(item);
+            var singleQueueName = _configuration[$"Queue:Single:{item.Type}"];
+            var singleQueueClient = _storageQueueMessageGateway.GetQueueClient(singleQueueName);
+            await _storageQueueMessageGateway.SendMessage(item, singleQueueClient);
         }
 
         return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
