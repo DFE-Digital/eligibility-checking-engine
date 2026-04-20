@@ -159,6 +159,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             foreach (var record in records)
             {
                 record.IsDeleted = true;
+                record.Status = CheckEligibilityStatus.deleted;
                 record.Updated = DateTime.UtcNow;
             }
 
