@@ -768,6 +768,9 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         soapResponse.ValidityStartDate = DateTime.Today.AddDays(-2).ToString();
         soapResponse.ValidityEndDate = DateTime.Today.AddDays(-1).ToString();
         soapResponse.GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString();
+        soapResponse.Qualifier = String.Empty;
+        soapResponse.Status = "0";
+        soapResponse.ErrorCode = "0";
         
         _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         _moqEcsGateway.Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>())).ReturnsAsync(soapResponse);
