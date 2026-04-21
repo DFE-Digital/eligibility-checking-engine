@@ -72,14 +72,14 @@ public class CheckingEngineGateway : ICheckingEngine
                 case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
-                {
-                    await Process_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
-                }
+                    {
+                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
+                    }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
-                {
-                    await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
-                }
+                    {
+                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
+                    }
                     break;
             }
 
@@ -131,10 +131,10 @@ public class CheckingEngineGateway : ICheckingEngine
     /// <param name="checkData"></param>
     /// <returns></returns>
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
-        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null )
+        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
         //TODO: This should probably be its own adapter
-        var context = dbContextFactory ?? _db ;
+        var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
             x.EligibilityCode == eligibilityCode &&
@@ -156,12 +156,12 @@ public class CheckingEngineGateway : ICheckingEngine
         }
 
         //Check for contiguous events and set VSD to earliest VSD of the current contiguous block
-        for (int i=0; i < wfRecords.Count() - 1; i++)
+        for (int i = 0; i < wfRecords.Count() - 1; i++)
         {
-            if (wfRecords[i].DiscretionaryValidityStartDate <= wfRecords[i+1].GracePeriodEndDate)
+            if (wfRecords[i].DiscretionaryValidityStartDate <= wfRecords[i + 1].GracePeriodEndDate)
             {
-                wfEvent.DiscretionaryValidityStartDate = wfRecords[i+1].DiscretionaryValidityStartDate;
-                wfEvent.ValidityStartDate = wfRecords[i+1].ValidityStartDate;
+                wfEvent.DiscretionaryValidityStartDate = wfRecords[i + 1].DiscretionaryValidityStartDate;
+                wfEvent.ValidityStartDate = wfRecords[i + 1].ValidityStartDate;
             }
             else
             {
@@ -188,9 +188,9 @@ public class CheckingEngineGateway : ICheckingEngine
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
 
         // Parse date offsets from eligibility code
-        int.TryParse(eligibilityCode.Substring(3,2), out var vsdOffset);
-        int.TryParse(eligibilityCode.Substring(5,2), out var vedOffset);
-        int.TryParse(eligibilityCode.Substring(7,2), out var gpedOffset);
+        int.TryParse(eligibilityCode.Substring(3, 2), out var vsdOffset);
+        int.TryParse(eligibilityCode.Substring(5, 2), out var vedOffset);
+        int.TryParse(eligibilityCode.Substring(7, 2), out var gpedOffset);
 
         // Apply date offsets based on scenario type
         if (!isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix))
@@ -222,7 +222,7 @@ public class CheckingEngineGateway : ICheckingEngine
             // If not matching a test data sceenario return null = notFound
             return wfEvent;
         }
-        
+
         // Populate the rest of the test record
         wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
         wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
@@ -249,18 +249,17 @@ public class CheckingEngineGateway : ICheckingEngine
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
-        result.Status = CheckEligibilityStatus.notFound;
-        
         var sw = Stopwatch.StartNew();
 
-        // Get event for test record
+        // Get event for TEST record
         if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
             checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
         {
             wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+            if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
         }
 
-        // Get event for ecs record
+        // Get event for ECS record
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
             //To ensure correct LA ID is passed when using ECS for checks
@@ -268,6 +267,7 @@ public class CheckingEngineGateway : ICheckingEngine
             SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
 
             result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
+
             if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
             {
                 wfEvent.EligibilityCode = checkData.EligibilityCode;
@@ -278,24 +278,25 @@ public class CheckingEngineGateway : ICheckingEngine
             }
 
             source = ProcessEligibilityCheckSource.ECS;
-            
+
             _logger.LogInformation($"Processing ECS WF check in {sw.ElapsedMilliseconds} ms");
         }
-
         // Get event for ECE record
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                 checkData.NationalInsuranceNumber, checkData.LastName);
-            
+
+            if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
+
             _logger.LogInformation($"Processing ECE WF check in {sw.ElapsedMilliseconds} ms");
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
-        
-        // If event is returned initiate business logic. 
-        if (result.Status != CheckEligibilityStatus.notFound || (wfEvent != null && wfEvent.EligibilityCode != null))
+        // If event is returned initiate business logic.
+        if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
         {
+
             //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
             var currentDate = DateTime.UtcNow.Date;
 
@@ -307,7 +308,9 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 result.Status = CheckEligibilityStatus.notEligible;
             }
+
         }
+
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
             await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate, dbContextFactory);
@@ -315,21 +318,24 @@ public class CheckingEngineGateway : ICheckingEngine
         var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request if a record has been found
-        if (wfEvent != null && result.Status != CheckEligibilityStatus.notFound)
-        {          
-            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
-            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.LastName = wfEvent.ParentLastName;
-            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+        if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound) {
 
-            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
-            context.CheckEligibilities.Update(result);
+            
+                wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+                wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+                wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+                wfCheckData.LastName = wfEvent.ParentLastName;
+                wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+
+                result.CheckData = JsonConvert.SerializeObject(wfCheckData);
+                context.CheckEligibilities.Update(result);
+            
         }
+
 
         result.Updated = DateTime.UtcNow;
         await context.SaveChangesAsync();
-      
+
     }
     /// <summary>
     /// Extract LA Id from scope if it exists
@@ -387,7 +393,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 if (checkResult == CheckEligibilityStatus.parentNotFound)
                 {
                     var sw = Stopwatch.StartNew();
-                    
+
                     //TODO: This should live in the use case
                     if (_ecsAdapter.UseEcsforChecks == "true")
                     {
@@ -555,23 +561,24 @@ public class CheckingEngineGateway : ICheckingEngine
             }
 
             else if (checkType != CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" &&
-                     ( string.IsNullOrEmpty(result.Qualifier) || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
+                     (string.IsNullOrEmpty(result.Qualifier) || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
             {
                 return CheckEligibilityStatus.notEligible;
             }
             // Since WF checks can only return Qualifier that is empty, or a "Discretionary Start" on Status 1 (eligible)
             // We need to check the type of the check before setting status as notFound/notligible status response from ECS is different between WF and the rest of the checks
-            else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier)) {
+            else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier))
+            {
 
                 if (string.IsNullOrEmpty(result.ValidityStartDate) && string.IsNullOrEmpty(result.ValidityEndDate) && string.IsNullOrEmpty(result.GracePeriodEndDate))
                 {
                     return CheckEligibilityStatus.notFound;
                 }
-                else 
+                else
                 {
                     return CheckEligibilityStatus.notEligible;
                 }
-                                
+
             }
 
             else if (result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA" && result.Status == "0" && result.ErrorCode == "0")
