@@ -55,7 +55,7 @@ public class MultiAcademyTrustsController : BaseController
     [ProducesResponseType((int)HttpStatusCode.Forbidden)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/multi-academy-trusts/{multiAcademyTrustId:int}/settings")]
-    [Authorize(Policy = PolicyNames.RequireMultiAcademyTrustScope)]
+    [Authorize(Policy = PolicyNames.RequireMatOrAdminScope)]
     public async Task<ActionResult> UpdateSettings(
         int multiAcademyTrustId,
         [FromBody] MultiAcademyTrustSettingsUpdateRequest request)

@@ -64,6 +64,7 @@ public static class ProgramExtensions
         services.AddTransient<IFosterFamily, FosterFamilyGateway>();
         services.AddTransient<IWorkingFamiliesReporting, WorkingFamiliesReportingGateway>();
         services.AddTransient<IWorkingFamiliesEvent, WorkingFamiliesEventGateway>();
+        services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
         return services;
     }
 
@@ -236,6 +237,10 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireLaOrAdminScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority") ||
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
+            options.AddPolicy(PolicyNames.RequireMatOrAdminScope, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
                     context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
         });
         return services;
