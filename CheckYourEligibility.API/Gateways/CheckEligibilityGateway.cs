@@ -158,8 +158,12 @@ public class CheckEligibilityGateway : ICheckEligibility
             // Soft delete the EligibilityCheck records by setting IsDeleted to true, and updating the Updated timestamp
             foreach (var record in records)
             {
+                if(record.Status == CheckEligibilityStatus.queuedForProcessing) 
+                {
+                    record.Status = CheckEligibilityStatus.deleted;
+                }
+                
                 record.IsDeleted = true;
-                record.Status = CheckEligibilityStatus.deleted;
                 record.Updated = DateTime.UtcNow;
             }
 
