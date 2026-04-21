@@ -16,15 +16,16 @@ public class MultiAcademyTrustsController : BaseController
 {
     private readonly IMultiAcademyTrust _multiAcademyTrust;
     private readonly string _multiAcademyTrustScopeName;
-    private const string AdminScope = "admin";
+    private readonly string _adminScopeName;
 
     public MultiAcademyTrustsController(
-        IMultiAcademyTrust multiAcademyTrust,
-        IAudit audit,
-        IConfiguration configuration) : base(audit)
+    IMultiAcademyTrust multiAcademyTrust,
+    IAudit audit,
+    IConfiguration configuration) : base(audit)
     {
         _multiAcademyTrust = multiAcademyTrust;
         _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
+        _adminScopeName = configuration.GetValue<string>("Jwt:Scopes:admin") ?? "admin";
     }
 
     [ProducesResponseType(typeof(MultiAcademyTrustSettingsResponse), (int)HttpStatusCode.OK)]
@@ -60,7 +61,7 @@ public class MultiAcademyTrustsController : BaseController
         int multiAcademyTrustId,
         [FromBody] MultiAcademyTrustSettingsUpdateRequest request)
     {
-        var isAdmin = User.HasScope(AdminScope);
+        var isAdmin = User.HasScope(_adminScopeName);
 
         if (!isAdmin)
         {
