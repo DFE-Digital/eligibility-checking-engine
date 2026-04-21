@@ -87,25 +87,38 @@ public class CheckEligibilityGateway : ICheckEligibility
                 {
                     try
                     {
-                        var firstValidCheck = await _db.CheckEligibilities
-                            .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID &&
-                                        x.Status == hashedStatus).OrderByDescending(x => x.Created).FirstAsync();
 
-                        CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
-                        hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                        for (int i = 1; i <= 3; i++)
+                        {
 
-                        item.CheckData = JsonConvert.SerializeObject(hashCheckData);
+                            var firstValidCheck = await _db.CheckEligibilities
+                           .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID &&
+                                       x.Status == hashedStatus).OrderByDescending(x => x.Created).AsNoTracking().FirstOrDefaultAsync();
+                            if (firstValidCheck != null)
+                            {
+
+                                CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
+                                hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                                item.CheckData = JsonConvert.SerializeObject(hashCheckData);
+                                _logger.LogInformation($"Action: Retreive check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
+                                break;
+
+                            }
+                            _logger.LogWarning($"Action: Retreive check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:NotFound, Attempt:{i} ");
+                            await Task.Delay(1000);
+                        }
+
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error creating check with ID: {GroupId}", _groupId);
+                        _logger.LogError(ex, $"Error creating check with ID: {item.EligibilityCheckHashID}");
                     }
                 }
             }
 
             await _db.CheckEligibilities.AddAsync(item);
             await _db.SaveChangesAsync();
-            //TODO: The message queueing logic should sit in the use case, targeting the storage queue gateway
+        
             if (checkHashResult == null)
             {
                 var queue = await _storageQueueMessageGateway.SendMessage(item);
