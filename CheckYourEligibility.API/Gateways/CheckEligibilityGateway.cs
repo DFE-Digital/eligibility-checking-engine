@@ -100,11 +100,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                                 CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                                 hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
                                 item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                                _logger.LogInformation($"Action: Retreive check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
+                                _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
                                 break;
 
                             }
-                            _logger.LogWarning($"Action: Retreive check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:NotFound, Attempt:{i} ");
+                            _logger.LogWarning($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:NotFound, Attempt:{i} ");
                             await Task.Delay(1000);
                         }
 
