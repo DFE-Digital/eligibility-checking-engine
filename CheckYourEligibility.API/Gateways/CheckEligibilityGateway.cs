@@ -1,6 +1,7 @@
 ﻿// Ignore Spelling: Fsm
 
 using AutoMapper;
+using Azure.Storage.Queues;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
@@ -9,10 +10,8 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
-using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -41,10 +40,48 @@ public class CheckEligibilityGateway : ICheckEligibility
     public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
-        foreach (var item in data) await PostCheck(item, meta);
-    }
+        List<EligibilityCheck> mappedBulkedChecks = new(); 
+        foreach (var d in data) {
+           
+           var item = await MapCheck(d, meta);
+            mappedBulkedChecks.Add(item);
+        } 
 
-    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
+        // Insert all rows into the DB BEFORE sending any queue messages,
+        // so the engine never processes a message for a row that doesn't exist yet.
+        _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+
+        // Now send queue messages for records that weren't resolved from the hash cache.
+        // Reuse a single QueueClient for all bulk messages — they share the same queue.
+        var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
+        if (queuedBulkItems.Any())
+        {
+            var bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+            var bulkQueueClient = _storageQueueMessageGateway.GetQueueClient(bulkQueueName);
+            foreach (var item in queuedBulkItems)
+            {
+                await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
+            }
+        }
+    }
+    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
+
+        var item = await MapCheck(data, meta);
+        await _db.CheckEligibilities.AddAsync(item);
+        await _db.SaveChangesAsync();
+
+        // Send queue message after the row is committed to the DB.
+        if (item.Status == CheckEligibilityStatus.queuedForProcessing)
+        {
+            var singleQueueName = _configuration[$"Queue:Single:{item.Type}"];
+            var singleQueueClient = _storageQueueMessageGateway.GetQueueClient(singleQueueName);
+            await _storageQueueMessageGateway.SendMessage(item, singleQueueClient);
+        }
+
+        return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
+
+    }
+    public async Task<EligibilityCheck> MapCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
     {
         var item = _mapper.Map<EligibilityCheck>(data);
 
@@ -62,6 +99,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             item.Created = DateTime.UtcNow;
             item.Updated = DateTime.UtcNow;
             item.Status = CheckEligibilityStatus.queuedForProcessing;
+
             if (meta != null)
             {
                 item.OrganisationID = meta.OrganisationID;
@@ -102,16 +140,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     }
                 }
             }
-
-            await _db.CheckEligibilities.AddAsync(item);
-            await _db.SaveChangesAsync();
-            //TODO: The message queueing logic should sit in the use case, targeting the storage queue gateway
-            if (checkHashResult == null)
-            {
-                var queue = await _storageQueueMessageGateway.SendMessage(item);
-            }
-
-            return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
+            return item;
         }
         catch (Exception ex)
         {
@@ -191,6 +220,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             var CheckData = GetCheckProcessData(result.Type, result.CheckData);
             if (isBatchRecord)
             {
+                item.EligibilityCheckID = result.EligibilityCheckID;
                 item.Status = result.Status.ToString();
                 item.Created = result.Created;
                 item.ClientIdentifier = CheckData.ClientIdentifier;

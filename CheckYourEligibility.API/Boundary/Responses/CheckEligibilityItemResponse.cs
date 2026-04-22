@@ -14,6 +14,7 @@ public class CheckEligibilityItemBase
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityItem : CheckEligibilityItemBase
 {
+    public string? EligibilityCheckID { get; set; }
     public string LastName { get; set; }
 
     public string DateOfBirth { get; set; }
