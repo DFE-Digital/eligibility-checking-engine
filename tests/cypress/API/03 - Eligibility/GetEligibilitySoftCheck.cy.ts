@@ -36,11 +36,11 @@ describe('GET eligibility soft check by Guid', () => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
 
-                const pollCheck = (retries = 0, waitTime = 1000) => {
+                const pollCheck = (retries = 0, waitTime = 2000) => {
                     cy.get('@Guid').then((Guid) => {
                         cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
                             cy.verifyApiResponseCode(newResponse, 200);
-                            if (newResponse.body.data.eligibilityStatus === "QueuedForProcessing" && retries < 2) {
+                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
                                 cy.wait(waitTime).then(() => {
                                     pollCheck(retries + 1, waitTime + 1000);
                                 });
