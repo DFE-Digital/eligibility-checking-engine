@@ -218,9 +218,8 @@ public class CheckingEngineGateway : ICheckingEngine
             wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
         }
         else
-        {
-            // If not matching a test data sceenario return null = notFound
-            return wfEvent;
+        {            
+            return null;
         }
 
         // Populate the rest of the test record
