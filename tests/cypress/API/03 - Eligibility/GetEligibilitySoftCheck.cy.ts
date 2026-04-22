@@ -1,6 +1,5 @@
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible }
-    from '../../support/requestBodies';
+import { validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible } from '../../support/requestBodies';
 
 
 describe('GET eligibility soft check by Guid', () => {
@@ -29,26 +28,32 @@ describe('GET eligibility soft check by Guid', () => {
     })
 
     
-    it('Verify 200 Success response is returned with valid guid Working Families notFound',() => {
+    it('Verify 200 Success response is returned with valid guid Working Families notFound', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            //Make post request for eligibility check
             cy.log(Cypress.env('lastName'));
             const requestBody = validWorkingFamiliesRequestBody();
             cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
-                //extract Guid
                 cy.extractGuid(response);
-                //make get request using the guid 
-                cy.get('@Guid').then((Guid) => {
-                    cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
-                        // Assert the response 
-                        cy.verifyApiResponseCode(newResponse, 200)
-                        cy.verifyGetEligibilityWFCheckResponseDataNotFound(newResponse, requestBody)
-                    })
-                });
+
+                const pollCheck = (retries = 0, waitTime = 2000) => {
+                    cy.get('@Guid').then((Guid) => {
+                        cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
+                            cy.verifyApiResponseCode(newResponse, 200);
+                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
+                                cy.wait(waitTime).then(() => {
+                                    pollCheck(retries + 1, waitTime + 1000);
+                                });
+                            } else {
+                                cy.verifyGetEligibilityWFCheckResponseDataNotFound(newResponse, requestBody);
+                            }
+                        });
+                    });
+                };
+                pollCheck();
             });
         });
-    })
+    });
 });
     it('Verify 200 Success response is returned with valid guid Working Families found',function () {
                 if (Cypress.env('ENV') === 'PP') {
