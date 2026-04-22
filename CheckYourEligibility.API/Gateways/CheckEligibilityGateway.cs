@@ -140,12 +140,6 @@ public class CheckEligibilityGateway : ICheckEligibility
                     }
                 }
             }
-            if (checkHashResult == null)
-            {
-                // Queue message will be sent by the caller (PostCheck bulk) after BulkInsert,
-                // or directly here for single checks.
-            }
-
             return item;
         }
         catch (Exception ex)
