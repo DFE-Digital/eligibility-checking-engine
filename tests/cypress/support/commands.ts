@@ -67,7 +67,7 @@ Cypress.Commands.add('verifyPostEligibilityCheckResponse', (response) => {
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
 
   // Verfiy total number of elements
-  cy.verifyTotalElements(totalElements, 4);
+  cy.verifyTotalElements(totalElements, 5);
 
   // Verify response elements
   expect(response.body.data).to.have.property('status');
