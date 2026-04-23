@@ -1,13 +1,11 @@
 ﻿// Ignore Spelling: Fsm
 
-using Azure.Messaging.EventGrid.SystemEvents;
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using ApplicationStatus = CheckYourEligibility.API.Domain.ApplicationStatus;
 
 [ExcludeFromCodeCoverage(Justification = "framework")]
@@ -285,7 +283,10 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 		modelBuilder.Entity<WorkingFamiliesEventSummary>()
 			.HasIndex(e => e.OwningLocalAuthorityId);
 
-	}
+        var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
+        Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };
+        SqlServerIndexBuilderExtensions.IncludeProperties(builder, expr);
+    }
 }
         
         
