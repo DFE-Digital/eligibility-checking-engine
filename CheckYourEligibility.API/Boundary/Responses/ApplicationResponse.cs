@@ -1,4 +1,6 @@
-﻿namespace CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Domain.Enums;
+
+namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class ApplicationResponse
 {
@@ -15,6 +17,7 @@ public class ApplicationResponse
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string Status { get; set; }
+    public EligibilityTier? Tier { get; set; } 
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }
     public List<ApplicationEvidenceResponse>? Evidence { get; set; }
