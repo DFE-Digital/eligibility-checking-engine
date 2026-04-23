@@ -40,12 +40,9 @@ public class StorageQueueMessageGateway : IStorageQueueMessage
     #region Private
 
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
-    //TODO: Ideally this method and whole class would live in the StorageQueue gateway
-    public async Task<string> SendMessage(EligibilityCheck item)
+    public async Task<string> SendMessage(EligibilityCheck item, QueueClient queueClient)
     {
         var queueName = _configuration[$"Queue:{(item.BulkCheckID.IsNullOrEmpty()?"Single":"Bulk")}:{item.Type.ToString()}"];
-
-        QueueClient queueClient = GetQueueClient(queueName);
         
         await queueClient.SendMessageAsync(
             JsonConvert.SerializeObject(new QueueMessageCheck
@@ -56,10 +53,12 @@ public class StorageQueueMessageGateway : IStorageQueueMessage
                 SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
             }));
 
+        
+
         return queueClient.Name;
     }
 
-    private QueueClient GetQueueClient(string queueName)
+    public QueueClient GetQueueClient(string queueName)
     {
         if (!_queues.ContainsKey(queueName))
         {
