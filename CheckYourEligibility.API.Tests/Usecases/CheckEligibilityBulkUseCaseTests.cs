@@ -8,6 +8,7 @@ using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -24,12 +25,19 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<CheckEligibilityBulkUseCase>>(MockBehavior.Loose);
+        _mockScopeFactory = new Mock<IServiceScopeFactory>();
+        var mockScope = new Mock<IServiceScope>();
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(ICheckEligibility))).Returns(_mockCheckGateway.Object);
+        mockScope.Setup(s => s.ServiceProvider).Returns(mockServiceProvider.Object);
+        _mockScopeFactory.Setup(f => f.CreateScope()).Returns(mockScope.Object);
         _sut = new CheckEligibilityBulkUseCase(
             _mockValidator.Object,
             _mockCheckGateway.Object,
             _mockBulkCheckGateway.Object,
             _mockAuditGateway.Object,
-            _mockLogger.Object);
+            _mockLogger.Object,
+            _mockScopeFactory.Object);
         _recordCountLimit = 100;
     }
 
@@ -46,6 +54,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
     private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<CheckEligibilityBulkUseCase>> _mockLogger;
+    private Mock<IServiceScopeFactory> _mockScopeFactory;
     private CheckEligibilityBulkUseCase _sut;
     private int _recordCountLimit;
 
@@ -126,8 +135,10 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
+        var postCheckCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
+            .Callback(() => postCheckCalled.SetResult(true))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
@@ -135,6 +146,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies, _recordCountLimit, meta);
+        await postCheckCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         // Assert
         result.Data.Status.Should().Be(Messages.Processing);
@@ -169,8 +181,10 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
+        var postCheckCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _mockCheckGateway.Setup(s =>
                 s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
+            .Callback(() => postCheckCalled.SetResult(true))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
@@ -178,6 +192,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
+        await postCheckCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         // Assert
         result.Data.Status.Should().Be(Messages.Processing);
@@ -214,19 +229,22 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .ReturnsAsync(_fixture.Create<string>());
-        _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
-                d => d.First().NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>(), meta))
+        var postCheckCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _mockCheckGateway.Setup(s => s.PostCheck(It.Is<IEnumerable<IEligibilityServiceType>>(
+                d => ((CheckEligibilityRequestData)d.First()).NationalInsuranceNumber == nino.ToUpper()), It.IsAny<string>(), meta))
+            .Callback(() => postCheckCalled.SetResult(true))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
+        await postCheckCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         // Assert
         _mockBulkCheckGateway.Verify(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()), Times.Once);
-        _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<CheckEligibilityRequestData>>(
-            d => d.First().NationalInsuranceNumber == "AB123456C"), It.IsAny<string>(), meta), Times.Once);
+        _mockCheckGateway.Verify(s => s.PostCheck(It.Is<IEnumerable<IEligibilityServiceType>>(
+            d => ((CheckEligibilityRequestData)d.First()).NationalInsuranceNumber == "AB123456C"), It.IsAny<string>(), meta), Times.Once);
     }
 
     [Test]
@@ -280,13 +298,16 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
             .Callback<BulkCheck>(b => capturedBulkCheck = b)
             .ReturnsAsync("bulk-check-id");
+        var postCheckCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
+            .Callback(() => postCheckCalled.SetResult(true))
             .Returns(Task.CompletedTask);
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.BulkCheck, It.IsAny<string>(), null))
             .ReturnsAsync("audit-id");
 
         // Act
         await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
+        await postCheckCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         // Assert
         capturedBulkCheck.Should().NotBeNull();

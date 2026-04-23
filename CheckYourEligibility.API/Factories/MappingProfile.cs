@@ -18,6 +18,7 @@ public class MappingProfile : Profile
         CreateMap<IEligibilityServiceType, EligibilityCheck>()
             .ReverseMap();
         CreateMap<EligibilityCheck, CheckEligibilityItem>()
+            .ForMember(dest => dest.EligibilityCheckID, opt => opt.Ignore())
             .ReverseMap();
         CreateMap<ApplicationRequestData, Application>()
             .ForMember(dest => dest.ParentNationalInsuranceNumber,

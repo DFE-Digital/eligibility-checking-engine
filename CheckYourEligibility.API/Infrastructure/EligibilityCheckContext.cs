@@ -97,7 +97,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         return base.SaveChanges();
     }
+    public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data) 
+    {
+        using var transaction = base.Database.BeginTransaction();
+        try
+        {           
+            this.BulkInsert(data);
+            transaction.Commit();
+        }
+        catch (Exception ex) {
 
+            transaction.Rollback();
+        }
+        
+    }
     public void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data)
     {
         using var transaction = base.Database.BeginTransaction();
@@ -115,6 +128,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         this.BulkInsert(data);
     }
+
     public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data)
     {
 
@@ -166,10 +180,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             transaction.Commit();
         }
     }
-
-
-
-    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

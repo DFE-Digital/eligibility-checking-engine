@@ -35,4 +35,6 @@ public interface IEligibilityCheckContext
     void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData);
     void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data);
     void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data);
+    void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data);
+
 }

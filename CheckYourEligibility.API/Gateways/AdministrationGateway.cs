@@ -1,12 +1,11 @@
 ﻿// Ignore Spelling: Fsm
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.CsvImport;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CheckYourEligibility.API.Gateways;
 

@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -32,6 +33,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
     private readonly IBulkCheck _bulkCheckGateway;
     private readonly ICheckEligibility _checkEligibilityGateway;
     private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
     /// Use case for bulk eligibility checking operations
@@ -41,13 +43,15 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         ICheckEligibility checkEligibilityGateway,
         IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
-        ILogger<CheckEligibilityBulkUseCase> logger)
+        ILogger<CheckEligibilityBulkUseCase> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _validator = validator;
         _checkEligibilityGateway = checkEligibilityGateway;
         _bulkCheckGateway = bulkCheckGateway;
         _auditGateway = auditGateway;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<CheckEligibilityResponseBulk> Execute<T>(
@@ -120,11 +124,27 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         };
 
         await _bulkCheckGateway.CreateBulkCheck(bulkCheck);
-
-        await _checkEligibilityGateway.PostCheck(bulkData, groupId, meta);
-
         await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 
+        // Capture the data as a typed list before the request scope ends.
+        // PostCheck runs in its own DI scope so it owns its DbContext and
+        // other scoped services for as long as the background work takes.
+        // Each invocation gets a fresh gateway instance, so concurrent bulk
+        // submissions cannot share state or overwrite each other's groupId.
+        var capturedData = ((IEnumerable<IEligibilityServiceType>)bulkData).ToList();
+        _ = Task.Run(async () =>
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var gateway = scope.ServiceProvider.GetRequiredService<ICheckEligibility>();
+            try
+            {
+                await gateway.PostCheck(capturedData, groupId, meta);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background PostCheck failed for bulk check group ID: {GroupId}", groupId);
+            }
+        });
 
         _logger.LogInformation($"Bulk eligibility check created with group ID: {groupId}");
         return new CheckEligibilityResponseBulk
