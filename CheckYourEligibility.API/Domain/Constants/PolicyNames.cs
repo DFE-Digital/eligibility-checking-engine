@@ -6,6 +6,7 @@ namespace CheckYourEligibility.API.Domain.Constants;
 public static class PolicyNames
 {
     public const string RequireLocalAuthorityScope = "RequireLocalAuthorityScope";
+    public const string RequireMatOrAdminScope = "RequireMatOrAdminScope";
     public const string RequireCheckScope = "RequireCheckScope";
     public const string RequireApplicationScope = "RequireApplicationScope";
     public const string RequireAdminScope = "RequireAdminScope";
