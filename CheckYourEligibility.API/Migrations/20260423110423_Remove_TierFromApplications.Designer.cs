@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260423110423_Remove_TierFromApplications")]
+    partial class Remove_TierFromApplications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -508,9 +511,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<int>("MultiAcademyTrustID")
                         .HasColumnType("int");
 
-                    b.Property<bool>("AcademyCanReviewEvidence")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -560,10 +560,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("RateLimitEventID");
-
-                    b.HasIndex(new[] { "PartitionName", "TimeStamp" }, "idx_RateLimitEvent_PartitionName_TimeStamp");
-
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex(new[] { "PartitionName", "TimeStamp" }, "idx_RateLimitEvent_PartitionName_TimeStamp"), new[] { "QuerySize" });
 
                     b.ToTable("RateLimitEvents");
                 });
