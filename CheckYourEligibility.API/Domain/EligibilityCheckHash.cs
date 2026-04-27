@@ -20,4 +20,10 @@ public class EligibilityCheckHash
     [Column(TypeName = "varchar(100)")] public CheckEligibilityStatus Outcome { get; set; }
 
     [Column(TypeName = "varchar(100)")] public ProcessEligibilityCheckSource Source { get; set; }
+
+    /// <summary>
+    /// Expanded FSM tiers support - targeted/expanded
+    /// </summary>
+    [Column(TypeName = "nvarchar(50)")]
+    public EligibilityTier? Tier { get; set; }
 }

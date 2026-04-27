@@ -1,9 +1,8 @@
 ﻿// Ignore Spelling: Fsm
 
+using CheckYourEligibility.API.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
-using CheckYourEligibility.API.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Domain;
 
@@ -57,7 +56,7 @@ public class EligibilityCheck
     /// The bulk check entity if this is part of a bulk operation
     /// </summary>
     public virtual BulkCheck? BulkCheck { get; set; }
-    
+
     /// <summary>
     /// The serialized check data
     /// </summary>
@@ -78,7 +77,7 @@ public class EligibilityCheck
     /// else OrganisationID = 0
     /// </summary>
     [Column(TypeName = "int")]
-    public int? OrganisationID{ get; set; }
+    public int? OrganisationID { get; set; }
 
     /// <summary>
     /// What type of organisation is making the check
@@ -87,9 +86,15 @@ public class EligibilityCheck
     /// </summary>
     [Column(TypeName = "nvarchar(20)")]
     public string? OrganisationType { get; set; }
-    
+
     /// <summary>
     /// Soft delete flag - if true, the record is considered deleted and should be ignored in queries
     /// </summary>
-    public bool IsDeleted { get; set; } 
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Expanded FSM tiers support - targeted/expanded
+    /// </summary>
+    [Column(TypeName = "nvarchar(50)")]
+    public EligibilityTier? Tier {get; set;}
 }

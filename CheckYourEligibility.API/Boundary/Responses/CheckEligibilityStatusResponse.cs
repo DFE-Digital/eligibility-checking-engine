@@ -1,4 +1,6 @@
-﻿namespace CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Domain.Enums;
+
+namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class CheckEligibilityStatusResponse
 {
@@ -8,4 +10,6 @@ public class CheckEligibilityStatusResponse
 public class StatusValue
 {
     public string Status { get; set; }
+
+    public EligibilityTier? Tier { get; set; }
 }
