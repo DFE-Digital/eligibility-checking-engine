@@ -27,7 +27,7 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string GracePeriodEndDate { get; set; }
     public string EligibilityCode { get; set; }
     
-    public EligibilityTier? Tier { get; set; }
+    public string? Tier { get; set; }
 
 }
 
