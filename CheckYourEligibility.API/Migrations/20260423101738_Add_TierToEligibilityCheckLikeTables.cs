@@ -28,7 +28,7 @@ namespace CheckYourEligibility.API.Migrations
                 table: "Applications",
                 type: "nvarchar(50)",
                 nullable: false,
-                defaultValue: EligibilityTier.Targeted);
+                defaultValue: EligibilityTier.targeted);
         }
 
         /// <inheritdoc />

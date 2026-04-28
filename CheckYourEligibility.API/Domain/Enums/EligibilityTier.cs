@@ -9,10 +9,10 @@
         /// <summary>
         /// Check is below the threshold
         /// </summary>
-        Targeted,
+        targeted,
         /// <summary>
         /// Check is above the threshold
         /// </summary>
-        Expanded
+        expanded
     }
 }
