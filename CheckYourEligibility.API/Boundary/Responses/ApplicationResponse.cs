@@ -17,7 +17,7 @@ public class ApplicationResponse
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string Status { get; set; }
-    public EligibilityTier? Tier { get; set; } 
+    public string? Tier { get; set; } 
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }
     public List<ApplicationEvidenceResponse>? Evidence { get; set; }

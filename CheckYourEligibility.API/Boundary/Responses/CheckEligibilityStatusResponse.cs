@@ -11,5 +11,5 @@ public class StatusValue
 {
     public string Status { get; set; }
 
-    public EligibilityTier? Tier { get; set; }
+    public string? Tier { get; set; }
 }

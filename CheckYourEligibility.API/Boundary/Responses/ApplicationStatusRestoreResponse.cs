@@ -10,7 +10,7 @@ public class ApplicationStatusRestoreResponse
 public class ApplicationStatusRestoreResponseData
 {
     public string Status { get; set; }
-    public EligibilityTier? Tier { get; set; }
+    public string? Tier { get; set; }
 
     public DateTime Updated { get; set; }
 }
