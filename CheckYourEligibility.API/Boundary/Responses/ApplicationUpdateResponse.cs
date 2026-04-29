@@ -9,10 +9,11 @@ public class ApplicationUpdateResponse
 {
     public ApplicationUpdateDataResponse Data { get; set; }
 }
-[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class ApplicationUpdateDataResponse
 {
     public string Status { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; }
     public int? EstablishmentUrn { get; set; }
 }

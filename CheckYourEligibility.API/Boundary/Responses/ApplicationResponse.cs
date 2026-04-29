@@ -2,7 +2,6 @@
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 
-[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class ApplicationResponse
 {
     public string Id { get; set; }
@@ -18,6 +17,7 @@ public class ApplicationResponse
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string Status { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; } 
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }

@@ -2,12 +2,12 @@
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 
-[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityItemBase
 {
     public string NationalInsuranceNumber { get; set; }
 
     public string Status { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; }
     public DateTime Created { get; set; }
 }
