@@ -59,7 +59,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
         _mockCheckingEngineGateway.Setup(s => s.ProcessCheckAsync(guid, auditItemTemplate, null))
-            .ReturnsAsync((CheckEligibilityStatus?)null);
+            .ReturnsAsync(((CheckEligibilityStatus?)null,(EligibilityTier?)null));
 
         // Act
         Func<Task> act = async () => await _sut.Execute(guid);
@@ -79,7 +79,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
         _mockCheckingEngineGateway.Setup(s => s.ProcessCheckAsync(guid, auditItemTemplate, null))
-            .ReturnsAsync(statusValue);
+            .ReturnsAsync((statusValue, null));
 
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
 
@@ -101,7 +101,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
         _mockCheckingEngineGateway.Setup(s => s.ProcessCheckAsync(guid, auditItemTemplate, null))
-            .ReturnsAsync(statusValue);
+            .ReturnsAsync((statusValue, null));
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
 
         // Act
@@ -123,7 +123,7 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         _mockAuditGateway.Setup(a => a.AuditDataGet(AuditType.Check, string.Empty))
             .Returns(auditItemTemplate);
         _mockCheckingEngineGateway.Setup(s => s.ProcessCheckAsync(guid, auditItemTemplate, null))
-            .ReturnsAsync(statusValue);
+            .ReturnsAsync((statusValue,null));
         _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
 
         // Act

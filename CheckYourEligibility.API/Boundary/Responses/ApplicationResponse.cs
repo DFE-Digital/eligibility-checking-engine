@@ -1,7 +1,8 @@
-﻿using CheckYourEligibility.API.Domain.Enums;
+﻿using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class ApplicationResponse
 {
     public string Id { get; set; }

@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Domain.Enums;
 using Newtonsoft.Json;
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class EligibilityCheckReportItem
 {
    [JsonProperty("LastName")]

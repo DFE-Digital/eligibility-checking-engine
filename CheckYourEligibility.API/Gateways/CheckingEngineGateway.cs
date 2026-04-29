@@ -52,7 +52,7 @@ public class CheckingEngineGateway : ICheckingEngine
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
     }
 
-    public async Task<CheckEligibilityStatus?> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
+    public async Task<(CheckEligibilityStatus?,EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
@@ -83,46 +83,53 @@ public class CheckingEngineGateway : ICheckingEngine
                     break;
             }
 
-            return result.Status;
+            return (result.Status, result.Tier);
         }
 
-        return null;
+        return (null, null);
     }
 
-    private CheckEligibilityStatus TestDataCheck(string? nino, string? nass)
+    #region Private
+    private (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
     {
+
         if (!nino.IsNullOrEmpty())
         {
+            if (checkType == CheckEligibilityType.FreeSchoolMeals &&  nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted")))
+                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
+
+            if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded")))
+                return (CheckEligibilityStatus.eligible, EligibilityTier.expanded);
+
             if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
-                return CheckEligibilityStatus.eligible;
+                return (CheckEligibilityStatus.eligible, null);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
-                return CheckEligibilityStatus.notEligible;
+                return (CheckEligibilityStatus.notEligible,null);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")))
-                return CheckEligibilityStatus.parentNotFound;
+                return (CheckEligibilityStatus.parentNotFound, null);
             if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")))
-                return CheckEligibilityStatus.error;
+                return (CheckEligibilityStatus.error, null);
+            
         }
         else
         {
             nass = nass.Substring(2, 2);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                return CheckEligibilityStatus.eligible;
+                return (CheckEligibilityStatus.eligible, null);
             if (nass == _configuration.GetValue<string>(
                     "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
-                return CheckEligibilityStatus.notEligible;
+                return (CheckEligibilityStatus.notEligible, null);
             if (nass == _configuration.GetValue<string>(
                     "TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
-                return CheckEligibilityStatus.parentNotFound;
+                return (CheckEligibilityStatus.parentNotFound, null);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
-                return CheckEligibilityStatus.error;
+                return (CheckEligibilityStatus.error, null);
         }
 
-        return CheckEligibilityStatus.parentNotFound;
+        return (CheckEligibilityStatus.parentNotFound, null);
     }
-
-    #region Private
 
     /// <summary>
     /// Logic to find a match in Working families events' table
@@ -312,7 +319,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-            await _hashGateway.Create(wfCheckData, result.Status, source, auditDataTemplate, dbContextFactory);
+            await _hashGateway.Create(wfCheckData, result.Status,result.Tier, source, auditDataTemplate, dbContextFactory);
 
         var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
@@ -368,7 +375,7 @@ public class CheckingEngineGateway : ICheckingEngine
     {
         var context = dbContextFactory ?? _db;
         var source = ProcessEligibilityCheckSource.HMRC;
-        var checkResult = CheckEligibilityStatus.parentNotFound;
+        var checkStatusResult = CheckEligibilityStatus.parentNotFound;
         CAPIClaimResponse capiClaimResponse = new();
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
@@ -378,7 +385,9 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
-            checkResult = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber);
+            var (testStatus,testTier)= TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
+            checkStatusResult = testStatus;
+            result.Tier = testTier;
             source = ProcessEligibilityCheckSource.TEST;
         }
 
@@ -388,38 +397,38 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 //To ensure correct LA ID is passed when using ECS for checks
                 string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
-                checkResult = await HMRC_Check(checkData, dbContextFactory);
-                if (checkResult == CheckEligibilityStatus.parentNotFound)
+                checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
+                if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
                 {
                     var sw = Stopwatch.StartNew();
 
                     //TODO: This should live in the use case
                     if (_ecsAdapter.UseEcsforChecks == "true")
                     {
-                        checkResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.ECS;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
                     }
                     else if (_ecsAdapter.UseEcsforChecks == "false")
                     {
 
-                        capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
-                        checkResult = capiClaimResponse.CheckEligibilityStatus;
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId);
+                        checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
                     }
                     else // do both checks
                     {
-                        checkResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, laId);
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
 
                         sw.Restart();
-                        capiClaimResponse = await DwpCitizenCheck(checkData, checkResult, correlationId);
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId);
                         eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
-                        if (checkResult != eceCheckResult)
+                        if (checkStatusResult != eceCheckResult)
                         {
                             source = ProcessEligibilityCheckSource.ECS_CONFLICT;
                         }
@@ -430,15 +439,15 @@ public class CheckingEngineGateway : ICheckingEngine
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
             {
-                checkResult = await HO_Check(checkData, dbContextFactory);
+                checkStatusResult = await HO_Check(checkData, dbContextFactory);
                 source = ProcessEligibilityCheckSource.HO;
             }
         }
 
-        result.Status = checkResult;
+        result.Status = checkStatusResult;
         result.Updated = DateTime.UtcNow;
 
-        if (checkResult == CheckEligibilityStatus.error)
+        if (checkStatusResult == CheckEligibilityStatus.error)
         {
             // Revert status back and do not save changes
             result.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -446,7 +455,7 @@ public class CheckingEngineGateway : ICheckingEngine
         else
         {
             result.EligibilityCheckHashID =
-               await _hashGateway.Create(checkData, checkResult, source, auditDataTemplate, dbContextFactory);
+               await _hashGateway.Create(checkData, checkStatusResult, result.Tier, source, auditDataTemplate, dbContextFactory);
 
             //If CAPI returns a different result from ECS
             // Create a record
@@ -457,7 +466,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 {
                     CorrelationID = correlationId,
                     ECE_Status = eceCheckResult,
-                    ECS_Status = checkResult,
+                    ECS_Status = checkStatusResult,
                     DateOfBirth = checkData.DateOfBirth,
                     LastName = checkData.LastName,
                     Nino = checkData.NationalInsuranceNumber,
@@ -473,7 +482,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
 
             }
-
             await context.SaveChangesAsync();
         }
 
