@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CheckYourEligibility.API.Domain;
@@ -32,6 +33,6 @@ public class FosterCarer : IAuditable
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
-    public FosterChild? FosterChild { get; set; }
+    public virtual Collection<FosterChild> FosterChildren { get; set; }
 
 }

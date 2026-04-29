@@ -11,8 +11,8 @@ public static class WorkingFamiliesEventHelper
 
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
-            ValidityStartDate = data.FosterChild.ValidityStartDate,
-            ValidityEndDate = data.FosterChild.ValidityEndDate,
+            ValidityStartDate = data.FosterChildren.First().ValidityStartDate,
+            ValidityEndDate = data.FosterChildren.First().ValidityEndDate,
 
             ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
             ParentFirstName = data.FirstName,
@@ -23,14 +23,14 @@ public static class WorkingFamiliesEventHelper
             PartnerLastName = data.PartnerLastName ?? string.Empty,
             PartnerDateOfBirth = data.PartnerDateOfBirth ?? DateTime.MinValue,
 
-            ChildFirstName = data.FosterChild.FirstName,
-            ChildLastName = data.FosterChild.LastName,
-            ChildPostCode = data.FosterChild.PostCode,
-            ChildDateOfBirth = data.FosterChild.DateOfBirth,
-            SubmissionDate = data.FosterChild.SubmissionDate,
+            ChildFirstName = data.FosterChildren.First().FirstName,
+            ChildLastName = data.FosterChildren.First().LastName,
+            ChildPostCode = data.FosterChildren.First().PostCode,
+            ChildDateOfBirth = data.FosterChildren.First().DateOfBirth,
+            SubmissionDate = data.FosterChildren.First().SubmissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChild.ValidityStartDate, data.FosterChild.SubmissionDate),
-            GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChild.ValidityEndDate)
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChildren.First().ValidityStartDate, data.FosterChildren.First().SubmissionDate),
+            GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChildren.First().ValidityEndDate)
         };
 
         return wfEvent;

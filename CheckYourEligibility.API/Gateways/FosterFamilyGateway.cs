@@ -26,15 +26,16 @@ public class FosterFamilyGateway : IFosterFamily
             throw new ArgumentNullException(nameof(data));
 
         var fosterCarer = _mapper.Map<FosterCarer>(data);
+        var fosterChild = _mapper.Map<FosterChild>(data);
 
         if (fosterCarer == null)
             throw new InvalidOperationException("Mapping to FosterCarer returned null.");
 
-        if (fosterCarer.FosterChild == null)
-            throw new InvalidOperationException("FosterChild cannot be null.");
+        if(fosterChild == null)
+            throw new InvalidOperationException("Mapping to FosterChild returned null.");
 
         fosterCarer.FosterCarerId = Guid.NewGuid();
-        fosterCarer.FosterChild.FosterChildId = Guid.NewGuid();
+        fosterChild.FosterChildId = Guid.NewGuid();
 
         // Single transaction
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
@@ -47,9 +48,11 @@ public class FosterFamilyGateway : IFosterFamily
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
 
-            fosterCarer.FosterChild.EligibilityCode = workingEvent.EligibilityCode;
-
             await _db.FosterCarers.AddAsync(fosterCarer, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            fosterChild.EligibilityCode = workingEvent.EligibilityCode;
+            await _db.FosterChildren.AddAsync(fosterChild, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
         
             await tx.CommitAsync(cancellationToken);
@@ -78,7 +81,7 @@ public class FosterFamilyGateway : IFosterFamily
             var query = await _db.FosterCarers
            .AsNoTracking()
            .Where(fc => fc.FosterCarerId.ToString() == guid)
-           .Include(fc => fc.FosterChild)
+           .Include(fc => fc.FosterChildren)
            .FirstOrDefaultAsync();
 
             if (query != null)
@@ -107,20 +110,23 @@ public class FosterFamilyGateway : IFosterFamily
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            // find and map foster family, carer + child
-            var fosterFamily = await _db.FosterCarers
-                .Include(fc => fc.FosterChild)
-                .FirstOrDefaultAsync(fc => fc.FosterCarerId.ToString() == guid, cancellationToken);
+            // find and map foster carer
+            var fosterCarer = await _db.FosterCarers.FirstOrDefaultAsync(fc => fc.FosterCarerId.ToString() == guid, cancellationToken);
+            if (fosterCarer is null) throw new NotFoundException("Unable to find the foster carer");
+            _mapper.Map(data, fosterCarer);
 
-            if (fosterFamily is null)
-                throw new NotFoundException("Unable to find the foster family");
+            // find and map foster child
+            var fosterChild = await _db.FosterChildren.FirstOrDefaultAsync(fc => fc.FosterCarerId.ToString() == guid, cancellationToken);
+            if (fosterChild is null) throw new NotFoundException("Unable to find the foster child");
+            _mapper.Map(data, fosterChild);
 
-            _mapper.Map(data, fosterFamily);
+            // Ensure the foster child is associated with the foster carer
+            fosterCarer.FosterChildren.Add(fosterChild);
 
             // find and map working family event
             var workingFamiliesEvent = await _db.WorkingFamiliesEvents
                 .FirstOrDefaultAsync(
-                    wf => wf.EligibilityCode == fosterFamily.FosterChild!.EligibilityCode,
+                    wf => wf.EligibilityCode == fosterCarer.FosterChildren.First().EligibilityCode,
                     cancellationToken);
 
             if (workingFamiliesEvent is null)
@@ -132,7 +138,7 @@ public class FosterFamilyGateway : IFosterFamily
             await _db.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
 
-            return _mapper.Map<FosterFamilyResponse>(fosterFamily);
+            return _mapper.Map<FosterFamilyResponse>(fosterCarer);
         }
         catch (Exception ex)
         {

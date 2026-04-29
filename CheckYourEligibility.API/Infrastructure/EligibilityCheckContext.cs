@@ -262,10 +262,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<FosterChild>()
             .HasOne(fc => fc.FosterCarer)
-            .WithOne(c => c.FosterChild)
-            .HasForeignKey<FosterChild>(fc => fc.FosterCarerId)
+            .WithMany(fc => fc.FosterChildren)
+            .HasForeignKey(fc => fc.FosterCarerId)
             .IsRequired();
-        
         
         modelBuilder.Entity<FosterChild>()
             .HasIndex(fc => fc.EligibilityCode);
