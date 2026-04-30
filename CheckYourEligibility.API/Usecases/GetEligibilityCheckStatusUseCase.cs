@@ -39,8 +39,8 @@ public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCas
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var response = await _checkGateway.GetStatus(guid, type);
-        if (response == null)
+        var (status,tier) = await _checkGateway.GetStatusAsync(guid, type);
+        if (status == null)
         {
             _logger.LogWarning(
                 $"Eligibility check with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
@@ -56,7 +56,8 @@ public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCas
         {
             Data = new StatusValue
             {
-                Status = response.Value.ToString()
+                Status = status.Value.ToString(),
+                Tier = tier?.ToString()
             }
         };
     }

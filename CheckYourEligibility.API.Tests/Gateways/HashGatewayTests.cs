@@ -64,7 +64,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(fsm);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
             new AuditData());
         await _fakeInMemoryDb.SaveChangesAsync();
 
@@ -85,7 +85,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(wf);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
             new AuditData());
         await _fakeInMemoryDb.SaveChangesAsync();
 
@@ -105,7 +105,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(fsm);
 
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
             new AuditData());
         await _fakeInMemoryDb.SaveChangesAsync();
         var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
@@ -130,7 +130,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(wf);
 
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound, ProcessEligibilityCheckSource.HMRC,
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
             new AuditData());
         await _fakeInMemoryDb.SaveChangesAsync();
         var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));

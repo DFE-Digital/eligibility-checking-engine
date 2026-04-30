@@ -1,5 +1,4 @@
-﻿using CheckYourEligibility.API.Domain.Enums;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 
@@ -8,6 +7,8 @@ public class CheckEligibilityItemBase
     public string NationalInsuranceNumber { get; set; }
 
     public string Status { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? Tier { get; set; }
     public DateTime Created { get; set; }
 }
 
@@ -26,8 +27,6 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string EligibilityCode { get; set; }
-    
-    public string? Tier { get; set; }
 
 }
 

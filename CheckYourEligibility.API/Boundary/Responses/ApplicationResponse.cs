@@ -1,4 +1,4 @@
-﻿using CheckYourEligibility.API.Domain.Enums;
+﻿using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 
@@ -17,6 +17,7 @@ public class ApplicationResponse
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string Status { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; } 
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }

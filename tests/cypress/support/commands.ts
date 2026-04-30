@@ -67,7 +67,7 @@ Cypress.Commands.add('verifyPostEligibilityCheckResponse', (response) => {
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
 
   // Verfiy total number of elements
-  cy.verifyTotalElements(totalElements, 5);
+  cy.verifyTotalElements(totalElements, 4);
 
   // Verify response elements
   expect(response.body.data).to.have.property('status');
@@ -87,7 +87,7 @@ Cypress.Commands.add('verifyPostEligibilityBulkCheckResponse', (response) => {
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
 
   // Verfiy total number of elements
-  cy.verifyTotalElements(totalElements, 5);
+  cy.verifyTotalElements(totalElements, 4);
 
   // Verify response elements
   expect(response.body.data).to.have.property('status');
@@ -323,7 +323,7 @@ Cypress.Commands.add('verifyPostApplicationResponse', (response, requestData) =>
 
   // Verfiy total number of elements
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
-  cy.verifyTotalElements(totalElements, 19);
+  cy.verifyTotalElements(totalElements, 18);
 
   // Assertions to verify response data matches request data
   expect(responseData).to.have.property('id');
@@ -361,7 +361,7 @@ Cypress.Commands.add('verifyGetApplicationResponse', (response, expectedData) =>
     Object.keys(responseData.establishment).length +
     Object.keys(responseData.establishment.localAuthority).length +
     Object.keys(responseLinks).length;
-  cy.verifyTotalElements(totalElements, 24);
+  cy.verifyTotalElements(totalElements, 23);
 
   expect(responseData).to.have.property('id');
   expect(responseData).to.have.property('reference');

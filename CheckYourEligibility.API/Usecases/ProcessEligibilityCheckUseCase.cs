@@ -40,14 +40,13 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
 
         try
         {
-            CheckEligibilityStatus? response = null;
-      
+           
                 // pass dbContext
                 var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-                response = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate, dbContextFactory);
+                var (status, tier) = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate, dbContextFactory);
                 await _auditGateway.CreateAuditEntry(AuditType.Check, guid, dbContextFactory);
             
-            if (response == null)
+            if (status == null)
             {
                 _logger.LogWarning(
                     $"Eligibility check with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
@@ -57,13 +56,14 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         
 
             _logger.LogInformation(
-                $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {response.Value}");
+                $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {status.Value}");
 
             var resultResponse = new CheckEligibilityStatusResponse
             {
                 Data = new StatusValue
                 {
-                    Status = response.Value.ToString()
+                    Status = status.Value.ToString(),
+                    Tier  = tier?.ToString()
                 }
             };
             // When status is Queued For Processing, i.e. not error
