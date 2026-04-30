@@ -6,7 +6,7 @@ public class EligibilityCheckReportItems
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public Guid EligibilityCheckReportItemsId { get; init; } = Guid.NewGuid();
+    public Guid EligibilityCheckReportItemId { get; init; } = Guid.NewGuid();
     
     public Guid EligibilityCheckReportId { get; set; }
     public virtual EligibilityCheckReport EligibilityCheckReport { get; set; }
