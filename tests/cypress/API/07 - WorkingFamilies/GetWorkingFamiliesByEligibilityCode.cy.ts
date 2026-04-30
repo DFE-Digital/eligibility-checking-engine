@@ -1,128 +1,130 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import { validLoginRequestBody } from "@/cypress/support/requestBodies";
 
-
+/**
+ * Utility: random ISO date within last 7 days
+ */
 const randomDateWithin7Days = () => {
   const today = new Date();
   const daysAgo = Math.floor(Math.random() * 7);
   const dt = new Date(today);
   dt.setDate(today.getDate() - daysAgo);
   return dt.toISOString();
-}
+};
 
-const generateEventsBlock = (reconfirmCount = 2) => {
-  const submissionDate = randomDateWithin7Days();
 
-  const block = [
-    {
+const generateContiguousEventBlock  = (
+  applicationCount = 3,
+  reconfirmPerApplication = 2
+) => {
+  const events: any[] = [];
+
+  for (let i = 0; i < applicationCount; i++) {
+    const baseDate = new Date(randomDateWithin7Days());
+
+    // application
+    events.push({
       event: 0,
-      record: { submissionDate }
-    }
-  ];
-
-  for (let i = 0; i < reconfirmCount; i++) {
-    block.push({
-      event: 1, // 1 being reconfirmation
-      record: { submissionDate }
+      record: {
+        submissionDate: baseDate.toISOString()
+      }
     });
+
+    // reconfirmation(s) for each application
+    for (let r = 0; r < reconfirmPerApplication; r++) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() - (r + 1));
+
+      events.push({
+        event: 1,
+        record: {
+          submissionDate: d.toISOString()
+        }
+      });
+    }
   }
 
-  return block;
-}
-
-const generateContiguousEventData = (blockCount = 3) => {
-  const blocks = [];
-
-  for (let i = 0; i < blockCount; i++) {
-    blocks.push(generateEventsBlock());
-  }
-
-  blocks.sort((a, b) =>
-    new Date(b[0].record.submissionDate).getTime() -
-    new Date(a[0].record.submissionDate).getTime()
+  // Backend contract: newest first
+  events.sort(
+    (a, b) =>
+      new Date(b.record.submissionDate).getTime() -
+      new Date(a.record.submissionDate).getTime()
   );
 
-  return { data: blocks.flat() };
-}
+  return { data: events };
+};
 
-describe("Get Working Family Events By Eligibility Code - Valid Contiguous Blocks", () => {
+describe("Get Working Family Events By Eligibility Code – Valid responses", () => {
 
-  it("Verifies application then reconfirm events in correct contiguous block order", () => {
+  it("returns a flat list ordered by submission date DESC with valid event types", () => {
 
-    const eligibilityCode = 50009000005;
+    const eligibilityCode = "50009000005";
 
     cy.intercept(
       "GET",
       `**/working-families-reporting/${eligibilityCode}`,
       {
         statusCode: 200,
-        body: generateContiguousEventData(3)
+        body: generateContiguousEventBlock(3, 2)
       }
     ).as("stubWFEvents");
 
     getandVerifyBearerToken("/oauth2/token", validLoginRequestBody)
       .then(token => {
-
         cy.window()
           .then(win =>
-            win.fetch(
-              `working-families-reporting/${eligibilityCode}`,
-              {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json"
-                }
+            win.fetch(`working-families-reporting/${eligibilityCode}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
               }
-            )
+            })
           )
-          .then(async (fetchRes) => {
-
+          .then(async fetchRes => {
             const json = await fetchRes.json();
 
-            // shape it like Cypress response for compatibility
-            const res = {
-              status: fetchRes.status,
-              body: json
-            };
+            expect(fetchRes.status).to.eq(200);
+            expect(json.data).to.be.an("array").and.not.empty;
 
-            expect(res.status).to.eq(200);
-            expect(res.body.data).to.be.an("array").and.not.empty;
+            const events = json.data;
 
-            const events = res.body.data;
-
-            const blocks = [];
-            let currentBlock = [] as any[];
-
-            events.forEach((ev: any) => {
-              if (ev.event === 0) {
-                if (currentBlock.length > 0) blocks.push(currentBlock);
-                currentBlock = [ev];
-              } else {
-                currentBlock.push(ev);
-              }
-            });
-            blocks.push(currentBlock);
-
-            blocks.forEach((block, index) => {
-              expect(block[0].event).to.eq(0);
-              block.slice(1).forEach(ev => {
-                expect(ev.event).to.eq(1);
-              });
-            });
-
-            const appDates = blocks.map(b =>
-              new Date(b[0].record.submissionDate)
+            // newest to oldest order check
+            const submissionDates = events.map(
+              e => new Date(e.record.submissionDate)
             );
-            const sortedDesc = [...appDates].sort((a, b) => b - a);
 
-            expect(appDates).to.deep.equal(sortedDesc);
+            const expectedOrder = [...submissionDates].sort(
+              (a, b) => b.getTime() - a.getTime()
+            );
 
+            expect(submissionDates).to.deep.equal(
+              expectedOrder,
+              "Events must be ordered by submissionDate DESC"
+            );
+
+            events.forEach(ev => {
+              expect([0, 1]).to.include(
+                ev.event,
+                "Event must be Application(0) or Reconfirm(1)"
+              );
+            });
+
+            expect(
+              events.some(e => e.event === 0),
+              "At least one Application should exist"
+            ).to.eq(true);
+
+            expect(
+              events.some(e => e.event === 1),
+              "At least one Reconfirmation should exist"
+            ).to.eq(true);
           });
-    });
+      });
   });
 
-  it("Single event → must return Application only", () => {
+  it("single event returns exactly one Application", () => {
+
     const eligibilityCode = "90012345671";
 
     cy.intercept(
@@ -134,7 +136,9 @@ describe("Get Working Family Events By Eligibility Code - Valid Contiguous Block
           data: [
             {
               event: 0,
-              record: { submissionDate: randomDateWithin7Days() }
+              record: {
+                submissionDate: randomDateWithin7Days()
+              }
             }
           ]
         }
@@ -143,39 +147,28 @@ describe("Get Working Family Events By Eligibility Code - Valid Contiguous Block
 
     getandVerifyBearerToken("/oauth2/token", validLoginRequestBody)
       .then(token => {
-
         cy.window()
           .then(win =>
-            win.fetch(
-              `working-families-reporting/${eligibilityCode}`,
-              {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
-              }
-            )
+            win.fetch(`working-families-reporting/${eligibilityCode}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` }
+            })
           )
-          .then(async (fetchRes) => {
+          .then(async fetchRes => {
             const json = await fetchRes.json();
 
-            const res = {
-              status: fetchRes.status,
-              body: json
-            };
-
-            expect(res.status).to.eq(200);
-            expect(res.body.data.length).to.eq(1);
-            expect(res.body.data[0].event).to.eq(0);
+            expect(fetchRes.status).to.eq(200);
+            expect(json.data).to.have.length(1);
+            expect(json.data[0].event).to.eq(0);
           });
-
       });
   });
 });
 
-describe("Get Working Family Events By Eligibility Code - Invalid requests", () => {
+describe("Get Working Family Events By Eligibility Code – Error responses", () => {
 
-  it("Returns 400 when eligibility code does not exist", () => {
+  it("returns 400 when eligibility code is invalid", () => {
+
     const eligibilityCode = "NOT_A_REAL_CODE";
 
     cy.intercept(
@@ -184,41 +177,33 @@ describe("Get Working Family Events By Eligibility Code - Invalid requests", () 
       {
         statusCode: 400,
         body: {
-          errors: [
-            { title: "No working family events found" }
-          ]
+          errors: [{ title: "No working family events found" }]
         }
       }
     ).as("stubNotFound");
 
     getandVerifyBearerToken("/oauth2/token", validLoginRequestBody)
       .then(token => {
-
         cy.window()
           .then(win =>
-            win.fetch(
-              `working-families-reporting/${eligibilityCode}`,
-              {
-                method: "GET",
-                headers: { Authorization: `Bearer ${token}` }
-              }
-            )
+            win.fetch(`working-families-reporting/${eligibilityCode}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` }
+            })
           )
-          .then(async (fetchRes) => {
+          .then(async fetchRes => {
             const json = await fetchRes.json();
 
-            const res = { status: fetchRes.status, body: json };
-
-            expect(res.status).to.eq(400);
-            expect(res.body.errors?.[0].title).to.contain(
+            expect(fetchRes.status).to.eq(400);
+            expect(json.errors?.[0].title).to.contain(
               "No working family events found"
             );
           });
-
       });
   });
 
-  it("Returns 400 or 500 when backend throws an unexpected error", () => {
+  it("returns 500 when backend throws an unexpected error", () => {
+
     const eligibilityCode = "CAUSE_SERVER_ERROR";
 
     cy.intercept(
@@ -234,26 +219,19 @@ describe("Get Working Family Events By Eligibility Code - Invalid requests", () 
 
     getandVerifyBearerToken("/oauth2/token", validLoginRequestBody)
       .then(token => {
-
         cy.window()
           .then(win =>
-            win.fetch(
-              `working-families-reporting/${eligibilityCode}`,
-              {
-                method: "GET",
-                headers: { Authorization: `Bearer ${token}` }
-              }
-            )
+            win.fetch(`working-families-reporting/${eligibilityCode}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` }
+            })
           )
-          .then(async (fetchRes) => {
+          .then(async fetchRes => {
             const json = await fetchRes.json();
 
-            const res = { status: fetchRes.status, body: json };
-
-            expect([400, 500]).to.include(res.status);
-            expect(res.body.errors?.[0].title).to.exist;
+            expect(fetchRes.status).to.eq(500);
+            expect(json.errors?.[0].title).to.exist;
           });
-
       });
   });
 });
