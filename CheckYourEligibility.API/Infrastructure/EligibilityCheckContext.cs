@@ -45,6 +45,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FosterCarer> FosterCarers { get; set; }
     public virtual DbSet<FosterChild> FosterChildren { get; set; }
     public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
+    public virtual DbSet<EligibilityCheckReportItems> EligibilityCheckReportItems { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
