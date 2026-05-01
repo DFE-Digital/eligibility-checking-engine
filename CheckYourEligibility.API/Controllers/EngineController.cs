@@ -114,7 +114,7 @@ public class EngineController : BaseController
         try
         {
             var result = await _processEligibilityCheckUseCase.Execute(guid);
-            
+               
             if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), result.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
             {
               return StatusCode(StatusCodes.Status503ServiceUnavailable,

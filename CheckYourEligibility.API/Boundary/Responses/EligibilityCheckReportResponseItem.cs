@@ -9,7 +9,8 @@ public class EligibilityCheckReportResponseItem
    public DateTime DateOfBirth { get; set; }
    public DateTime DateCheckSubmitted { get; set; }
    public CheckEligibilityStatus Outcome { get; set; }
-   public EligibilityTier? Tier { get; set; }
+   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+   public string? Tier { get; set; }
    public CheckType CheckType { get; set; } = CheckType.BulkChecks;
    public string CheckedBy { get; set; }  
 }

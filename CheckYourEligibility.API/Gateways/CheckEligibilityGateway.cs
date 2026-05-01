@@ -78,7 +78,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             await _storageQueueMessageGateway.SendMessage(item, singleQueueClient);
         }
 
-        return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status };
+        return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status, Tier = item.Tier };
 
     }
     public async Task<EligibilityCheck> MapCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
@@ -117,6 +117,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
                 CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
                 item.Status = hashedStatus;
+                item.Tier = checkHashResult.Tier;
                 item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
                 item.EligibilityCheckHash = checkHashResult;
 
@@ -162,14 +163,14 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
     }
 
-    public async Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type)
+    public async Task<(CheckEligibilityStatus?,EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            (type == CheckEligibilityType.None ||
                                                                             type == x.Type) &&
                                                                            x.IsDeleted == false);
-        if (result != null) return result.Status;
-        return null;
+        if (result != null) return (result.Status, result.Tier);
+        return (null,null);
     }
 
     public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)

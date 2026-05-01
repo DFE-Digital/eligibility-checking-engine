@@ -12,7 +12,7 @@ public interface ICheckEligibility
     Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false)
         where T : CheckEligibilityItem;
 
-    Task<CheckEligibilityStatus?> GetStatus(string guid, CheckEligibilityType type);
+    Task<(CheckEligibilityStatus?,EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type);
 
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null);
     Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId);

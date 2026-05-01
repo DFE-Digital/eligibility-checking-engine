@@ -165,16 +165,17 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_InValidRequest_GetStatus_Should_Return_null()
+    public async Task Given_InValidRequest_GetStatus_Should_Return_null()
     {
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetStatus(guid, CheckEligibilityType.None);
+        var(status,tier) = await _sut.GetStatusAsync(guid, CheckEligibilityType.None);
 
         // Assert
-        response.Result.Should().BeNull();
+        status.Should().BeNull();
+        tier.Should().BeNull();
     }
 
     [Test]
@@ -183,18 +184,54 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
+        item.Tier = null;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetStatus(item.EligibilityCheckID, CheckEligibilityType.None);
+        var(status,tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
 
         // Assert
-        response.ToString().Should().Be(item.Status.ToString());
+        status.ToString().Should().Be(item.Status.ToString());
+        tier.Should().BeNull();
     }
 
     [Test]
-    public void Given_ValidRequest_DiffType_GetStatus_Should_Return_null()
+    public async Task Given_ValidRequest_GetStatus_Should_Return_Eligible_Expanded()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
+        item.Tier = EligibilityTier.expanded;
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var (status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
+
+        // Assert
+        status.ToString().Should().Be(item.Status.ToString());
+        tier.ToString().Should().Be(EligibilityTier.expanded.ToString());
+    }
+    [Test]
+    public async Task Given_ValidRequest_GetStatus_Should_Return_Eligible_Targeted()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
+        item.Tier = EligibilityTier.targeted;
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var (status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
+
+        // Assert
+        status.ToString().Should().Be(item.Status.ToString());
+        tier.ToString().Should().Be(EligibilityTier.targeted.ToString());
+    }
+    [Test]
+    public async Task Given_ValidRequest_DiffType_GetStatus_Should_Return_null()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -204,27 +241,30 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = _sut.GetStatus(item.EligibilityCheckID, type);
+        var(status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, type);
 
         // Assert
-        response.Result.Should().BeNull();
+        status.Should().BeNull();
+        tier.Should().BeNull();
     }
 
     [Test]
-    public void Given_ValidRequest_SameType_GetStatus_Should_Return_status()
+    public async Task Given_ValidRequest_SameType_GetStatus_Should_Return_status()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         var type = CheckEligibilityType.FreeSchoolMeals;
+        item.Tier = null;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = _sut.GetStatus(item.EligibilityCheckID, type);
+        var(status,tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, type);
 
         // Assert
-        response.Result.ToString().Should().Be(item.Status.ToString());
+        status.ToString().Should().Be(item.Status.ToString());
+        tier.Should().BeNull();
     }
 
     [Test]

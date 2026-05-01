@@ -82,7 +82,7 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
                 _logger.LogInformation($"Eligibility check created with ID: {response.Id}");
                 return new CheckEligibilityResponse
                 {
-                    Data = new StatusValue { Status = response.Status.ToString() },
+                    Data = new StatusValue { Status = response.Status.ToString(), Tier = response.Tier?.ToString()},
                     Links = new CheckEligibilityResponseLinks
                     {
                         Get_EligibilityCheck = $"{CheckLinks.GetLink}{response.Id}",

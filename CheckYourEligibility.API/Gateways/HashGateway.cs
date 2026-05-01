@@ -51,11 +51,12 @@ public class HashGateway : IHash
     /// </summary>
     /// <param name="item"></param>
     /// <param name="outcome"></param>
+    /// <param name="tier"></param>
     /// <param name="source"></param>
     /// <param name="auditDataTemplate"></param>
     /// <returns></returns>
     /// <remarks>NOTE there is no save, Context should be saved in calling service</remarks>
-    public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome,
+    public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome, EligibilityTier? tier,
         ProcessEligibilityCheckSource source, AuditData auditDataTemplate,EligibilityCheckContext dbContextFactory = null )
     {
         var hash = item.GetHash();
@@ -67,6 +68,7 @@ public class HashGateway : IHash
             Hash = hash,
             Type = item.Type,
             Outcome = outcome,
+            Tier = tier,
             TimeStamp = DateTime.UtcNow,
             Source = source
         };

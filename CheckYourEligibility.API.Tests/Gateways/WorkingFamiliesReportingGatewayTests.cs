@@ -78,83 +78,74 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
     }
 
     [Test]
-    public async Task GetAllWorkingFamiliesEventsByEligibilityCode_ReturnsCorrectBlocks()
+    public async Task GetAllWorkingFamiliesEventsByEligibilityCode_ClassifiesApplicationsAndReconfirmationsCorrectly()
     {
         // Arrange
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-
         context.WorkingFamiliesEvents.AddRange(_events);
         await context.SaveChangesAsync();
 
         // Act
         var result = await _sut.GetAllWorkingFamiliesEventsByEligibilityCode("TEST33344455");
 
-        // Assert root object exists
+        // Assert: root
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Data, Is.Not.Null);
-
-        // Expected total = 3 apps + 7 reconfirmations = 10
         Assert.That(result.Data.Count, Is.EqualTo(10),
-            "Should return all 10 events across all blocks.");
+            "Should return all events across all contiguous chains.");
 
-        // AC3: Sort newest → oldest
-        var returned = result.Data
-            .OrderByDescending(x => x.Record.SubmissionDate)
-            .ToList();
+        var returned = result.Data;
 
         // ---- APPLICATION ASSERTS ----
-
-        var apps = returned
+        var applications = returned
             .Where(x => x.Event == WorkingFamilyEventType.Application)
             .ToList();
 
-        Assert.That(apps.Count, Is.EqualTo(3),
-            "Should identify exactly 3 applications (1 per block).");
+        Assert.That(applications.Count, Is.EqualTo(3),
+            "There should be exactly one Application per contiguous chain.");
 
-        var appIds = apps
-            .Select(a => a.Record.WorkingFamiliesEventID)
+        var applicationIds = applications
+            .Select(x => x.Record.WorkingFamiliesEventID)
             .ToList();
 
-        Assert.That(appIds, Does.Contain("C1-A"));
-        Assert.That(appIds, Does.Contain("C2-A"));
-        Assert.That(appIds, Does.Contain("C3-A"));
+        Assert.That(applicationIds, Does.Contain("C1-A"));
+        Assert.That(applicationIds, Does.Contain("C2-A"));
+        Assert.That(applicationIds, Does.Contain("C3-A"));
 
-
-        // ---- RECONFIRMATION ASSERTS ----
-
-        var recs = returned
+        // ---- RECONFIRM ASSERTS ----
+        var reconfirmations = returned
             .Where(x => x.Event == WorkingFamilyEventType.Reconfirm)
             .ToList();
 
-        Assert.That(recs.Count, Is.EqualTo(7),
-            "Should identify exactly 7 reconfirmation events.");
+        Assert.That(reconfirmations.Count, Is.EqualTo(7));
 
-        var recIds = recs
-            .Select(r => r.Record.WorkingFamiliesEventID)
+        var reconfirmationIds = reconfirmations
+            .Select(x => x.Record.WorkingFamiliesEventID)
             .ToList();
 
-        Assert.That(recIds, Does.Contain("C1-R1"));
-        Assert.That(recIds, Does.Contain("C1-R2"));
-        Assert.That(recIds, Does.Contain("C2-R1"));
-        Assert.That(recIds, Does.Contain("C2-R2"));
-        Assert.That(recIds, Does.Contain("C2-R3"));
-        Assert.That(recIds, Does.Contain("C3-R1"));
-        Assert.That(recIds, Does.Contain("C3-R2"));
+        Assert.That(reconfirmationIds, Does.Contain("C1-R1"));
+        Assert.That(reconfirmationIds, Does.Contain("C1-R2"));
+        Assert.That(reconfirmationIds, Does.Contain("C2-R1"));
+        Assert.That(reconfirmationIds, Does.Contain("C2-R2"));
+        Assert.That(reconfirmationIds, Does.Contain("C2-R3"));
+        Assert.That(reconfirmationIds, Does.Contain("C3-R1"));
+        Assert.That(reconfirmationIds, Does.Contain("C3-R2"));
 
-
-        // ORDERING ASSERT
-
+        // ---- ORDER ASSERTS ----
         var submissionDates = returned
             .Select(x => x.Record.SubmissionDate)
             .ToList();
 
-        var sorted = submissionDates
+        var expectedOrder = submissionDates
             .OrderByDescending(x => x)
             .ToList();
 
-        CollectionAssert.AreEqual(sorted, submissionDates,
-            "Events should be sorted newest-first.");
+        CollectionAssert.AreEqual(
+            expectedOrder,
+            submissionDates,
+            "Events must be ordered by SubmissionDate DESC.");
     }
+
 
     [Test]
     public async Task GetAllWorkingFamiliesEventsByEligibilityCode_WhenOnlyOneEvent_ReturnsApplication()
@@ -177,7 +168,7 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
             ParentNationalInsuranceNumber = "AB123456A",
             PartnerNationalInsuranceNumber = "CD987654B",
             ParentDateOfBirth = new DateTime(1980, 1, 1),
-            PartnerDateOfBirth = new DateTime(1980, 1, 1), 
+            PartnerDateOfBirth = new DateTime(1980, 1, 1),
 
             SubmissionDate = new DateTime(2024, 01, 10),
             ValidityStartDate = new DateTime(2024, 01, 15),
@@ -209,20 +200,22 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
 
 
     [Test]
-    public void GetAllWorkingFamiliesEventsByEligibilityCode_WhenNoEventsExist_ThrowsException()
+    public async Task GetAllWorkingFamiliesEventsByEligibilityCode_WhenNoEventsExist_ReturnsEmptyList()
     {
         // Arrange
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
 
-        // Ensure the DB is empty
         context.WorkingFamiliesEvents.RemoveRange(context.WorkingFamiliesEvents);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
 
-        // Act + Assert
-        Assert.That(
-            async () => await _sut.GetAllWorkingFamiliesEventsByEligibilityCode("NO_EVENTS"),
-            Throws.Exception.TypeOf<Exception>()
-                .With.Message.EqualTo("No working family events found"));
+        // Act
+        var result = await _sut.GetAllWorkingFamiliesEventsByEligibilityCode("NO_EVENTS");
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data, Is.Empty,
+            "When no events exist, the response should return an empty list.");
     }
 
     private static List<WorkingFamiliesEvent> GetWorkingFamiliesEventsTestData()
