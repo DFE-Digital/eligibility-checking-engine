@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260430103918_add_tbl_EligibilityCheckReportItems_and_fks")]
+    partial class add_tbl_EligibilityCheckReportItems_and_fks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -786,9 +789,8 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("EligibilityCheckReportId");
 
@@ -797,9 +799,9 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("EligibilityCheckReports");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
-                    b.Property<Guid>("EligibilityCheckReportItemId")
+                    b.Property<Guid>("EligibilityCheckReportItemsId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EligibilityCheckID")
@@ -812,13 +814,13 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<bool>("IsBulkCheckItem")
                         .HasColumnType("bit");
 
-                    b.HasKey("EligibilityCheckReportItemId");
+                    b.HasKey("EligibilityCheckReportItemsId");
 
                     b.HasIndex("EligibilityCheckID");
 
                     b.HasIndex("EligibilityCheckReportId");
 
-                    b.ToTable("EligibilityCheckReportItem");
+                    b.ToTable("EligibilityCheckReportItems");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -1035,7 +1037,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheck", "EligibilityCheck")
                         .WithMany()

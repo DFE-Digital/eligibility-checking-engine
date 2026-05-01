@@ -1,4 +1,4 @@
 public class EligibilityCheckReportResponse
 {
-  public IEnumerable<EligibilityCheckReportItem> Data { get; set; }
+  public IEnumerable<EligibilityCheckReportResponseItem> Data { get; set; }
 }

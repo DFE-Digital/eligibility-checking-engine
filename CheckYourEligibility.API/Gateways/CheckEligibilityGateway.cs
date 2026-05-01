@@ -289,7 +289,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
 
 
-    public async Task<IEnumerable<EligibilityCheckReportItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<EligibilityCheckReportResponseItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
     {
         if (request is null)
             throw new ArgumentNullException(nameof(request));
@@ -311,22 +311,22 @@ public class CheckEligibilityGateway : ICheckEligibility
                 throw new Exception($"No bulk checks found");
             }
 
-            // Flatten the eligibility checks and deserialize the CheckData into EligibilityCheckReportItem, while also adding the CheckedBy and DateCheckSubmitted fields
+            // Flatten the eligibility checks and deserialize the CheckData into EligibilityCheckReportResponseItem, while also adding the CheckedBy and DateCheckSubmitted fields
             var reportItems = bulkChecks
                 .Where(bulkCheck => bulkCheck?.EligibilityChecks != null)
                 .SelectMany(bulkCheck => bulkCheck.EligibilityChecks
                     .Where(check => !string.IsNullOrWhiteSpace(check?.CheckData))
                     .Select(check =>
                     {
-                        EligibilityCheckReportItem? parsedCheck = null;
+                        EligibilityCheckReportResponseItem? parsedCheck = null;
                         try
                         {
-                            parsedCheck = JsonConvert.DeserializeObject<EligibilityCheckReportItem>(check.CheckData);
+                            parsedCheck = JsonConvert.DeserializeObject<EligibilityCheckReportResponseItem>(check.CheckData);
                             parsedCheck.Outcome = check.Status;
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"Failed to deserialize EligibilityCheckReportItem for BulkCheckID: {bulkCheck.BulkCheckID}");
+                            _logger.LogError(ex, $"Failed to deserialize EligibilityCheckReportResponseItem for BulkCheckID: {bulkCheck.BulkCheckID}");
                             return null;
                         }
                         if (parsedCheck == null) return null;
