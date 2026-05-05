@@ -1,9 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using Azure;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using System.Text.Json;
 
-public interface IEligibilityCheckReportUseCase
+public interface IGetEligibilityCheckReportingUseCase
 {
     /// <summary>
     /// Generates a reports for bulk checks based on the provided request model
@@ -13,14 +11,14 @@ public interface IEligibilityCheckReportUseCase
     Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model);
 }
 
-public class EligibilityCheckReportUseCase : IEligibilityCheckReportUseCase
+public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReportingUseCase
 {
-    private readonly  ICheckEligibility _checkEligibilityGateway;
-    private readonly ILogger<EligibilityCheckReportUseCase> _logger;
+    private readonly  IEligibilityCheckReporting _eligibilityCheckReportingGateway;
+    private readonly ILogger<GetEligibilityCheckReportingUseCase> _logger;
 
-    public EligibilityCheckReportUseCase(ICheckEligibility checkEligibilityGateway, ILogger<EligibilityCheckReportUseCase> logger)
+    public GetEligibilityCheckReportingUseCase(IEligibilityCheckReporting eligibilityCheckReportingGateway, ILogger<GetEligibilityCheckReportingUseCase> logger)
     {
-        _checkEligibilityGateway = checkEligibilityGateway;
+        _eligibilityCheckReportingGateway = eligibilityCheckReportingGateway;
         _logger = logger;
     }
 
@@ -33,7 +31,7 @@ public class EligibilityCheckReportUseCase : IEligibilityCheckReportUseCase
 
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
 
-        var response = await _checkEligibilityGateway.EligibilityCheckReports(model);
+        var response = await _eligibilityCheckReportingGateway.EligibilityCheckReports(model);
 
         if (response == null)
         {

@@ -13,9 +13,9 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
-        _mockLogger = new Mock<ILogger<EligibilityCheckReportUseCase>>(MockBehavior.Loose);
-        _sut = new EligibilityCheckReportUseCase(_mockCheckGateway.Object, _mockLogger.Object);
+        _mockCheckGateway = new Mock<IEligibilityCheckReporting>(MockBehavior.Strict);
+        _mockLogger = new Mock<ILogger<GetEligibilityCheckReportingUseCase>>(MockBehavior.Loose);
+        _sut = new GetEligibilityCheckReportingUseCase(_mockCheckGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
 
     }
@@ -27,9 +27,9 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
     }
 
 
-    private Mock<ICheckEligibility> _mockCheckGateway;
-    private Mock<ILogger<EligibilityCheckReportUseCase>> _mockLogger;
-    private EligibilityCheckReportUseCase _sut;
+    private Mock<IEligibilityCheckReporting> _mockCheckGateway;
+    private Mock<ILogger<GetEligibilityCheckReportingUseCase>> _mockLogger;
+    private GetEligibilityCheckReportingUseCase _sut;
     private new Fixture _fixture = null!;
 
     [Test]
