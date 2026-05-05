@@ -553,7 +553,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<EligibilityCheckReportRequest>();
-        var reportItems = _fixture.CreateMany<EligibilityCheckReportItem>(3).ToList();
+        var reportItems = _fixture.CreateMany<EligibilityCheckReportResponseItem>(3).ToList();
         var executionResult = new EligibilityCheckReportResponse { Data = reportItems };
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });

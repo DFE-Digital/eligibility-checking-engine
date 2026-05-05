@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260429153019_Add_ReportStatus_EligibilityCheckReportTbl")]
+    partial class Add_ReportStatus_EligibilityCheckReportTbl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -786,39 +789,14 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("EligibilityCheckReportId");
 
                     b.HasIndex("LocalAuthorityID");
 
                     b.ToTable("EligibilityCheckReports");
-                });
-
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
-                {
-                    b.Property<Guid>("EligibilityCheckReportItemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("EligibilityCheckID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<Guid>("EligibilityCheckReportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsBulkCheckItem")
-                        .HasColumnType("bit");
-
-                    b.HasKey("EligibilityCheckReportItemId");
-
-                    b.HasIndex("EligibilityCheckID");
-
-                    b.HasIndex("EligibilityCheckReportId");
-
-                    b.ToTable("EligibilityCheckReportItem");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -1033,25 +1011,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasForeignKey("LocalAuthorityID");
 
                     b.Navigation("LocalAuthority");
-                });
-
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheck", "EligibilityCheck")
-                        .WithMany()
-                        .HasForeignKey("EligibilityCheckID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EligibilityCheckReport", "EligibilityCheckReport")
-                        .WithMany()
-                        .HasForeignKey("EligibilityCheckReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EligibilityCheck");
-
-                    b.Navigation("EligibilityCheckReport");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>

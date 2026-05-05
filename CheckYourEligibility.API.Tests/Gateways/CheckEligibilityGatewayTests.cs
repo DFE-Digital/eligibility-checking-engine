@@ -553,7 +553,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportResponseItem>>();
         response.Should().NotBeNull();
         response.Count().Should().Be(15); // 3 bulk checks with 5 eligibility checks each should result in 15 report items
     }
@@ -585,7 +585,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var response = await _sut.EligibilityCheckReports(reportRequest);
 
         // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportItem>>();
+        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportResponseItem>>();
         response.Should().NotBeNull();
         response.Count().Should().Be(0); // No eligibility checks should result in an empty report
     }

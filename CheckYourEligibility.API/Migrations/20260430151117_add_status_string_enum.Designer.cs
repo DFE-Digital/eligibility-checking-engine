@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260430151117_add_status_string_enum")]
+    partial class add_status_string_enum
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -797,7 +800,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("EligibilityCheckReports");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
                     b.Property<Guid>("EligibilityCheckReportItemId")
                         .HasColumnType("uniqueidentifier");
@@ -818,7 +821,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("EligibilityCheckReportId");
 
-                    b.ToTable("EligibilityCheckReportItem");
+                    b.ToTable("EligibilityCheckReportItems");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -1035,7 +1038,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheck", "EligibilityCheck")
                         .WithMany()

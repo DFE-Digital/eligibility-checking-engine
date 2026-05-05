@@ -69,11 +69,11 @@ public class GenerateEligibilityReportUseCaseTests : TestBase.TestBase
         .With(x => x.LocalAuthorityID, 948)
         .Create();
 
-        var reportItems = _fixture.CreateMany<EligibilityCheckReportItem>(3).ToList();
+        var reportItems = _fixture.CreateMany<EligibilityCheckReportResponseItem>(3).ToList();
         var executionResult = new EligibilityCheckReportResponse { Data = reportItems };
 
         _mockCheckGateway.Setup(u => u.EligibilityCheckReports(It.IsAny<EligibilityCheckReportRequest>(), It.IsAny<CancellationToken>()))
-    .Returns(Task.FromResult<IEnumerable<EligibilityCheckReportItem>>(reportItems));
+    .Returns(Task.FromResult<IEnumerable<EligibilityCheckReportResponseItem>>(reportItems));
 
         // Act
         var response = await _sut.Execute(request);
