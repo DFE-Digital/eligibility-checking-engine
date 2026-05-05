@@ -13,7 +13,7 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
+        _mockCheckGateway = new Mock<IEligibilityCheckReporting>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetEligibilityReportHistoryUseCase>>(MockBehavior.Loose);
         _sut = new GetEligibilityReportHistoryUseCase(_mockCheckGateway.Object, _mockLogger.Object);
         _fixture = new Fixture();
@@ -51,7 +51,7 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
         _mockCheckGateway.VerifyAll();
     }
 
-    private Mock<ICheckEligibility> _mockCheckGateway;
+    private Mock<IEligibilityCheckReporting> _mockCheckGateway;
     private Mock<ILogger<GetEligibilityReportHistoryUseCase>> _mockLogger;
     private GetEligibilityReportHistoryUseCase _sut;
     private string _localAuth = null!;
