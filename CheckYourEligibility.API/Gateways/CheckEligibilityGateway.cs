@@ -37,6 +37,35 @@ public class CheckEligibilityGateway : ICheckEligibility
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Returns an eligiblity check record that is not soft-deleted
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="dbContextFactory"></param>
+    /// <returns></returns>
+    public async Task<EligibilityCheck?> GetEligibilityCheckByIdAsync(string guid, EligibilityCheckContext dbContextFactory = null)
+    {
+
+        var context = dbContextFactory ?? _db;
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+                                                                           x.IsDeleted == false);
+        return result;
+
+    }
+    /// <summary>
+    /// Returns an eligiblity check record that is not soft-deleted
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="dbContextFactory"></param>
+    /// <returns></returns>
+    public async Task UpdateProcessedEligibilityCheckAsync(EligibilityCheck processedEligibilityCheck, EligibilityCheckContext dbContextFactory = null)
+    {
+
+        var context = dbContextFactory ?? _db;
+        context.CheckEligibilities.Update(processedEligibilityCheck);                                                                 
+
+    }
+
     public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;

@@ -1,7 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿using CheckYourEligibility.API.Domain.Enums;
+using System.Security.Cryptography;
 using System.Text;
-using CheckYourEligibility.API.Domain.Enums;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -18,7 +17,7 @@ public class CheckProcessData
     public string DateOfBirth { get; set; }
     public string SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
-
+    public string? EligiblityEndDate { get; set; }
     public string? ClientIdentifier { get; set; }
 
     public CheckEligibilityType Type { get; set; }

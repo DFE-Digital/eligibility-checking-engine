@@ -1,7 +1,7 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
-using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
 
@@ -17,5 +17,6 @@ public interface ICheckEligibility
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null);
     Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId);
     Task<IEnumerable<EligibilityCheckReportItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default);
-    Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId); 
+    Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId);
+    Task<EligibilityCheck?> GetEligibilityCheckByIdAsync(string guid, EligibilityCheckContext dbContextFactory = null);
 }
