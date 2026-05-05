@@ -25,9 +25,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     }
 
     public virtual DbSet<ECSConflict> ECSConflicts { get; set; }
-	public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
-	public virtual DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
-	public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
+    public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
+    public virtual DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
+    public virtual DbSet<ApplicationEvidence> ApplicationEvidence { get; set; }
     public virtual DbSet<EligibilityCheck> CheckEligibilities { get; set; }
     public virtual DbSet<BulkCheck> BulkChecks { get; set; }
     public virtual DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
@@ -45,16 +45,17 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FosterCarer> FosterCarers { get; set; }
     public virtual DbSet<FosterChild> FosterChildren { get; set; }
     public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
+    public virtual DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
-        
+
         return base.SaveChangesAsync();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        StampAuditFields();   
+        StampAuditFields();
         return base.SaveChangesAsync();
     }
 
@@ -97,19 +98,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         return base.SaveChanges();
     }
-    public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data) 
+    public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data)
     {
         using var transaction = base.Database.BeginTransaction();
         try
-        {           
+        {
             this.BulkInsert(data);
             transaction.Commit();
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
 
             transaction.Rollback();
         }
-        
+
     }
     public void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data)
     {
@@ -265,11 +267,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .WithOne(c => c.FosterChild)
             .HasForeignKey<FosterChild>(fc => fc.FosterCarerId)
             .IsRequired();
-        
-        
+
+
         modelBuilder.Entity<FosterChild>()
             .HasIndex(fc => fc.EligibilityCode);
-       
+
         modelBuilder.Entity<WorkingFamiliesEvent>()
             .HasIndex(e => e.EligibilityCode);
 
@@ -277,16 +279,26 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasIndex(e => e.HMRCEligibilityEventId, "idx_WorkingFamiliesEvents_HMRCEligibilityEventId");
 
 
-		modelBuilder.Entity<WorkingFamiliesEventSummary>()
-			.HasIndex(e => e.EligibilityCode);
+        modelBuilder.Entity<WorkingFamiliesEventSummary>()
+            .HasIndex(e => e.EligibilityCode);
 
-		modelBuilder.Entity<WorkingFamiliesEventSummary>()
-			.HasIndex(e => e.OwningLocalAuthorityId);
+        modelBuilder.Entity<WorkingFamiliesEventSummary>()
+            .HasIndex(e => e.OwningLocalAuthorityId);
+
+
+        modelBuilder.Entity<EligibilityCheckReport>(b =>
+        {
+            b.Property(e => e.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(50); 
+        });
+
 
         var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };
         SqlServerIndexBuilderExtensions.IncludeProperties(builder, expr);
+
+
     }
 }
-        
-        
+

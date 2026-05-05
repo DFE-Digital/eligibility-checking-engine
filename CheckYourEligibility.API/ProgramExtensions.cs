@@ -47,6 +47,7 @@ public static class ProgramExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddTransient<ICheckEligibility, CheckEligibilityGateway>();
+        services.AddTransient<IEligibilityCheckReporting, EligibilityCheckReportingGateway>();
         services.AddTransient<IBulkCheck, BulkCheckGateway>();
         services.AddTransient<ICheckingEngine, CheckingEngineGateway>();
         services.AddTransient<IStorageQueue, StorageQueueGateway>();

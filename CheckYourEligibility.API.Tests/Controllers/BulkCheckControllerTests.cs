@@ -37,8 +37,6 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
-    private Mock<IEligibilityCheckReportUseCase> _mockEligibilityCheckReportUseCase;
-    private Mock<IGetEligibilityReportHistoryUseCase> _mockGetEligibilityReportHistoryUseCase;
 
     private BulkCheckController _sut;
 
@@ -57,8 +55,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
         _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
-        _mockEligibilityCheckReportUseCase = new Mock<IEligibilityCheckReportUseCase>(MockBehavior.Strict);
-        _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
+        
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<BulkCheckController>>();
 
@@ -79,8 +76,6 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
-            _mockEligibilityCheckReportUseCase.Object,
-            _mockGetEligibilityReportHistoryUseCase.Object,
             _mockGetAllBulkChecksUseCase.Object
         );
 
@@ -111,8 +106,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase.VerifyAll();
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
-        _mockEligibilityCheckReportUseCase.VerifyAll();
-        _mockGetEligibilityReportHistoryUseCase.VerifyAll();
+        
         _mockAuditGateway.VerifyAll();
     }
 
@@ -540,109 +534,6 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         // Act
         var response = await _sut.DeleteBulkUpload(guid);
-
-        // Assert
-        response.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)response;
-        var errorResponse = (ErrorResponse)badRequestResult.Value!;
-        errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
-    }
-
-    [Test]
-    public async Task EligibilityCheckReportRequest_returns_ok_with_response_when_use_case_returns_valid_result()
-    {
-        // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-        var reportItems = _fixture.CreateMany<EligibilityCheckReportItem>(3).ToList();
-        var executionResult = new EligibilityCheckReportResponse { Data = reportItems };
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
-
-        // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
-
-        // Assert
-        response.Should().BeOfType<ObjectResult>();
-        var objectResult = (ObjectResult)response;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        objectResult.Value.Should().BeEquivalentTo(executionResult);
-    }
-
-    [Test]
-    public async Task EligibilityCheckReportRequest_returns_bad_request_when_use_case_returns_invalid_result()
-    {
-        // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
-            .ThrowsAsync(new ValidationException("Validation error"));
-
-        // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
-
-        // Assert
-        response.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)response;
-        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
-    }
-
-    [Test] 
-    public async Task EligibilityCheckReportRequest_returns_unauthorized_when_use_case_throws_UnauthorizedAccessException()
-    {
-        // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockEligibilityCheckReportUseCase.Setup(u => u.Execute(request))
-            .ThrowsAsync(new UnauthorizedAccessException());
-
-        // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
-
-        // Assert
-        response.Should().BeOfType<UnauthorizedObjectResult>();
-    }
-
-    [Test]
-    public async Task GetEligibilityReportHistory_returns_ok_with_response_when_use_case_returns_valid_result()
-    {
-        // Arrange
-        var localAuthorityId = "201";
-        var reportHistory = _fixture.CreateMany<EligibilityCheckReportHistoryItem>(3).ToList();
-        var executionResult = new EligibilityCheckReportHistoryResponse { Data = reportHistory };
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockGetEligibilityReportHistoryUseCase.Setup(u => u.Execute(localAuthorityId, It.Is<IList<int>>(ids => ids.Contains(201)))).ReturnsAsync(executionResult);
-
-        // Act
-        var response = await _sut.GetAllReportHistory(localAuthorityId);
-
-        // Assert
-        response.Should().BeOfType<ObjectResult>();
-        var objectResult = (ObjectResult)response;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        objectResult.Value.Should().BeEquivalentTo(executionResult);
-    }
-
-    [Test]
-    public async Task GetAllReportHistory_returns_bad_request_when_no_local_authority_scope_found()
-    {
-        // Arrange
-        var localAuthorityId = "201";
-
-        // Set up controller with NO local authority context (empty scopes)
-        SetupControllerWithLocalAuthorityIds(new List<int>());
-
-        // Act
-        var response = await _sut.GetAllReportHistory(localAuthorityId);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();

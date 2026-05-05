@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260430150755_dropstatus_fixid")]
+    partial class dropstatus_fixid
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -786,10 +789,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.HasKey("EligibilityCheckReportId");
 
                     b.HasIndex("LocalAuthorityID");
@@ -797,7 +796,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("EligibilityCheckReports");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
                     b.Property<Guid>("EligibilityCheckReportItemId")
                         .HasColumnType("uniqueidentifier");
@@ -818,7 +817,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("EligibilityCheckReportId");
 
-                    b.ToTable("EligibilityCheckReportItem");
+                    b.ToTable("EligibilityCheckReportItems");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -1035,7 +1034,7 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("EligibilityCheckReportItem", b =>
+            modelBuilder.Entity("EligibilityCheckReportItems", b =>
                 {
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheck", "EligibilityCheck")
                         .WithMany()
