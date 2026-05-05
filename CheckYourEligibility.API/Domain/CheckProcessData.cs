@@ -1,21 +1,19 @@
-﻿using System.Security.Cryptography;
+﻿using CheckYourEligibility.API.Domain.Enums;
+using System.Security.Cryptography;
 using System.Text;
-using CheckYourEligibility.API.Domain.Enums;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.API.Gateways;
 
 public class CheckProcessData
 {
     public string? NationalInsuranceNumber { get; set; }
-
     public string? LastName { get; set; }
-
     public string EligibilityCode { get; set; }
     public string ValidityStartDate { get; set; }
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
+    public string? EligibilityEndDate { get; set; }
     public string SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 

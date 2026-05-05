@@ -301,16 +301,17 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ValidRequest_GetItem_Should_Return_Item()
+    public async Task Given_FSM_ValidRequest_GetItem_Should_Return_Item()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.Status = CheckEligibilityStatus.eligible;
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = CheckEligibilityType.FreeSchoolMeals;
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
+        string eligibilityEndDate = (new DateTime(DateTime.UtcNow.Year, 07, 31)).ToString("yyyy-MM-dd");
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check,eligibilityEndDate));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -323,6 +324,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         response.NationalAsylumSeekerServiceNumber.Should().BeEquivalentTo(check.NationalAsylumSeekerServiceNumber);
         response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
         response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
+        response.EligibilityEndDate.Should().BeEquivalentTo(eligibilityEndDate);
     }
 
     [Test]
@@ -641,7 +643,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
     #region Private Helper Methods
 
-    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
+    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request, string? eligiblityEndDate = null)
     {
         return new CheckProcessData
         {
@@ -649,7 +651,8 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             LastName = request.LastName,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = request.Type
+            Type = request.Type,
+            EligibilityEndDate = eligiblityEndDate
         };
     }
 

@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -269,7 +270,7 @@ public class CheckingEngineGateway : ICheckingEngine
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
             //To ensure correct LA ID is passed when using ECS for checks
-            string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
+            string laId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
             SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
 
             result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
@@ -343,33 +344,6 @@ public class CheckingEngineGateway : ICheckingEngine
         await context.SaveChangesAsync();
 
     }
-    /// <summary>
-    /// Extract LA Id from scope if it exists
-    /// else return an empty string.
-    /// </summary>
-    /// <param name="scope"></param>
-    /// <returns></returns>
-    private string ExtractLAIdFromScope(string scope)
-    {
-        string laWithIdSyntax = "local_authority:";
-        string laId = string.Empty;
-
-        if (!string.IsNullOrEmpty(scope) && scope.Contains(laWithIdSyntax))
-        {
-            int LaIdStartIndex = scope.IndexOf(laWithIdSyntax) + laWithIdSyntax.Length;
-            var LaIdendIndex = scope.IndexOf(" ", LaIdStartIndex);
-            if (LaIdendIndex == -1)
-            {
-                laId = scope.Substring(LaIdStartIndex).Trim();
-            }
-            else
-            {
-                laId = scope.Substring(LaIdStartIndex, LaIdendIndex - LaIdStartIndex).Trim();
-            }
-
-        }
-        return laId;
-    }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
         CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
@@ -396,7 +370,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
                 //To ensure correct LA ID is passed when using ECS for checks
-                string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
+                string laId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
                 if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
                 {
@@ -434,7 +408,7 @@ public class CheckingEngineGateway : ICheckingEngine
                         }
 
                     }
-
+                    
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -444,6 +418,14 @@ public class CheckingEngineGateway : ICheckingEngine
             }
         }
 
+        if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult != CheckEligibilityStatus.parentNotFound)
+        {
+
+            
+            checkData.EligibilityEndDate  = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
+            result.CheckData = JsonConvert.SerializeObject(checkData); 
+        }
+        
         result.Status = checkStatusResult;
         result.Updated = DateTime.UtcNow;
 

@@ -262,6 +262,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
                     item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
                     item.LastName = CheckData.LastName;
+                    item.EligibilityEndDate = CheckData.EligibilityEndDate;
                     break;
             }
 
@@ -452,7 +453,9 @@ public class CheckEligibilityGateway : ICheckEligibility
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
-                    ClientIdentifier = checkItem.ClientIdentifier
+                    ClientIdentifier = checkItem.ClientIdentifier,
+                    EligibilityEndDate = checkItem.EligibilityEndDate
+                    
                 };
         }
     }
