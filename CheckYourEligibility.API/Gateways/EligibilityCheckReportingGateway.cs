@@ -20,74 +20,28 @@ public class EligibilityCheckReportingGateway : IEligibilityCheckReporting
         _configuration = configuration;
     }
 
-    public async Task<IEnumerable<EligibilityCheckReportResponseItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<EligibilityCheckReportResponseItem>> EligibilityCheckReports(Guid reportId, CancellationToken cancellationToken = default)
     {
-        if (request is null)
-            throw new ArgumentNullException(nameof(request));
+        if (reportId == Guid.Empty)
+            throw new ArgumentNullException(nameof(reportId));
 
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            // Get bulk checks between the specified dates for the given local authority
-            var bulkChecks = await _db.BulkChecks.Where(x => x.LocalAuthorityID == request.LocalAuthorityID &&
-                                                       x.SubmittedDate >= request.StartDate &&
-                                                       x.SubmittedDate <= request.EndDate)
-                                                       .Include(ec => ec.EligibilityChecks)
-                                                       .ToListAsync();
+            // update the status
+            var report = await _db.EligibilityCheckReports.FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+            report.Status = ReportStatus.Generating;
+            await _db.SaveChangesAsync(cancellationToken);
 
-            if (bulkChecks == null || bulkChecks.Count == 0)
-            {
-                _logger.LogInformation($"No bulk checks found for LocalAuthorityID: {request.LocalAuthorityID} between {request.StartDate} and {request.EndDate}");
-                throw new Exception($"No bulk checks found");
-            }
+            // get the checks and save them
+            // to do
 
-            // Flatten the eligibility checks and deserialize the CheckData into EligibilityCheckReportResponseItem, while also adding the CheckedBy and DateCheckSubmitted fields
-            var reportItems = bulkChecks
-                .Where(bulkCheck => bulkCheck?.EligibilityChecks != null)
-                .SelectMany(bulkCheck => bulkCheck.EligibilityChecks
-                    .Where(check => !string.IsNullOrWhiteSpace(check?.CheckData))
-                    .Select(check =>
-                    {
-                        EligibilityCheckReportResponseItem? parsedCheck = null;
-                        try
-                        {
-                            parsedCheck = JsonConvert.DeserializeObject<EligibilityCheckReportResponseItem>(check.CheckData);
-                            parsedCheck.Outcome = check.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Failed to deserialize EligibilityCheckReportResponseItem for BulkCheckID: {bulkCheck.BulkCheckID}");
-                            return null;
-                        }
-                        if (parsedCheck == null) return null;
-                        parsedCheck.CheckedBy = bulkCheck.SubmittedBy ?? string.Empty;
-                        parsedCheck.DateCheckSubmitted = bulkCheck.SubmittedDate;
-                        return parsedCheck;
-                    })
-                )
-                .Where(item => item != null)
-                .ToList();
+            // if successful update status again and reponse
+            report.Status = ReportStatus.Complete;
+            await _db.SaveChangesAsync(cancellationToken);
 
 
-            if (request.SaveRequestAudit)
-            {
-                // Save audit of report generated in EligibilityCheckReportRequests
-                var reportAudit = new EligibilityCheckReport
-                {
-                    StartDate = request.StartDate,
-                    EndDate = request.EndDate,
-                    GeneratedBy = request.GeneratedBy,
-                    LocalAuthorityID = request.LocalAuthorityID,
-                    NumberOfResults = reportItems.Count
-                };
-
-                await _db.EligibilityCheckReports.AddAsync(reportAudit);
-                await _db.SaveChangesAsync();
-            }
-
-            await tx.CommitAsync(cancellationToken);
-            return reportItems;
         }
         catch (Exception ex)
         {
@@ -95,6 +49,24 @@ public class EligibilityCheckReportingGateway : IEligibilityCheckReporting
             _logger.LogError(ex, "Error generating bulk check report");
             throw new Exception($"Error generating bulk check report: {ex.Message}");
         }
+    }
+
+    internal async Task<Guid> SaveEligibilityCheckReportRequest(EligibilityCheckReportRequest request)
+    {
+        var reportAudit = new EligibilityCheckReport
+        {
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            GeneratedBy = request.GeneratedBy,
+            LocalAuthorityID = request.LocalAuthorityID,
+            Status = ReportStatus.New,
+            NumberOfResults = 0
+        };
+
+        await _db.EligibilityCheckReports.AddAsync(reportAudit);
+        await _db.SaveChangesAsync();
+
+        return reportAudit.EligibilityCheckReportId;
     }
 
     public async Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId)
