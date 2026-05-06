@@ -3,4 +3,11 @@
 public class LocalAuthoritySettingsResponse
 {
     public bool SchoolCanReviewEvidence { get; set; }
+    public IList<EligibilityPolicyResponse> EligibilityPolicies { get; set; }
+}
+public partial class EligibilityPolicyResponse { 
+
+    public string CheckType { get; set; }
+    public string EligibilityCriteria { get; set; }
+
 }

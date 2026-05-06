@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace CheckYourEligibility.API.Domain;
@@ -16,6 +17,10 @@ public class LocalAuthority
     /// in the FSM admin portal.
     /// </summary>
     public bool SchoolCanReviewEvidence { get; set; } = false;
+
+    public int FreeSchoolMealsPolicyID { get; set; }
+    public int EarlyYearsPupilPremiumPolicyID { get; set; }
+    public int TwoYearPolicyID { get; set; }
 
 
 }

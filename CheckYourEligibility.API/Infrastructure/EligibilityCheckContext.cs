@@ -47,6 +47,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
     public virtual DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
 
+    public virtual DbSet<EligibilityPolicy> EligibilityPolicies { get; set; }
+
     public Task<int> SaveChangesAsync()
     {
 
@@ -293,8 +295,19 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                     .HasMaxLength(50); 
         });
 
+        modelBuilder.Entity<LocalAuthority>()
+            .Property(e => e.FreeSchoolMealsPolicyID)
+            .HasDefaultValue(1);
 
-        var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
+        modelBuilder.Entity<LocalAuthority>()
+            .Property(e => e.EarlyYearsPupilPremiumPolicyID)
+            .HasDefaultValue(2);
+
+        modelBuilder.Entity<LocalAuthority>()
+            .Property(e => e.TwoYearPolicyID)
+            .HasDefaultValue(3);
+
+    var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };
         SqlServerIndexBuilderExtensions.IncludeProperties(builder, expr);
 
