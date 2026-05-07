@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 
 public interface IGetEligibilityCheckReportingUseCase
 {
@@ -15,11 +14,13 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
 {
     private readonly  IEligibilityCheckReporting _eligibilityCheckReportingGateway;
     private readonly ILogger<GetEligibilityCheckReportingUseCase> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public GetEligibilityCheckReportingUseCase(IEligibilityCheckReporting eligibilityCheckReportingGateway, ILogger<GetEligibilityCheckReportingUseCase> logger)
+    public GetEligibilityCheckReportingUseCase(IEligibilityCheckReporting eligibilityCheckReportingGateway, ILogger<GetEligibilityCheckReportingUseCase> logger, IServiceScopeFactory scopeFactory)
     {
         _eligibilityCheckReportingGateway = eligibilityCheckReportingGateway;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model)
@@ -31,21 +32,36 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
 
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
 
-        var response = await _eligibilityCheckReportingGateway.EligibilityCheckReports(model);
+        // create the report request
+        var reportRequest = await _eligibilityCheckReportingGateway.CreateReport(model, CancellationToken.None);
 
-        if (response == null)
+        // generate the report in the background
+        _ = Task.Run(async () =>
         {
-            var sanitizedRequest = JsonSerializer.Serialize(model);
-            _logger.LogError("Failed to generate eligibility check report for request: {SanitizedRequest}", sanitizedRequest);
-            throw new Exception("Failed to generate eligibility check report");
-        } 
+            
+            using var scope = _scopeFactory.CreateScope();
+            var gateway = scope.ServiceProvider.GetRequiredService<IEligibilityCheckReporting>();
+            try
+            {
+                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background report generation failed for report {ReportId}", reportRequest.EligibilityCheckReportId.ToString());
+            }
+        });
 
-        _logger.LogInformation("Successfully generated eligibility check report");
-
+        // all new reports will start with a status of 'New', so we can return that immediately without waiting for the report generation to complete
         return new EligibilityCheckReportResponse
         {
-           Data = response
+            Data = new EligibilityCheckReportResponseItem
+            {
+                ReportID = reportRequest.EligibilityCheckReportId.ToString(),
+                Status = reportRequest.Status.ToString()
+            }
         };
+
+        
     }
 }
 
