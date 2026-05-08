@@ -1,16 +1,13 @@
 using CheckYourEligibility.API.Domain.Enums;
 using Newtonsoft.Json;
 
+public class EligibilityCheckReportResponse
+{
+  public EligibilityCheckReportResponseItem Data { get; set; }
+}
+
 public class EligibilityCheckReportResponseItem
 {
-   [JsonProperty("LastName")]
-   public string ParentName { get; set; }
-   public string NationalInsuranceNumber { get; set; }
-   public DateTime DateOfBirth { get; set; }
-   public DateTime DateCheckSubmitted { get; set; }
-   public CheckEligibilityStatus Outcome { get; set; }
-   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-   public string? Tier { get; set; }
-   public CheckType CheckType { get; set; } = CheckType.BulkChecks;
-   public string CheckedBy { get; set; }  
+   public string ReportID {get;set;}
+   public string Status {get;set;}
 }

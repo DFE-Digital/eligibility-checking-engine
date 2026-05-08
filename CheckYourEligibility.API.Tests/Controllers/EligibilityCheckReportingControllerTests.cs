@@ -34,7 +34,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckReportingController>>();
 
-         var configData = new Dictionary<string, string?>
+        var configData = new Dictionary<string, string?>
         {
             { "Jwt:Scopes:local_authority", "local_authority" }
         };
@@ -83,67 +83,33 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task EligibilityCheckReportRequest_returns_ok_with_response_when_use_case_returns_valid_result()
+    public async Task GetEligibilityCheckReport_returns_ok_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-        var reportItems = _fixture.CreateMany<EligibilityCheckReportResponseItem>(3).ToList();
-        var executionResult = new EligibilityCheckReportResponse { Data = reportItems };
+        int localAuthorityId = 201;
+        var reportRequest = new EligibilityCheckReportRequest { LocalAuthorityID = localAuthorityId };
+        var reportResponse = new EligibilityCheckReportResponse
+        {
+            Data = new EligibilityCheckReportResponseItem
+            {
+                ReportID = Guid.NewGuid().ToString(),
+                Status = ReportStatus.New.ToString()
+            }
+        };
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(request)).ReturnsAsync(executionResult);
+        _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(It.Is<EligibilityCheckReportRequest>(r => r.LocalAuthorityID == localAuthorityId))).ReturnsAsync(reportResponse);
 
         // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
+        var response = await _sut.EligibilityCheckReportRequest(reportRequest);
 
         // Assert
         response.Should().BeOfType<ObjectResult>();
         var objectResult = (ObjectResult)response;
 
         objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        objectResult.Value.Should().BeEquivalentTo(executionResult);
-    }
-
-    [Test]
-    public async Task EligibilityCheckReportRequest_returns_bad_request_when_use_case_returns_invalid_result()
-    {
-        // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        
-        _mockEligibilityCheckReportingUseCase
-            .Setup(u => u.Execute(request))
-            .ThrowsAsync(new FluentValidation.ValidationException("Validation error"));
-
-
-        // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
-
-        // Assert
-        response.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)response;
-        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be("Validation error");
-    }
-
-    [Test]
-    public async Task EligibilityCheckReportRequest_returns_unauthorized_when_use_case_throws_UnauthorizedAccessException()
-    {
-        // Arrange
-        var request = _fixture.Create<EligibilityCheckReportRequest>();
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(request))
-            .ThrowsAsync(new UnauthorizedAccessException());
-
-        // Act
-        var response = await _sut.EligibilityCheckReportRequest(request);
-
-        // Assert
-        response.Should().BeOfType<UnauthorizedObjectResult>();
+        objectResult.Value.Should().BeEquivalentTo(reportResponse);
     }
 
     [Test]
@@ -168,6 +134,55 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
         objectResult.Value.Should().BeEquivalentTo(executionResult);
     }
+
+    [Test]
+    public async Task EligibilityCheckReportRequest_returns_bad_request_when_no_local_authority_scope_found()
+    {
+        // Arrange
+        var model = new EligibilityCheckReportRequest();
+
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var response = await _sut.EligibilityCheckReportRequest(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)response;
+        var errorResponse = badRequest.Value as ErrorResponse;
+
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task EligibilityCheckReportRequest_returns_bad_request_when_fluent_validation_exception_thrown()
+    {
+        // Arrange
+        var model = new EligibilityCheckReportRequest { LocalAuthorityID = 201 };
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockEligibilityCheckReportingUseCase
+            .Setup(u => u.Execute(It.IsAny<EligibilityCheckReportRequest>()))
+            .ThrowsAsync(new FluentValidation.ValidationException("Validation failed"));
+
+        // Act
+        var response = await _sut.EligibilityCheckReportRequest(model);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)response;
+        var errorResponse = badRequest.Value as ErrorResponse;
+
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Errors.First().Title.Should().Contain("Validation failed");
+    }
+
+
+
 
     [Test]
     public async Task GetAllReportHistory_returns_bad_request_when_no_local_authority_scope_found()

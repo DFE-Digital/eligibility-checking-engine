@@ -6,7 +6,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
@@ -16,7 +15,6 @@ namespace CheckYourEligibility.API.Tests.Gateways;
 
 public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
 {
-    private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
 
     private Mock<ILogger<EligibilityCheckReportingGateway>> _mockLogger = null!;
@@ -42,7 +40,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
-        _sut = new EligibilityCheckReportingGateway(_configuration, _fakeInMemoryDb, _mockLogger.Object);
+        _sut = new EligibilityCheckReportingGateway(_fakeInMemoryDb, _mockLogger.Object);
     }
 
     [TearDown]
@@ -53,80 +51,181 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task EligibilityReport_Should_Throw_Exception_When_No_Matching_Bulk_Checks()
+    public async Task EligibilityCheckReports_Should_Process_Checks_In_Batches()
     {
         // Arrange
-        var request = new EligibilityCheckReportRequest
+        const int totalChecks = 25_000; 
+        var report = new EligibilityCheckReport
         {
-            LocalAuthorityID = null,
-            StartDate = DateTime.UtcNow.AddDays(1), // Future date
-            EndDate = DateTime.UtcNow.AddDays(-1)
+            EligibilityCheckReportId = Guid.NewGuid(),
+            LocalAuthorityID = 948,
+            CheckType = CheckType.AllChecks,
+            GeneratedBy = "peterB",
+            StartDate = DateTime.UtcNow.AddDays(-1),
+            EndDate = DateTime.UtcNow.AddDays(1),
         };
 
-        // Act
-        Func<Task> act = async () => await _sut.EligibilityCheckReports(request);
+        _fakeInMemoryDb.EligibilityCheckReports.Add(report);
 
-        // Assert
-        await act.Should().ThrowAsync<Exception>();
-    }
-
-    [Test]
-    public async Task EligibilityReport_Should_Return_Report_When_Matching_Bulk_Checks_Exist()
-    {
-        // Arrange
-        var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
-        reportRequest.StartDate = DateTime.UtcNow.AddDays(-7);
-        reportRequest.EndDate = DateTime.UtcNow.AddDays(7);
-        reportRequest.LocalAuthorityID = 948; // Ensure it matches all records
-
-        // 3 bulk checks with 5 eligibility checks each should be sufficient to test the report generation and performance with multiple records
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < totalChecks; i++)
         {
-            var item = GetBulkCheckWithEligibilityChecks(5, CheckEligibilityType.FreeSchoolMeals, 948).EligibilityChecks.First();
-            _fakeInMemoryDb.BulkChecks.Add(item.BulkCheck);
-
-            await _fakeInMemoryDb.SaveChangesAsync();
+            _fakeInMemoryDb.CheckEligibilities.Add(new EligibilityCheck
+            {
+                EligibilityCheckID = $"CHK{i:D2}",
+                OrganisationID = 948,
+                Created = DateTime.UtcNow
+            });
         }
 
-        // Act
-        var response = await _sut.EligibilityCheckReports(reportRequest);
-
-        // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportResponseItem>>();
-        response.Should().NotBeNull();
-        response.Count().Should().Be(15); // 3 bulk checks with 5 eligibility checks each should result in 15 report items
-    }
-
-    [Test]
-    public async Task EligibilityReport_Should_Return_Empty_Report_When_No_Eligibility_Checks_Found()
-    {
-        // Arrange
-        var reportRequest = _fixture.Create<EligibilityCheckReportRequest>();
-        reportRequest.StartDate = DateTime.UtcNow.AddDays(-7);
-        reportRequest.EndDate = DateTime.UtcNow.AddDays(7);
-        reportRequest.LocalAuthorityID = 948; // Ensure it matches all records
-
-        // Add a bulk check with no eligibility checks to test the scenario where bulk checks exist but no eligibility checks are found
-        var bulkCheck = new Domain.BulkCheck
-        {
-            BulkCheckID = Guid.NewGuid().ToString(),
-            Filename = "test.csv",
-            EligibilityType = CheckEligibilityType.FreeSchoolMeals,
-            LocalAuthorityID = 948,
-            SubmittedDate = DateTime.UtcNow,
-            Status = BulkCheckStatus.InProgress,
-            EligibilityChecks = new List<EligibilityCheck>() // No eligibility checks
-        };
-        _fakeInMemoryDb.BulkChecks.Add(bulkCheck);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.EligibilityCheckReports(reportRequest);
+        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId);
 
         // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportResponseItem>>();
-        response.Should().NotBeNull();
-        response.Count().Should().Be(0); // No eligibility checks should result in an empty report
+        var updatedReport = await _fakeInMemoryDb.EligibilityCheckReports.SingleAsync();
+        updatedReport.NumberOfResults.Should().Be(totalChecks);
+    }
+
+    [Test]
+    public async Task EligibilityCheckReports_Should_Classify_Bulk_And_Single_Checks()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+
+        var report = new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = Guid.NewGuid(),
+            LocalAuthorityID = 948,
+            StartDate = now.AddDays(-1),
+            EndDate = now.AddDays(1),
+            CheckType = CheckType.AllChecks,
+            GeneratedBy = "peterB",
+        };
+
+        var bulkCheck = new BulkCheck { BulkCheckID = "B1" };
+
+        _fakeInMemoryDb.EligibilityCheckReports.Add(report);
+
+        _fakeInMemoryDb.CheckEligibilities.AddRange(
+            new EligibilityCheck
+            {
+                EligibilityCheckID = "BULK",
+                OrganisationID = 948,
+                Created = now,
+                BulkCheck = bulkCheck
+            },
+            new EligibilityCheck
+            {
+                EligibilityCheckID = "SINGLE",
+                OrganisationID = 948,
+                Created = now
+            });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var query = _sut.GetCheckQuery(report);
+
+        var results = await query
+            .Select(e => new
+            {
+                e.EligibilityCheckID,
+                IsBulk = e.BulkCheck != null
+            })
+            .ToListAsync();
+
+        // Assert
+        results.Should().ContainSingle(r =>
+            r.EligibilityCheckID == "BULK" && r.IsBulk);
+
+        results.Should().ContainSingle(r =>
+            r.EligibilityCheckID == "SINGLE" && !r.IsBulk);
+    }
+
+    [Test]
+    public async Task EligibilityCheckReports_Should_Set_Status_To_Generating_And_Complete()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+
+        var report = new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = Guid.NewGuid(),
+            LocalAuthorityID = 948,
+            GeneratedBy = "peterB",
+            StartDate = now.AddDays(-1),
+            EndDate = now.AddDays(1),
+            Status = ReportStatus.New
+        };
+
+        _fakeInMemoryDb.EligibilityCheckReports.Add(report);
+
+        _fakeInMemoryDb.CheckEligibilities.Add(new EligibilityCheck
+        {
+            EligibilityCheckID = "CHK001",
+            OrganisationID = 948,
+            Created = now,
+            BulkCheck = null             // ✅ individual check
+        });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        await _sut.EligibilityCheckReports(
+            report.EligibilityCheckReportId,
+            CancellationToken.None);
+
+        // Assert
+        var updated = await _fakeInMemoryDb.EligibilityCheckReports
+            .FirstAsync(r => r.EligibilityCheckReportId == report.EligibilityCheckReportId);
+
+        updated.Status.Should().Be(ReportStatus.Complete);
+        updated.NumberOfResults.Should().Be(1);
+    }
+
+    [Test]
+    public async Task EligibilityCheckReports_ReportNotFound_Throws()
+    {
+        Func<Task> act = async () =>
+            await _sut.EligibilityCheckReports(Guid.NewGuid(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Test]
+    public async Task EligibilityCheckReports_Should_Throw_Exception_For_Empty_ReportIdAsync()
+    {
+        // Arrange
+        var emptyReportId = Guid.Empty;
+
+        // Act
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task SaveEligibilityCheckReport_Should_Save_Report_To_DatabaseAsync()
+    {
+        // Arrange
+        var report = new EligibilityCheckReportRequest
+        {
+            LocalAuthorityID = 948,
+            StartDate = DateTime.UtcNow.AddDays(-7),
+            EndDate = DateTime.UtcNow.AddDays(7),
+            GeneratedBy = "peterB",
+        };
+
+        // Act
+        await _sut.CreateReport(report, cancellationToken: CancellationToken.None);
+
+        // Assert
+        var savedReport = await _fakeInMemoryDb.EligibilityCheckReports.FirstOrDefaultAsync(r => r.LocalAuthorityID == 948);
+        savedReport.Should().NotBeNull();
+        savedReport!.LocalAuthorityID.Should().Be(948);
+        savedReport.GeneratedBy.Should().Be("peterB");
     }
 
     [Test]
@@ -241,4 +340,3 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
 }
 
 
-    

@@ -1,102 +1,123 @@
+using CheckYourEligibility.API.Domain;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
-public class EligibilityCheckReportingGateway : IEligibilityCheckReporting
+public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReporting
 {
-    private readonly IConfiguration _configuration;
     private readonly IEligibilityCheckContext _db;
     private readonly ILogger<EligibilityCheckReportingGateway> _logger;
 
     public EligibilityCheckReportingGateway(
-        IConfiguration configuration,
-        IEligibilityCheckContext dbContext,
-        ILogger<EligibilityCheckReportingGateway> logger
-    )
+        IEligibilityCheckContext db,
+        ILogger<EligibilityCheckReportingGateway> logger)
     {
-        _db = dbContext;
+        _db = db;
         _logger = logger;
-        _configuration = configuration;
     }
 
-    public async Task<IEnumerable<EligibilityCheckReportResponseItem>> EligibilityCheckReports(EligibilityCheckReportRequest request, CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-            throw new ArgumentNullException(nameof(request));
 
-        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+    public async Task EligibilityCheckReports(
+    Guid reportId,
+    CancellationToken cancellationToken = default)
+    {
+        if (reportId == Guid.Empty)
+            throw new ArgumentNullException(nameof(reportId));
+
+        var report = await _db.EligibilityCheckReports
+        .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+
+        if (report is null)
+            throw new InvalidOperationException("Report not found");
+
+        // set the report status to generating
+        report.Status = ReportStatus.Generating;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // they could be a lot of checks, so we need to batch the inserts
+        // to avoid loading them all into memory at once
+        const int BatchSize = 10_000;
+        var batch = new List<EligibilityCheckReportItem>(BatchSize);
+        var totalResults = 0;
+        string? lastProcessedCheckId = null;
 
         try
         {
-            // Get bulk checks between the specified dates for the given local authority
-            var bulkChecks = await _db.BulkChecks.Where(x => x.LocalAuthorityID == request.LocalAuthorityID &&
-                                                       x.SubmittedDate >= request.StartDate &&
-                                                       x.SubmittedDate <= request.EndDate)
-                                                       .Include(ec => ec.EligibilityChecks)
-                                                       .ToListAsync();
-
-            if (bulkChecks == null || bulkChecks.Count == 0)
+            while (true)
             {
-                _logger.LogInformation($"No bulk checks found for LocalAuthorityID: {request.LocalAuthorityID} between {request.StartDate} and {request.EndDate}");
-                throw new Exception($"No bulk checks found");
-            }
+                var query = GetCheckQuery(report);
 
-            // Flatten the eligibility checks and deserialize the CheckData into EligibilityCheckReportResponseItem, while also adding the CheckedBy and DateCheckSubmitted fields
-            var reportItems = bulkChecks
-                .Where(bulkCheck => bulkCheck?.EligibilityChecks != null)
-                .SelectMany(bulkCheck => bulkCheck.EligibilityChecks
-                    .Where(check => !string.IsNullOrWhiteSpace(check?.CheckData))
-                    .Select(check =>
-                    {
-                        EligibilityCheckReportResponseItem? parsedCheck = null;
-                        try
-                        {
-                            parsedCheck = JsonConvert.DeserializeObject<EligibilityCheckReportResponseItem>(check.CheckData);
-                            parsedCheck.Outcome = check.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Failed to deserialize EligibilityCheckReportResponseItem for BulkCheckID: {bulkCheck.BulkCheckID}");
-                            return null;
-                        }
-                        if (parsedCheck == null) return null;
-                        parsedCheck.CheckedBy = bulkCheck.SubmittedBy ?? string.Empty;
-                        parsedCheck.DateCheckSubmitted = bulkCheck.SubmittedDate;
-                        return parsedCheck;
-                    })
-                )
-                .Where(item => item != null)
-                .ToList();
-
-
-            if (request.SaveRequestAudit)
-            {
-                // Save audit of report generated in EligibilityCheckReportRequests
-                var reportAudit = new EligibilityCheckReport
+                // only apply filter after first batch
+                if (lastProcessedCheckId != null)
                 {
-                    StartDate = request.StartDate,
-                    EndDate = request.EndDate,
-                    GeneratedBy = request.GeneratedBy,
-                    LocalAuthorityID = request.LocalAuthorityID,
-                    NumberOfResults = reportItems.Count
-                };
+                    query = query.Where(c => string.Compare(c.EligibilityCheckID, lastProcessedCheckId) > 0);
+                }
 
-                await _db.EligibilityCheckReports.AddAsync(reportAudit);
-                await _db.SaveChangesAsync();
+                var checks = await query
+                        .OrderBy(e => e.EligibilityCheckID)
+                        .Take(BatchSize)
+                        .Select(e => new CheckResult(
+                            e.EligibilityCheckID,
+                            e.BulkCheck != null ))
+                        .ToListAsync(cancellationToken);
+
+                // if no more checks, break the loop
+                if (checks.Count == 0)
+                    break;
+
+                // add the checks to the batch
+                batch.AddRange(checks.Select(check => new EligibilityCheckReportItem
+                {
+                    EligibilityCheckReportId = report.EligibilityCheckReportId,
+                    EligibilityCheckID = check.EligibilityCheckID,
+                    IsBulkCheckItem = check.IsBulk
+                }));
+
+                // insert the batch into the database
+                _db.BulkInsert_EligibilityCheckReportItems(batch);
+                batch.Clear();
+
+                // update the total results count
+                totalResults += checks.Count;
+
+                // update the last processed check id
+                lastProcessedCheckId = checks[^1].EligibilityCheckID;
             }
 
-            await tx.CommitAsync(cancellationToken);
-            return reportItems;
+            report.Status = ReportStatus.Complete;
+            report.NumberOfResults = totalResults;
+            await _db.SaveChangesAsync(cancellationToken);
+
         }
         catch (Exception ex)
         {
-            await tx.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error generating bulk check report");
-            throw new Exception($"Error generating bulk check report: {ex.Message}");
+            report.Status = ReportStatus.Failed;
+            await _db.SaveChangesAsync(cancellationToken);
+
+            _logger.LogError(ex, "Error generating eligibility check report");
+            throw;
         }
     }
 
+    public async Task<EligibilityCheckReport> CreateReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken)
+    {
+        var report = new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = Guid.NewGuid(),
+            LocalAuthorityID = request.LocalAuthorityID,
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            NumberOfResults = 0,
+            GeneratedBy = request.GeneratedBy,
+            CheckType = request.CheckType,
+            Status = ReportStatus.New
+        };
+
+        _db.EligibilityCheckReports.Add(report);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return report;
+    }
 
     public async Task<EligibilityCheckReportHistoryResponse> GetEligibilityCheckReportHistory(string localAuthorityId, int pageNumber)
     {
@@ -158,4 +179,49 @@ public class EligibilityCheckReportingGateway : IEligibilityCheckReporting
             throw;
         }
     }
+
+    #region helpers
+
+    private sealed record CheckResult(
+        string EligibilityCheckID,
+        bool IsBulk
+    );
+
+    // public to allow testing
+    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request)
+    {
+        return request.CheckType switch
+        {
+            CheckType.BulkChecks =>
+                _db.BulkChecks
+                    .Where(b =>
+                        b.LocalAuthorityID == request.LocalAuthorityID &&
+                        b.SubmittedDate >= request.StartDate &&
+                        b.SubmittedDate <= request.EndDate)
+                    .SelectMany(b => b.EligibilityChecks!)
+                    .AsNoTracking(),
+
+            CheckType.IndividualChecks =>
+                _db.CheckEligibilities
+                    .Where(c =>
+                        c.BulkCheck == null &&
+                        c.OrganisationID == request.LocalAuthorityID &&
+                        c.Created >= request.StartDate &&
+                        c.Created <= request.EndDate)
+                    .AsNoTracking(),
+
+            CheckType.AllChecks =>
+                _db.CheckEligibilities
+                    .Where(c =>
+                        c.OrganisationID == request.LocalAuthorityID &&
+                        c.Created >= request.StartDate &&
+                        c.Created <= request.EndDate)
+                    .AsNoTracking(),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(request.CheckType))
+        };
+    }
+
+
+    #endregion
 }

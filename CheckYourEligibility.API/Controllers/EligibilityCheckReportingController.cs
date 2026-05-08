@@ -34,7 +34,7 @@ public class EligibilityCheckReportingController : BaseController
     }
 
     /// <summary>
-    ///     Returns reports of bulk checks between a set time period
+    ///     Return report status and id
     /// </summary>
     /// <returns></returns>
     [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
