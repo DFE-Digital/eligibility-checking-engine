@@ -65,14 +65,15 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
         var reportItems = _fixture.CreateMany<EligibilityCheckReportHistoryItem>(3).ToList();
         var executionResult = new EligibilityCheckReportHistoryResponse { Data = reportItems };
         var localAuthorityIds = new List<int> { 948 };
+        int pageNumber = 1;
 
-        _mockCheckGateway.Setup(u => u.GetEligibilityCheckReportHistory(_localAuth))
-    .Returns(Task.FromResult<IEnumerable<EligibilityCheckReportHistoryItem>>(reportItems));
+        _ = _mockCheckGateway.Setup(u => u.GetEligibilityCheckReportHistory(_localAuth, pageNumber))
+    .Returns(Task.FromResult<EligibilityCheckReportHistoryResponse>(executionResult));
 
 
 
          // Act
-        var response = await _sut.Execute(_localAuth, localAuthorityIds);
+        var response = await _sut.Execute(_localAuth, localAuthorityIds, pageNumber);
 
         // Assert
         response.Should().NotBeNull();
@@ -88,7 +89,7 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
 
         // Act + Asserts
         Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
-            await _sut.Execute(localAuthorityId, localAuthorityIds));
+            await _sut.Execute(localAuthorityId, localAuthorityIds, pageNumber: 1));
     }
 
     [Test]
@@ -97,6 +98,6 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
         var localAuthorityId = string.Empty;
         var localAuthorityIds = new List<int> { 201 };
 
-        Assert.ThrowsAsync<ValidationException>(async () => await _sut.Execute(localAuthorityId, localAuthorityIds));
+        Assert.ThrowsAsync<ValidationException>(async () => await _sut.Execute(localAuthorityId, localAuthorityIds, pageNumber: 1));
     }
 }

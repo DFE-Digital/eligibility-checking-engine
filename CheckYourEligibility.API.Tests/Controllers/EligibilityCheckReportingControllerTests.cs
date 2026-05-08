@@ -113,29 +113,6 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task GetEligibilityReportHistory_returns_ok_with_response_when_use_case_returns_valid_result()
-    {
-        // Arrange
-        var localAuthorityId = "201";
-        var reportHistory = _fixture.CreateMany<EligibilityCheckReportHistoryItem>(3).ToList();
-        var executionResult = new EligibilityCheckReportHistoryResponse { Data = reportHistory };
-
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
-
-        _mockGetEligibilityReportHistoryUseCase.Setup(u => u.Execute(localAuthorityId, It.Is<IList<int>>(ids => ids.Contains(201)))).ReturnsAsync(executionResult);
-
-        // Act
-        var response = await _sut.GetAllReportHistory(localAuthorityId);
-
-        // Assert
-        response.Should().BeOfType<ObjectResult>();
-        var objectResult = (ObjectResult)response;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        objectResult.Value.Should().BeEquivalentTo(executionResult);
-    }
-
-    [Test]
     public async Task EligibilityCheckReportRequest_returns_bad_request_when_no_local_authority_scope_found()
     {
         // Arrange
@@ -194,13 +171,75 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(new List<int>());
 
         // Act
-        var response = await _sut.GetAllReportHistory(localAuthorityId);
+        var response = await _sut.GetAllReportHistory(localAuthorityId, pageNumber: 1);
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
         var badRequestResult = (BadRequestObjectResult)response;
         var errorResponse = (ErrorResponse)badRequestResult.Value!;
         errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task GetAllReportHistory_returns_ok_with_report_history_response()
+    {
+        // Arrange
+        var localAuthorityId = "201";
+        var pageNumber = 2;
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var responseFromUseCase = new EligibilityCheckReportHistoryResponse
+        {
+            PageNumber = 2,
+            PageSize = 10,
+            TotalNumberOfRecords = 15,
+            Data =
+            [
+                new EligibilityCheckReportHistoryItem
+            {
+                GeneratedBy = "peterB",
+                NumberOfResults = 5,
+                Status = "Complete"
+            }
+            ]
+        };
+
+        _mockGetEligibilityReportHistoryUseCase
+            .Setup(u => u.Execute(localAuthorityId, It.IsAny<List<int>>(), pageNumber))
+            .ReturnsAsync(responseFromUseCase);
+
+        // Act
+        var result = await _sut.GetAllReportHistory(localAuthorityId, pageNumber);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var okResult = (ObjectResult)result;
+        okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        okResult.Value.Should().BeEquivalentTo(responseFromUseCase);
+    }
+
+    [Test]
+    public async Task GetAllReportHistory_returns_bad_request_for_fluent_validation_exception()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockGetEligibilityReportHistoryUseCase
+            .Setup(u => u.Execute(It.IsAny<string>(), It.IsAny<List<int>>(), It.IsAny<int>()))
+            .ThrowsAsync(new FluentValidation.ValidationException("Invalid page number"));
+
+        // Act
+        var result = await _sut.GetAllReportHistory("201", -1);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+        var error = (ErrorResponse)badRequest.Value!;
+
+        error.Errors.Single().Title.Should().Contain("Invalid page number");
     }
 }
 

@@ -54,7 +54,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     public async Task EligibilityCheckReports_Should_Process_Checks_In_Batches()
     {
         // Arrange
-        const int totalChecks = 25_000; 
+        const int totalChecks = 25_000;
         var report = new EligibilityCheckReport
         {
             EligibilityCheckReportId = Guid.NewGuid(),
@@ -166,7 +166,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             EligibilityCheckID = "CHK001",
             OrganisationID = 948,
             Created = now,
-            BulkCheck = null             // ✅ individual check
+            BulkCheck = null
         });
 
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -228,54 +228,175 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         savedReport.GeneratedBy.Should().Be("peterB");
     }
 
+    #region GetEligibilityCheckReportHistory tests
+
     [Test]
-    public async Task GetReportHistory_Should_Return_Report_History_For_Local_AuthorityAsync()
+    public async Task GetEligibilityCheckReportHistory_Should_Throw_For_Null_Or_Whitespace_LocalAuthorityId()
+    {
+        // Act
+        Func<Task> act = async () =>
+            await _sut.GetEligibilityCheckReportHistory("", pageNumber: 1);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task GetEligibilityCheckReportHistory_Should_Return_Empty_Data_When_No_Reports_Exist()
+    {
+        // Act
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 1);
+
+        // Assert
+        response.Should().NotBeNull();
+        response.Data.Should().BeEmpty();
+        response.PageNumber.Should().Be(1);
+        response.PageSize.Should().Be(10);
+        response.TotalNumberOfRecords.Should().Be(0);
+    }
+
+    [Test]
+    public async Task GetEligibilityCheckReportHistory_Should_Return_Single_Report()
     {
         // Arrange
         _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
         {
             LocalAuthorityID = 948,
+            ReportGeneratedDate = DateTime.UtcNow,
             StartDate = DateTime.UtcNow.AddDays(-7),
-            EndDate = DateTime.UtcNow.AddDays(7),
+            EndDate = DateTime.UtcNow,
             GeneratedBy = "peterB",
-            NumberOfResults = 15
+            NumberOfResults = 15,
+            Status = ReportStatus.Complete
         });
+
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetEligibilityCheckReportHistory("948");
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 1);
 
         // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportHistoryItem>>();
-        response.Count().Should().Be(1);  // only one report record been added.
+        response.TotalNumberOfRecords.Should().Be(1);
+        response.Data.Should().HaveCount(1);
+
+        var item = response.Data.Single();
+        item.GeneratedBy.Should().Be("peterB");
+        item.NumberOfResults.Should().Be(15);
+        item.Status.Should().Be(ReportStatus.Complete.ToString());
     }
 
     [Test]
-    public async Task GetReportHistory_Should_Return_Empty_History_When_No_Reports_FoundAsync()
+    public async Task GetEligibilityCheckReportHistory_Should_Return_Paginated_Results()
     {
         // Arrange
-        // No reports added to the database to ensure it returns an empty history
+        for (int i = 0; i < 25; i++)
+        {
+            _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+            {
+                LocalAuthorityID = 948,
+                ReportGeneratedDate = DateTime.UtcNow.AddMinutes(-i),
+                GeneratedBy = $"user{i}",
+                Status = ReportStatus.Complete
+            });
+        }
+
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetEligibilityCheckReportHistory("948");
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 2);
 
         // Assert
-        response.Should().BeAssignableTo<IEnumerable<EligibilityCheckReportHistoryItem>>();
-        response.Count().Should().Be(0);  // No reports should result in an empty history
+        response.TotalNumberOfRecords.Should().Be(25);
+        response.PageNumber.Should().Be(2);
+        response.PageSize.Should().Be(10);
+        response.Data.Should().HaveCount(10);
     }
 
     [Test]
-    public async Task GetReportHistory_Should_Throw_Exception_For_Empty_Local_AuthorityIdAsync()
+    public async Task GetEligibilityCheckReportHistory_PageNumber_Less_Than_One_Should_Default_To_One()
     {
         // Arrange
-        var empty = "";
+        _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+        {
+            LocalAuthorityID = 948,
+            ReportGeneratedDate = DateTime.UtcNow,
+            Status = ReportStatus.Complete,
+            GeneratedBy = "peterB"
+        });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        Func<Task> act = async () => await _sut.GetEligibilityCheckReportHistory(empty);
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 0);
 
         // Assert
-        await act.Should().ThrowAsync<Exception>();
+        response.PageNumber.Should().Be(1);
+        response.Data.Should().HaveCount(1);
     }
+
+    [Test]
+    public async Task GetEligibilityCheckReportHistory_PageNumber_Exceeds_Max_Should_Return_Last_Page()
+    {
+        // Arrange (15 records → 2 pages)
+        for (int i = 0; i < 15; i++)
+        {
+            _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+            {
+                LocalAuthorityID = 948,
+                ReportGeneratedDate = DateTime.UtcNow.AddMinutes(-i),
+                GeneratedBy = "peterb",
+                Status = ReportStatus.Complete
+            });
+        }
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 99);
+
+        // Assert
+        response.PageNumber.Should().Be(2);
+        response.Data.Should().HaveCount(5);
+    }
+
+    [Test]
+    public async Task GetEligibilityCheckReportHistory_Should_Order_By_ReportGeneratedDate_Descending()
+    {
+        // Arrange
+        var older = DateTime.UtcNow.AddDays(-1);
+        var newer = DateTime.UtcNow;
+
+        _fakeInMemoryDb.EligibilityCheckReports.AddRange(
+            new EligibilityCheckReport
+            {
+                LocalAuthorityID = 948,
+                ReportGeneratedDate = older,
+                Status = ReportStatus.Complete,
+                GeneratedBy = "peterB",
+                StartDate = older.AddDays(-7),
+                EndDate = older.AddDays(7)
+                
+            },
+            new EligibilityCheckReport
+            {
+                LocalAuthorityID = 948,
+                ReportGeneratedDate = newer,
+                Status = ReportStatus.Complete,
+                GeneratedBy = "peterB",
+                StartDate = newer.AddDays(-7),
+                EndDate = newer.AddDays(7)
+            });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 1);
+
+        // Assert
+        response.Data.First().ReportGeneratedDate.Should().Be(newer);
+    }
+
+    #endregion
 
     #region Helper Methods
     private BulkCheck GetBulkCheckWithEligibilityChecks(int numberOfChecks, CheckEligibilityType type, int localAuthorityId)

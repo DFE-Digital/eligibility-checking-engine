@@ -169,20 +169,50 @@ Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
 
 Cypress.Commands.add('verifyEligibilityReportHistoryResponse', (response) => {
 
+  expect(response.body).to.have.property('pageNumber');
+  expect(response.body.pageNumber).to.be.a('number').and.to.be.greaterThan(0);
+
+  expect(response.body).to.have.property('pageSize');
+  expect(response.body.pageSize).to.be.a('number').and.to.be.greaterThan(0);
+
+  expect(response.body).to.have.property('totalNumberOfRecords');
+  expect(response.body.totalNumberOfRecords).to.be.a('number');
+
   expect(response.body).to.have.property('data');
-  
   const responseData = response.body.data;
 
-  expect(responseData).to.be.an('array').and.not.be.empty;
+  expect(responseData).to.be.an('array');
+
+  if (responseData.length === 0) {
+    return;
+  }
 
   const first = responseData[0];
 
   expect(first).to.have.property('reportGeneratedDate');
+  expect(new Date(first.reportGeneratedDate).toString()).to.not.equal('Invalid Date');
+
   expect(first).to.have.property('startDate');
+  expect(new Date(first.startDate).toString()).to.not.equal('Invalid Date');
+
   expect(first).to.have.property('endDate');
+  expect(new Date(first.endDate).toString()).to.not.equal('Invalid Date');
+
   expect(first).to.have.property('generatedBy');
+  expect(first.generatedBy).to.be.a('string').and.not.be.empty;
+
   expect(first).to.have.property('numberOfResults');
+  expect(first.numberOfResults).to.be.a('number').and.to.be.at.least(0);
+
+  expect(first).to.have.property('status');
+  expect(first.status).to.be.oneOf([
+    'New',
+    'Generating',
+    'Complete',
+    'Failed'
+  ]);
 });
+
 
 
 Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataNotFound', (response, requestData) => {
