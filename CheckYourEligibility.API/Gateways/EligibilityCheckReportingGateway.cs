@@ -97,33 +97,65 @@ public class EligibilityCheckReportingGateway : IEligibilityCheckReporting
         }
     }
 
-    public async Task<IEnumerable<EligibilityCheckReportHistoryItem>> GetEligibilityCheckReportHistory(string localAuthorityId)
+
+    public async Task<EligibilityCheckReportHistoryResponse> GetEligibilityCheckReportHistory(string localAuthorityId, int pageNumber)
     {
-        if (string.IsNullOrEmpty(localAuthorityId))
+        if (string.IsNullOrWhiteSpace(localAuthorityId))
             throw new ArgumentNullException(nameof(localAuthorityId));
+
+        const int pageSize = 10;
+        var localAuthorityIntId = int.Parse(localAuthorityId);
 
         try
         {
-            var reportHistory = await _db.EligibilityCheckReports
-                .Where(x => x.ReportGeneratedDate > DateTime.UtcNow.AddDays(-7))
-                .Where(r => r.LocalAuthorityID == int.Parse(localAuthorityId))
+            var query = _db.EligibilityCheckReports
+                .Where(r => r.LocalAuthorityID == localAuthorityIntId);
+
+            // Get total records
+            var totalRecords = await query.CountAsync();
+
+            // Ensure page number is valid
+            pageNumber = pageNumber < 1 ? 1 : pageNumber;
+
+            // Calculate total pages and adjust page number if it exceeds max
+            var maxPage = totalRecords == 0
+                ? 1
+                : (int)Math.Ceiling(totalRecords / (double)pageSize);
+
+            // If requested page number exceeds max, return the last page
+            if (pageNumber > maxPage)
+            {
+                pageNumber = maxPage;
+            }
+
+            // Retrieve paginated results
+            var reportHistoryItems = await query
                 .OrderByDescending(r => r.ReportGeneratedDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(r => new EligibilityCheckReportHistoryItem
                 {
                     ReportGeneratedDate = r.ReportGeneratedDate,
                     StartDate = r.StartDate,
                     EndDate = r.EndDate,
                     GeneratedBy = r.GeneratedBy,
-                    NumberOfResults = r.NumberOfResults
+                    NumberOfResults = r.NumberOfResults,
+                    Status = r.Status.ToString()
                 })
                 .ToListAsync();
 
-            return reportHistory;
+            return new EligibilityCheckReportHistoryResponse
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalNumberOfRecords = totalRecords,
+                Data = reportHistoryItems,
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving eligibility check report history");
-            throw new Exception($"Error retrieving eligibility check report history: {ex.Message}");
+            throw;
         }
     }
 }
