@@ -145,20 +145,26 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
 
 Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
 
+  // status
+  expect(response.status).to.eq(200);
+
+  // body shape
   expect(response.body).to.have.property('data');
-  
-  const responseData = response.body.data;
 
-  expect(responseData).to.be.an('array').and.not.be.empty;
+  const data = response.body.data;
 
-  const first = responseData[0];
+  expect(data).to.be.an('object');
 
-  expect(first).to.have.property('nationalInsuranceNumber');
-  expect(first).to.have.property('LastName');
-  expect(first).to.have.property('dateOfBirth');
-  expect(first).to.have.property('dateCheckSubmitted');
-  expect(first).to.have.property('outcome');
+  expect(data).to.have.property('reportID');
+  expect(data.reportID).to.be.a('string').and.not.be.empty;
 
+  expect(data).to.have.property('status');
+  expect(data.status).to.be.oneOf([
+    'New',
+    'Processing',
+    'Completed',
+    'Failed'
+  ]);
 });
 
 Cypress.Commands.add('verifyEligibilityReportHistoryResponse', (response) => {

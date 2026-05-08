@@ -149,14 +149,15 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         }
     }
 
-    #region private helpers
+    #region helpers
 
     private sealed record CheckResult(
         string EligibilityCheckID,
         bool IsBulk
     );
 
-    private IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request)
+    // public to allow testing
+    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request)
     {
         return request.CheckType switch
         {

@@ -30,7 +30,7 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
         var validator = new EligibilityCheckReportRequestValidator();
         var validationResults = validator.Validate(model);
 
-        if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
+        if (!validationResults.IsValid) throw new FluentValidation.ValidationException(validationResults.ToString());
 
         // create the report request
         var reportRequest = await _eligibilityCheckReportingGateway.CreateReport(model, CancellationToken.None);
