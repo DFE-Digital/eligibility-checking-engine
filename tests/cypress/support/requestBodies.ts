@@ -271,7 +271,7 @@ export function validPostEligibilityReportRequest() {
     endDate: "2026-02-18",
     generatedBy: "Peter B",
     localAuthorityID: 894,
-    checkType: 2, // 2 for bulk check
+    checkType: 0, // 0 for all check
   };
 }
 export function invalidPostEligibilityReportRequest() {

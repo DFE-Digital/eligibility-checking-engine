@@ -34,7 +34,7 @@ public class EligibilityCheckReportingController : BaseController
     }
 
     /// <summary>
-    ///     Returns reports of bulk checks between a set time period
+    ///     Return report status and id
     /// </summary>
     /// <returns></returns>
     [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
@@ -91,7 +91,7 @@ public class EligibilityCheckReportingController : BaseController
     [HttpGet("/check-eligibility/report-history/{localAuthorityId}")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> GetAllReportHistory(string localAuthorityId)
+    public async Task<ActionResult> GetAllReportHistory(string localAuthorityId, [FromQuery] int pageNumber)
     {
         try
         {
@@ -104,7 +104,7 @@ public class EligibilityCheckReportingController : BaseController
                 });
             }
 
-            var result = await _getEligibilityReportHistoryUseCase.Execute(localAuthorityId, localAuthorityIds);
+            var result = await _getEligibilityReportHistoryUseCase.Execute(localAuthorityId, localAuthorityIds, pageNumber);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
