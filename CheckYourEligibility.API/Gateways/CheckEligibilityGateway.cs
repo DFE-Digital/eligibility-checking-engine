@@ -153,6 +153,31 @@ public class CheckEligibilityGateway : ICheckEligibility
                         _logger.LogError(ex, $"Error creating check with ID: {item.EligibilityCheckHashID}");
                     }
                 }
+                // Find check data of last hashed result for FSM to preserve EligibilityEndDate
+                else if (data.Type == CheckEligibilityType.FreeSchoolMeals && (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
+                {
+                    try
+                    {
+                        var firstValidCheck = await _db.CheckEligibilities
+                            .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID &&
+                                        x.Status == hashedStatus)
+                            .OrderByDescending(x => x.Created)
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync();
+
+                        if (firstValidCheck != null)
+                        {
+                            CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
+                            hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                            item.CheckData = JsonConvert.SerializeObject(hashCheckData);
+                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error retrieving cached check data with ID: {item.EligibilityCheckHashID}");
+                    }
+                }
             }
             return item;
         }
