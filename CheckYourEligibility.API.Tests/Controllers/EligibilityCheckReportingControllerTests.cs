@@ -4,7 +4,9 @@ using System.Security.Claims;
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +23,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
 
     private Mock<IGetEligibilityCheckReportingUseCase> _mockEligibilityCheckReportingUseCase;
     private Mock<IGetEligibilityReportHistoryUseCase> _mockGetEligibilityReportHistoryUseCase;
+    private Mock<IDeleteEligibilityCheckReportUseCase> _mockDeleteEligibilityCheckReportUseCase;
     private ILogger<EligibilityCheckReportingController> _mockLogger;
 
     private EligibilityCheckReportingController _sut;
@@ -30,6 +33,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
     {
         _mockEligibilityCheckReportingUseCase = new Mock<IGetEligibilityCheckReportingUseCase>(MockBehavior.Strict);
         _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
+        _mockDeleteEligibilityCheckReportUseCase = new Mock<IDeleteEligibilityCheckReportUseCase>(MockBehavior.Strict);
 
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckReportingController>>();
@@ -49,7 +53,8 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
             _configuration,
             _mockAuditGateway.Object,
             _mockGetEligibilityReportHistoryUseCase.Object,
-            _mockEligibilityCheckReportingUseCase.Object
+            _mockEligibilityCheckReportingUseCase.Object,
+            _mockDeleteEligibilityCheckReportUseCase.Object
         );
     }
 
@@ -58,6 +63,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
     {
         _mockEligibilityCheckReportingUseCase.VerifyAll();
         _mockGetEligibilityReportHistoryUseCase.VerifyAll();
+        _mockDeleteEligibilityCheckReportUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -240,6 +246,81 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         var error = (ErrorResponse)badRequest.Value!;
 
         error.Errors.Single().Title.Should().Contain("Invalid page number");
+    }
+
+    [Test]
+    public async Task DeleteReportHistory_returns_no_content_when_report_is_successfully_deleted()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteEligibilityCheckReportUseCase
+            .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DeleteReportHistory(reportId);
+
+        // Assert
+        result.Should().BeOfType<StatusCodeResult>();
+        ((StatusCodeResult)result).StatusCode.Should().Be(StatusCodes.Status204NoContent);
+    }
+
+    [Test]
+    public async Task DeleteReportHistory_returns_forbid_when_unauthorized_access_exception_thrown()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteEligibilityCheckReportUseCase
+            .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
+            .ThrowsAsync(new UnauthorizedAccessException("You do not have permission to delete reports for this local authority"));
+
+        // Act
+        var result = await _sut.DeleteReportHistory(reportId);
+
+        // Assert
+        result.Should().BeOfType<ForbidResult>();
+    }
+
+    [Test]
+    public async Task DeleteReportHistory_returns_not_found_when_report_doesnt_exist()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockDeleteEligibilityCheckReportUseCase
+            .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
+            .ThrowsAsync(new NotFoundException("Eligibility report not found"));
+
+        // Act
+        var result = await _sut.DeleteReportHistory(reportId);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = (NotFoundObjectResult)result;
+        var errorResponse = (ErrorResponse)notFoundResult.Value!;
+        errorResponse.Errors.First().Title.Should().Be("Eligibility report not found");
+    }
+
+    [Test]
+    public async Task DeleteReportHistory_returns_bad_request_when_no_local_authority_scope_found()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds(new List<int>()); // Empty scopes
+
+        // Act
+        var result = await _sut.DeleteReportHistory(reportId);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)result;
+        var errorResponse = (ErrorResponse)badRequestResult.Value!;
+        errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
     }
 }
 
