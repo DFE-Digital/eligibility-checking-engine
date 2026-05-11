@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -129,8 +130,9 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
         try
         {
+            // Base query to get non-deleted reports for the specified local authority
             var query = _db.EligibilityCheckReports
-                .Where(r => r.LocalAuthorityID == localAuthorityIntId);
+                .Where(r => !r.IsDeleted && r.LocalAuthorityID == localAuthorityIntId);
 
             // Get total records
             var totalRecords = await query.CountAsync();
@@ -178,6 +180,35 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             _logger.LogError(ex, "Error retrieving eligibility check report history");
             throw;
         }
+    }
+
+    public async Task<int> GetLocalAuthorityIdForReport(Guid reportId, CancellationToken cancellationToken = default)
+    {
+        if (reportId == Guid.Empty)
+            throw new ArgumentNullException(nameof(reportId));
+
+        var report = await _db.EligibilityCheckReports
+            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+
+        if (report is null)
+            throw new NotFoundException("Eligibility report not found");
+
+        return report.LocalAuthorityID.Value;
+    }
+
+    public async Task DeleteEligibilityCheckReport(Guid reportId, CancellationToken cancellationToken = default)
+    {
+        if (reportId == Guid.Empty)
+            throw new ArgumentNullException(nameof(reportId));
+
+        var report = await _db.EligibilityCheckReports
+            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+
+        if (report is null)
+            throw new NotFoundException("Eligibility report not found");
+
+        report.IsDeleted = true;
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     #region helpers
