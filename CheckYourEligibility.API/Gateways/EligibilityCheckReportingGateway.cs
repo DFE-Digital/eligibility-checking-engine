@@ -59,7 +59,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                         .Take(BatchSize)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
-                            e.BulkCheck != null ))
+                            e.BulkCheck != null))
                         .ToListAsync(cancellationToken);
 
                 // if no more checks, break the loop
@@ -188,12 +188,12 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             throw new ArgumentNullException(nameof(reportId));
 
         var report = await _db.EligibilityCheckReports
-            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId && !r.IsDeleted, cancellationToken);
 
         if (report is null)
             throw new NotFoundException("Eligibility report not found");
 
-        if(!report.LocalAuthorityID.HasValue)
+        if (!report.LocalAuthorityID.HasValue)
             throw new InvalidOperationException("Eligibility report does not have a local authority ID");
 
         return report.LocalAuthorityID.Value;
