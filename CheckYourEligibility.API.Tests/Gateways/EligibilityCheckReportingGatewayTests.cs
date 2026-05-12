@@ -3,6 +3,7 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -394,6 +395,135 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
 
         // Assert
         response.Data.First().ReportGeneratedDate.Should().Be(newer);
+    }
+
+    #endregion
+
+    #region GetLocalAuthorityIdForReport tests
+
+    [Test]
+    public async Task GetLocalAuthorityIdForReport_Should_Return_LocalAuthorityId_When_Report_Exists()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+        var expectedLocalAuthorityId = 948;
+
+        _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = reportId,
+            LocalAuthorityID = expectedLocalAuthorityId,
+            ReportGeneratedDate = DateTime.UtcNow,
+            GeneratedBy = "peterB",
+            Status = ReportStatus.Complete
+        });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetLocalAuthorityIdForReport(reportId, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(expectedLocalAuthorityId);
+    }
+
+    [Test]
+    public void GetLocalAuthorityIdForReport_Should_Throw_For_EmptyGuid()
+    {
+        // Act & Assert
+        Func<Task> act = async () => await _sut.GetLocalAuthorityIdForReport(Guid.Empty, CancellationToken.None);
+
+        act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Test]
+    public void GetLocalAuthorityIdForReport_Should_Throw_NotFoundException_When_Report_Not_Found()
+    {
+        // Act & Assert
+        Func<Task> act = async () => await _sut.GetLocalAuthorityIdForReport(Guid.NewGuid(), CancellationToken.None);
+
+        act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Eligibility report not found");
+    }
+
+    #endregion
+
+    #region DeleteEligibilityCheckReport tests
+
+    [Test]
+    public async Task DeleteEligibilityCheckReport_Should_Soft_Delete_Report()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+
+        var report = new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = reportId,
+            LocalAuthorityID = 948,
+            ReportGeneratedDate = DateTime.UtcNow,
+            GeneratedBy = "peterB",
+            Status = ReportStatus.Complete,
+            IsDeleted = false
+        };
+
+        _fakeInMemoryDb.EligibilityCheckReports.Add(report);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        await _sut.DeleteEligibilityCheckReport(reportId, CancellationToken.None);
+
+        // Assert
+        var deletedReport = await _fakeInMemoryDb.EligibilityCheckReports
+            .FirstAsync(r => r.EligibilityCheckReportId == reportId);
+
+        deletedReport.IsDeleted.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task DeleteEligibilityCheckReport_Should_Not_Return_Deleted_Reports_In_History()
+    {
+        // Arrange
+        var reportId = Guid.NewGuid();
+
+        _fakeInMemoryDb.EligibilityCheckReports.Add(new EligibilityCheckReport
+        {
+            EligibilityCheckReportId = reportId,
+            LocalAuthorityID = 948,
+            ReportGeneratedDate = DateTime.UtcNow,
+            GeneratedBy = "peterB",
+            Status = ReportStatus.Complete,
+            IsDeleted = false
+        });
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act - Delete the report
+        await _sut.DeleteEligibilityCheckReport(reportId, CancellationToken.None);
+
+        // Act - Query history
+        var response = await _sut.GetEligibilityCheckReportHistory("948", pageNumber: 1);
+
+        // Assert
+        response.TotalNumberOfRecords.Should().Be(0);
+        response.Data.Should().BeEmpty();
+    }
+
+    [Test]
+    public void DeleteEligibilityCheckReport_Should_Throw_For_EmptyGuid()
+    {
+        // Act & Assert
+        Func<Task> act = async () => await _sut.DeleteEligibilityCheckReport(Guid.Empty, CancellationToken.None);
+
+        act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Test]
+    public void DeleteEligibilityCheckReport_Should_Throw_NotFoundException_When_Report_Not_Found()
+    {
+        // Act & Assert
+        Func<Task> act = async () => await _sut.DeleteEligibilityCheckReport(Guid.NewGuid(), CancellationToken.None);
+
+        act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Eligibility report not found");
     }
 
     #endregion

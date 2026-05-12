@@ -16,4 +16,5 @@ public class EligibilityCheckReport
     public virtual LocalAuthority? LocalAuthority { get; set; }
     public ReportStatus? Status { get; set; } 
     public CheckType CheckType { get; set; }
+    public bool IsDeleted { get; set; } = false;
 }

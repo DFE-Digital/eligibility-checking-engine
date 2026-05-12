@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,19 +19,22 @@ public class EligibilityCheckReportingController : BaseController
     private readonly string _localAuthorityScopeName;
     private readonly IGetEligibilityReportHistoryUseCase _getEligibilityReportHistoryUseCase;
     private readonly IGetEligibilityCheckReportingUseCase _getEligibilityCheckReportingUseCase;
+    private readonly IDeleteEligibilityCheckReportUseCase _deleteEligibilityCheckReportUseCase;
 
     public EligibilityCheckReportingController(
         ILogger<EligibilityCheckReportingController> logger,
         IConfiguration configuration, 
         IAudit audit,
         IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
-        IGetEligibilityCheckReportingUseCase getEligibilityCheckReportingUseCase
+        IGetEligibilityCheckReportingUseCase getEligibilityCheckReportingUseCase,
+        IDeleteEligibilityCheckReportUseCase deleteEligibilityCheckReportUseCase
     ) : base(audit)
     {
         _logger = logger;
         _localAuthorityScopeName = configuration.GetValue<string>("Jwt:Scopes:local_authority") ?? "local_authority";
         _getEligibilityReportHistoryUseCase = getEligibilityReportHistoryUseCase;
         _getEligibilityCheckReportingUseCase = getEligibilityCheckReportingUseCase;
+        _deleteEligibilityCheckReportUseCase = deleteEligibilityCheckReportUseCase;
     }
 
     /// <summary>
@@ -114,6 +118,52 @@ public class EligibilityCheckReportingController : BaseController
             {
                 Errors = [new Error { Title = ex.Message }]
             });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Soft deletes a report by setting its IsDeleted flag.
+    /// </summary>
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Forbidden)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpDelete("/check-eligibility/report-history/{reportId}")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> DeleteReportHistory(Guid reportId)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            await _deleteEligibilityCheckReportUseCase.Execute(reportId, localAuthorityIds);
+
+            return new StatusCodeResult(StatusCodes.Status204NoContent);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
