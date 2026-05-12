@@ -202,7 +202,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             throw new ArgumentNullException(nameof(reportId));
 
         var report = await _db.EligibilityCheckReports
-            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId && !r.IsDeleted, cancellationToken);
 
         if (report is null)
             throw new NotFoundException("Eligibility report not found");
