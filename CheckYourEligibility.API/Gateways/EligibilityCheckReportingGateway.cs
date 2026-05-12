@@ -193,6 +193,9 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         if (report is null)
             throw new NotFoundException("Eligibility report not found");
 
+        if(!report.LocalAuthorityID.HasValue)
+            throw new InvalidOperationException("Eligibility report does not have a local authority ID");
+
         return report.LocalAuthorityID.Value;
     }
 
