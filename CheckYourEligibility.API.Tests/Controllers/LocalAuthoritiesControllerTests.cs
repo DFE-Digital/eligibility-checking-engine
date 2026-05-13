@@ -78,13 +78,13 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
             .ReturnsAsync(la);
 
         _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyById(1))
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(1))
             .ReturnsAsync(policy1);
         _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyById(2))
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(2))
             .ReturnsAsync(policy2);
         _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyById(3))
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(3))
             .ReturnsAsync(policy3);
 
         // Act

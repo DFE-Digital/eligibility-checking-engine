@@ -1,30 +1,30 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
+﻿using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.DWP;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace CheckYourEligibility.API.Adapters;
 
 public interface IDwpAdapter
 {
-    Task<(StatusCodeResult,string)> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
-        CheckEligibilityType type, string correaltionId);
+    Task<CAPIClaimResponseBase> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+        CheckEligibilityType type, string correaltionId, EligibilityPolicy eligibilityPolicy);
 
     Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
 }
 
 [ExcludeFromCodeCoverage]
-public class DwpAdapter: IDwpAdapter
+public class DwpAdapter : IDwpAdapter
 {
     public const string decision_entitled = "decision_entitled";
     public const string statusInPayment = "in_payment";
@@ -69,22 +69,16 @@ public class DwpAdapter: IDwpAdapter
         _httpClient = httpClient;
 
         _DWP_ApiInstigatingUserId = _configuration["Dwp:ApiInstigatingUserId"];
-        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];      
+        _DWP_ApiPolicyId = _configuration["Dwp:ApiPolicyId"];
         _DWP_ApiContext = _configuration["Dwp:ApiContext"];
         _DWP_ApiAccessLevel = _configuration["Dwp:ApiAccessLevel"];
 
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] =
-            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] =
-            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
-            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
     }
 
     #region Citizen Api Rest
 
-    public async Task<(StatusCodeResult, string)> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
-        CheckEligibilityType type, string correlationId)
+    public async Task<CAPIClaimResponseBase> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
+        CheckEligibilityType type, string correlationId, EligibilityPolicy eligibilityPolicy)
     {
         var uri =
             $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
@@ -112,39 +106,60 @@ public class DwpAdapter: IDwpAdapter
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
-                if (CheckBenefitEntitlement(guid, claims, type)) {
-                    // ECS_Conflict helper logic to better track conflicts
-                    reason =
-                        "CAPI confirms citizen has benefit of type -" +
-                        "employment_support_allowance_income_based" +
-                        "or income_support, " +
-                        "or job_seekers_allowance_income_based, " +
-                        "or pensions_credit " +
-                        "or universal_credit ";
-                    return (new OkResult(), reason);
+                var (isEntitled, eligbilityTier) = CheckBenefitEntitlement(guid, claims, type, eligibilityPolicy);
 
+                if (isEntitled)
+                {
+                    return (new CAPIClaimResponseBase
+                    {
+                        CAPIResponseCode = HttpStatusCode.OK,
+                        EligibilityTier = eligbilityTier,
+                        Reason = "CAPI confirms citizen has found benefit",
+                        CAPIEndpoint = uri
+
+                    });
                 }
-                // ECS_Conflict helper logic to better track conflicts
-                reason = "CAPI returned status 200, but no benefits found after using business logic.";
-                return (new NotFoundResult(),reason);
+                return (new CAPIClaimResponseBase
+                {
+                    CAPIResponseCode = HttpStatusCode.NotFound,
+                    EligibilityTier = eligbilityTier,
+                    Reason = "CAPI returned status 200, but no benefits found after using business logic",
+                    CAPIEndpoint = uri
+
+                });
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                // ECS_Conflict helper logic to better track conflicts
-                reason = "CAPI did not find any data for this citizen.";
-                return (new NotFoundResult(), reason);
+            {        
+                return (new CAPIClaimResponseBase
+                {
+                    CAPIResponseCode = HttpStatusCode.NotFound,
+                    Reason = "CAPI did not find any data for this citizen",
+                    CAPIEndpoint = uri
+                });               
             }
 
             string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
             _logger.LogInformation(errorMessage);
-            return (new InternalServerErrorResult(), errorMessage);
+
+            return (new CAPIClaimResponseBase
+            {
+                CAPIResponseCode = HttpStatusCode.InternalServerError,             
+                Reason = errorMessage,
+                CAPIEndpoint = uri
+            });
         }
         catch (Exception ex)
         {
             string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
             _logger.LogError(ex, errorMessage);
-            return (new InternalServerErrorResult(), errorMessage);
+          
+            return (new CAPIClaimResponseBase
+            {
+                CAPIResponseCode = HttpStatusCode.InternalServerError,             
+                Reason = errorMessage,
+                CAPIEndpoint = uri
+            });
         }
     }
 
@@ -164,12 +179,13 @@ public class DwpAdapter: IDwpAdapter
 
         return null;
     }
-
-    public bool CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type)
+    //pass the policy for the type of the la here
+    // if mat use default behaviour
+    public (bool, EligibilityTier?) CheckBenefitEntitlement(string citizenId, DwpClaimsResponse claims, CheckEligibilityType type, EligibilityPolicy eligibilityPolicy)
     {
         //If they have pensions credit and there is no end date
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.pensions_credit))
-            return true;
+            return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
 
         var universalCredit = claims.data.FirstOrDefault(x =>
             x.attributes.benefitType == DwpBenefitType.universal_credit.ToString()
@@ -182,21 +198,47 @@ public class DwpAdapter: IDwpAdapter
             var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
             if (liveAwards != null && liveAwards.Count() > 0)
             {
-                // Determine eligibility based on take home pay thresholds
-                return CheckUniversalCreditBenefitType(citizenId, liveAwards, _DWP_ApiUniversalCreditThreshold[type]);
+                if (CheckUniversalCreditBenefitType(citizenId, liveAwards, eligibilityPolicy.UniversalCreditThreshold))
+                    return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
+
+                if (eligibilityPolicy.EligibilityCriteria == EligibilityCriteria.expanded)
+                    return (true, EligibilityTier.expanded);
+
+                // If not eligible and not expanded, return not eligible/null tier (standard)
+                return (false, null);
             }
+
         }
-        
+
         // No pensions credit + (no UC or no live award within last 3 months)
         // Then check if any of the other claims are live and have no end date
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.job_seekers_allowance_income_based))
-            return true;
+            return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.employment_support_allowance_income_based))
-            return true;
+            return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
         if (CheckStandardBenefitType(citizenId, claims, DwpBenefitType.income_support))
-            return true;
-        
-        return false;
+            return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
+
+        return (false, null);
+    }
+    /// <summary>
+    /// Maps tier according to policy criteria only,
+    ///  if 'expanded' then tier is targetted,
+    /// if (default) 'standard' then tier is null / empty response
+    /// </summary>
+    /// <param name="criteria"></param>
+    /// <returns></returns>
+    private (bool, EligibilityTier?) GetEligibleResponseBasedOnEligibilityPolicy(EligibilityCriteria criteria)
+    {
+
+        switch (criteria)
+        {
+            case EligibilityCriteria.expanded:
+                return (true, EligibilityTier.targeted);
+            default: return (true, null);
+
+        }
+
     }
 
     private bool CheckUniversalCreditBenefitType(string citizenId, IEnumerable<Award> liveAwards, double threshold)
@@ -284,7 +326,7 @@ public class DwpAdapter: IDwpAdapter
 
             // ECS_Conflict helper logic to better track conflicts
             citizenResponse.CAPIResponseCode = response.StatusCode;
-          
+
             if (response.IsSuccessStatusCode)
             {
                 var responseData =
@@ -306,13 +348,14 @@ public class DwpAdapter: IDwpAdapter
                 citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
                 return citizenResponse;
             }
-            else {
+            else
+            {
                 string errorMessage = $"CAPI failed getting citizen. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
                 _logger.LogInformation(errorMessage);
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
                 citizenResponse.Reason = errorMessage;
                 return citizenResponse;
-            }            
+            }
         }
         catch (Exception ex)
         {
@@ -347,7 +390,7 @@ public class DwpAdapter: IDwpAdapter
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);
         _token = responseData.access_token;
         _tokenExpiry = DateTime.Now.AddSeconds(responseData.expires_in);
-        
+
         return responseData.access_token;
     }
 

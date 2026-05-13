@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,13 +14,14 @@ namespace CheckYourEligibility.API.Gateways
         { 
             _db = db;
         }
-        public Task<EligibilityPolicy?> GeEligibilityPolicyById(int EligibilityPolicyId)
+        public async Task<EligibilityPolicy?> GeEligibilityPolicyByIdAsync(int? EligibilityPolicyId)
         {
-            return _db.EligibilityPolicies
+            return await _db.EligibilityPolicies
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ID == EligibilityPolicyId);
+            
         }
-
+    
 
     }
 }

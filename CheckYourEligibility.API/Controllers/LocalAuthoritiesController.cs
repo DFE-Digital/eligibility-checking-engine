@@ -51,7 +51,7 @@ public class LocalAuthoritiesController : BaseController
         foreach (var policyId in laPolicies)
         {
 
-            var policy = await _eligibilityPolicy.GeEligibilityPolicyById(policyId);
+            var policy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyId);
             EligibilityPolicyResponse eligibilityPolicy = new()
             {
                 CheckType = policy.CheckType.ToString(),
