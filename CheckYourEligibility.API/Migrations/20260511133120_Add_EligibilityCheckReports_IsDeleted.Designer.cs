@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260511133120_Add_EligibilityCheckReports_IsDeleted")]
+    partial class Add_EligibilityCheckReports_IsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -393,37 +396,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("EligibilityCheckHashes");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityPolicy", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("CheckType")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("EligibilityCriteria")
-                        .IsRequired()
-                        .HasColumnType("varchar(25)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PolicyName")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<double>("UniversalCreditThreshold")
-                        .HasColumnType("float");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("EligibilityPolicies");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Establishment", b =>
                 {
                     b.Property<int>("EstablishmentID")
@@ -522,27 +494,12 @@ namespace CheckYourEligibility.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LocalAuthorityID"));
 
-                    b.Property<int>("EarlyYearsPupilPremiumPolicyID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(2);
-
-                    b.Property<int>("FreeSchoolMealsPolicyID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
-
                     b.Property<string>("LaName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("SchoolCanReviewEvidence")
                         .HasColumnType("bit");
-
-                    b.Property<int>("TwoYearPolicyID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(3);
 
                     b.HasKey("LocalAuthorityID");
 

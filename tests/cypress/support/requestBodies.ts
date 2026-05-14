@@ -269,16 +269,16 @@ export function validPostEligibilityReportRequest() {
   return {
     startDate: "2025-12-04",
     endDate: "2026-02-18",
-    generatedBy: "Peter B",
+    generatedBy: "Cypress Test",
     localAuthorityID: 894,
-    checkType: 2, // 2 for bulk check
+    checkType: 0, // 0 for all check
   };
 }
 export function invalidPostEligibilityReportRequest() {
   return {
     startDate: "2025-",
     endDate: "2026-   02-18",
-    generatedBy: "Peter B",
+    generatedBy: "Cypress Test",
     localAuthorityID: null,
     checkType: 2, // 2 for bulk check
   };

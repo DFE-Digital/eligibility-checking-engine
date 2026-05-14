@@ -115,6 +115,24 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         }
 
     }
+
+
+    public void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data)
+    {
+        using var transaction = base.Database.BeginTransaction();
+        try
+        {
+            this.BulkInsert(data);
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+
+            transaction.Rollback();
+        }
+
+    }
+
     public void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data)
     {
         using var transaction = base.Database.BeginTransaction();

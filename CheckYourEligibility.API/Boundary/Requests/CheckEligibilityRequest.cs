@@ -22,6 +22,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
         set => baseType = value != CheckEligibilityType.None ? value : CheckEligibilityType.FreeSchoolMeals;
     }
 
+    public string? EligibilityEndDate { get; set; }
     public string? NationalInsuranceNumber { get; set; }
 }
 

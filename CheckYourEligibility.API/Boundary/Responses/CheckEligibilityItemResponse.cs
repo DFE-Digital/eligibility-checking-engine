@@ -9,6 +9,7 @@ public class CheckEligibilityItemBase
     public string Status { get; set; }
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; }
+    public string? EligibilityEndDate { get; set; }
     public DateTime Created { get; set; }
 }
 

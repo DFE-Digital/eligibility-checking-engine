@@ -1,10 +1,5 @@
-// Ignore Spelling: Levenshtein
-
-using System.Globalization;
-using System.Net;
 using AutoFixture;
 using AutoMapper;
-using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
@@ -306,16 +301,17 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ValidRequest_GetItem_Should_Return_Item()
+    public async Task Given_FSM_ValidRequest_GetItem_Should_Return_Item()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.Status = CheckEligibilityStatus.eligible;
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = CheckEligibilityType.FreeSchoolMeals;
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
+        string eligibilityEndDate = (new DateTime(DateTime.UtcNow.Year, 07, 31)).ToString("yyyy-MM-dd");
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check,eligibilityEndDate));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
@@ -328,6 +324,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         response.NationalAsylumSeekerServiceNumber.Should().BeEquivalentTo(check.NationalAsylumSeekerServiceNumber);
         response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
         response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
+        response.EligibilityEndDate.Should().BeEquivalentTo(eligibilityEndDate);
     }
 
     [Test]
@@ -517,6 +514,18 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
     #region Private Helper Methods
 
+    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request, string? eligiblityEndDate = null)
+    {
+        return new CheckProcessData
+        {
+            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
+            LastName = request.LastName,
+            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalInsuranceNumber = request.NationalInsuranceNumber,
+            Type = request.Type,
+            EligibilityEndDate = eligiblityEndDate
+        };
+    }
     private Domain.BulkCheck GetBulkCheckWithEligibilityChecks(int numberOfChecks, CheckEligibilityType type, int localAuthorityId)
     {
         var bulkCheck = new Domain.BulkCheck
@@ -573,6 +582,9 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             DateOfBirth = request.DateOfBirth,
             Type = CheckEligibilityType.WorkingFamilies
+
+
+
         };
     }
 

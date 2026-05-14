@@ -3,7 +3,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface IGetEligibilityReportHistoryUseCase
 {
-    Task<EligibilityCheckReportHistoryResponse> Execute(string localAuthorityId, IList<int> localAuthorityIds);
+    Task<EligibilityCheckReportHistoryResponse> Execute(string localAuthorityId, IList<int> localAuthorityIds, int pageNumber);
 }
 
 public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryUseCase
@@ -17,7 +17,7 @@ public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryU
         _logger = logger;
     }
 
-    public async Task<EligibilityCheckReportHistoryResponse> Execute(string localAuthorityId, IList<int> localAuthorityIds)
+    public async Task<EligibilityCheckReportHistoryResponse> Execute(string localAuthorityId, IList<int> localAuthorityIds, int pageNumber)
     {
         if(string.IsNullOrEmpty(localAuthorityId)) throw new ValidationException("Local Authority ID is required");
         
@@ -27,7 +27,7 @@ public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryU
                 "You do not have permission to view report history for this Local Authority");
         };
 
-        var response = await _eligibilityCheckReportingGateway.GetEligibilityCheckReportHistory(localAuthorityId);
+        var response = await _eligibilityCheckReportingGateway.GetEligibilityCheckReportHistory(localAuthorityId, pageNumber);
 
         // Sanitize user-provided Local Authority ID before logging to prevent log forging
         var sanitizedLocalAuthorityId = localAuthorityId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
@@ -40,9 +40,6 @@ public class GetEligibilityReportHistoryUseCase :  IGetEligibilityReportHistoryU
 
         _logger.LogInformation("Successfully generated eligibility check report history for Local Authority ID: {LocalAuthorityId}", sanitizedLocalAuthorityId);
 
-        return new EligibilityCheckReportHistoryResponse
-        {
-           Data = response
-        };
+        return response;
     }
 }
