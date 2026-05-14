@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -38,7 +39,8 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly string isInGracePeriodPrefix;
     private readonly string isNotYetEligiblePrefix;
     private readonly string isExpiredPrefix;
-
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
+           new Dictionary<CheckEligibilityType, double>();
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway, ILocalAuthority localAuthority, IEligibilityPolicy eligibilityPolicy)
     {
@@ -55,6 +57,12 @@ public class CheckingEngineGateway : ICheckingEngine
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
         isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] =
+           Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
     }
     public async Task<(CheckEligibilityStatus?,EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
@@ -65,14 +73,6 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (result != null)
         {
-             EligibilityPolicy eligibilityPolicy = null;
-            if (result.OrganisationType == OrganisationType.local_authority && result.OrganisationID is int laId && laId != 0)
-            {
-
-                int? policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(laId, result.Type);
-                //get policy for the la
-                eligibilityPolicy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
-            }
 
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
             //TODO: This should live in the use case
@@ -82,7 +82,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
                     {
-                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData, eligibilityPolicy, dbContextFactory);
+                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
                     }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
@@ -380,7 +380,7 @@ public class CheckingEngineGateway : ICheckingEngine
         return laId;
     }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
-        CheckProcessData checkData, EligibilityPolicy eligibilityPolicy, EligibilityCheckContext dbContextFactory = null)
+        CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         var source = ProcessEligibilityCheckSource.HMRC;
@@ -391,6 +391,27 @@ public class CheckingEngineGateway : ICheckingEngine
 
         // For CAPI request to track request conflicts from DWP side
         string correlationId = Guid.NewGuid().ToString();
+
+
+
+        EligibilityPolicy eligibilityPolicy = new EligibilityPolicy
+        {
+
+            CheckType = result.Type,
+            EligibilityCriteria = EligibilityCriteria.standard,
+            UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[result.Type],
+            IsDeleted = false
+        };
+
+        if (result.OrganisationType == OrganisationType.local_authority && result.OrganisationID is int laId && laId != 0)
+        {
+
+            int? policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(laId, result.Type);
+            //get policy for the la
+            eligibilityPolicy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
+        }
+
+
 
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
@@ -405,7 +426,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
                 //To ensure correct LA ID is passed when using ECS for checks
-                string laId = ExtractLAIdFromScope(auditDataTemplate.scope);
+                string localAuthorityId = ExtractLAIdFromScope(auditDataTemplate.scope);
                 
 
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
@@ -416,7 +437,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     //TODO: This should live in the use case
                     if (_ecsAdapter.UseEcsforChecks == "true")
                     {
-                        checkStatusResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
                         source = ProcessEligibilityCheckSource.ECS;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
                     }
@@ -430,7 +451,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     }
                     else // do both checks
                     {
-                        checkStatusResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
 

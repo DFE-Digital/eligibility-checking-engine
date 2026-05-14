@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Boundary.Responses.DWP;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -41,9 +42,6 @@ public class DwpAdapter : IDwpAdapter
 
     private readonly string _DWP_ApiInstigatingUserId;
     private readonly string _DWP_ApiPolicyId;
-
-    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
-        new Dictionary<CheckEligibilityType, double>();
 
     private readonly double _DWP_UniversalCreditThreshhold_2;
     private readonly double _DWP_UniversalCreditThreshhold_3;
@@ -198,14 +196,17 @@ public class DwpAdapter : IDwpAdapter
             var liveAwards = universalCredit.attributes.awards.Where(x => x.status == awardStatusLive && DateTime.Parse(x.endDate) > filterDate);
             if (liveAwards != null && liveAwards.Count() > 0)
             {
-                if (CheckUniversalCreditBenefitType(citizenId, liveAwards, eligibilityPolicy.UniversalCreditThreshold))
-                    return GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
+                (bool,EligibilityTier?) result = (false, null);
 
-                if (eligibilityPolicy.EligibilityCriteria == EligibilityCriteria.expanded)
-                    return (true, EligibilityTier.expanded);
+                if (CheckUniversalCreditBenefitType(citizenId, liveAwards, eligibilityPolicy.UniversalCreditThreshold))
+
+                   result =  GetEligibleResponseBasedOnEligibilityPolicy(eligibilityPolicy.EligibilityCriteria);
+
+                else if (eligibilityPolicy.EligibilityCriteria == EligibilityCriteria.expanded)
+                    result  =  (true, EligibilityTier.expanded);
 
                 // If not eligible and not expanded, return not eligible/null tier (standard)
-                return (false, null);
+                return result;
             }
 
         }
