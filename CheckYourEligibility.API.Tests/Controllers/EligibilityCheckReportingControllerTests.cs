@@ -1,7 +1,3 @@
-
-using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
-using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -13,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
@@ -22,6 +19,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
 
     private Mock<IGetEligibilityCheckReportingUseCase> _mockEligibilityCheckReportingUseCase;
+    private Mock<IGetEligibilityReportStatusUseCase> _mockGetEligibilityReportStatusUseCase;
     private Mock<IGetEligibilityReportHistoryUseCase> _mockGetEligibilityReportHistoryUseCase;
     private Mock<IDeleteEligibilityCheckReportUseCase> _mockDeleteEligibilityCheckReportUseCase;
     private ILogger<EligibilityCheckReportingController> _mockLogger;
@@ -34,6 +32,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         _mockEligibilityCheckReportingUseCase = new Mock<IGetEligibilityCheckReportingUseCase>(MockBehavior.Strict);
         _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
         _mockDeleteEligibilityCheckReportUseCase = new Mock<IDeleteEligibilityCheckReportUseCase>(MockBehavior.Strict);
+        _mockGetEligibilityReportStatusUseCase = new Mock<IGetEligibilityReportStatusUseCase>(MockBehavior.Strict);
 
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<EligibilityCheckReportingController>>();
@@ -54,7 +53,8 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
             _mockAuditGateway.Object,
             _mockGetEligibilityReportHistoryUseCase.Object,
             _mockEligibilityCheckReportingUseCase.Object,
-            _mockDeleteEligibilityCheckReportUseCase.Object
+            _mockDeleteEligibilityCheckReportUseCase.Object,
+            _mockGetEligibilityReportStatusUseCase.Object
         );
     }
 
@@ -321,6 +321,86 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)result;
         var errorResponse = (ErrorResponse)badRequestResult.Value!;
         errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+    [Test]
+    public async Task EligibilityCheckReportRequestStatus_returns_ok_with_status_response()
+    {
+        // Arrange
+        var reportId = "report-123";
+        var expectedResponse = new EligibilityReportStatusResponse { Status = "Complete" };
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        _mockGetEligibilityReportStatusUseCase
+            .Setup(u => u.Execute(reportId))
+            .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await _sut.EligibilityCheckReportRequestStatus(reportId);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = (OkObjectResult)result;
+        okResult.Value.Should().BeEquivalentTo(expectedResponse);
+    }
+
+    [Test]
+    public async Task EligibilityCheckReportRequestStatus_returns_bad_request_when_no_local_authority_scope_found()
+    {
+        // Arrange
+        var reportId = "report-123";
+        SetupControllerWithLocalAuthorityIds(new List<int>());
+
+        // Act
+        var result = await _sut.EligibilityCheckReportRequestStatus(reportId);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequest = (BadRequestObjectResult)result;
+        var errorResponse = badRequest.Value as ErrorResponse;
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task EligibilityCheckReportRequestStatus_returns_not_found_when_not_found_exception_thrown()
+    {
+        // Arrange
+        var reportId = "report-123";
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        _mockGetEligibilityReportStatusUseCase
+            .Setup(u => u.Execute(reportId))
+            .ThrowsAsync(new NotFoundException());
+
+        // Act
+        var result = await _sut.EligibilityCheckReportRequestStatus(reportId);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var notFound = (NotFoundObjectResult)result;
+        var errorResponse = notFound.Value as ErrorResponse;
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Errors.First().Status.Should().Be(StatusCodes.Status404NotFound);
+    }
+
+    [Test]
+    public async Task EligibilityCheckReportRequestStatus_returns_bad_request_when_validation_exception_thrown()
+    {
+        // Arrange
+        var reportId = "report-123";
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        var errorMsg = "Validation failed";
+        _mockGetEligibilityReportStatusUseCase
+            .Setup(u => u.Execute(reportId))
+            .ThrowsAsync(new ValidationException(new List<Error>(), errorMsg));
+
+        // Act
+        var result = await _sut.EligibilityCheckReportRequestStatus(reportId);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequest = (BadRequestObjectResult)result;
+        var errorResponse = badRequest.Value as ErrorResponse;
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Errors.First().Title.Should().Be(errorMsg);
     }
 }
 

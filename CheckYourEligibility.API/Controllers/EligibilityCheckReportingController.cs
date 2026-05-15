@@ -20,6 +20,7 @@ public class EligibilityCheckReportingController : BaseController
     private readonly IGetEligibilityReportHistoryUseCase _getEligibilityReportHistoryUseCase;
     private readonly IGetEligibilityCheckReportingUseCase _getEligibilityCheckReportingUseCase;
     private readonly IDeleteEligibilityCheckReportUseCase _deleteEligibilityCheckReportUseCase;
+    private readonly IGetEligibilityReportStatusUseCase _getEligibilityReportStatusUseCase;
 
     public EligibilityCheckReportingController(
         ILogger<EligibilityCheckReportingController> logger,
@@ -27,7 +28,8 @@ public class EligibilityCheckReportingController : BaseController
         IAudit audit,
         IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
         IGetEligibilityCheckReportingUseCase getEligibilityCheckReportingUseCase,
-        IDeleteEligibilityCheckReportUseCase deleteEligibilityCheckReportUseCase
+        IDeleteEligibilityCheckReportUseCase deleteEligibilityCheckReportUseCase,
+        IGetEligibilityReportStatusUseCase  getEligibilityReportStatusUseCase
     ) : base(audit)
     {
         _logger = logger;
@@ -35,8 +37,45 @@ public class EligibilityCheckReportingController : BaseController
         _getEligibilityReportHistoryUseCase = getEligibilityReportHistoryUseCase;
         _getEligibilityCheckReportingUseCase = getEligibilityCheckReportingUseCase;
         _deleteEligibilityCheckReportUseCase = deleteEligibilityCheckReportUseCase;
+        _getEligibilityReportStatusUseCase = getEligibilityReportStatusUseCase;
     }
 
+    [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check-eligibility/report/{reportId}/status")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> EligibilityCheckReportRequestStatus(string reportId) {
+       
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await  _getEligibilityReportStatusUseCase.Execute(reportId);
+            return new OkObjectResult(result);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse
+            { Errors = [new Error { Status = StatusCodes.Status404NotFound }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse
+            { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        
+
+
+    }
     /// <summary>
     ///     Return report status and id
     /// </summary>

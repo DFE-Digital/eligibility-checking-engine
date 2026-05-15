@@ -1,5 +1,6 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
+using DocumentFormat.OpenXml.Math;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -16,8 +17,19 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         _db = db;
         _logger = logger;
     }
+    /// <summary>
+    /// If report if found - return status,
+    /// else - return null
+    /// </summary>
+    /// <param name="reportId"></param>
+    /// <returns></returns>
+    public async Task<EligibilityCheckReport?> GetEligibilityReportStatusById(Guid reportId)
+    {
+        var report = await _db.EligibilityCheckReports.FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId);
+        return report;
 
-
+    
+    }
     public async Task EligibilityCheckReports(
     Guid reportId,
     CancellationToken cancellationToken = default)
@@ -99,7 +111,6 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             throw;
         }
     }
-
     public async Task<EligibilityCheckReport> CreateReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken)
     {
         var report = new EligibilityCheckReport
