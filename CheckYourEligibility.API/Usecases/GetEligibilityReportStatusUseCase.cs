@@ -31,7 +31,7 @@ public class GetEligibilityReportStatusUseCase : IGetEligibilityReportStatusUseC
         if (response == null) {
 
             _logger.LogWarning(
-                $"Eligibility check report with ID {reportId} not found");
+                "Eligibility check report with ID {ReportId} not found", id);
             throw new NotFoundException();
         }        
         
