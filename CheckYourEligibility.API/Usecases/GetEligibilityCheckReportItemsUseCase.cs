@@ -28,7 +28,7 @@ namespace CheckYourEligibility.API.Usecases
 
             if (await _eligibilityCheckReportingGateway.GetEligibilityReportById(id) == null)
             {
-                _logger.LogWarning($"Eligibility check report with ID {reportId} not found");
+                _logger.LogWarning("Eligibility check report with ID {ReportId} not found", id);
                 throw new NotFoundException();
             }
 
