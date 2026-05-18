@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,7 @@ public class EligibilityCheckReportingController : BaseController
     private readonly IGetEligibilityCheckReportingUseCase _getEligibilityCheckReportingUseCase;
     private readonly IDeleteEligibilityCheckReportUseCase _deleteEligibilityCheckReportUseCase;
     private readonly IGetEligibilityReportStatusUseCase _getEligibilityReportStatusUseCase;
+    private readonly IGetEligibilityCheckReportItemsUseCase _getEligibilityCheckReportItemsUseCase;
 
     public EligibilityCheckReportingController(
         ILogger<EligibilityCheckReportingController> logger,
@@ -29,7 +31,8 @@ public class EligibilityCheckReportingController : BaseController
         IGetEligibilityReportHistoryUseCase getEligibilityReportHistoryUseCase,
         IGetEligibilityCheckReportingUseCase getEligibilityCheckReportingUseCase,
         IDeleteEligibilityCheckReportUseCase deleteEligibilityCheckReportUseCase,
-        IGetEligibilityReportStatusUseCase  getEligibilityReportStatusUseCase
+        IGetEligibilityReportStatusUseCase  getEligibilityReportStatusUseCase,
+        IGetEligibilityCheckReportItemsUseCase getEligibilityCheckReportItemsUseCase
     ) : base(audit)
     {
         _logger = logger;
@@ -38,14 +41,51 @@ public class EligibilityCheckReportingController : BaseController
         _getEligibilityCheckReportingUseCase = getEligibilityCheckReportingUseCase;
         _deleteEligibilityCheckReportUseCase = deleteEligibilityCheckReportUseCase;
         _getEligibilityReportStatusUseCase = getEligibilityReportStatusUseCase;
+        _getEligibilityCheckReportItemsUseCase = getEligibilityCheckReportItemsUseCase;
     }
 
     [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/check-eligibility/report/{reportId}/items")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> EligibilityCheckReportItems(string reportId)
+    {
+
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }            
+            var result = await _getEligibilityCheckReportItemsUseCase.Execute(reportId);
+            return new OkObjectResult(result);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse
+            { Errors = [new Error { Status = StatusCodes.Status404NotFound }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse
+            { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+
+
+
+    }
+    [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/check-eligibility/report/{reportId}/status")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> EligibilityCheckReportRequestStatus(string reportId) {
+    public async Task<ActionResult> EligibilityCheckReportStatus(string reportId) {
        
         try
         {
@@ -73,7 +113,6 @@ public class EligibilityCheckReportingController : BaseController
             { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         
-
 
     }
     /// <summary>

@@ -8,14 +8,14 @@ namespace CheckYourEligibility.API.Tests.UseCases;
 public class GetEligibilityReportStatusUseCaseTests : TestBase.TestBase
 {
     private Mock<IEligibilityCheckReporting> _mockGateway;
-    private Mock<ILogger<GetEligibilityReportHistoryUseCase>> _mockLogger;
+    private Mock<ILogger<GetEligibilityReportStatusUseCase>> _mockLogger;
     private GetEligibilityReportStatusUseCase _sut;
 
     [SetUp]
     public void Setup()
     {
         _mockGateway = new Mock<IEligibilityCheckReporting>();
-        _mockLogger = new Mock<ILogger<GetEligibilityReportHistoryUseCase>>();
+        _mockLogger = new Mock<ILogger<GetEligibilityReportStatusUseCase>>();
         _sut = new GetEligibilityReportStatusUseCase(_mockGateway.Object, _mockLogger.Object);
     }
 
@@ -31,7 +31,7 @@ public class GetEligibilityReportStatusUseCaseTests : TestBase.TestBase
     public void Execute_ReportNotFound_ThrowsNotFoundException()
     {
         var guid = Guid.NewGuid();
-        _mockGateway.Setup(g => g.GetEligibilityReportStatusById(guid)).ReturnsAsync((EligibilityCheckReport)null);
+        _mockGateway.Setup(g => g.GetEligibilityReportById(guid)).ReturnsAsync((EligibilityCheckReport)null);
         Assert.ThrowsAsync<NotFoundException>(async () => await _sut.Execute(guid.ToString()));
     }
 
@@ -40,7 +40,7 @@ public class GetEligibilityReportStatusUseCaseTests : TestBase.TestBase
     {
         var guid = Guid.NewGuid();
         var report = new EligibilityCheckReport { Status = ReportStatus.Complete };
-        _mockGateway.Setup(g => g.GetEligibilityReportStatusById(guid)).ReturnsAsync(report);
+        _mockGateway.Setup(g => g.GetEligibilityReportById(guid)).ReturnsAsync(report);
         var result = await _sut.Execute(guid.ToString());
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Status, Is.EqualTo(ReportStatus.Complete.ToString()));
@@ -51,7 +51,7 @@ public class GetEligibilityReportStatusUseCaseTests : TestBase.TestBase
     {
         var guid = Guid.NewGuid();
         var report = new EligibilityCheckReport { Status = null };
-        _mockGateway.Setup(g => g.GetEligibilityReportStatusById(guid)).ReturnsAsync(report);
+        _mockGateway.Setup(g => g.GetEligibilityReportById(guid)).ReturnsAsync(report);
         var result = await _sut.Execute(guid.ToString());
         Assert.That(result.Status, Is.EqualTo(ReportStatus.Archived.ToString()));
     }

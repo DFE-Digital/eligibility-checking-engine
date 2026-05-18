@@ -182,6 +182,7 @@ builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUse
 builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckReportingUseCase, GetEligibilityCheckReportingUseCase>();
 builder.Services.AddScoped<IGetEligibilityReportStatusUseCase, GetEligibilityReportStatusUseCase>();
+builder.Services.AddScoped<IGetEligibilityCheckReportItemsUseCase, GetEligibilityCheckReportItemsUseCase>();
 builder.Services.AddScoped<IGetEligibilityReportHistoryUseCase, GetEligibilityReportHistoryUseCase>();
 builder.Services.AddScoped<IDeleteEligibilityCheckReportUseCase, DeleteEligibilityCheckReportUseCase>();
 builder.Services.AddScoped<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase, GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>();

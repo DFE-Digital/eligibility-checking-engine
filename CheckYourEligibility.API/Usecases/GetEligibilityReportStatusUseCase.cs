@@ -9,9 +9,9 @@ public interface IGetEligibilityReportStatusUseCase
 public class GetEligibilityReportStatusUseCase : IGetEligibilityReportStatusUseCase
 {
     private readonly IEligibilityCheckReporting _eligibilityCheckReportingGateway;
-    private readonly ILogger<GetEligibilityReportHistoryUseCase> _logger;
+    private readonly ILogger<GetEligibilityReportStatusUseCase> _logger;
 
-    public GetEligibilityReportStatusUseCase(IEligibilityCheckReporting eligibilityCheckReportingGateway, ILogger<GetEligibilityReportHistoryUseCase> logger)
+    public GetEligibilityReportStatusUseCase(IEligibilityCheckReporting eligibilityCheckReportingGateway, ILogger<GetEligibilityReportStatusUseCase> logger)
     {
         _eligibilityCheckReportingGateway = eligibilityCheckReportingGateway;
         _logger = logger;
@@ -26,7 +26,7 @@ public class GetEligibilityReportStatusUseCase : IGetEligibilityReportStatusUseC
 
         }
 
-        var response = await _eligibilityCheckReportingGateway.GetEligibilityReportStatusById(id);
+        var response = await _eligibilityCheckReportingGateway.GetEligibilityReportById(id);
 
         if (response == null) {
 

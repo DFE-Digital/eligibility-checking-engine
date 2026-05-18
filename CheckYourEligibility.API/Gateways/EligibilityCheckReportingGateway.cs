@@ -1,6 +1,8 @@
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using DocumentFormat.OpenXml.Math;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -18,18 +20,59 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         _logger = logger;
     }
     /// <summary>
-    /// If report if found - return status,
-    /// else - return null
+    /// Returns report by ID
     /// </summary>
     /// <param name="reportId"></param>
-    /// <returns></returns>
-    public async Task<EligibilityCheckReport?> GetEligibilityReportStatusById(Guid reportId)
+    /// <returns>Report record</returns>
+    public async Task<EligibilityCheckReport?> GetEligibilityReportById(Guid reportId)
     {
         var report = await _db.EligibilityCheckReports.FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId);
         return report;
-
-    
     }
+    /// <summary>
+    /// Get all checks by report ID
+    /// </summary>
+    /// <param name="reportId"></param>
+    /// <returns></returns>
+    public async Task<List<EligibilityCheckReportItem>> GetEligibilityCheckReportItemsByReportId(Guid reportId) {
+
+        var reportItems = await _db.EligibilityCheckReportItem.Where(i => i.EligibilityCheckReportId == reportId).ToListAsync();
+        return reportItems;
+    }
+    public async Task<Dictionary<Guid, EligibilityCheck>> GetEligibilityChecksByReportId(Guid reportId)
+    {
+        if (await GetEligibilityReportById(reportId) == null)
+        {
+            _logger.LogWarning($"Eligibility check report with ID {reportId} not found");
+            throw new NotFoundException();
+        }
+        var reportItems = await  GetEligibilityCheckReportItemsByReportId(reportId);
+
+        if (!reportItems.Any())
+            return new Dictionary<Guid, EligibilityCheck>();
+
+        var ids = reportItems.Select(x => x.EligibilityCheckID);
+
+        var idList = ids.ToList();
+
+        var checks = await _db.CheckEligibilities
+            .Where(c => idList.Contains(c.EligibilityCheckID) && !c.IsDeleted)
+            .ToListAsync();
+
+        return checks.ToDictionary(
+            c => Guid.Parse(c.EligibilityCheckID),
+            c => c
+        );
+    }
+
+    /// <summary>
+    /// Backend process for report generation
+    /// </summary>
+    /// <param name="reportId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task EligibilityCheckReports(
     Guid reportId,
     CancellationToken cancellationToken = default)

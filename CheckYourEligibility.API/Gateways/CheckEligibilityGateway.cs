@@ -1,15 +1,17 @@
 ﻿// Ignore Spelling: Fsm
 
 using AutoMapper;
-using Azure.Storage.Queues;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -64,6 +66,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             }
         }
     }
+
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
 
         var item = await MapCheck(data, meta);
