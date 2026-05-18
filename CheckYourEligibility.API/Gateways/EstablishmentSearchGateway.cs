@@ -19,6 +19,19 @@ public class EstablishmentSearchGateway : IEstablishmentSearch
         _db = dbContext;
     }
 
+    /// <summary>
+    /// Get Establishment LA ID if no establishment is found - return null
+    /// </summary>
+    /// <param name="establishmentId"></param>
+    /// <returns></returns>
+    public async Task<int?> GetEstablishmentLAIdAsync(int establishmentId) {
+
+        int? laId = null;
+        var record = await _db.Establishments.AsNoTracking().FirstOrDefaultAsync(x => x.EstablishmentID == establishmentId);
+        if (record != null) { laId = record.LocalAuthorityID; }
+        return laId;
+    }
+
     [ExcludeFromCodeCoverage(Justification = "memory only db breaks test in full run, works fine run locally")]
     public async Task<IEnumerable<Establishment>?> Search(string query, string? la, string? mat)
     {

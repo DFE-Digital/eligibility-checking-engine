@@ -6,6 +6,7 @@ using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
@@ -13,6 +14,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.ComponentModel;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -41,10 +43,6 @@ public class DwpAdapterTests : TestBase.TestBase
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var configForSmsApi = new Dictionary<string, string>
         {
-            { "Dwp:UniversalCreditThreshhold-1", "616.66" },
-            { "Dwp:UniversalCreditThreshhold-2", "1233.33" },
-            { "Dwp:UniversalCreditThreshhold-3", "1849.99" },
-            { "Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals", "616.66" },
             { "Dwp:EcsHost", "ecs.education.gov.uk" },
             { "Dwp:EcsServiceVersion", "20170701" },
             { "Dwp:EcsLAId", "999" },
@@ -68,91 +66,135 @@ public class DwpAdapterTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_Claims_have_pensions_credit_CheckBenefitEntitlement_Should_Return_true()
+    public void Given_Claims_have_pensions_credit_and_Policy_Is_Standard_CheckBenefitEntitlement_Should_Return_true_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
         request.data[0].attributes.endDate = null;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true); //isEntitled
+        response.Item2.Should().BeNull(); //tier
     }
 
     [Test]
-    public void Given_Claims_have_pensions_credit_CheckBenefitEntitlement_Should_Return_false()
+    public void Given_Claims_have_pensions_credit_and_Policy_IsStandard_CheckBenefitEntitlement_Should_Return_false_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
         request.data[0].attributes.status = "not entitled";
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false); //IsEntitled
+        response.Item2.Should().BeNull(); // Tier
     }
 
     [Test]
     public void Given_Claims_have_job_seekers_allowance_income_based_CheckBenefitEntitlement_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true); //IsEntitled
+        response.Item2.Should().BeNull(); //Tier
     }
 
     [Test]
-    public void Given_Claims_have_income_support_CheckBenefitEntitlement_Should_Return_true()
+    public void Given_Claims_have_income_and_Policy_IsStandard_support_CheckBenefitEntitlement_Should_Return_true_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.benefitType = DwpBenefitType.income_support.ToString();
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     [Test]
-    public void Given_Claims_have_employment_support_allowance_income_based_CheckBenefitEntitlement_Should_Return_true()
+    public void Given_Claims_have_employment_support_allowance_income_based_and_Policy_IsStandard_CheckBenefitEntitlement_Should_Return_true_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
+
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
+
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
-    ///     UC1 616.66 One instance of an award with status live above threshold
+    ///     UC1 (61667 pence) One instance of an award with status live above threshold
     /// </summary>
     [Test]
-    public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_1_Should_Return_false()
+    public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_1_and_Policy_IsStandard_Should_Return_false_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
+
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -163,25 +205,32 @@ public class DwpAdapterTests : TestBase.TestBase
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 10000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 100000 }
             }
         };
 
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
     ///     UC1 616.66 One instance of an award with status live within threshold
     /// </summary>
     [Test]
-    public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_1_Should_Return_true()
+    public void Given_Claims_have_universal_credit_and_Policy_IsStandard_CheckBenefitEntitlement_1_Should_Return_true_Tier_Should_Ne_Null()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+        .With(x => x.ID, 1)
+        .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+        .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+        .With(x => x.UniversalCreditThreshold, 61667)
+        .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -196,12 +245,12 @@ public class DwpAdapterTests : TestBase.TestBase
             }
         };
 
-
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
 
@@ -212,6 +261,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_2_Should_Return_false()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -222,22 +277,22 @@ public class DwpAdapterTests : TestBase.TestBase
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500000 } //pence
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500000 } //pence
             }
         };
 
-
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -247,6 +302,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_2_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -267,21 +328,27 @@ public class DwpAdapterTests : TestBase.TestBase
             }
         };
 
-
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
-    ///     UC2 1849.99 two instance of an award with status live above threshold
+    ///     UC2 184999 pence two instance of an award with status live above threshold
     /// </summary>
     [Test]
     public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_3_Should_Return_false()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -292,28 +359,28 @@ public class DwpAdapterTests : TestBase.TestBase
             {
                 endDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500000 }
             },
             new()
             {
                 endDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500000 }
             },
             new()
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 5000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 500000 }
             }
         };
 
-
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -323,6 +390,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_have_universal_credit_CheckBenefitEntitlement_3_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         request.data[0].attributes.benefitType = DwpBenefitType.universal_credit.ToString();
@@ -349,12 +422,12 @@ public class DwpAdapterTests : TestBase.TestBase
             }
         };
 
-
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -365,6 +438,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_have_Ended_pensions_credit_and_universal_credit_CheckBenefitEntitlement_1_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         //PC
@@ -384,22 +463,30 @@ public class DwpAdapterTests : TestBase.TestBase
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
     ///     Ended pension credit
-    ///     UC1 616.66 One instance of an award with status live above threshold
+    ///     UC1 (61667 pence) One instance of an award with status live above threshold
     /// </summary>
     [Test]
     public void Given_Claims_have_Ended_pensions_credit_and_universal_credit_CheckBenefitEntitlement_1_Should_Return_false()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
+
         //PC
         request.data[0].attributes.benefitType = DwpBenefitType.pensions_credit.ToString();
         request.data[0].attributes.endDate = DateTime.Now.ToString("yyyy-MM-dd");
@@ -412,15 +499,16 @@ public class DwpAdapterTests : TestBase.TestBase
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 100000 } //in pence
             }
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -431,6 +519,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_no_live_universal_credit_JSA_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         //JSA
@@ -451,10 +545,11 @@ public class DwpAdapterTests : TestBase.TestBase
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -465,9 +560,15 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_no_live_universal_credit_ESA_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
-        //JSA
+        //ESA
         request.data[0].attributes.benefitType = DwpBenefitType.employment_support_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
@@ -485,10 +586,11 @@ public class DwpAdapterTests : TestBase.TestBase
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
@@ -499,6 +601,12 @@ public class DwpAdapterTests : TestBase.TestBase
     public void Given_Claims_no_live_universal_credit_Income_Support_Should_Return_true()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
         //IS
@@ -519,23 +627,30 @@ public class DwpAdapterTests : TestBase.TestBase
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(true);
+        response.Item1.Should().Be(true);
+        response.Item2.Should().BeNull();
     }
 
     /// <summary>
     ///     Income Support not ended
-    ///     UC1 616.66 One instance of an award with status live above threshold
+    ///     UC1 61667 pence One instance of an award with status live above threshold
     /// </summary>
     [Test]
     public void Given_Claims_universal_credit_above_threshold_JSA_Should_Return_false()
     {
         // Arrange
+        var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
+            .With(x => x.ID, 1)
+            .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.EligibilityCriteria, EligibilityCriteria.standard)
+            .With(x => x.UniversalCreditThreshold, 61667)
+            .Create();
         var citizenGuid = Guid.NewGuid().ToString();
         var request = _fixture.Create<DwpClaimsResponse>();
-        //IS
+        //JSA
         request.data[0].attributes.benefitType = DwpBenefitType.job_seekers_allowance_income_based.ToString();
         request.data[0].attributes.endDate = null;
         request.data[0].attributes.status = DwpAdapter.decision_entitled;
@@ -548,15 +663,16 @@ public class DwpAdapterTests : TestBase.TestBase
             {
                 endDate = DateTime.Now.ToString("yyyy-MM-dd"), startDate = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"),
                 status = DwpAdapter.awardStatusLive,
-                assessmentAttributes = new AssessmentAttributes { takeHomePay = 1000 }
+                assessmentAttributes = new AssessmentAttributes { takeHomePay = 100000 }
             }
         };
 
         // Act
-        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals);
+        var response = _sut.CheckBenefitEntitlement(citizenGuid, request, CheckEligibilityType.FreeSchoolMeals, eligibilityPolicy);
 
         // Assert
-        response.Should().Be(false);
+        response.Item1.Should().Be(false);
+        response.Item2.Should().BeNull();
     }
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)

@@ -1,10 +1,11 @@
-﻿using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Net;
 
 namespace CheckYourEligibility.API.Controllers;
@@ -15,12 +16,14 @@ namespace CheckYourEligibility.API.Controllers;
 public class LocalAuthoritiesController : BaseController
 {
     private readonly ILocalAuthority _localAuthority;
+    private readonly IEligibilityPolicy _eligibilityPolicy;
     private const string AdminScope = "admin";
     private const string LocalAuthorityScope = "local_authority";
 
-    public LocalAuthoritiesController(ILocalAuthority localAuthority, IAudit audit) : base(audit)
+    public LocalAuthoritiesController(ILocalAuthority localAuthority, IAudit audit, IEligibilityPolicy eligibility) : base(audit)
     {
         _localAuthority = localAuthority;
+        _eligibilityPolicy = eligibility;
     }
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
@@ -40,9 +43,30 @@ public class LocalAuthoritiesController : BaseController
             });
         }
 
+        // extract the eligibility polciies for the LA
+        // to return into the response
+        List<EligibilityPolicyResponse> eligiblity = new();
+        int[] laPolicies = [la.FreeSchoolMealsPolicyID, la.EarlyYearsPupilPremiumPolicyID, la.TwoYearPolicyID];
+
+        foreach (var policyId in laPolicies)
+        {
+
+            var policy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyId);
+            EligibilityPolicyResponse eligibilityPolicy = new()
+            {
+                CheckType = policy.CheckType.ToString(),
+                EligibilityCriteria = policy.EligibilityCriteria.ToString()
+            };
+
+            eligiblity.Add(eligibilityPolicy);
+        }
+
+
         return Ok(new LocalAuthoritySettingsResponse
         {
-            SchoolCanReviewEvidence = la.SchoolCanReviewEvidence
+            SchoolCanReviewEvidence = la.SchoolCanReviewEvidence,
+            EligibilityPolicies = eligiblity
+
         });
     }
 

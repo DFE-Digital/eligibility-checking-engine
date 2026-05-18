@@ -6,6 +6,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
@@ -15,6 +16,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -25,9 +27,11 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly IEligibilityCheckContext _db;
 
     private readonly IEcsAdapter _ecsAdapter;
+    private readonly ILocalAuthority _localAuthority;
     private readonly IDwpAdapter _dwpAdapter;
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
+    private readonly IEligibilityPolicy _eligibilityPolicy;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
@@ -36,9 +40,10 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly string isInGracePeriodPrefix;
     private readonly string isNotYetEligiblePrefix;
     private readonly string isExpiredPrefix;
-
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
+           new Dictionary<CheckEligibilityType, double>();
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway)
+        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway, ILocalAuthority localAuthority, IEligibilityPolicy eligibilityPolicy)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -46,31 +51,35 @@ public class CheckingEngineGateway : ICheckingEngine
         _dwpAdapter = dwpAdapter;
         _hashGateway = hashGateway;
         _configuration = configuration;
+        _localAuthority = localAuthority;
+        _eligibilityPolicy = eligibilityPolicy;
 
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
         isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] =
+           Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
+        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
+            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
     }
-
     public async Task<(CheckEligibilityStatus?,EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
         var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-                                                                           x.IsDeleted == false);
+                                                                          x.IsDeleted == false);
 
         if (result != null)
         {
+
             var checkData = GetCheckProcessData(result.Type, result.CheckData);
-
-            //if (result.Status != CheckEligibilityStatus.queuedForProcessing)
-            //    return result.Status;
-
             //TODO: This should live in the use case
             switch (result.Type)
             {
-                case CheckEligibilityType.FreeSchoolMeals:
+                case CheckEligibilityType.FreeSchoolMeals:                          
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
                     {
@@ -350,12 +359,33 @@ public class CheckingEngineGateway : ICheckingEngine
         var context = dbContextFactory ?? _db;
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkStatusResult = CheckEligibilityStatus.parentNotFound;
-        CAPIClaimResponse capiClaimResponse = new();
+        CAPIClaimResponseBase capiClaimResponse = new();
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
 
         // For CAPI request to track request conflicts from DWP side
         string correlationId = Guid.NewGuid().ToString();
+
+
+
+        EligibilityPolicy eligibilityPolicy = new EligibilityPolicy
+        {
+
+            CheckType = result.Type,
+            EligibilityCriteria = EligibilityCriteria.standard,
+            UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[result.Type],
+            IsDeleted = false
+        };
+
+        if (result.OrganisationType == OrganisationType.local_authority && result.OrganisationID is int laId && laId != 0)
+        {
+
+            int? policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(laId, result.Type);
+            //get policy for the la
+            eligibilityPolicy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
+        }
+
+
 
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
@@ -370,7 +400,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
                 //To ensure correct LA ID is passed when using ECS for checks
-                string laId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
+                string localAuthorityId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
                 if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
                 {
@@ -379,26 +409,26 @@ public class CheckingEngineGateway : ICheckingEngine
                     //TODO: This should live in the use case
                     if (_ecsAdapter.UseEcsforChecks == "true")
                     {
-                        checkStatusResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
                         source = ProcessEligibilityCheckSource.ECS;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
                     }
                     else if (_ecsAdapter.UseEcsforChecks == "false")
                     {
 
-                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId);
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId,eligibilityPolicy);
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
                     }
                     else // do both checks
                     {
-                        checkStatusResult = await EcsCheck(checkData, laId);
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
 
                         sw.Restart();
-                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId);
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
                         eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
@@ -427,6 +457,7 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         
         result.Status = checkStatusResult;
+        result.Tier = capiClaimResponse.EligibilityTier;
         result.Updated = DateTime.UtcNow;
 
         if (checkStatusResult == CheckEligibilityStatus.error)
@@ -595,12 +626,9 @@ public class CheckingEngineGateway : ICheckingEngine
         return convertEcsResultStatus(result);
     }
 
-    public async Task<CAPIClaimResponse> DwpCitizenCheck(CheckProcessData data,
-        CheckEligibilityStatus checkResult, string correlationId)
+    public async Task<CAPIClaimResponseBase> DwpCitizenCheck(CheckProcessData data,
+        CheckEligibilityStatus checkResult, string correlationId,EligibilityPolicy eligibilityPolicy)
     {
-
-        // ECS_Conflict helper logic to better track conflicts
-        CAPIClaimResponse claimResponse = new();
 
         var citizenRequest = new CitizenMatchRequest
         {
@@ -637,34 +665,30 @@ public class CheckingEngineGateway : ICheckingEngine
 
             // Perform a benefit check
             var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId);
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId,eligibilityPolicy);
             _logger.LogInformation($"Dwp after getting claim");
 
-            if (result.Item1.StatusCode == StatusCodes.Status200OK)
+            if (result.CAPIResponseCode == HttpStatusCode.OK)
             {
-                checkResult = CheckEligibilityStatus.eligible;
+                result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
                 _logger.LogInformation($"Dwp is eligible");
 
             }
-            else if (result.Item1.StatusCode == StatusCodes.Status404NotFound)
+            else if (result.CAPIResponseCode == HttpStatusCode.NotFound)
             {
-                checkResult = CheckEligibilityStatus.notEligible;
+                result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
 
                 _logger.LogInformation($"Dwp is not found");
             }
             else
             {
-                _logger.LogError($"Dwp Error unknown Response status code:-{result.Item1.StatusCode}.");
-                checkResult = CheckEligibilityStatus.error;
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.CAPIResponseCode}.");
+                result.CheckEligibilityStatus = CheckEligibilityStatus.error;
             }
-            // ECS_Conflict helper logic to better track conflicts
-            claimResponse.CAPIEndpoint =
-                $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
-            claimResponse.CheckEligibilityStatus = checkResult;
-            claimResponse.Reason = result.Item2; // reason message returned from DWP gateway
-            claimResponse.CAPIResponseCode = (HttpStatusCode)result.Item1.StatusCode;
+        
+            return result;
         }
-        return claimResponse;
+       
     }
 
     private CheckEligibilityStatus CheckSurname(string lastNamePartial, IQueryable<string> validData)

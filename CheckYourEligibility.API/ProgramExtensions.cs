@@ -66,6 +66,7 @@ public static class ProgramExtensions
         services.AddTransient<IWorkingFamiliesReporting, WorkingFamiliesReportingGateway>();
         services.AddTransient<IWorkingFamiliesEvent, WorkingFamiliesEventGateway>();
         services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
+        services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         return services;
     }
 

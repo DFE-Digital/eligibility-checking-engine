@@ -3,6 +3,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +17,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<ILocalAuthority> _mockLocalAuthority;
+    private Mock<IEligibilityPolicy> _mockEligibilityPolicy;
     private Mock<IAudit> _mockAudit;
     private LocalAuthoritiesController _sut;
 
@@ -24,11 +26,13 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     {
         _fixture = new Fixture();
         _mockLocalAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
+        _mockEligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
 
         _sut = new LocalAuthoritiesController(
             _mockLocalAuthority.Object,
-            _mockAudit.Object
+            _mockAudit.Object,
+            _mockEligibilityPolicy.Object
         );
     }
 
@@ -36,6 +40,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockLocalAuthority.VerifyAll();
+        _mockEligibilityPolicy.VerifyAll();
         _mockAudit.VerifyAll();
     }
 
@@ -50,34 +55,57 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
         };
     }
 
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Given_GetSettings_When_LocalAuthorityExists_ReturnsOkWithCorrectFlag(bool flag)
+    [Test]
+    public async Task GetSettings_WhenLocalAuthorityExists_ReturnsOkWithThreeEligibilityPoliciesAndSchoolCanReviewEvidenceFlag()
     {
         // Arrange
-        var laCode = _fixture.Create<int>();
+        var laCode = 123;
+        var la = new LocalAuthority
+        {
+            LocalAuthorityID = laCode,
+            SchoolCanReviewEvidence = true,
+            FreeSchoolMealsPolicyID = 1,
+            EarlyYearsPupilPremiumPolicyID = 2,
+            TwoYearPolicyID = 3
+        };
+
+        var policy1 = new EligibilityPolicy { CheckType = CheckEligibilityType.FreeSchoolMeals, EligibilityCriteria = EligibilityCriteria.standard };
+        var policy2 = new EligibilityPolicy { CheckType = CheckEligibilityType.EarlyYearPupilPremium, EligibilityCriteria = EligibilityCriteria.standard };
+        var policy3 = new EligibilityPolicy { CheckType = CheckEligibilityType.TwoYearOffer, EligibilityCriteria = EligibilityCriteria.standard };
 
         _mockLocalAuthority
             .Setup(x => x.GetLocalAuthorityById(laCode))
-            .ReturnsAsync(new LocalAuthority
-            {
-                LocalAuthorityID = laCode,
-                LaName = _fixture.Create<string>(),
-                SchoolCanReviewEvidence = flag
-            });
+            .ReturnsAsync(la);
+
+        _mockEligibilityPolicy
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(1))
+            .ReturnsAsync(policy1);
+        _mockEligibilityPolicy
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(2))
+            .ReturnsAsync(policy2);
+        _mockEligibilityPolicy
+            .Setup(x => x.GeEligibilityPolicyByIdAsync(3))
+            .ReturnsAsync(policy3);
 
         // Act
         var result = await _sut.GetSettings(laCode);
 
         // Assert
-        var ok = result as OkObjectResult;
-        ok.Should().NotBeNull();
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
 
-        var payload = ok!.Value as LocalAuthoritySettingsResponse;
-        payload.Should().NotBeNull();
-        payload!.SchoolCanReviewEvidence.Should().Be(flag);
+        var response = okResult.Value as LocalAuthoritySettingsResponse;
+        response.Should().NotBeNull();
+
+        response.SchoolCanReviewEvidence.Should().BeTrue();
+        response.EligibilityPolicies.Should().HaveCount(3);
+        response.EligibilityPolicies[0].CheckType.Should().Be(policy1.CheckType.ToString());
+        response.EligibilityPolicies[0].EligibilityCriteria.Should().Be(policy1.EligibilityCriteria.ToString());
+        response.EligibilityPolicies[1].CheckType.Should().Be(policy2.CheckType.ToString());
+        response.EligibilityPolicies[1].EligibilityCriteria.Should().Be(policy2.EligibilityCriteria.ToString());
+        response.EligibilityPolicies[2].CheckType.Should().Be(policy3.CheckType.ToString());
+        response.EligibilityPolicies[2].EligibilityCriteria.Should().Be(policy3.EligibilityCriteria.ToString());
     }
-
     [Test]
     public async Task Given_GetSettings_When_LocalAuthorityNotFound_ReturnsNotFoundWithErrorResponse()
     {

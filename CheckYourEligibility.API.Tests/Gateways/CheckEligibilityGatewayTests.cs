@@ -111,7 +111,10 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     public async Task Given_PostBulk_Should_Complete()
     {
         // Arrange
+
+
         var request = _fixture.Create<CheckEligibilityRequestData>();
+        var claimResponse = _fixture.Create<CAPIClaimResponseBase>();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
@@ -119,6 +122,8 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var key = string.IsNullOrEmpty(request.NationalInsuranceNumber)
             ? request.NationalAsylumSeekerServiceNumber
             : request.NationalInsuranceNumber;
+        // Arrange standard policy
+
         //Set UpValid hmrc check
         _fakeInMemoryDb.FreeSchoolMealsHMRC.Add(new FreeSchoolMealsHMRC
         {
@@ -131,8 +136,8 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .ReturnsAsync(citizenResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString()))
-            .ReturnsAsync((result, string.Empty));
+                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString(),It.IsAny<EligibilityPolicy>()))
+            .ReturnsAsync(claimResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 

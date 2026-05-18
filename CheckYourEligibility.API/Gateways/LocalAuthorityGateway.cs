@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,9 +14,9 @@ public class LocalAuthorityGateway : ILocalAuthority
         _db = dbContext;
     }
 
-    public Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId)
+    public async Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId)
     {
-        return _db.LocalAuthorities
+        return await _db.LocalAuthorities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
     }
@@ -33,5 +34,30 @@ public class LocalAuthorityGateway : ILocalAuthority
         await _db.SaveChangesAsync();
 
         return la;
+    }
+    /// <summary>
+    /// Get the Policy Id to be applied when checking benefits
+    /// </summary>
+    /// <param name="localAuthorityId"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public async Task<int?> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type)
+    {
+
+        var la = await GetLocalAuthorityById(localAuthorityId);
+
+        switch (type)
+        {
+
+            case CheckEligibilityType.FreeSchoolMeals:
+                return la.FreeSchoolMealsPolicyID;
+            case CheckEligibilityType.EarlyYearPupilPremium:
+                return la.EarlyYearsPupilPremiumPolicyID;
+            case CheckEligibilityType.TwoYearOffer:
+                return la.TwoYearPolicyID;
+        };
+
+        return null;
+
     }
 }

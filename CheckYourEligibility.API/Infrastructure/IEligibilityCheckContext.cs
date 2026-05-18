@@ -25,6 +25,8 @@ public interface IEligibilityCheckContext
     DbSet<Audit> Audits { get; set; }
     DbSet<FosterCarer> FosterCarers { get; set; }
     DbSet<FosterChild> FosterChildren { get; set; }
+     DbSet<EligibilityPolicy> EligibilityPolicies { get; set; }
+
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data);
     Task<int> SaveChangesAsync();
     DatabaseFacade Database { get; } 
