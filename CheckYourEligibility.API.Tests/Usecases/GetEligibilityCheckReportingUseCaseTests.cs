@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests.Usecases;
+namespace CheckYourEligibility.API.Tests.UseCases;
 
 public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
 {

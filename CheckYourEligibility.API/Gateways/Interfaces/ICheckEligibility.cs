@@ -1,6 +1,8 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using System.Threading.Tasks;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
@@ -16,4 +18,5 @@ public interface ICheckEligibility
 
     Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid, EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null);
     Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId);
+
 }
