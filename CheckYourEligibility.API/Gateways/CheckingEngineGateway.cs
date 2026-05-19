@@ -359,6 +359,7 @@ public class CheckingEngineGateway : ICheckingEngine
         var context = dbContextFactory ?? _db;
         var source = ProcessEligibilityCheckSource.HMRC;
         var checkStatusResult = CheckEligibilityStatus.parentNotFound;
+        EligibilityTier? checkTierResult = null;
         CAPIClaimResponseBase capiClaimResponse = new();
         // Variables needed for ECS conflict records
         var eceCheckResult = CheckEligibilityStatus.parentNotFound;
@@ -391,7 +392,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             var (testStatus,testTier)= TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
             checkStatusResult = testStatus;
-            result.Tier = testTier;
+            checkTierResult = testTier;
             source = ProcessEligibilityCheckSource.TEST;
         }
 
@@ -418,6 +419,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId,eligibilityPolicy);
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
+                        checkTierResult = capiClaimResponse.EligibilityTier;
                         source = ProcessEligibilityCheckSource.DWP;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
                     }
@@ -429,7 +431,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         sw.Restart();
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
-                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
+                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;           
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                         if (checkStatusResult != eceCheckResult)
@@ -457,7 +459,7 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         
         result.Status = checkStatusResult;
-        result.Tier = capiClaimResponse.EligibilityTier;
+        result.Tier = checkTierResult;
         result.Updated = DateTime.UtcNow;
 
         if (checkStatusResult == CheckEligibilityStatus.error)
