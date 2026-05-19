@@ -48,11 +48,10 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "E1",
-                    EligibilityCode = eligibilityCode,
-                    SubmissionDate = DateTime.UtcNow
+                    EventId = "C3-A",
+                    SubmissionDate = new DateTime(2025,08,01)
                 }
             }
         }
@@ -68,7 +67,7 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
         // assert
         result.Should().NotBeNull();
         result.Data.Should().HaveCount(1);
-        result.Data.First().Record.WorkingFamiliesEventID.Should().Be("E1");
+        result.Data.First().Record.EventId.Should().Be("C3-A");
 
         _mockWorkingFamiliesReportingGateway.Verify(
             g => g.GetAllWorkingFamiliesEventsByEligibilityCode(eligibilityCode),

@@ -73,10 +73,9 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "X1",
-                    EligibilityCode = eligibilityCode
+                    EventId = "X1",
                 }
             }
         }
@@ -114,20 +113,18 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "C3-A",
-                    EligibilityCode = eligibilityCode,
+                    EventId = "C3-A",
                     SubmissionDate = new DateTime(2025,08,01)
                 }
             },
             new()
             {
                 Event = WorkingFamilyEventType.Reconfirm,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "C3-R1",
-                    EligibilityCode = eligibilityCode,
+                    EventId = "C3-R1",
                     SubmissionDate = new DateTime(2025,08,10)
                 }
             },
@@ -136,20 +133,18 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "C2-A",
-                    EligibilityCode = eligibilityCode,
+                    EventId = "C2-A",
                     SubmissionDate = new DateTime(2024,12,15)
                 }
             },
             new()
             {
                 Event = WorkingFamilyEventType.Reconfirm,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "C2-R1",
-                    EligibilityCode = eligibilityCode,
+                    EventId = "C2-R1",
                     SubmissionDate = new DateTime(2024,12,20)
                 }
             },
@@ -158,10 +153,9 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEvent
+                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
                 {
-                    WorkingFamiliesEventID = "C1-A",
-                    EligibilityCode = eligibilityCode,
+                    EventId = "C1-A",
                     SubmissionDate = new DateTime(2024,06,01)
                 }
             }
@@ -185,15 +179,15 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         returned!.Data.Should().HaveCount(5);
 
         // Block 3 items appear first (newest submission dates)
-        returned.Data[0].Record.WorkingFamiliesEventID.Should().Be("C3-A");
-        returned.Data[1].Record.WorkingFamiliesEventID.Should().Be("C3-R1");
+        returned.Data[0].Record.EventId.Should().Be("C3-A");
+        returned.Data[1].Record.EventId.Should().Be("C3-R1");
 
         // Block 2 next
-        returned.Data[2].Record.WorkingFamiliesEventID.Should().Be("C2-A");
-        returned.Data[3].Record.WorkingFamiliesEventID.Should().Be("C2-R1");
+        returned.Data[2].Record.EventId.Should().Be("C2-A");
+        returned.Data[3].Record.EventId.Should().Be("C2-R1");
 
         // Block 1 last
-        returned.Data[4].Record.WorkingFamiliesEventID.Should().Be("C1-A");
+        returned.Data[4].Record.EventId.Should().Be("C1-A");
 
         // Use case called once
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase.Verify(
