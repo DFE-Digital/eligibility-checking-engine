@@ -43,7 +43,7 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
                 };
             }
 
-            WorkingFamiliesEvent? previous = null;
+            WorkingFamiliesEventEligibilityCodeRepsonseRecord? previous = null;
 
             // check if each record is a reconfirm or application event
             foreach (var current in records)
@@ -58,10 +58,10 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
                         ? WorkingFamilyEventType.Reconfirm
                         : WorkingFamilyEventType.Application,
 
-                    Record = current
+                    Record = _mapper.Map<WorkingFamiliesEventEligibilityCodeRepsonseRecord>(current)
                 });
 
-                previous = current;
+                previous = _mapper.Map<WorkingFamiliesEventEligibilityCodeRepsonseRecord>(current);
             }
 
             return new WorkingFamilyEventByEligibilityCodeRepsonse

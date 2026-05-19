@@ -105,7 +105,7 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
             "There should be exactly one Application per contiguous chain.");
 
         var applicationIds = applications
-            .Select(x => x.Record.WorkingFamiliesEventID)
+            .Select(x => x.Record.EventId)
             .ToList();
 
         Assert.That(applicationIds, Does.Contain("C1-A"));
@@ -120,7 +120,7 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
         Assert.That(reconfirmations.Count, Is.EqualTo(7));
 
         var reconfirmationIds = reconfirmations
-            .Select(x => x.Record.WorkingFamiliesEventID)
+            .Select(x => x.Record.EventId)
             .ToList();
 
         Assert.That(reconfirmationIds, Does.Contain("C1-R1"));
@@ -194,8 +194,7 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
         Assert.That(returnedItem.Event, Is.EqualTo(WorkingFamilyEventType.Application));
 
         // Assert the record matches
-        Assert.That(returnedItem.Record.WorkingFamiliesEventID, Is.EqualTo("ONLY-A"));
-        Assert.That(returnedItem.Record.EligibilityCode, Is.EqualTo("SINGLE123"));
+        Assert.That(returnedItem.Record.EventId, Is.EqualTo("ONLY-A"));
     }
 
 
