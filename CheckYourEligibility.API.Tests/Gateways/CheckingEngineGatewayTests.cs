@@ -68,7 +68,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             { "QueueFsmCheckStandard", "notSet" },
             { "QueueFsmCheckBulk", "notSet" },
             { "HashCheckDays", "7" },
-            { "Dwp:UseEcsforChecksWF", "false"}
+            { "Dwp:UseEcsforChecksWF", "false" },
+            // DefaultEligibilityPolicies mock config
+            { "DefaultEligibilityPolicies:FreeSchoolMeals:Criteria", "standard" },
+            { "DefaultEligibilityPolicies:FreeSchoolMeals:Threshold", "61667" },
+            { "DefaultEligibilityPolicies:EarlyYearPupilPremium:Criteria", "standard" },
+            { "DefaultEligibilityPolicies:EarlyYearPupilPremium:Threshold", "61667" },
+            { "DefaultEligibilityPolicies:TwoYearOffer:Criteria", "standard" },
+            { "DefaultEligibilityPolicies:TwoYearOffer:Threshold", "128334" }
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
@@ -97,7 +104,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task SetOrganisationEligibilityPolicyAsync_Returns_LA_Policy_If_Exists()
+    public async Task GetOrganisationEligibilityPolicyAsync_Returns_LA_Policy_If_Exists()
     {
         // Arrange
         int laId = 123;
@@ -115,7 +122,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Act
         var result =  _sut.GetType()
-            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
         var policy = await result;
 
@@ -127,14 +134,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task SetOrganisationEligibilityPolicyAsync_Returns_Default_If_orgId_Zero()
+    public async Task GetOrganisationEligibilityPolicyAsync_Returns_Default_If_orgId_Zero()
     {
         // Arrange
         int laId = 0;
 
         // Act
         var result =  _sut.GetType()
-            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
         var policy = await result;
 
@@ -146,7 +153,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task SetOrganisationEligibilityPolicyAsync_Returns_Default_If_Policy_Not_Found()
+    public async Task GetOrganisationEligibilityPolicyAsync_Returns_Default_If_Policy_Not_Found()
     {
         // Arrange
         int laId = 123;
@@ -155,7 +162,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Act
         var result =  _sut.GetType()
-            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
         var policy = await result;
 
@@ -166,11 +173,11 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task  SetOrganisationEligibilityPolicyAsync()
+    public async Task  GetOrganisationEligibilityPolicyAsync()
     {
         // Act
         var result =  _sut.GetType()
-            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "multi-academy-trust", 123, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
         var policy = await result;
 

@@ -39,8 +39,8 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly string isInGracePeriodPrefix;
     private readonly string isNotYetEligiblePrefix;
     private readonly string isExpiredPrefix;
-    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold =
-           new Dictionary<CheckEligibilityType, double>();
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new();
+    private readonly Dictionary<CheckEligibilityType, string> _DWP_ApiCriteria = new();
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway, ILocalAuthority localAuthority, IEligibilityPolicy eligibilityPolicy)
     {
@@ -57,12 +57,26 @@ public class CheckingEngineGateway : ICheckingEngine
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
         isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.FreeSchoolMeals] =
-           Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:FreeSchoolMeals"]);
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.EarlyYearPupilPremium] =
-            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:EarlyYearPupilPremium"]);
-        _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
-            Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
+
+        // Use new DefaultEligibilityPolicies config section
+        var defaultPoliciesSection = _configuration.GetSection("DefaultEligibilityPolicies");
+        if (defaultPoliciesSection.Exists())
+        {
+            foreach (var type in new[] { CheckEligibilityType.FreeSchoolMeals, CheckEligibilityType.EarlyYearPupilPremium, CheckEligibilityType.TwoYearOffer })
+            {
+                var typeName = type.ToString();
+                var policySection = defaultPoliciesSection.GetSection(typeName);
+                if (policySection.Exists())
+                {
+                    var thresholdStr = policySection["Threshold"];
+                    if (double.TryParse(thresholdStr, out var threshold))
+                        _DWP_ApiUniversalCreditThreshold[type] = threshold;
+                    var criteria = policySection["Criteria"];
+                    if (!string.IsNullOrEmpty(criteria))
+                        _DWP_ApiCriteria[type] = criteria;
+                }
+            }
+        }
     }
     public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
@@ -354,7 +368,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
     }
 
-    private async Task<EligibilityPolicy> SetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type)
+    private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type)
     {
 
         if (organisationType == OrganisationType.local_authority && orgId is int LaId && LaId != 0)
@@ -371,7 +385,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
 
             CheckType = type,
-            EligibilityCriteria = EligibilityCriteria.standard,
+            EligibilityCriteria = Enum.Parse<EligibilityCriteria>(_DWP_ApiCriteria[type]),
             UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[type],
             IsDeleted = false
         };
@@ -406,7 +420,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
 
-                var eligibilityPolicy = await SetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type);
+                var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type);
                 //To ensure correct LA ID is passed when using ECS for checks
                 string localAuthorityId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
