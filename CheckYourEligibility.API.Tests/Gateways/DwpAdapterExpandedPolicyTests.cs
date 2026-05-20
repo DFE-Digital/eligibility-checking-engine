@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using AutoFixture;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Responses;
@@ -9,7 +7,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using NUnit.Framework;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 

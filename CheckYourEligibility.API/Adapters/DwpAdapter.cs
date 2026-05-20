@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Boundary.Responses.DWP;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;

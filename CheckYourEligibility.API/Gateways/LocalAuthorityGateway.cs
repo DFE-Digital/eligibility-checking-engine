@@ -41,7 +41,7 @@ public class LocalAuthorityGateway : ILocalAuthority
     /// <param name="localAuthorityId"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    public async Task<int?> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type)
+    public async Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type)
     {
 
         var la = await GetLocalAuthorityById(localAuthorityId);
@@ -57,7 +57,7 @@ public class LocalAuthorityGateway : ILocalAuthority
                 return la.TwoYearPolicyID;
         };
 
-        return null;
+        return 0;
 
     }
 }

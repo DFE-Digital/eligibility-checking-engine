@@ -16,7 +16,6 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
-using System.Runtime.CompilerServices;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -65,7 +64,7 @@ public class CheckingEngineGateway : ICheckingEngine
         _DWP_ApiUniversalCreditThreshold[CheckEligibilityType.TwoYearOffer] =
             Convert.ToDouble(_configuration["Dwp:ApiUniversalCreditThreshold:TwoYearOffer"]);
     }
-    public async Task<(CheckEligibilityStatus?,EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
@@ -79,7 +78,7 @@ public class CheckingEngineGateway : ICheckingEngine
             //TODO: This should live in the use case
             switch (result.Type)
             {
-                case CheckEligibilityType.FreeSchoolMeals:                          
+                case CheckEligibilityType.FreeSchoolMeals:
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
                     {
@@ -105,7 +104,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (!nino.IsNullOrEmpty())
         {
-            if (checkType == CheckEligibilityType.FreeSchoolMeals &&  nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted")))
+            if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted")))
                 return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
 
             if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded")))
@@ -115,13 +114,13 @@ public class CheckingEngineGateway : ICheckingEngine
                 return (CheckEligibilityStatus.eligible, null);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
-                return (CheckEligibilityStatus.notEligible,null);
+                return (CheckEligibilityStatus.notEligible, null);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")))
                 return (CheckEligibilityStatus.parentNotFound, null);
             if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")))
                 return (CheckEligibilityStatus.error, null);
-            
+
         }
         else
         {
@@ -235,7 +234,7 @@ public class CheckingEngineGateway : ICheckingEngine
             wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
         }
         else
-        {            
+        {
             return null;
         }
 
@@ -329,28 +328,53 @@ public class CheckingEngineGateway : ICheckingEngine
 
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-            await _hashGateway.Create(wfCheckData, result.Status,result.Tier, source, auditDataTemplate, dbContextFactory);
+            await _hashGateway.Create(wfCheckData, result.Status, result.Tier, source, auditDataTemplate, dbContextFactory);
 
         var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
         // that needs to be returned on the GET request if a record has been found
-        if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound) {
+        if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
+        {
 
-            
-                wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
-                wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-                wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
-                wfCheckData.LastName = wfEvent.ParentLastName;
-                wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
 
-                result.CheckData = JsonConvert.SerializeObject(wfCheckData);
-                context.CheckEligibilities.Update(result);
-            
+            wfCheckData.ValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+            wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+            wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+
+            result.CheckData = JsonConvert.SerializeObject(wfCheckData);
+            context.CheckEligibilities.Update(result);
+
         }
 
 
         result.Updated = DateTime.UtcNow;
         await context.SaveChangesAsync();
+
+    }
+
+    private async Task<EligibilityPolicy> SetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type)
+    {
+
+        if (organisationType == OrganisationType.local_authority && orgId is int LaId && LaId != 0)
+        {
+            int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type);
+            // get policy for the LA          
+            if (policyID != 0)
+                return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
+        }
+
+
+        //fallback to default policy from appsettings.
+        return new EligibilityPolicy
+        {
+
+            CheckType = type,
+            EligibilityCriteria = EligibilityCriteria.standard,
+            UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[type],
+            IsDeleted = false
+        };
 
     }
     private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
@@ -368,29 +392,9 @@ public class CheckingEngineGateway : ICheckingEngine
         string correlationId = Guid.NewGuid().ToString();
 
 
-
-        EligibilityPolicy eligibilityPolicy = new EligibilityPolicy
-        {
-
-            CheckType = result.Type,
-            EligibilityCriteria = EligibilityCriteria.standard,
-            UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[result.Type],
-            IsDeleted = false
-        };
-
-        if (result.OrganisationType == OrganisationType.local_authority && result.OrganisationID is int laId && laId != 0)
-        {
-
-            int? policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(laId, result.Type);
-            //get policy for the la
-            eligibilityPolicy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
-        }
-
-
-
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
-            var (testStatus,testTier)= TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
+            var (testStatus, testTier) = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
             checkStatusResult = testStatus;
             checkTierResult = testTier;
             source = ProcessEligibilityCheckSource.TEST;
@@ -398,8 +402,11 @@ public class CheckingEngineGateway : ICheckingEngine
 
         else
         {
+
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
+
+                var eligibilityPolicy = await SetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type);
                 //To ensure correct LA ID is passed when using ECS for checks
                 string localAuthorityId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
@@ -417,7 +424,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     else if (_ecsAdapter.UseEcsforChecks == "false")
                     {
 
-                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId,eligibilityPolicy);
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
                         source = ProcessEligibilityCheckSource.DWP;
@@ -431,7 +438,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         sw.Restart();
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
-                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;           
+                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                         if (checkStatusResult != eceCheckResult)
@@ -440,7 +447,7 @@ public class CheckingEngineGateway : ICheckingEngine
                         }
 
                     }
-                    
+
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -453,11 +460,11 @@ public class CheckingEngineGateway : ICheckingEngine
         if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult != CheckEligibilityStatus.parentNotFound)
         {
 
-            
-            checkData.EligibilityEndDate  = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
-            result.CheckData = JsonConvert.SerializeObject(checkData); 
+
+            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
+            result.CheckData = JsonConvert.SerializeObject(checkData);
         }
-        
+
         result.Status = checkStatusResult;
         result.Tier = checkTierResult;
         result.Updated = DateTime.UtcNow;
@@ -629,7 +636,7 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     public async Task<CAPIClaimResponseBase> DwpCitizenCheck(CheckProcessData data,
-        CheckEligibilityStatus checkResult, string correlationId,EligibilityPolicy eligibilityPolicy)
+        CheckEligibilityStatus checkResult, string correlationId, EligibilityPolicy eligibilityPolicy)
     {
 
         var citizenRequest = new CitizenMatchRequest
@@ -667,7 +674,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
             // Perform a benefit check
             var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId,eligibilityPolicy);
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
             _logger.LogInformation($"Dwp after getting claim");
 
             if (result.CAPIResponseCode == HttpStatusCode.OK)
@@ -687,10 +694,10 @@ public class CheckingEngineGateway : ICheckingEngine
                 _logger.LogError($"Dwp Error unknown Response status code:-{result.CAPIResponseCode}.");
                 result.CheckEligibilityStatus = CheckEligibilityStatus.error;
             }
-        
+
             return result;
         }
-       
+
     }
 
     private CheckEligibilityStatus CheckSurname(string lastNamePartial, IQueryable<string> validData)

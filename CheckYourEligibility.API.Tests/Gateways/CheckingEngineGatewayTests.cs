@@ -30,6 +30,7 @@ using System.Runtime.CompilerServices;
 namespace CheckYourEligibility.API.Tests;
 
 public class CheckingEngineGatewayTests : TestBase.TestBase
+   
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
@@ -93,6 +94,90 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureDeletedAsync();
+    }
+
+    [Test]
+    public async Task SetOrganisationEligibilityPolicyAsync_Returns_LA_Policy_If_Exists()
+    {
+        // Arrange
+        int laId = 123;
+        var expectedPolicy = new EligibilityPolicy
+        {
+            ID = 1,
+            CheckType = CheckEligibilityType.FreeSchoolMeals,
+            EligibilityCriteria = EligibilityCriteria.expanded,
+            UniversalCreditThreshold = 123.45,
+            IsDeleted = false
+        };
+      
+        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync(1);
+        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(1)).ReturnsAsync(expectedPolicy);
+
+        // Act
+        var result =  _sut.GetType()
+            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+        var policy = await result;
+
+        // Assert
+        policy.Should().NotBeNull();
+        policy.CheckType.Should().Be(CheckEligibilityType.FreeSchoolMeals);
+        policy.EligibilityCriteria.Should().Be(EligibilityCriteria.expanded);
+        policy.UniversalCreditThreshold.Should().Be(123.45);
+    }
+
+    [Test]
+    public async Task SetOrganisationEligibilityPolicyAsync_Returns_Default_If_orgId_Zero()
+    {
+        // Arrange
+        int laId = 0;
+
+        // Act
+        var result =  _sut.GetType()
+            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+        var policy = await result;
+
+        // Assert
+        policy.Should().NotBeNull();
+        policy.CheckType.Should().Be(CheckEligibilityType.FreeSchoolMeals);
+        policy.EligibilityCriteria.Should().Be(EligibilityCriteria.standard);
+        policy.IsDeleted.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task SetOrganisationEligibilityPolicyAsync_Returns_Default_If_Policy_Not_Found()
+    {
+        // Arrange
+        int laId = 123;
+        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync((int)0);
+        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(null)).ReturnsAsync((EligibilityPolicy)null);
+
+        // Act
+        var result =  _sut.GetType()
+            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+        var policy = await result;
+
+        // Assert
+        policy.Should().NotBeNull();
+        policy.CheckType.Should().Be(CheckEligibilityType.FreeSchoolMeals);
+        policy.EligibilityCriteria.Should().Be(EligibilityCriteria.standard);
+    }
+
+    [Test]
+    public async Task  SetOrganisationEligibilityPolicyAsync()
+    {
+        // Act
+        var result =  _sut.GetType()
+            .GetMethod("SetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .Invoke(_sut, new object[] { "multi-academy-trust", 123, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+        var policy = await result;
+
+        // Assert
+        policy.Should().NotBeNull();
+        policy.CheckType.Should().Be(CheckEligibilityType.FreeSchoolMeals);
+        policy.EligibilityCriteria.Should().Be(EligibilityCriteria.standard);
     }
 
     [Test]
