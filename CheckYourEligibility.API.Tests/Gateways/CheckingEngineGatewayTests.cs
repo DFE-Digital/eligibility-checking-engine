@@ -70,12 +70,12 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             { "HashCheckDays", "7" },
             { "Dwp:UseEcsforChecksWF", "false" },
             // DefaultEligibilityPolicies mock config
-            { "DefaultEligibilityPolicies:FreeSchoolMeals:Criteria", "standard" },
-            { "DefaultEligibilityPolicies:FreeSchoolMeals:Threshold", "61667" },
-            { "DefaultEligibilityPolicies:EarlyYearPupilPremium:Criteria", "standard" },
-            { "DefaultEligibilityPolicies:EarlyYearPupilPremium:Threshold", "61667" },
-            { "DefaultEligibilityPolicies:TwoYearOffer:Criteria", "standard" },
-            { "DefaultEligibilityPolicies:TwoYearOffer:Threshold", "128334" }
+            { "Dwp:DefaultEligibilityPolicies:FreeSchoolMeals:Criteria", "standard" },
+            { "Dwp:DefaultEligibilityPolicies:FreeSchoolMeals:Threshold", "61667" },
+            { "Dwp:DefaultEligibilityPolicies:EarlyYearPupilPremium:Criteria", "standard" },
+            { "Dwp:DefaultEligibilityPolicies:EarlyYearPupilPremium:Threshold", "61667" },
+            { "Dwp:DefaultEligibilityPolicies:TwoYearOffer:Criteria", "standard" },
+            { "Dwp:DefaultEligibilityPolicies:TwoYearOffer:Threshold", "128334" }
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
