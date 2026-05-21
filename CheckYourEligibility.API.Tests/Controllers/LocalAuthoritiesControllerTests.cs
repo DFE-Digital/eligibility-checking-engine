@@ -4,7 +4,9 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +19,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<ILocalAuthority> _mockLocalAuthority;
-    private Mock<IEligibilityPolicy> _mockEligibilityPolicy;
+    private Mock<ILocalAuthoritiesUseCase> _localAuthoritiesUseCase;
     private Mock<IAudit> _mockAudit;
     private LocalAuthoritiesController _sut;
 
@@ -26,13 +28,14 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     {
         _fixture = new Fixture();
         _mockLocalAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
-        _mockEligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
+        _localAuthoritiesUseCase = new Mock<ILocalAuthoritiesUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
 
         _sut = new LocalAuthoritiesController(
-            _mockLocalAuthority.Object,
+
+            _localAuthoritiesUseCase.Object,
             _mockAudit.Object,
-            _mockEligibilityPolicy.Object
+            _mockLocalAuthority.Object
         );
     }
 
@@ -40,7 +43,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockLocalAuthority.VerifyAll();
-        _mockEligibilityPolicy.VerifyAll();
+        _localAuthoritiesUseCase.VerifyAll();
         _mockAudit.VerifyAll();
     }
 
@@ -60,32 +63,20 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
     {
         // Arrange
         var laCode = 123;
-        var la = new LocalAuthority
+        var expectedResponse = new LocalAuthoritySettingsResponse
         {
-            LocalAuthorityID = laCode,
             SchoolCanReviewEvidence = true,
-            FreeSchoolMealsPolicyID = 1,
-            EarlyYearsPupilPremiumPolicyID = 2,
-            TwoYearPolicyID = 3
+            EligibilityPolicies = new List<EligibilityPolicyResponse>
+            {
+                new EligibilityPolicyResponse(CheckEligibilityType.FreeSchoolMeals.ToString(),EligibilityCriteria.standard.ToString()),
+                new EligibilityPolicyResponse (CheckEligibilityType.EarlyYearPupilPremium.ToString(), EligibilityCriteria.standard.ToString()),
+                new EligibilityPolicyResponse (CheckEligibilityType.TwoYearOffer.ToString(), EligibilityCriteria.standard.ToString())
+            }
         };
 
-        var policy1 = new EligibilityPolicy { CheckType = CheckEligibilityType.FreeSchoolMeals, EligibilityCriteria = EligibilityCriteria.standard };
-        var policy2 = new EligibilityPolicy { CheckType = CheckEligibilityType.EarlyYearPupilPremium, EligibilityCriteria = EligibilityCriteria.standard };
-        var policy3 = new EligibilityPolicy { CheckType = CheckEligibilityType.TwoYearOffer, EligibilityCriteria = EligibilityCriteria.standard };
-
-        _mockLocalAuthority
-            .Setup(x => x.GetLocalAuthorityById(laCode))
-            .ReturnsAsync(la);
-
-        _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyByIdAsync(1))
-            .ReturnsAsync(policy1);
-        _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyByIdAsync(2))
-            .ReturnsAsync(policy2);
-        _mockEligibilityPolicy
-            .Setup(x => x.GeEligibilityPolicyByIdAsync(3))
-            .ReturnsAsync(policy3);
+        _localAuthoritiesUseCase
+            .Setup(x => x.Execute(laCode))
+            .ReturnsAsync(expectedResponse);
 
         // Act
         var result = await _sut.GetSettings(laCode);
@@ -99,12 +90,12 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
 
         response.SchoolCanReviewEvidence.Should().BeTrue();
         response.EligibilityPolicies.Should().HaveCount(3);
-        response.EligibilityPolicies[0].CheckType.Should().Be(policy1.CheckType.ToString());
-        response.EligibilityPolicies[0].EligibilityCriteria.Should().Be(policy1.EligibilityCriteria.ToString());
-        response.EligibilityPolicies[1].CheckType.Should().Be(policy2.CheckType.ToString());
-        response.EligibilityPolicies[1].EligibilityCriteria.Should().Be(policy2.EligibilityCriteria.ToString());
-        response.EligibilityPolicies[2].CheckType.Should().Be(policy3.CheckType.ToString());
-        response.EligibilityPolicies[2].EligibilityCriteria.Should().Be(policy3.EligibilityCriteria.ToString());
+        response.EligibilityPolicies[0].CheckType.Should().Be(expectedResponse.EligibilityPolicies[0].CheckType);
+        response.EligibilityPolicies[0].EligibilityCriteria.Should().Be(expectedResponse.EligibilityPolicies[0].EligibilityCriteria);
+        response.EligibilityPolicies[1].CheckType.Should().Be(expectedResponse.EligibilityPolicies[1].CheckType);
+        response.EligibilityPolicies[1].EligibilityCriteria.Should().Be(expectedResponse.EligibilityPolicies[1].EligibilityCriteria);
+        response.EligibilityPolicies[2].CheckType.Should().Be(expectedResponse.EligibilityPolicies[2].CheckType);
+        response.EligibilityPolicies[2].EligibilityCriteria.Should().Be(expectedResponse.EligibilityPolicies[2].EligibilityCriteria);
     }
     [Test]
     public async Task Given_GetSettings_When_LocalAuthorityNotFound_ReturnsNotFoundWithErrorResponse()
@@ -112,9 +103,9 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
         // Arrange
         var laCode = _fixture.Create<int>();
 
-        _mockLocalAuthority
-            .Setup(x => x.GetLocalAuthorityById(laCode))
-            .ReturnsAsync((LocalAuthority)null);
+        _localAuthoritiesUseCase
+            .Setup(x => x.Execute(laCode))
+            .ThrowsAsync(new NotFoundException());
 
         // Act
         var result = await _sut.GetSettings(laCode);
@@ -126,6 +117,7 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
         var payload = notFound!.Value as ErrorResponse;
         payload.Should().NotBeNull();
         payload!.Errors.Should().NotBeNullOrEmpty();
+        payload.Errors.First().Status.Should().Be(StatusCodes.Status404NotFound);
         payload.Errors.First().Title.Should().Be($"Local authority '{laCode}' not found");
     }
 

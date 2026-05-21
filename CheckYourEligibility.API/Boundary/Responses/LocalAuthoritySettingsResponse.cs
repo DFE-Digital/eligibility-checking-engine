@@ -7,7 +7,16 @@ public class LocalAuthoritySettingsResponse
 }
 public partial class EligibilityPolicyResponse { 
 
+
     public string CheckType { get; set; }
     public string EligibilityCriteria { get; set; }
+
+
+    public EligibilityPolicyResponse(string checkType, string eligibilityCriteria)
+    {
+        CheckType = checkType;
+        EligibilityCriteria = eligibilityCriteria;
+    }
+
 
 }

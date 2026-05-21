@@ -18,7 +18,7 @@ namespace CheckYourEligibility.API.Gateways
         {
             return await _db.EligibilityPolicies
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ID == EligibilityPolicyId);
+                .FirstOrDefaultAsync(x => x.ID == EligibilityPolicyId && x.IsDeleted == false);
             
         }
     

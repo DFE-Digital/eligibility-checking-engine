@@ -1,8 +1,11 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -15,15 +18,15 @@ namespace CheckYourEligibility.API.Controllers;
 [Authorize]
 public class LocalAuthoritiesController : BaseController
 {
+    private readonly ILocalAuthoritiesUseCase _localAuthorityUseCase;
     private readonly ILocalAuthority _localAuthority;
-    private readonly IEligibilityPolicy _eligibilityPolicy;
     private const string AdminScope = "admin";
     private const string LocalAuthorityScope = "local_authority";
 
-    public LocalAuthoritiesController(ILocalAuthority localAuthority, IAudit audit, IEligibilityPolicy eligibility) : base(audit)
+    public LocalAuthoritiesController(ILocalAuthoritiesUseCase localAuthorityUseCase, IAudit audit, ILocalAuthority localAuthority) : base(audit)
     {
-        _localAuthority = localAuthority;
-        _eligibilityPolicy = eligibility;
+        _localAuthorityUseCase = localAuthorityUseCase;
+        _localAuthority  = localAuthority;
     }
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
@@ -33,41 +36,22 @@ public class LocalAuthoritiesController : BaseController
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> GetSettings(int laCode)
     {
-        var la = await _localAuthority.GetLocalAuthorityById(laCode);
-
-        if (la == null)
+        try
         {
+
+            var laSettings = await _localAuthorityUseCase.Execute(laCode);
+
+            return new OkObjectResult(laSettings);
+        }
+        catch (NotFoundException ex) {
+
             return NotFound(new ErrorResponse
             {
-                Errors = [new Error { Title = $"Local authority '{laCode}' not found" }]
+                Errors = [new Error { Status = StatusCodes.Status404NotFound, Title = $"Local authority '{laCode}' not found" }]
             });
+
         }
-
-        // extract the eligibility polciies for the LA
-        // to return into the response
-        List<EligibilityPolicyResponse> eligiblity = new();
-        int[] laPolicies = [la.FreeSchoolMealsPolicyID, la.EarlyYearsPupilPremiumPolicyID, la.TwoYearPolicyID];
-
-        foreach (var policyId in laPolicies)
-        {
-
-            var policy = await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyId);
-            EligibilityPolicyResponse eligibilityPolicy = new()
-            {
-                CheckType = policy.CheckType.ToString(),
-                EligibilityCriteria = policy.EligibilityCriteria.ToString()
-            };
-
-            eligiblity.Add(eligibilityPolicy);
-        }
-
-
-        return Ok(new LocalAuthoritySettingsResponse
-        {
-            SchoolCanReviewEvidence = la.SchoolCanReviewEvidence,
-            EligibilityPolicies = eligiblity
-
-        });
+    
     }
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]

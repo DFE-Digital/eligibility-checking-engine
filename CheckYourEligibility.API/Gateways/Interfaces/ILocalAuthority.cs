@@ -8,6 +8,6 @@ public interface ILocalAuthority
     Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId);
 
     Task<LocalAuthority?> UpdateSchoolCanReviewEvidence(int localAuthorityId, bool value);
-    Task<int?> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type);
+    Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type);
 
 }
