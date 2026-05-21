@@ -59,7 +59,8 @@ public class CheckingEngineGateway : ICheckingEngine
         isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
 
         // Use new DefaultEligibilityPolicies config section
-        var defaultPoliciesSection = _configuration.GetSection("DefaultEligibilityPolicies");
+        var defaultPoliciesSection = _configuration.GetSection("Dwp:DefaultEligibilityPolicies");
+
         if (defaultPoliciesSection.Exists())
         {
             foreach (var type in new[] { CheckEligibilityType.FreeSchoolMeals, CheckEligibilityType.EarlyYearPupilPremium, CheckEligibilityType.TwoYearOffer })
@@ -404,7 +405,6 @@ public class CheckingEngineGateway : ICheckingEngine
 
         // For CAPI request to track request conflicts from DWP side
         string correlationId = Guid.NewGuid().ToString();
-
 
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
