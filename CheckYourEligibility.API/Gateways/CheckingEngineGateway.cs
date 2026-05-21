@@ -471,10 +471,8 @@ public class CheckingEngineGateway : ICheckingEngine
             }
         }
 
-        if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult != CheckEligibilityStatus.parentNotFound)
+        if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult == CheckEligibilityStatus.eligible)
         {
-
-
             checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
             result.CheckData = JsonConvert.SerializeObject(checkData);
         }
