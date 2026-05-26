@@ -119,7 +119,7 @@ public class EligibilityCheckReportingController : BaseController
     ///     Return report status and id
     /// </summary>
     /// <returns></returns>
-    [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/check-eligibility/report")]
@@ -139,7 +139,7 @@ public class EligibilityCheckReportingController : BaseController
 
             var result = await _getEligibilityCheckReportingUseCase.Execute(model);
 
-            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }
         catch (UnauthorizedAccessException ex)
         {

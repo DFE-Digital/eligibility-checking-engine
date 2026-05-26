@@ -151,7 +151,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         errorResponse!.Errors[0].Title.Should().Be("Invalid report ID format. Must be a GUID");
     }
     [Test]
-    public async Task GetEligibilityCheckReport_returns_ok_with_response_when_use_case_returns_valid_result()
+    public async Task GetEligibilityCheckReport_returns_accepted_with_response_when_use_case_returns_valid_result()
     {
         // Arrange
         int localAuthorityId = 201;
@@ -176,7 +176,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         response.Should().BeOfType<ObjectResult>();
         var objectResult = (ObjectResult)response;
 
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().BeEquivalentTo(reportResponse);
     }
 

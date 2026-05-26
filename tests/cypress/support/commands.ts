@@ -146,7 +146,7 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
 Cypress.Commands.add('verifyPostEligibilityReportResponse', (response) => {
 
   // status
-  expect(response.status).to.eq(200);
+  expect(response.status).to.eq(202);
 
   // body shape
   expect(response.body).to.have.property('data');
