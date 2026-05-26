@@ -7,7 +7,7 @@ import { getandVerifyBearerToken } from "../../support/apiHelpers";
 
 describe("Post Eligibility Report - Valid Requests", () => {
   const eligibilityReportRequest = validPostEligibilityReportRequest();
-  it("Verify 200 Accepted response is returned with valid data", () => {
+  it("Verify 202 Accepted response is returned with valid data", () => {
     getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
       (token) => {
         cy.apiRequest(
@@ -17,7 +17,7 @@ describe("Post Eligibility Report - Valid Requests", () => {
           token,
         ).then((response) => {
           //
-          cy.verifyApiResponseCode(response, 200);
+          cy.verifyApiResponseCode(response, 202);
           // Assert the response body data
 
           // check first element in the response array
