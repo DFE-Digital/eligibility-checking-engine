@@ -158,6 +158,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 .Take(pageSize)
                 .Select(r => new EligibilityCheckReportHistoryItem
                 {
+                    ReportID = r.EligibilityCheckReportId.ToString(),
                     ReportGeneratedDate = r.ReportGeneratedDate,
                     StartDate = r.StartDate,
                     EndDate = r.EndDate,

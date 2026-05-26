@@ -281,6 +281,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         response.Data.Should().HaveCount(1);
 
         var item = response.Data.Single();
+        item.ReportID.Should().NotBeNullOrWhiteSpace();
         item.GeneratedBy.Should().Be("peterB");
         item.NumberOfResults.Should().Be(15);
         item.Status.Should().Be(ReportStatus.Complete.ToString());
