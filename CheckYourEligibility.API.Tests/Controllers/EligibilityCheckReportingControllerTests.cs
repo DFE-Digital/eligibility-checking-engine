@@ -266,6 +266,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
             [
                 new EligibilityCheckReportHistoryItem
             {
+                ReportID = Guid.NewGuid().ToString(),
                 GeneratedBy = "peterB",
                 NumberOfResults = 5,
                 Status = "Complete"
