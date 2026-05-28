@@ -61,6 +61,7 @@ namespace CheckYourEligibility.API.Usecases
                         Outcome = check.Status.ToString(),
                         Tier = check.Tier?.ToString(),
                         CheckType = check.Type.ToString(),
+                        ProcessingType = check.BulkCheckID != null ? "Batch" : "Individual",
                         CheckedBy = check.UserName ?? ""
                     };
                 })
