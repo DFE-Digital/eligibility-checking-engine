@@ -1,3 +1,5 @@
+using CheckYourEligibility.API.Domain.Enums;
+
 public class EligibilityCheckReportRequest
 {
     public DateTime StartDate { get; set; }
@@ -6,5 +8,5 @@ public class EligibilityCheckReportRequest
     public int? LocalAuthorityID { get; set; }
     public bool SaveRequestAudit { get; set; }
     public CheckType CheckType { get; set; } = CheckType.BulkChecks;
-    public EligibilityCheckType EligibilityCheckType { get; set; } = EligibilityCheckType.FreeSchoolMeals;
+    public CheckEligibilityType EligibilityCheckType { get; set; } = CheckEligibilityType.FreeSchoolMeals;
 }

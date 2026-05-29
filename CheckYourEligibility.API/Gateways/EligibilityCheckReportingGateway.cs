@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -73,7 +74,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     /// <exception cref="InvalidOperationException"></exception>
     public async Task EligibilityCheckReports(
     Guid reportId,
-    EligibilityCheckType eligiblityCheckType,
+    CheckEligibilityType eligiblityCheckType,
     CancellationToken cancellationToken = default)
     {
         if (reportId == Guid.Empty)

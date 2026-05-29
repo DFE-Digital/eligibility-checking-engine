@@ -75,14 +75,14 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
                 EligibilityCheckID = $"CHK{i:D2}",
                 OrganisationID = 948,
                 Created = DateTime.UtcNow,
-                CheckData = GenerateCheckData(EligibilityCheckType.FreeSchoolMeals)
+                CheckData = GenerateCheckData(CheckEligibilityType.FreeSchoolMeals)
             });
         }
 
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId, EligibilityCheckType.FreeSchoolMeals, CancellationToken.None);
+        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         // Assert
         var updatedReport = await _fakeInMemoryDb.EligibilityCheckReports.SingleAsync();
@@ -169,7 +169,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             OrganisationID = 948,
             Created = now,
             BulkCheck = null,
-            CheckData = GenerateCheckData(EligibilityCheckType.FreeSchoolMeals)
+            CheckData = GenerateCheckData(CheckEligibilityType.FreeSchoolMeals)
         });
 
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -177,7 +177,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         // Act
         await _sut.EligibilityCheckReports(
             report.EligibilityCheckReportId,
-            EligibilityCheckType.FreeSchoolMeals,
+            CheckEligibilityType.FreeSchoolMeals,
             CancellationToken.None);
 
         // Assert
@@ -192,7 +192,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     public async Task EligibilityCheckReports_ReportNotFound_Throws()
     {
         Func<Task> act = async () =>
-            await _sut.EligibilityCheckReports(Guid.NewGuid(), EligibilityCheckType.FreeSchoolMeals, CancellationToken.None);
+            await _sut.EligibilityCheckReports(Guid.NewGuid(), CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -204,7 +204,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         var emptyReportId = Guid.Empty;
 
         // Act
-        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, EligibilityCheckType.FreeSchoolMeals, CancellationToken.None);
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -592,7 +592,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         };
     }
 
-    private string GenerateCheckData(EligibilityCheckType eligibilityCheckType)
+    private string GenerateCheckData(CheckEligibilityType eligibilityCheckType)
     {
         var checkData = new
         {
