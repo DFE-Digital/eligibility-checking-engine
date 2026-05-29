@@ -76,9 +76,6 @@ public class EligibilityCheckReportingController : BaseController
             return BadRequest(new ErrorResponse
             { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
-
-
-
     }
     [ProducesResponseType(typeof(EligibilityCheckReportResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]

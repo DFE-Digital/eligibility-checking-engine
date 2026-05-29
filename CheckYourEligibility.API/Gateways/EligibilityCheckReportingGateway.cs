@@ -160,8 +160,8 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         {
             EligibilityCheckReportId = Guid.NewGuid(),
             LocalAuthorityID = request.LocalAuthorityID,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
+            StartDate = DateTime.Parse(request.StartDate),
+            EndDate = DateTime.Parse(request.EndDate),
             NumberOfResults = 0,
             GeneratedBy = request.GeneratedBy,
             CheckType = request.CheckType,
