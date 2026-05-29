@@ -74,14 +74,15 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             {
                 EligibilityCheckID = $"CHK{i:D2}",
                 OrganisationID = 948,
-                Created = DateTime.UtcNow
+                Created = DateTime.UtcNow,
+                CheckData = GenerateCheckData(CheckEligibilityType.FreeSchoolMeals)
             });
         }
 
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId);
+        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         // Assert
         var updatedReport = await _fakeInMemoryDb.EligibilityCheckReports.SingleAsync();
@@ -167,7 +168,8 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             EligibilityCheckID = "CHK001",
             OrganisationID = 948,
             Created = now,
-            BulkCheck = null
+            BulkCheck = null,
+            CheckData = GenerateCheckData(CheckEligibilityType.FreeSchoolMeals)
         });
 
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -175,6 +177,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         // Act
         await _sut.EligibilityCheckReports(
             report.EligibilityCheckReportId,
+            CheckEligibilityType.FreeSchoolMeals,
             CancellationToken.None);
 
         // Assert
@@ -189,7 +192,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     public async Task EligibilityCheckReports_ReportNotFound_Throws()
     {
         Func<Task> act = async () =>
-            await _sut.EligibilityCheckReports(Guid.NewGuid(), CancellationToken.None);
+            await _sut.EligibilityCheckReports(Guid.NewGuid(), CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -201,7 +204,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         var emptyReportId = Guid.Empty;
 
         // Act
-        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CancellationToken.None);
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -377,7 +380,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
                 GeneratedBy = "peterB",
                 StartDate = older.AddDays(-7),
                 EndDate = older.AddDays(7)
-                
+
             },
             new EligibilityCheckReport
             {
@@ -587,6 +590,21 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             DateOfBirth = request.DateOfBirth,
             Type = CheckEligibilityType.WorkingFamilies
         };
+    }
+
+    private string GenerateCheckData(CheckEligibilityType eligibilityCheckType)
+    {
+        var checkData = new
+        {
+            ClientIdentifier = (string?)null,
+            NationalAsylumSeekerServiceNumber = "",
+            DateOfBirth = "1993-09-17",
+            LastName = "TESTER",
+            Type = eligibilityCheckType.ToString(),
+            NationalInsuranceNumber = "NN128618D"
+        };
+
+        return JsonConvert.SerializeObject(checkData);
     }
     #endregion
 }

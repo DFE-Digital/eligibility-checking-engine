@@ -43,7 +43,7 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
             var gateway = scope.ServiceProvider.GetRequiredService<IEligibilityCheckReporting>();
             try
             {
-                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, CancellationToken.None);
+                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, model.EligibilityCheckType, CancellationToken.None);
             }
             catch (Exception ex)
             {
