@@ -6,4 +6,5 @@ public class EligibilityCheckReportRequest
     public int? LocalAuthorityID { get; set; }
     public bool SaveRequestAudit { get; set; }
     public CheckType CheckType { get; set; } = CheckType.BulkChecks;
+    public EligibilityCheckType EligibilityCheckType { get; set; } = EligibilityCheckType.FreeSchoolMeals;
 }

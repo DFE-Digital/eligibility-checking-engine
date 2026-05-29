@@ -1,8 +1,5 @@
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
-using DocumentFormat.OpenXml.Math;
-using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -70,11 +67,13 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     /// </summary>
     /// <param name="reportId"></param>
     /// <param name="cancellationToken"></param>
+    /// <param name="eligiblityCheckType"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
     public async Task EligibilityCheckReports(
     Guid reportId,
+    EligibilityCheckType eligiblityCheckType,
     CancellationToken cancellationToken = default)
     {
         if (reportId == Guid.Empty)
@@ -112,6 +111,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 var checks = await query
                         .OrderBy(e => e.EligibilityCheckID)
                         .Take(BatchSize)
+                        .Where(c => c.CheckData != null && c.CheckData.Contains(eligiblityCheckType.ToString()))  
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
                             e.BulkCheck != null))

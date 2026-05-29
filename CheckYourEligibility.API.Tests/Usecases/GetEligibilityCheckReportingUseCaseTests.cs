@@ -84,7 +84,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             .ReturnsAsync(createdReport);
 
         _mockEligibilityCheckReportingGateway
-            .Setup(g => g.EligibilityCheckReports(reportId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.EligibilityCheckReports(reportId, EligibilityCheckType.FreeSchoolMeals, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
 
@@ -123,7 +123,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             });
 
         _mockEligibilityCheckReportingGateway
-        .Setup(g => g.EligibilityCheckReports(reportId, It.IsAny<CancellationToken>()))
+        .Setup(g => g.EligibilityCheckReports(reportId, EligibilityCheckType.FreeSchoolMeals, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
         // Act
@@ -134,7 +134,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
 
         // Assert
         _mockEligibilityCheckReportingGateway.Verify(
-            g => g.EligibilityCheckReports(reportId, It.IsAny<CancellationToken>()),
+            g => g.EligibilityCheckReports(reportId, EligibilityCheckType.FreeSchoolMeals, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
