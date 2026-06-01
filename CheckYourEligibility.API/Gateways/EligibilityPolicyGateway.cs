@@ -14,9 +14,10 @@ namespace CheckYourEligibility.API.Gateways
         { 
             _db = db;
         }
-        public async Task<EligibilityPolicy?> GeEligibilityPolicyByIdAsync(int? EligibilityPolicyId)
+        public async Task<EligibilityPolicy?> GeEligibilityPolicyByIdAsync(int? EligibilityPolicyId, EligibilityCheckContext dbContextFactory = null)
         {
-            return await _db.EligibilityPolicies
+            var context = dbContextFactory ?? _db;
+            return await context.EligibilityPolicies
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ID == EligibilityPolicyId && x.IsDeleted == false);
             

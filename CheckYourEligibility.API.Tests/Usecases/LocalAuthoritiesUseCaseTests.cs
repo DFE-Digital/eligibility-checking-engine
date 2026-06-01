@@ -25,7 +25,7 @@ namespace CheckYourEligibility.API.Tests.Usecases
         [Test]
         public void Execute_WhenLocalAuthorityNotFound_ThrowsNotFoundException()
         {
-            _localAuthorityGatewayMock.Setup(x => x.GetLocalAuthorityById(It.IsAny<int>())).ReturnsAsync((LocalAuthority)null);
+            _localAuthorityGatewayMock.Setup(x => x.GetLocalAuthorityById(It.IsAny<int>(), null)).ReturnsAsync((LocalAuthority)null);
             Assert.ThrowsAsync<NotFoundException>(() => _localAuthoritiesUseCase.Execute(123));
         }
 
@@ -40,14 +40,14 @@ namespace CheckYourEligibility.API.Tests.Usecases
                 TwoYearPolicyID = 0,
                 SchoolCanReviewEvidence = true
             };
-            _localAuthorityGatewayMock.Setup(x => x.GetLocalAuthorityById(la.LocalAuthorityID)).ReturnsAsync(la);
+            _localAuthorityGatewayMock.Setup(x => x.GetLocalAuthorityById(la.LocalAuthorityID,null)).ReturnsAsync(la);
 
-            _eligibilityPolicyMock.Setup(x => x.GeEligibilityPolicyByIdAsync(la.FreeSchoolMealsPolicyID)).ReturnsAsync(new EligibilityPolicy
+            _eligibilityPolicyMock.Setup(x => x.GeEligibilityPolicyByIdAsync(la.FreeSchoolMealsPolicyID,null)).ReturnsAsync(new EligibilityPolicy
             {
                 CheckType = CheckEligibilityType.FreeSchoolMeals,
                 EligibilityCriteria = EligibilityCriteria.expanded,
             });
-            _eligibilityPolicyMock.Setup(x => x.GeEligibilityPolicyByIdAsync(la.EarlyYearsPupilPremiumPolicyID)).ReturnsAsync(new EligibilityPolicy
+            _eligibilityPolicyMock.Setup(x => x.GeEligibilityPolicyByIdAsync(la.EarlyYearsPupilPremiumPolicyID,null)).ReturnsAsync(new EligibilityPolicy
             {
                 CheckType = CheckEligibilityType.EarlyYearPupilPremium,
                 EligibilityCriteria = EligibilityCriteria.standard

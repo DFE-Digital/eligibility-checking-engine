@@ -28,7 +28,7 @@ public class LocalAuthoritiesUseCase : ILocalAuthoritiesUseCase
     public async Task<LocalAuthoritySettingsResponse> Execute(int laCode)
     {
 
-        var la = await _localAuthorityGateway.GetLocalAuthorityById(laCode) ?? throw new NotFoundException();
+        var la = await _localAuthorityGateway.GetLocalAuthorityById(laCode, null) ?? throw new NotFoundException();
 
 
         var policyMap = new Dictionary<CheckEligibilityType, int> {

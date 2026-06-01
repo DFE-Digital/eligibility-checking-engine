@@ -4,6 +4,6 @@ namespace CheckYourEligibility.API.Gateways.Interfaces
 {
     public interface IEligibilityPolicy
     {
-        public Task<EligibilityPolicy> GeEligibilityPolicyByIdAsync(int? EligibilityPolicyId);
+        public Task<EligibilityPolicy> GeEligibilityPolicyByIdAsync(int? EligibilityPolicyId, EligibilityCheckContext dbContextFactory = null);
     }
 }
