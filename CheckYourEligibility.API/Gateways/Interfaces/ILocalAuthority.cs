@@ -5,9 +5,9 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface ILocalAuthority
 {
-    Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId);
+    Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId, EligibilityCheckContext? dbContextFactory);
 
     Task<LocalAuthority?> UpdateSchoolCanReviewEvidence(int localAuthorityId, bool value);
-    Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type);
+    Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type, EligibilityCheckContext? dbContextFactory);
 
 }

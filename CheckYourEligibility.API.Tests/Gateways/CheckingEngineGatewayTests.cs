@@ -117,13 +117,13 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             IsDeleted = false
         };
       
-        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync(1);
-        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(1)).ReturnsAsync(expectedPolicy);
+        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals, null)).ReturnsAsync(1);
+        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(1, null)).ReturnsAsync(expectedPolicy);
 
         // Act
         var result =  _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals,null }) as Task<EligibilityPolicy>;
         var policy = await result;
 
         // Assert
@@ -142,7 +142,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Act
         var result =  _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
 
         // Assert
@@ -157,13 +157,13 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         // Arrange
         int laId = 123;
-        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals)).ReturnsAsync((int)0);
-        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(null)).ReturnsAsync((EligibilityPolicy)null);
+        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals,null)).ReturnsAsync((int)0);
+        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(null,null)).ReturnsAsync((EligibilityPolicy)null);
 
         // Act
         var result =  _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
 
         // Assert
@@ -178,7 +178,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Act
         var result =  _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .Invoke(_sut, new object[] { "multi-academy-trust", 123, CheckEligibilityType.FreeSchoolMeals }) as Task<EligibilityPolicy>;
+            .Invoke(_sut, new object[] { "multi-academy-trust", 123, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
 
         // Assert

@@ -369,15 +369,15 @@ public class CheckingEngineGateway : ICheckingEngine
 
     }
 
-    private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type)
+    private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
     {
 
         if (organisationType == OrganisationType.local_authority && orgId is int LaId && LaId != 0)
         {
-            int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type);
+            int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type, dbContextFactory);
             // get policy for the LA          
             if (policyID != 0)
-                return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID);
+                return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID, dbContextFactory);
         }
 
 
@@ -420,7 +420,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
 
-                var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type);
+                var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type, dbContextFactory);
                 //To ensure correct LA ID is passed when using ECS for checks
                 string localAuthorityId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);

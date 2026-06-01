@@ -14,15 +14,17 @@ public class LocalAuthorityGateway : ILocalAuthority
         _db = dbContext;
     }
 
-    public async Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId)
+    public async Task<LocalAuthority?> GetLocalAuthorityById(int localAuthorityId, EligibilityCheckContext? dbContextFactory)
     {
-        return await _db.LocalAuthorities
+        var context = dbContextFactory ?? _db;
+        return await context.LocalAuthorities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
     }
 
     public async Task<LocalAuthority?> UpdateSchoolCanReviewEvidence(int localAuthorityId, bool value)
     {
+
         var la = await _db.LocalAuthorities
             .FirstOrDefaultAsync(x => x.LocalAuthorityID == localAuthorityId);
 
@@ -41,10 +43,10 @@ public class LocalAuthorityGateway : ILocalAuthority
     /// <param name="localAuthorityId"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    public async Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type)
+    public async Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type, EligibilityCheckContext? dbContextFactory )
     {
 
-        var la = await GetLocalAuthorityById(localAuthorityId);
+        var la = await GetLocalAuthorityById(localAuthorityId,dbContextFactory);
 
         switch (type)
         {
