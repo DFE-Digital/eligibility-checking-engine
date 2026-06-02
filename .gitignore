@@ -398,6 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 /CheckYourEligibility.API/appsettings.Development.json
 /CheckYourEligibility.API/appsettings.Development.json
+/CheckYourEligibility.API/appsettings.local.json
 /.gitignore
 tests/cypress/cypress.env.json
 tests/cypress.env.json

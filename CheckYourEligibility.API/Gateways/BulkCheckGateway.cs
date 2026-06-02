@@ -174,47 +174,45 @@ public class BulkCheckGateway : IBulkCheck
             }
         }
 
-        // Execute query with optimized includes and projections
+        // Load only BulkCheck metadata - do NOT include EligibilityChecks navigation property,
+        // as that would load potentially 100,000+ rows into memory for large LAs.
         var bulkChecks = await query
-            .Include(x => x.EligibilityChecks)
-            .OrderByDescending(x => x.SubmittedDate) // Add ordering for consistent results and better UX
+            .OrderByDescending(x => x.SubmittedDate)
             .ToListAsync();
 
-        // Optimize status calculation using LINQ for better performance
+        if (bulkChecks.Count == 0)
+            return bulkChecks;
+
+        // Single aggregate query at the database level: count total and queued checks per BulkCheck.
+        // This replaces the previous approach of loading all individual EligibilityCheck rows.
+        // We count ALL rows (including soft-deleted) so we can distinguish:
+        //   - no rows at all   → just submitted, treat as InProgress
+        //   - rows but all deleted → Deleted
+        var bulkCheckIds = bulkChecks.Select(bc => bc.BulkCheckID).ToList();
+        var statusCounts = await _db.CheckEligibilities
+            .Where(x => bulkCheckIds.Contains(x.BulkCheckID!))
+            .GroupBy(x => x.BulkCheckID)
+            .Select(g => new
+            {
+                BulkCheckID = g.Key,
+                Total  = g.Count(x => !x.IsDeleted),
+                Queued = g.Count(x => !x.IsDeleted && x.Status == CheckEligibilityStatus.queuedForProcessing),
+                AnyRows = g.Count()
+            })
+            .ToDictionaryAsync(x => x.BulkCheckID!);
+
         foreach (var bulkCheck in bulkChecks)
         {
-            if (bulkCheck.EligibilityChecks?.Any() == true)
-            {
-                // Filter out deleted eligibility checks for status calculation
-                var eligibilityStatuses = bulkCheck.EligibilityChecks
-                    .Where(x => x.IsDeleted == false)
-                    .Select(x => x.Status).ToList();
-
-                // Use more efficient status checking
-                var queuedCount = eligibilityStatuses.Count(s => s == CheckEligibilityStatus.queuedForProcessing);
-                var errorCount = eligibilityStatuses.Count(s => s == CheckEligibilityStatus.error);
-                var totalCount = eligibilityStatuses.Count;
-
-                // Calculate expected status more efficiently
-                BulkCheckStatus expectedStatus;
-                if (totalCount == 0)
-                {
-                    // All records deleted - maintain current status or set to Deleted
-                    bulkCheck.Status = BulkCheckStatus.Deleted;
-                }
-                else if (queuedCount > 0)
-                {
-                    bulkCheck.Status = BulkCheckStatus.InProgress; // Queued
-                }
-                else if (queuedCount == 0)
-                {
-                    bulkCheck.Status = BulkCheckStatus.Completed; // All completed
-                }
-                else
-                {
-                    bulkCheck.Status = BulkCheckStatus.InProgress; // Partially completed
-                }
-            }
+            if (!statusCounts.TryGetValue(bulkCheck.BulkCheckID, out var counts))
+                // No EligibilityCheck rows at all — batch was just submitted; treat as in progress.
+                bulkCheck.Status = BulkCheckStatus.InProgress;
+            else if (counts.Total == 0)
+                // Rows exist but all are soft-deleted.
+                bulkCheck.Status = BulkCheckStatus.Deleted;
+            else if (counts.Queued > 0)
+                bulkCheck.Status = BulkCheckStatus.InProgress;
+            else
+                bulkCheck.Status = BulkCheckStatus.Completed;
         }
 
         return bulkChecks;
