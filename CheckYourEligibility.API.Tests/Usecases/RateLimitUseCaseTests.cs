@@ -192,10 +192,75 @@ public class RateLimitUseCaseTests
         // Assert
         result.Should().Be(true);
         context.Response.StatusCode.Should().NotBe(StatusCodes.Status429TooManyRequests);
-        
+
         _mockRateLimitGateway.Verify(s => s.Create(It.IsAny<RateLimitEvent>()), Times.Never);
         _mockRateLimitGateway.Verify(
             s => s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength), Times.Never);
         _mockRateLimitGateway.Verify(s => s.UpdateStatus(It.IsAny<string>(), true), Times.Never);
     }
+
+    [Test]
+    public async Task Execute_ShouldReturnJsonParsingError_When_RequestBody_Is_Invalid_Single_Quotes()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+
+        var context = new DefaultHttpContext();
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority:894")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+
+        var invalidJsonString = "{ 'single quotes invalid data' }";
+
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(invalidJsonString));
+        context.Request.Path = "/bulk-check";
+
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        Func<Task> act = async () => await _sut.Execute(options);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidParsingException>()
+            .WithMessage("The uploaded file could not be processed. Please check the file format and try again. If submitting data programmatically, ensure text values use double quotes (\") rather than single quotes (').");
+    }
+
+    [Test]
+    public async Task Execute_ShouldReturnCount_WhenDataIsValidArray()
+    {
+        // Arrange
+        var options = _fixture.Create<RateLimiterMiddlewareOptions>();
+        options.PermitLimit = 10;
+
+        _mockRateLimitGateway.Setup(s => s.Create(It.IsAny<RateLimitEvent>()))
+            .Returns(Task.CompletedTask);
+
+        _mockRateLimitGateway.Setup(s =>
+            s.GetQueriesInWindow(It.IsAny<string>(), It.IsAny<DateTime>(), options.WindowLength))
+            .ReturnsAsync(0);
+
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/bulk-check";
+
+        var claims = new List<Claim>
+        {
+            new Claim("scope", "local_authority:894")
+        };
+        context.User.AddIdentity(new ClaimsIdentity(claims));
+
+        var json = "{\"data\": [1,2,3,4]}";
+
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+        _mockHttpContextAccessor.Setup(s => s.HttpContext).Returns(context);
+
+        // Act
+        var result = await _sut.Execute(options);
+
+        // Assert
+        result.Should().BeTrue(); // rate limit allows
+    }
+
 }
