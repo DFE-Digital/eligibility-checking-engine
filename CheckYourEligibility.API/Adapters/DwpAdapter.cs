@@ -127,21 +127,21 @@ public class DwpAdapter : IDwpAdapter
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound)
-            {        
+            {
                 return (new CAPIClaimResponseBase
                 {
                     CAPIResponseCode = HttpStatusCode.NotFound,
                     Reason = "CAPI did not find any data for this citizen",
                     CAPIEndpoint = uri
-                });               
-            }
+                });
+            }         
 
-            string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
+                string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
             _logger.LogInformation(errorMessage);
 
             return (new CAPIClaimResponseBase
             {
-                CAPIResponseCode = HttpStatusCode.InternalServerError,             
+                CAPIResponseCode = response.StatusCode,             
                 Reason = errorMessage,
                 CAPIEndpoint = uri
             });
@@ -346,6 +346,7 @@ public class DwpAdapter : IDwpAdapter
                 _logger.LogInformation("DWP Duplicate matches found");
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
                 citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
+                citizenResponse.CAPIResponseCode = HttpStatusCode.UnprocessableEntity;
                 return citizenResponse;
             }
             else
