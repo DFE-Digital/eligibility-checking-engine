@@ -20,12 +20,12 @@ param(
     [string]$ApiBase        = "https://localhost:7117",
 
     # OAuth2 client credentials — must have bulk_check + local_authority scope
-    [string]$ClientId       = "anoop",
-    [string]$ClientSecret   = "Surf1ng_1",
+    [string]$ClientId       = "<your-client-id>",
+    [string]$ClientSecret   = "<your-client-secret>",
 
     # Local authority ID to query.
     # On dev, use a known large LA (e.g. one referenced in the bug ticket).
-    [string]$OrganisationId = "201",
+    [string]$OrganisationId = "<your-organisation-id>",
 
     [int]$Runs = 3     # number of timed calls to average
 )

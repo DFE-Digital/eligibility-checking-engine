@@ -2,13 +2,13 @@
 -- Seed-PerfTestData.sql
 -- LOCAL DEVELOPMENT ONLY — do NOT run against dev/staging/production.
 --
--- Creates 20 BulkChecks with 5,000 EligibilityChecks each (100,000 total)
+-- Creates 20 BulkChecks with 20,000 EligibilityChecks each (400,000 total)
 -- for LocalAuthorityID = 201, all submitted within the last 7 days.
 -- All rows tagged BulkCheckID LIKE 'perf-test-%' for easy cleanup.
 --
 -- PURPOSE: Reproduce the GetBulkStatuses timeout bug locally.
--- Each batch is capped at 5,000 rows (the real application limit).
--- 20 batches × 5,000 = 100,000 rows, spaced 8 hours apart so all
+-- Each batch uses 20,000 rows (exceeds the 5,000 app limit intentionally for stress testing).
+-- 20 batches × 20,000 = 400,000 rows, spaced 8 hours apart so all
 -- 20 batches fall within the 7-day query window (20 × 8h = 160h < 168h).
 --
 -- CLEANUP: Run the DELETE block at the bottom when done.
@@ -17,8 +17,8 @@
 SET NOCOUNT ON;
 
 DECLARE @LAID        INT = 201;
-DECLARE @BatchCount  INT = 21;      -- set to 20 for full perf test
-DECLARE @PerBatch    INT = 5000;      -- set to 5000 for full perf test
+DECLARE @BatchCount  INT = 21;
+DECLARE @PerBatch    INT = 20000;  -- intentionally above the 5k app limit for stress testing
 
 -- ---------------------------------------------------------------------------
 -- Cleanup any previous run
