@@ -112,6 +112,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         {
 
             transaction.Rollback();
+            throw;
         }
 
     }
@@ -129,6 +130,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         {
 
             transaction.Rollback();
+            throw;
         }
 
     }
@@ -166,6 +168,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         {
 
             transaction.Rollback();
+            throw;
         }
 
     }
@@ -187,6 +190,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         catch (Exception ex)
         {
             transaction.Rollback();
+            throw;
         }
 
 

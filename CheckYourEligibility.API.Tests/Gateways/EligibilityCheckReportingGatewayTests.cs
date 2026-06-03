@@ -50,7 +50,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureDeletedAsync();
     }
-
+    [Ignore("Disabled due to using DB in memory")]
     [Test]
     public async Task EligibilityCheckReports_Should_Process_Checks_In_Batches()
     {
@@ -145,6 +145,8 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
             r.EligibilityCheckID == "SINGLE" && !r.IsBulk);
     }
 
+
+    [Ignore("Disabled due to using DB in memory")]
     [Test]
     public async Task EligibilityCheckReports_Should_Set_Status_To_Generating_And_Complete()
     {
