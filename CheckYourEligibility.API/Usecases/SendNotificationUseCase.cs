@@ -25,7 +25,6 @@ public class SendNotificationUseCase : ISendNotificationUseCase
     {
         _gateway.SendNotification(notificationRequest);
 
-        await _auditGateway.CreateAuditEntry(AuditType.Notification, notificationRequest.Data.Email);
         return new NotificationResponse();
     }
 }

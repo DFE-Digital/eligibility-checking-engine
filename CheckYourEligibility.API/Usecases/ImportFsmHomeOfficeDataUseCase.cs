@@ -66,6 +66,5 @@ public class ImportFsmHomeOfficeDataUseCase : IImportFsmHomeOfficeDataUseCase
         }
 
         await _gateway.ImportHomeOfficeData(DataLoad);
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }

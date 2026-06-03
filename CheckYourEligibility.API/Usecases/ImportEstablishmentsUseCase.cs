@@ -58,6 +58,5 @@ public class ImportEstablishmentsUseCase : IImportEstablishmentsUseCase
         }
 
         await _gateway.ImportEstablishments(DataLoad);
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }

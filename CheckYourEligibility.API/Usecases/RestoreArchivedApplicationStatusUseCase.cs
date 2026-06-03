@@ -42,8 +42,6 @@ public class RestoreArchivedApplicationStatusUseCase : IRestoreArchivedApplicati
         var response = await _applicationGateway.RestoreArchivedApplicationStatus(guid);
         if (response == null) return null;
 
-        await _auditGateway.CreateAuditEntry(AuditType.Application, guid);
-
         return new ApplicationStatusRestoreResponse
         {
             Data = response.Data

@@ -102,6 +102,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// </summary>
     private async Task<JwtAuthResponse> ExecuteAuthentication(SystemUser credentials, JwtConfig jwtConfig)
     {
+        // NOTE : This will remain for now until we implement a bettet way to audit passed scopes
         await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
 
         if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret)) throw new InvalidClientException();

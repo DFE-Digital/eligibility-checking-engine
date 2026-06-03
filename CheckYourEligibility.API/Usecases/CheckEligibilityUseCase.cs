@@ -78,7 +78,6 @@ public class CheckEligibilityUseCase : ICheckEligibilityUseCase
             var response = await _checkGateway.PostCheck(modelData.Data, meta);
             if (response != null)
             {
-                await _auditGateway.CreateAuditEntry(AuditType.Check, response.Id);
                 _logger.LogInformation($"Eligibility check created with ID: {response.Id}");
                 return new CheckEligibilityResponse
                 {
