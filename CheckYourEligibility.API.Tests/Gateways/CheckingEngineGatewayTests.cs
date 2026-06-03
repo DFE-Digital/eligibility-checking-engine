@@ -614,15 +614,18 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         status.Should().Be(CheckEligibilityStatus.notEligible);
     }
 
-    [Test]
-    public async Task Given_validRequest_DWP_Process_Should_Return_checkError()
+    [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
+    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.error)]
+    public async Task Given_validRequest_DWP_Citizen__Claim_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
     {
         // Arrange
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
-        capiClaimResponse.CAPIResponseCode = HttpStatusCode.InternalServerError;
+        capiClaimResponse.CAPIResponseCode = capiStatusCode;
+
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
@@ -630,31 +633,36 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
+        citizenResponse.CAPIResponseCode = HttpStatusCode.OK;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
+
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
+        
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        var result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
+        
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
          It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), It.IsAny<EligibilityPolicy>()))
      .ReturnsAsync(capiClaimResponse);
+
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
-
         // Assert
-        status.Should().Be(CheckEligibilityStatus.queuedForProcessing);
+        status.Should().Be(checkStatus);
     }
 
-    [Test]
-    public async Task Given_validRequest_DWP_Process_Should_Return_500_Failure_status_is_NotUpdated()
+
+    [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
+    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.error)]
+    public async Task Given_validRequest_DWP_Citizen_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
     {
         // Arrange
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
-        citizenResponse.CAPIResponseCode = HttpStatusCode.InternalServerError;
+        citizenResponse.CAPIResponseCode = capiStatusCode;
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
 
@@ -671,16 +679,19 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
+
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
+        
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
+        
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID, _fixture.Create<AuditData>());
 
         // Assert
-        status.Should().Be(CheckEligibilityStatus.queuedForProcessing);
+        status.Should().Be(checkStatus);
     }
 
     [Test]

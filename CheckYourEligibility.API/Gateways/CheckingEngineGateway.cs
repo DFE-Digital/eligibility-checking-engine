@@ -439,6 +439,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     {
 
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
+                        
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
                         source = ProcessEligibilityCheckSource.DWP;
@@ -483,8 +484,12 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (checkStatusResult == CheckEligibilityStatus.error)
         {
-            // Revert status back and do not save changes
-            result.Status = CheckEligibilityStatus.queuedForProcessing;
+            // do not revert check to QueueForProcessing when DWP throws 422
+            if (capiClaimResponse.CAPIResponseCode != HttpStatusCode.UnprocessableEntity) {
+                // Revert status back and do not save changes
+                result.Status = CheckEligibilityStatus.queuedForProcessing;
+            }
+            
         }
         else
         {
@@ -510,7 +515,6 @@ public class CheckingEngineGateway : ICheckingEngine
                     CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
                     Reason = capiClaimResponse.Reason,
                     CAPIResponseCode = capiClaimResponse.CAPIResponseCode
-
 
                 };
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
