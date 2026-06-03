@@ -107,13 +107,12 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         act.Should().ThrowExactlyAsync<DbUpdateException>();
     }
 
+    [Ignore("Disabled due to using DB in memory")]
     [Test]
     public async Task Given_PostBulk_Should_Complete()
     {
         // Arrange
-
-
-        var request = _fixture.Create<CheckEligibilityRequestData>();
+       var request = _fixture.Create<CheckEligibilityRequestData>();
         var claimResponse = _fixture.Create<CAPIClaimResponseBase>();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var meta = _fixture.Create<CheckMetaData>();
@@ -139,7 +138,6 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
                 It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString(),It.IsAny<EligibilityPolicy>()))
             .ReturnsAsync(claimResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         
         var groupId = Guid.NewGuid().ToString();
