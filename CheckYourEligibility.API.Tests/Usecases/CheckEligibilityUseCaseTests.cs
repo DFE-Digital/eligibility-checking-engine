@@ -95,8 +95,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), meta))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id, null))
-            .ReturnsAsync(_fixture.Create<string>()); // Act
+        // Act
         // The factory will convert any model to the correct type based on routeType
         // So this test should actually succeed now
         var result = await _sut.Execute(incorrectModel, CheckEligibilityType.FreeSchoolMeals, meta);
@@ -134,11 +133,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),It.IsAny<CheckMetaData>()))
             .Callback<IEligibilityServiceType, CheckMetaData>((arg,metaArg) => capturedArg = arg)
             .ReturnsAsync(responseData);
-
-        _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Check, responseData.Id, null))
-            .ReturnsAsync(_fixture.Create<string>());
-
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
 
@@ -194,8 +188,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>(),meta))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.WorkingFamilies, meta);
@@ -226,8 +218,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),meta))
             .ReturnsAsync(responseData);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals,meta);
@@ -258,10 +248,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
         _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),meta))
             .ReturnsAsync(responseData);
-
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, checkId, null))
-            .ReturnsAsync(_fixture.Create<string>());
-
         // Act
         await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
 

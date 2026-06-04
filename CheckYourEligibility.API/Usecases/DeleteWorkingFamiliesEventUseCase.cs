@@ -11,16 +11,13 @@ public interface IDeleteWorkingFamiliesEventUseCase
 public class DeleteWorkingFamiliesEventUseCase : IDeleteWorkingFamiliesEventUseCase
 {
     private readonly IWorkingFamiliesEvent _gateway;
-    private readonly IAudit _auditGateway;
     private readonly ILogger<DeleteWorkingFamiliesEventUseCase> _logger;
 
     public DeleteWorkingFamiliesEventUseCase(
         IWorkingFamiliesEvent gateway,
-        IAudit auditGateway,
         ILogger<DeleteWorkingFamiliesEventUseCase> logger)
     {
         _gateway = gateway;
-        _auditGateway = auditGateway;
         _logger = logger;
     }
 
