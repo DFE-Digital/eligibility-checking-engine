@@ -82,7 +82,6 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
         }
 
         await _gateway.ImportWfHMRCData(DataLoad);
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 
 }

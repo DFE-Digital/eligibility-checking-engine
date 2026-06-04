@@ -33,7 +33,6 @@ public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
     {
         var response = await _userGateway.Create(model.Data);
 
-        await _auditGateway.CreateAuditEntry(AuditType.User, response);
 
         return new UserSaveItemResponse { Data = response };
     }

@@ -11,7 +11,6 @@ namespace CheckYourEligibility.API.Tests.UseCases;
 public class DeleteWorkingFamiliesEventUseCaseTests : TestBase.TestBase
 {
     private Mock<IWorkingFamiliesEvent> _mockGateway = null!;
-    private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<ILogger<DeleteWorkingFamiliesEventUseCase>> _mockLogger = null!;
     private DeleteWorkingFamiliesEventUseCase _sut = null!;
 
@@ -21,50 +20,34 @@ public class DeleteWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     public void Setup()
     {
         _mockGateway = new Mock<IWorkingFamiliesEvent>(MockBehavior.Strict);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<DeleteWorkingFamiliesEventUseCase>>(MockBehavior.Loose);
-        _sut = new DeleteWorkingFamiliesEventUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _sut = new DeleteWorkingFamiliesEventUseCase(_mockGateway.Object, _mockLogger.Object);
     }
 
     [TearDown]
     public new void Teardown()
     {
         _mockGateway.VerifyAll();
-        _mockAuditGateway.VerifyAll();
     }
 
     [Test]
-    public async Task Execute_ShouldReturnTrue_WhenEventExistsAndIsDeleted()
+    public async Task Execute_ShouldDeleteEvent_Successfully()
     {
         // Arrange
         _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(true);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, ValidHmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(ValidHmrcId);
 
         // Assert
         result.Should().BeTrue();
+        _mockGateway.Verify(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId), Times.Once);
     }
 
     [Test]
-    public async Task Execute_ShouldReturnFalse_WhenEventDoesNotExist()
+    public async Task Execute_ShouldReturnFalse_WhenEventNotFound()
     {
         // Arrange
-        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(false);
-
-        // Act
-        var result = await _sut.Execute(ValidHmrcId);
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Test]
-    public async Task Execute_ShouldReturnFalse_WhenEventAlreadySoftDeleted()
-    {
-        // Arrange — gateway returns false when record is already deleted (not found with IsDeleted=false)
         _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(false);
 
         // Act
@@ -104,34 +87,5 @@ public class DeleteWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
 
-    [Test]
-    public async Task Execute_ShouldCallAudit_WhenEventSuccessfullyDeleted()
-    {
-        // Arrange
-        var auditCalled = false;
-        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(true);
-        _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, ValidHmrcId, null))
-            .ReturnsAsync(string.Empty)
-            .Callback(() => auditCalled = true);
 
-        // Act
-        await _sut.Execute(ValidHmrcId);
-
-        // Assert
-        auditCalled.Should().BeTrue();
-    }
-
-    [Test]
-    public async Task Execute_ShouldNotCallAudit_WhenEventNotFound()
-    {
-        // Arrange
-        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(false);
-
-        // Act
-        await _sut.Execute(ValidHmrcId);
-
-        // Assert — audit should NOT be called (VerifyAll on _mockAuditGateway confirms no unexpected calls)
-        _mockAuditGateway.VerifyNoOtherCalls();
-    }
 }

@@ -1,7 +1,27 @@
-﻿namespace CheckYourEligibility.API.Helpers
+﻿using CheckYourEligibility.API.Domain.Constants;
+
+namespace CheckYourEligibility.API.Helpers
 {
     public static class EligibilityCheckHelper
     {
+        /// <summary>
+        /// If oranisation is of type LA and ID is not 0
+        /// return OrganisationID
+        /// else return and empty string
+        /// </summary>
+        /// <param name="organisationType"></param>
+        /// <param name="organisationId"></param>
+        /// <returns></returns>
+        public static string GetOrganisationIdOFTypeLocalAuthority(string? organisationType, int? organisationId ) {
+
+
+            if (organisationType != OrganisationType.local_authority || organisationId is null || organisationId == 0)
+            {
+                return string.Empty;
+            }
+
+            return organisationId.Value.ToString();
+        }
         /// <summary>
         /// Extract LA Id from scope if it exists
         /// else return an empty string.

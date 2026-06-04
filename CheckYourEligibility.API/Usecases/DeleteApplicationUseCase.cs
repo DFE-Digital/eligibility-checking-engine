@@ -68,7 +68,5 @@ public class DeleteApplicationUseCase : IDeleteApplicationUseCase
             throw new NotFoundException($"Application with ID {guid} not found");
         }
 
-        // Create audit entry
-        await _auditGateway.CreateAuditEntry(AuditType.Application, guid);
     }
 }

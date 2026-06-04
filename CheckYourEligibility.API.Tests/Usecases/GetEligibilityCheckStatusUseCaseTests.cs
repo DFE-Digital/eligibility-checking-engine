@@ -79,9 +79,7 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Setup(s => s.GetStatusAsync(guid, type)).ReturnsAsync((statusValue, null));
 
         var expectedStausCode = CheckEligibilityStatus.queuedForProcessing;
-        _mockAuditGateway.Setup(a =>a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(auditId);
-
-
+       
         // Act
         var result = await _sut.Execute(guid, type);
 
@@ -99,9 +97,6 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         var type = _fixture.Create<CheckEligibilityType>();
         var statusValue = _fixture.Create<CheckEligibilityStatus>();
         _mockCheckGateway.Setup(s => s.GetStatusAsync(guid, type)).ReturnsAsync((statusValue, null));
-
-        _mockAuditGateway.Setup(a =>a.CreateAuditEntry(AuditType.Check, guid,null)).ReturnsAsync(_fixture.Create<string>());
-
         // Act
         await _sut.Execute(guid, type);
 

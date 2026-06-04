@@ -39,8 +39,6 @@ public class SendNotificationUseCaseTests
         // Arrange
         var request = _fixture.Create<NotificationRequest>();
         _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(request);
@@ -50,39 +48,4 @@ public class SendNotificationUseCaseTests
         result.Should().BeOfType<NotificationResponse>();
     }
 
-    [Test]
-    public async Task Execute_Should_Create_Audit_Entry()
-    {
-        // Arrange
-        var request = _fixture.Create<NotificationRequest>();
-        var auditId = _fixture.Create<string>();
-
-        _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
-            .ReturnsAsync(auditId);
-
-        // Act
-        await _sut.Execute(request);
-
-        // Assert
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null), Times.Once);
-    }
-
-    [Test]
-    public async Task Execute_Should_Return_NotificationResponse()
-    {
-        // Arrange
-        var request = _fixture.Create<NotificationRequest>();
-
-        _mockNotifyGateway.Setup(s => s.SendNotification(request));
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Notification, request.Data.Email, null))
-            .ReturnsAsync(_fixture.Create<string>());
-
-        // Act
-        var result = await _sut.Execute(request);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<NotificationResponse>();
-    }
 }

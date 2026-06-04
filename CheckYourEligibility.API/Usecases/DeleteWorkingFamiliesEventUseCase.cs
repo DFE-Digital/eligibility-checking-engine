@@ -11,16 +11,13 @@ public interface IDeleteWorkingFamiliesEventUseCase
 public class DeleteWorkingFamiliesEventUseCase : IDeleteWorkingFamiliesEventUseCase
 {
     private readonly IWorkingFamiliesEvent _gateway;
-    private readonly IAudit _auditGateway;
     private readonly ILogger<DeleteWorkingFamiliesEventUseCase> _logger;
 
     public DeleteWorkingFamiliesEventUseCase(
         IWorkingFamiliesEvent gateway,
-        IAudit auditGateway,
         ILogger<DeleteWorkingFamiliesEventUseCase> logger)
     {
         _gateway = gateway;
-        _auditGateway = auditGateway;
         _logger = logger;
     }
 
@@ -33,7 +30,6 @@ public class DeleteWorkingFamiliesEventUseCase : IDeleteWorkingFamiliesEventUseC
 
         if (deleted)
         {
-            await _auditGateway.CreateAuditEntry(AuditType.WorkingFamilies, hmrcId);
             var safeId = hmrcId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
             _logger.LogInformation("Working families event soft-deleted for HMRC id {HMRCId}", safeId);
         }

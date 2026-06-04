@@ -70,8 +70,6 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
             throw new NotFoundException(guid);
         }
 
-        await _auditGateway.CreateAuditEntry(AuditType.CheckBulkResults, guid);
-
         _logger.LogInformation(
             $"Retrieved bulk upload results for group ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
 

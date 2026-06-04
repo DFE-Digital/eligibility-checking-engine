@@ -294,7 +294,6 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             response.Message = "Import completed - no records to process.";
         }
 
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
         return response;
     }
 

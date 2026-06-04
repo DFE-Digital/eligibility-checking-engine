@@ -122,8 +122,6 @@ public class CreateApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.PostApplication(model.Data!)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, response.Id, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(model, _allowedLocalAuthorityIds);
@@ -147,9 +145,6 @@ public class CreateApplicationUseCaseTests
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment))
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.PostApplication(model.Data!)).ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, response.Id, null))
-            .ReturnsAsync(_fixture.Create<string>());
-
         // Act
         var result = await _sut.Execute(model, allAuthoritiesAllowed);
 

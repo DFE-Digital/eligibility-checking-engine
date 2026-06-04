@@ -64,8 +64,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(fsm);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
-            new AuditData());
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         var response = await _sut.Exists(dataItem);
@@ -85,8 +84,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(wf);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
-            new AuditData());
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         var response = await _sut.Exists(dataItem);
@@ -105,8 +103,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(fsm);
 
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
-            new AuditData());
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
         var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
         hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDays + 1));
@@ -130,8 +127,7 @@ public class HashGatewayTests : TestBase.TestBase
         var dataItem = GetCheckProcessData(wf);
 
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC,
-            new AuditData());
+        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
         var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
         hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDaysWF + 1));

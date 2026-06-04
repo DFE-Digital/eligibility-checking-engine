@@ -22,8 +22,6 @@ public class UpdateFosterFamilyUseCase : IUpdateFosterFamilyUseCase
         var response = await _fosterFamilyGateway.UpdateFosterFamily(guid, model);
         if (response == null) return null;
 
-        await _auditGateway.CreateAuditEntry(AuditType.FosterFamily, guid);
-
         return response;
     }
 }

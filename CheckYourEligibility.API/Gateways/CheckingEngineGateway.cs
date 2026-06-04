@@ -97,12 +97,12 @@ public class CheckingEngineGateway : ICheckingEngine
                 case CheckEligibilityType.TwoYearOffer:
                 case CheckEligibilityType.EarlyYearPupilPremium:
                     {
-                        await Process_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
+                        await Process_StandardCheck(result, checkData, dbContextFactory);
                     }
                     break;
                 case CheckEligibilityType.WorkingFamilies:
                     {
-                        await Process_WorkingFamilies_StandardCheck(guid, auditDataTemplate, result, checkData, dbContextFactory);
+                        await Process_WorkingFamilies_StandardCheck(result, checkData, dbContextFactory);
                     }
                     break;
             }
@@ -271,8 +271,7 @@ public class CheckingEngineGateway : ICheckingEngine
     /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
     /// </summary>
     /// <returns></returns>
-    private async Task Process_WorkingFamilies_StandardCheck(string guid, AuditData auditDataTemplate,
-        EligibilityCheck? result, CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
+    private async Task Process_WorkingFamilies_StandardCheck(EligibilityCheck? result, CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         //TODO: This should be cleaned up
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
@@ -293,7 +292,7 @@ public class CheckingEngineGateway : ICheckingEngine
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
             //To ensure correct LA ID is passed when using ECS for checks
-            string laId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
+            string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
             SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
 
             result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
@@ -343,7 +342,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
-            await _hashGateway.Create(wfCheckData, result.Status, result.Tier, source, auditDataTemplate, dbContextFactory);
+            await _hashGateway.Create(wfCheckData, result.Status, result.Tier, source, dbContextFactory);
 
         var context = dbContextFactory ?? _db;
         // Now update the check data in the EligibilityCheckTable with all the neccessary fields
@@ -392,7 +391,7 @@ public class CheckingEngineGateway : ICheckingEngine
         };
 
     }
-    private async Task Process_StandardCheck(string guid, AuditData auditDataTemplate, EligibilityCheck? result,
+    private async Task Process_StandardCheck(EligibilityCheck result,
         CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
@@ -413,7 +412,6 @@ public class CheckingEngineGateway : ICheckingEngine
             checkTierResult = testTier;
             source = ProcessEligibilityCheckSource.TEST;
         }
-
         else
         {
 
@@ -422,7 +420,9 @@ public class CheckingEngineGateway : ICheckingEngine
 
                 var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type, dbContextFactory);
                 //To ensure correct LA ID is passed when using ECS for checks
-                string localAuthorityId = EligibilityCheckHelper.ExtractLAIdFromScope(auditDataTemplate.scope);
+
+                string localAuthorityId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+                
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
                 if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
                 {
@@ -494,13 +494,12 @@ public class CheckingEngineGateway : ICheckingEngine
         else
         {
             result.EligibilityCheckHashID =
-               await _hashGateway.Create(checkData, checkStatusResult, result.Tier, source, auditDataTemplate, dbContextFactory);
+               await _hashGateway.Create(checkData, checkStatusResult, result.Tier, source, dbContextFactory);
 
             //If CAPI returns a different result from ECS
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
-                var organisation = await context.Audits.FirstOrDefaultAsync(a => a.TypeID == guid);
                 ECSConflict ecsConflictRecord = new()
                 {
                     CorrelationID = correlationId,
@@ -669,41 +668,44 @@ public class CheckingEngineGateway : ICheckingEngine
                 }
             }
         };
-        //check citizen
-        // if a guid empty ie the request failed then the status is updated
-
-        _logger.LogInformation($"Dwp before getting citizen");
-
         _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
         var citizenResponse = await _dwpAdapter.GetCitizen(citizenRequest, data.Type, correlationId);
-        _logger.LogInformation($"Dwp after getting citizen");
 
         if (string.IsNullOrEmpty(citizenResponse.Guid))
         {
-            _logger.LogInformation($"Dwp after getting citizen error " + citizenResponse.CheckEligibilityStatus);
+            _logger.LogInformation("Dwp after not finding citizen ResponseStatusCode:{code}, \n" +
+                "DWPcorrelationId: {correlationId} \n" +
+                "NINO:{nino} \n" +
+                "LastName:{lastName}\n" +
+                "DateOfBirth:{dateOfBirth}", 
+                citizenResponse.CAPIResponseCode,
+                correlationId,
+                data.NationalInsuranceNumber,
+                data.LastName,
+                data.DateOfBirth);
             return citizenResponse;
         }
         // Guid returned = citizen found
         else
         {
-            _logger.LogInformation($"Dwp has valid citizen");
+            _logger.LogInformation("Dwp has valid citizen, correlationId:{correlationId}", correlationId);
 
             // Perform a benefit check
             var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
                 DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
-            _logger.LogInformation($"Dwp after getting claim");
+            _logger.LogInformation("Dwp after getting claim,correlationId:{correlationId}", correlationId);
 
             if (result.CAPIResponseCode == HttpStatusCode.OK)
             {
                 result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
-                _logger.LogInformation($"Dwp is eligible");
+                _logger.LogInformation("Dwp is eligible correlationId:{correlationId}", correlationId);
 
             }
             else if (result.CAPIResponseCode == HttpStatusCode.NotFound)
             {
                 result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
 
-                _logger.LogInformation($"Dwp is not found");
+                _logger.LogInformation("Dwp is not found correlationId:{correlationId}", correlationId);
             }
             else
             {

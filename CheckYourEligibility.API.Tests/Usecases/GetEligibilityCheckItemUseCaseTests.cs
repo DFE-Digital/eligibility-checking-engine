@@ -77,8 +77,6 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var type = CheckEligibilityType.None;
         var item = _fixture.Create<CheckEligibilityItem>();
         _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, type, false)).ReturnsAsync(item);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
-
         // Act
         var result = await _sut.Execute(guid, type);
 
@@ -98,8 +96,6 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var type = CheckEligibilityType.FreeSchoolMeals;
         var item = _fixture.Create<CheckEligibilityItem>();
         _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, type, false)).ReturnsAsync(item);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
-
         // Act
         var result = await _sut.Execute(guid, type);
 
@@ -119,13 +115,11 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var type = _fixture.Create<CheckEligibilityType>();
         var item = _fixture.Create<CheckEligibilityItem>();
         _mockCheckGateway.Setup(s => s.GetItem<CheckEligibilityItem>(guid, type, false)).ReturnsAsync(item);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
-
         // Act
         await _sut.Execute(guid, type);
 
         // Assert
         _mockCheckGateway.Verify(s => s.GetItem<CheckEligibilityItem>(guid, type, false), Times.Once);
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Check, guid, null), Times.Once);
+ 
     }
 }

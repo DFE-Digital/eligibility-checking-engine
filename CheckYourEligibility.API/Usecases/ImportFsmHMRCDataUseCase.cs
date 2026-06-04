@@ -63,6 +63,5 @@ public class ImportFsmHMRCDataUseCase : IImportFsmHMRCDataUseCase
         }
 
         await _gateway.ImportHMRCData(DataLoad);
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }
