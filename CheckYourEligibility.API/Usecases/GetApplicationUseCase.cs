@@ -41,7 +41,6 @@ public class GetApplicationUseCase : IGetApplicationUseCase
 
         var response = await _applicationGateway.GetApplication(guid);
         if (response == null) return null!;
-        await _auditGateway.CreateAuditEntry(AuditType.Application, guid);
 
         return new ApplicationItemResponse
         {

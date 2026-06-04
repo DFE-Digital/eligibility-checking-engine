@@ -1,9 +1,7 @@
-﻿using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
+﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -57,7 +55,7 @@ public class HashGateway : IHash
     /// <returns></returns>
     /// <remarks>NOTE there is no save, Context should be saved in calling service</remarks>
     public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome, EligibilityTier? tier,
-        ProcessEligibilityCheckSource source, AuditData auditDataTemplate,EligibilityCheckContext dbContextFactory = null )
+        ProcessEligibilityCheckSource source,EligibilityCheckContext dbContextFactory = null )
     {
         var hash = item.GetHash();
 
@@ -74,10 +72,6 @@ public class HashGateway : IHash
         };
         var context = dbContextFactory ?? _db;
         await context.EligibilityCheckHashes.AddAsync(HashItem);
-
-        auditDataTemplate.Type = AuditType.Hash;
-        auditDataTemplate.typeId = HashItem.EligibilityCheckHashID;
-        await _audit.AuditAdd(auditDataTemplate, dbContextFactory);
         return HashItem.EligibilityCheckHashID;
     }
 }

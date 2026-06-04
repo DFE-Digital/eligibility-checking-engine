@@ -297,10 +297,7 @@ public class DwpAdapter : IDwpAdapter
         citizenResponse.CAPIEndpoint = string.Empty;
         citizenResponse.Guid = string.Empty;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
-
-        _logger.LogInformation($"Dwp before citizen token");
         string token = await GetToken();
-        _logger.LogInformation($"Dwp token " + token);
 
         try
         {
