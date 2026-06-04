@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -75,7 +76,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                           $"Task_No....{i}\n" +
                           $"Check:{checkData.Guid}\n" +
                           $"Time_Elapsed: {st.ElapsedMilliseconds:N0} ms\n");
-                          i++;
+                        i++;
 
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
                         {
@@ -105,7 +106,13 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                         }
 
                     }
+                    catch (NotFoundException ex) {
+                        //if check record is not found in the database
+                        // due to unexpected roll-back
+                        // delete the message from the queue.
+                        await _storageQueueGateway.DeleteMessageAsync(item, queueName);
 
+                    }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Queue processing");
