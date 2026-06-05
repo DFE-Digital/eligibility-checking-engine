@@ -79,7 +79,7 @@ public class CheckingEngineGateway : ICheckingEngine
             }
         }
     }
-    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null)
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         //TODO: This should come from the other gateway
@@ -518,9 +518,9 @@ public class CheckingEngineGateway : ICheckingEngine
                 };
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
 
-            }
-            await context.SaveChangesAsync();
+            }           
         }
+        await context.SaveChangesAsync();
 
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
     }
