@@ -138,6 +138,11 @@ public class CheckEligibilityGateway : ICheckEligibility
 
                                 CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                                 hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                                hashCheckData.FirstName = checkData.FirstName;
+                                hashCheckData.ChildFirstName = checkData.ChildFirstName;
+                                hashCheckData.ChildLastName = checkData.ChildLastName;
+                                hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
+                                hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
                                 item.CheckData = JsonConvert.SerializeObject(hashCheckData);
                                 _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
                                 break;
@@ -169,8 +174,13 @@ public class CheckEligibilityGateway : ICheckEligibility
                         {
                             CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                             hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                            hashCheckData.FirstName = checkData.FirstName;
+                            hashCheckData.ChildFirstName = checkData.ChildFirstName;
+                            hashCheckData.ChildLastName = checkData.ChildLastName;
+                            hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
+                            hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
                             item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
+                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");                            
                         }
                     }
                     catch (Exception ex)
