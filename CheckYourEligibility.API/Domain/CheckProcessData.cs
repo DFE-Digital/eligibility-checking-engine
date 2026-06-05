@@ -8,6 +8,11 @@ public class CheckProcessData
 {
     public string? NationalInsuranceNumber { get; set; }
     public string? LastName { get; set; }
+    public string? FirstName { get; set; }
+    public string? ChildFirstName { get; set; }
+    public string? ChildLastName { get; set; }
+    public string? ChildDateOfBirth { get; set; }
+    public string? ChildSchoolURN { get; set; }
     public string EligibilityCode { get; set; }
     public string ValidityStartDate { get; set; }
     public string ValidityEndDate { get; set; }
