@@ -41,8 +41,8 @@ public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
         try
         {
                 // pass dbContext
-                var auditItemTemplate = _auditGateway.AuditDataGet(AuditType.Check, string.Empty);
-                var (status, tier) = await _checkingEngineGateway.ProcessCheckAsync(guid, auditItemTemplate, dbContextFactory);
+              
+                var (status, tier) = await _checkingEngineGateway.ProcessCheckAsync(guid, dbContextFactory);
                
             if (status == null)
             {
