@@ -287,6 +287,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
                     item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
                     item.LastName = CheckData.LastName;
+                    item.FirstName = CheckData.FirstName;
+                    item.ChildFirstName = CheckData.ChildFirstName;
+                    item.ChildLastName = CheckData.ChildLastName;
+                    item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
+                    item.ChildSchoolURN = CheckData.ChildSchoolURN;
                     item.EligibilityEndDate = CheckData.EligibilityEndDate;
                     break;
             }
@@ -366,6 +371,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                 {
                     DateOfBirth = checkItem.DateOfBirth,
                     LastName = checkItem.LastName?.ToUpper(),
+                    FirstName = checkItem.FirstName,
+                    ChildFirstName = checkItem.ChildFirstName,
+                    ChildLastName = checkItem.ChildLastName,
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
+                    ChildSchoolURN = checkItem.ChildSchoolURN,
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
