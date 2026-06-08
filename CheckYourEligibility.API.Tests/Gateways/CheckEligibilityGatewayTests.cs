@@ -308,6 +308,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = CheckEligibilityType.FreeSchoolMeals;
+        check.FirstName = "Alex";
+        check.ChildFirstName = "Sam";
+        check.ChildLastName = "Tester";
+        check.ChildDateOfBirth = "2016-04-12";
+        check.ChildSchoolURN = "123456";
         string eligibilityEndDate = (new DateTime(DateTime.UtcNow.Year, 07, 31)).ToString("yyyy-MM-dd");
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check,eligibilityEndDate));
 
@@ -323,6 +328,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
         response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
         response.EligibilityEndDate.Should().BeEquivalentTo(eligibilityEndDate);
+        response.FirstName.Should().BeEquivalentTo(check.FirstName);
+        response.ChildFirstName.Should().BeEquivalentTo(check.ChildFirstName);
+        response.ChildLastName.Should().BeEquivalentTo(check.ChildLastName);
+        response.ChildDateOfBirth.Should().BeEquivalentTo(check.ChildDateOfBirth);
+        response.ChildSchoolURN.Should().BeEquivalentTo(check.ChildSchoolURN);
     }
 
     [Test]
@@ -518,6 +528,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         {
             DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
+            FirstName = request.FirstName,
+            ChildFirstName = request.ChildFirstName,
+            ChildLastName = request.ChildLastName,
+            ChildDateOfBirth = request.ChildDateOfBirth,
+            ChildSchoolURN = request.ChildSchoolURN,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type,
@@ -562,6 +577,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         {
             DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
+            FirstName = request.FirstName,
+            ChildFirstName = request.ChildFirstName,
+            ChildLastName = request.ChildLastName,
+            ChildDateOfBirth = request.ChildDateOfBirth,
+            ChildSchoolURN = request.ChildSchoolURN,
             NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type
