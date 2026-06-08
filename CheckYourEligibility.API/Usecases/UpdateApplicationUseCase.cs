@@ -40,7 +40,6 @@ public class UpdateApplicationUseCase : IUpdateApplicationUseCase
         var response = await _applicationGateway.UpdateApplication(guid, model.Data);
         if (response == null) return null;
 
-        await _auditGateway.CreateAuditEntry(AuditType.Application, guid);
 
         return new ApplicationUpdateResponse
         {
@@ -65,8 +64,6 @@ public class UpdateApplicationUseCase : IUpdateApplicationUseCase
         if (response == null) return null;
 
         
-        await _auditGateway.CreateAuditEntry(AuditType.Application, reference);
-
         return new ApplicationUpdateResponse
         {
             Data = response.Data

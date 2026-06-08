@@ -22,6 +22,5 @@ public class CleanUpEligibilityChecksUseCase : ICleanUpEligibilityChecksUseCase
     public async Task Execute()
     {
         await _gateway.CleanUpEligibilityChecks();
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }

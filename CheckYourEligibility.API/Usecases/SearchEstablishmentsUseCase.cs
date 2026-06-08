@@ -27,7 +27,6 @@ public class SearchEstablishmentsUseCase : ISearchEstablishmentsUseCase
         if (query.Length < 3 || query.Length > int.MaxValue) throw new ArgumentException();
 
         var results = await _gateway.Search(query, la, mat);
-        await _auditGateway.CreateAuditEntry(AuditType.Establishment, string.Empty);
         return results ?? Enumerable.Empty<Establishment>();
     }
 }

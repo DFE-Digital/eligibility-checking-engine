@@ -11,5 +11,5 @@ public interface IHash
     Task<EligibilityCheckHash?> Exists(CheckProcessData item);
 
     Task<string> Create(CheckProcessData item, CheckEligibilityStatus checkResult, EligibilityTier? tier, ProcessEligibilityCheckSource source,
-        AuditData auditDataTemplate, EligibilityCheckContext dbContextFactory = null);
+        EligibilityCheckContext dbContextFactory = null);
 }

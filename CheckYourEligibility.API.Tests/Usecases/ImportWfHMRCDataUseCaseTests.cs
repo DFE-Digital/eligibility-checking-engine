@@ -96,8 +96,6 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
             .Returns(stream);
 
         _mockGateway.Setup(s => s.ImportWfHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Administration, string.Empty, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(fileMock.Object);

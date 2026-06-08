@@ -45,8 +45,6 @@ public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
         
         var response = await _fosterFamilyGateway.PostFosterFamily(model.Data);
 
-        if (response != null) await _auditGateway.CreateAuditEntry(AuditType.FosterFamily, response.FosterCarerId.ToString());
-
         if (response == null)
         {
             throw new Exception("Failed to create foster family");

@@ -87,8 +87,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -117,9 +115,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
-
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
 
@@ -137,8 +132,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -166,8 +159,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -185,8 +176,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -206,8 +195,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -227,8 +214,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -261,8 +246,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, requestNoPartner);
@@ -282,8 +265,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
 
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
@@ -297,21 +278,23 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     public async Task Execute_ShouldCallAudit_AfterSuccessfulUpsert()
     {
         // Arrange
-        var auditCalled = false;
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty)
-            .Callback(() => auditCalled = true);
 
         // Act
-        await _sut.Execute(HmrcId, ValidRequest);
+        var result = await _sut.Execute(HmrcId, ValidRequest);
 
         // Assert
-        auditCalled.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.HMRCEligibilityEventId.Should().Be(HmrcId);
+
+        _mockGateway.Verify(
+            g => g.UpsertWorkingFamiliesEvent(It.Is<WorkingFamiliesEvent>(wfe =>
+                wfe.HMRCEligibilityEventId == HmrcId &&
+                wfe.EligibilityCode == ValidDern)),
+            Times.Once);
     }
 
     [Test]
@@ -323,9 +306,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         SetupNoOverlaps();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
-
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
 
@@ -377,9 +357,6 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             .ReturnsAsync(new List<WorkingFamiliesEvent>());
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.WorkingFamilies, HmrcId, null))
-            .ReturnsAsync(string.Empty);
-
         // Act
         var result = await _sut.Execute(HmrcId, ValidRequest);
 

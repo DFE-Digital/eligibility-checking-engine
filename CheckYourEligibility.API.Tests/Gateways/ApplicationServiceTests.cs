@@ -581,8 +581,7 @@ public class ApplicationServiceTests : TestBase.TestBase
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = new CheckEligibilityRequestData().Type
         };
-        var hashId = await _HashGateway.Create(processItem, status,null, ProcessEligibilityCheckSource.HO,
-            new AuditData { Type = AuditType.Check });
+        var hashId = await _HashGateway.Create(processItem, status,null, ProcessEligibilityCheckSource.HO);
     }
 
     private async Task CreateUserEstablishmentAndLa()

@@ -22,6 +22,5 @@ public class CleanUpRateLimitEventsUseCase : ICleanUpRateLimitEventsUseCase
     public async Task Execute()
     {
         await _gateway.CleanUpRateLimitEvents();
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }

@@ -44,8 +44,6 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(guid, localAuthorityIds);
@@ -66,9 +64,6 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
-            .ReturnsAsync(_fixture.Create<string>());
-
         // Act
         await _sut.Execute(guid, localAuthorityIds);
 
@@ -171,30 +166,6 @@ public class DeleteApplicationUseCaseTests
     }
 
     [Test]
-    public void Execute_AuditGatewayThrowsException_PropagatesException()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var localAuthorityIds = new List<int> { 0 };
-        var applicationLocalAuthorityId = _fixture.Create<int>();
-        var expectedException = new Exception("Audit service error");
-
-        _mockApplicationGateway.Setup(x => x.GetLocalAuthorityIdForApplication(guid))
-            .ReturnsAsync(applicationLocalAuthorityId);
-        _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
-            .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
-            .ThrowsAsync(expectedException);
-
-        // Act & Assert
-        var exception = Assert.ThrowsAsync<Exception>(
-            async () => await _sut.Execute(guid, localAuthorityIds));
-
-        exception.Should().NotBeNull();
-        exception.Should().BeSameAs(expectedException);
-    }
-
-    [Test]
     public async Task Execute_ValidGuidWithMultipleLocalAuthorities_DeletesWhenOneMatches()
     {
         // Arrange
@@ -206,8 +177,6 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(guid, localAuthorityIds);
@@ -216,28 +185,6 @@ public class DeleteApplicationUseCaseTests
         // Verification is handled in TearDown through VerifyAll()
     }
 
-    [Test]
-    public async Task Execute_ValidExecution_CreatesCorrectAuditEntry()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var localAuthorityIds = new List<int> { 0 };
-        var applicationLocalAuthorityId = _fixture.Create<int>();
-        var expectedAuditId = _fixture.Create<string>();
-
-        _mockApplicationGateway.Setup(x => x.GetLocalAuthorityIdForApplication(guid))
-            .ReturnsAsync(applicationLocalAuthorityId);
-        _mockApplicationGateway.Setup(x => x.DeleteApplication(guid))
-            .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, guid,null))
-            .ReturnsAsync(expectedAuditId);
-
-        // Act
-        await _sut.Execute(guid, localAuthorityIds);
-
-        // Assert
-        _mockAuditGateway.Verify(x => x.CreateAuditEntry(AuditType.Application, guid,null), Times.Once);
-    }
 
     [Test]
     public async Task Execute_CallsGatewayMethodsInCorrectOrder()
@@ -278,8 +225,6 @@ public class DeleteApplicationUseCaseTests
             .ReturnsAsync(applicationLocalAuthorityId);
         _mockApplicationGateway.Setup(x => x.DeleteApplication(stringGuid))
             .ReturnsAsync(true);
-        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Application, stringGuid, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         await _sut.Execute(stringGuid, localAuthorityIds);

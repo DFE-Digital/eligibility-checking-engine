@@ -124,7 +124,6 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
         };
 
         await _bulkCheckGateway.CreateBulkCheck(bulkCheck);
-        await _auditGateway.CreateAuditEntry(AuditType.BulkCheck, groupId);
 
         // Capture the data as a typed list before the request scope ends.
         // PostCheck runs in its own DI scope so it owns its DbContext and

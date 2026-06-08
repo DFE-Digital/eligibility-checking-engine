@@ -45,8 +45,6 @@ public class RestoreArchivedApplicationStatusUseCaseTests
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.RestoreArchivedApplicationStatus(guid))
             .ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIds);
@@ -102,8 +100,6 @@ public class RestoreArchivedApplicationStatusUseCaseTests
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.RestoreArchivedApplicationStatus(guid))
             .ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIds);
@@ -125,14 +121,8 @@ public class RestoreArchivedApplicationStatusUseCaseTests
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.RestoreArchivedApplicationStatus(guid))
             .ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid, null))
-            .ReturnsAsync(_fixture.Create<string>());
-
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIds);
-
-        // Assert
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Application, guid, null), Times.Once);
     }
 
     [Test]
@@ -147,8 +137,6 @@ public class RestoreArchivedApplicationStatusUseCaseTests
             .ReturnsAsync(localAuthorityId);
         _mockApplicationGateway.Setup(s => s.RestoreArchivedApplicationStatus(guid))
             .ReturnsAsync(response);
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Application, guid, null))
-            .ReturnsAsync(_fixture.Create<string>());
 
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIds);

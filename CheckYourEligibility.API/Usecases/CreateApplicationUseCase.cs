@@ -72,8 +72,7 @@ public class CreateApplicationUseCase : ICreateApplicationUseCase
                 "You do not have permission to create applications for this establishment's local authority");
         }
 
-        var response = await _applicationGateway.PostApplication(model.Data);
-        if (response != null) await _auditGateway.CreateAuditEntry(AuditType.Application, response.Id);
+        var response = await _applicationGateway.PostApplication(model.Data);      
 
         if (response == null)
         {

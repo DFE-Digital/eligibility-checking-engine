@@ -109,9 +109,7 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockCheckGateway
             .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null))
             .ReturnsAsync(responseData);
-
-
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
+   
 
         // Act
         var result = await _sut.Execute(guid, request);
@@ -132,7 +130,7 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
             .Setup(s => s.UpdateEligibilityCheckStatus(guid, request.Data, null))
             .ReturnsAsync(responseData);
 
-        _mockAuditGateway.Setup(a => a.CreateAuditEntry(AuditType.Check, guid, null)).ReturnsAsync(_fixture.Create<string>());
+        
 
 
         // Act

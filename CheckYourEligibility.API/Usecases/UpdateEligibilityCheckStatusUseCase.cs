@@ -51,8 +51,6 @@ public class UpdateEligibilityCheckStatusUseCase : IUpdateEligibilityCheckStatus
             throw new NotFoundException(guid);
         }
 
-        await _auditGateway.CreateAuditEntry(AuditType.Check, guid);
-
         _logger.LogInformation(
             $"Updated eligibility check status for ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
 

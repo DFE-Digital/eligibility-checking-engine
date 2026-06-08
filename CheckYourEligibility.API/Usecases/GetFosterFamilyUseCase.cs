@@ -31,7 +31,6 @@ public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
         
         if (response == null) return null!;
         
-        await _auditGateway.CreateAuditEntry(AuditType.FosterFamily, guid);
 
         return response;
     }

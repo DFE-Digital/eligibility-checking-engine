@@ -58,6 +58,5 @@ public class UpdateEstablishmentsPrivateBetaUseCase : IUpdateEstablishmentsPriva
         }
 
         await _gateway.UpdateEstablishmentsPrivateBeta(dataLoad);
-        await _auditGateway.CreateAuditEntry(AuditType.Administration, string.Empty);
     }
 }
