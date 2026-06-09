@@ -53,4 +53,62 @@ public class DataValidationTests
             e => e.PropertyName.Contains("LastName"),
             because: reason);
     }
+
+    private CheckEligibilityRequestData ValidRequestWithOptionalApplicationData() =>
+    new CheckEligibilityRequestData
+    {
+        LastName = "Tester",
+        FirstName = "Alex",
+        DateOfBirth = "2000-01-01",
+        ChildFirstName = "Sam",
+        ChildLastName = "Tester",
+        ChildDateOfBirth = "2016-04-12",
+        ChildSchoolURN = "123456",
+        NationalInsuranceNumber = "AB123456C",
+        Type = CheckEligibilityType.FreeSchoolMeals
+    };
+
+    [Test]
+    public void Optional_application_fields_with_valid_values_pass_validation()
+    {
+        var result = _validator.Validate(ValidRequestWithOptionalApplicationData());
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Test]
+    public void ChildDateOfBirth_with_invalid_value_fails_validation()
+    {
+        var request = ValidRequestWithOptionalApplicationData();
+        request.ChildDateOfBirth = "not-a-date";
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("ChildDateOfBirth"));
+    }
+
+    [Test]
+    public void ChildSchoolURN_with_non_numeric_value_fails_validation()
+    {
+        var request = ValidRequestWithOptionalApplicationData();
+        request.ChildSchoolURN = "ABC123";
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("ChildSchoolURN"));
+    }
+
+    [Test]
+    public void ChildFirstName_with_invalid_characters_fails_validation()
+    {
+        var request = ValidRequestWithOptionalApplicationData();
+        request.ChildFirstName = "Sam#";
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("ChildFirstName"));
+    }
 }

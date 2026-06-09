@@ -11,7 +11,12 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     //public int? Sequence { get; set; }
 
     public string? DateOfBirth { get; set; }
+    public string? FirstName { get; set; }
     public string? LastName { get; set; }
+    public string? ChildFirstName { get; set; }
+    public string? ChildLastName { get; set; }
+    public string? ChildDateOfBirth { get; set; }
+    public string? ChildSchoolURN { get; set; }
     /// <summary>
     /// The type of eligibility check. This field is optional and determined by the endpoint path.
     /// When submitting requests, you can omit this field as the endpoint route automatically sets the correct type.
