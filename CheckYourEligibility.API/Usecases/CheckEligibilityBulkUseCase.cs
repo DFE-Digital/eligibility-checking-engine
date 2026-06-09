@@ -117,6 +117,8 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             SubmittedBy = model.Meta?.SubmittedBy ?? string.Empty,
             EligibilityType = type,
             Status = BulkCheckStatus.InProgress,
+            OrganisationType = meta.OrganisationType,
+            OrganisationID = meta.OrganisationID,
             SubmittedDate = DateTime.UtcNow,
             LocalAuthorityID = model.Meta?.LocalAuthorityId,
             FinalNameInCheck = bulkData[index - 1].LastName ?? string.Empty,
@@ -139,7 +141,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             try
             {
                 await gateway.PostCheck(capturedData, groupId, meta);
-            }
+            } 
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Background PostCheck failed for bulk check group ID: {GroupId}", groupId);

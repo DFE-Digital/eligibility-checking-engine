@@ -201,20 +201,6 @@ public class BulkCheckGateway : IBulkCheck
             })
             .ToDictionaryAsync(x => x.BulkCheckID!);
 
-        foreach (var bulkCheck in bulkChecks)
-        {
-            if (!statusCounts.TryGetValue(bulkCheck.BulkCheckID, out var counts))
-                // No EligibilityCheck rows at all — batch was just submitted; treat as in progress.
-                bulkCheck.Status = BulkCheckStatus.InProgress;
-            else if (counts.Total == 0)
-                // Rows exist but all are soft-deleted.
-                bulkCheck.Status = BulkCheckStatus.Deleted;
-            else if (counts.Queued > 0)
-                bulkCheck.Status = BulkCheckStatus.InProgress;
-            else
-                bulkCheck.Status = BulkCheckStatus.Completed;
-        }
-
         return bulkChecks;
     }
 

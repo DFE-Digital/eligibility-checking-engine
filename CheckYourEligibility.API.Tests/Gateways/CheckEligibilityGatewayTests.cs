@@ -415,6 +415,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         statusUpdate.Data.Status.Should().BeEquivalentTo(requestUpdateStatus.Status.ToString());
     }
 
+
     [Test]
     public async Task Given_InvalidRequest_DeleteBulkEligibilityChecks_Should_Return_ErrorMessage()
     {
@@ -479,6 +480,38 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         //deleteRespomse.Should().BeOfType<CheckEligibilityBulkDeleteResponse>();
         //deleteRespomse.DeletedCount.Should().Be(5);
         deleteRespomse.Status.Should().BeEquivalentTo("Success");
+    }
+
+    [Test]
+    public async Task Given_ValidRequest_DeleteBulkEligibilityChecks_Should_Set_Status_Deleted()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var item = _fixture.Create<EligibilityCheck>();
+            item.EligibilityCheckID = Guid.NewGuid().ToString();
+            item.BulkCheckID = groupId;
+            item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
+            // Set navigation properties to null to avoid creating additional entities
+            item.EligibilityCheckHash = null;
+            item.EligibilityCheckHashID = null;
+            item.BulkCheck = null;
+            _fakeInMemoryDb.CheckEligibilities.Add(item);
+        }
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var requestUpdateStatus = _fixture.Create<EligibilityCheckStatusData>();
+
+        // Act
+        var deleteResponse = await _sut.DeleteByBulkCheckId(groupId);
+
+        // Assert
+        var deletedRecords = await _fakeInMemoryDb.CheckEligibilities.Where(x => x.BulkCheckID == groupId).ToListAsync();
+        deletedRecords.Should().NotBeEmpty("There should be records with the specified BulkCheckID");
+        deletedRecords.All(x => x.IsDeleted).Should().BeTrue("All records with the specified BulkCheckID should be marked as deleted");
     }
 
 
