@@ -138,6 +138,11 @@ public class CheckEligibilityGateway : ICheckEligibility
 
                                 CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                                 hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                                hashCheckData.FirstName = checkData.FirstName;
+                                hashCheckData.ChildFirstName = checkData.ChildFirstName;
+                                hashCheckData.ChildLastName = checkData.ChildLastName;
+                                hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
+                                hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
                                 item.CheckData = JsonConvert.SerializeObject(hashCheckData);
                                 _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
                                 break;
@@ -169,8 +174,13 @@ public class CheckEligibilityGateway : ICheckEligibility
                         {
                             CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                             hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                            hashCheckData.FirstName = checkData.FirstName;
+                            hashCheckData.ChildFirstName = checkData.ChildFirstName;
+                            hashCheckData.ChildLastName = checkData.ChildLastName;
+                            hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
+                            hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
                             item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
+                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");                            
                         }
                     }
                     catch (Exception ex)
@@ -287,6 +297,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
                     item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
                     item.LastName = CheckData.LastName;
+                    item.FirstName = CheckData.FirstName;
+                    item.ChildFirstName = CheckData.ChildFirstName;
+                    item.ChildLastName = CheckData.ChildLastName;
+                    item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
+                    item.ChildSchoolURN = CheckData.ChildSchoolURN;
                     item.EligibilityEndDate = CheckData.EligibilityEndDate;
                     break;
             }
@@ -366,6 +381,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                 {
                     DateOfBirth = checkItem.DateOfBirth,
                     LastName = checkItem.LastName?.ToUpper(),
+                    FirstName = checkItem.FirstName,
+                    ChildFirstName = checkItem.ChildFirstName,
+                    ChildLastName = checkItem.ChildLastName,
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
+                    ChildSchoolURN = checkItem.ChildSchoolURN,
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
