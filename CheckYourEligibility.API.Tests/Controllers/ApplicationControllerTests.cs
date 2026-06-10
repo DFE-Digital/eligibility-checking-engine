@@ -15,7 +15,7 @@ using Moq;
 using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class ApplicationControllerTests : TestBase.TestBase
 {
