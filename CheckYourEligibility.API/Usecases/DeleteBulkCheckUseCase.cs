@@ -50,7 +50,7 @@ namespace CheckYourEligibility.API.Usecases
     
             if(bulkCheck.Status == BulkCheckStatus.InProgress)
             {
-                throw new InvalidOperationException($"Cannot delete bulk check with ID {groupId} because it is still in progress.");
+                throw new ValidationException(null, $"Cannot delete bulk check with ID {groupId} because it is currently in progress.");
             }
 
             // Check if user has permission to delete this bulk check

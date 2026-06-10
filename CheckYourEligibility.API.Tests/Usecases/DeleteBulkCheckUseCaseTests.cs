@@ -196,7 +196,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Execute_Should_Throw_InvalidOperationException_When_BulkCheck_Is_InProgress()
+    public async Task Execute_Should_Throw_ValidationException_When_BulkCheck_Is_InProgress()
     {
         // Arrange
         var groupId = Guid.NewGuid().ToString();
@@ -210,5 +210,12 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         
         // Act
         Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIDs);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<ValidationException>()
+            .WithMessage($"Cannot delete bulk check with ID {groupId} because it is currently in progress.");
+        
+        _mockBulkCheckGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
+        _mockCheckGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 }
