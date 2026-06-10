@@ -615,8 +615,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
-    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.error)]
-    public async Task Given_validRequest_DWP_Citizen__Claim_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
+    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.notFound)]
+    public async Task Given_validRequest_DWP_Citizen_Claim_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
     {
         // Arrange
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
@@ -657,7 +657,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
     [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
-    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.error)]
+    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.notFound)]
     public async Task Given_validRequest_DWP_Citizen_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
     {
         // Arrange
