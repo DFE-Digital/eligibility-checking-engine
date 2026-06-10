@@ -20,8 +20,24 @@ public class BulkCheck
     [Column(TypeName = "varchar(100)")]
     public string SubmittedBy { get; set; } = string.Empty;
     
-    [NotMapped]
+    [Column(TypeName = "varchar(100)")]
     public BulkCheckStatus Status { get; set; }
+
+    /// <summary>
+    /// ID of Organisation if found in scope
+    /// else OrganisationID = 0
+    /// </summary>
+    [Column(TypeName = "int")]
+    public int? OrganisationID { get; set; }
+
+    /// <summary>
+    /// What type of organisation is making the check
+    /// It can be local-authority, establishment multi-academy-trust
+    /// else it will be set to NULL
+    /// </summary>
+    [Column(TypeName = "nvarchar(20)")]
+    public string? OrganisationType { get; set; }
+
     
     /// <summary>
     /// The Local Authority ID that submitted this bulk check

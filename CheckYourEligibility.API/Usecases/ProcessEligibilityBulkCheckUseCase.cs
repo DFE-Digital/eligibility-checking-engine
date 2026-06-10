@@ -102,6 +102,8 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                                 _logger.LogError(ex, "Error deleting queue item");
                             }
 
+                            // once all checks are complete, update bulk check status to completed    
+                            await UpdateBulkCheckStatusIfCompleted(checkData.Guid);
 
                         }
 
@@ -147,4 +149,40 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
         return new MessageResponse { Data = "Queue Processed." };
 
     }
+
+
+    private async Task UpdateBulkCheckStatusIfCompleted(string checkID)
+    {
+        await using var _db = _dbContextFactory.CreateDbContext();
+
+        var bulkCheckId = await _db.CheckEligibilities
+            .Where(x => x.EligibilityCheckID == checkID)
+            .Select(x => x.BulkCheckID)
+            .FirstOrDefaultAsync();
+
+        // If bulkCheckId is null, it means this check isn't part of a bulk check, its single check, so we can skip the rest of the method
+        if (bulkCheckId == null)
+            return;
+
+        // Check if there are any pending checks for the same bulk check ID
+        var hasPending = await _db.CheckEligibilities
+            .AnyAsync(x =>
+                x.BulkCheckID == bulkCheckId &&
+                x.Status == CheckEligibilityStatus.queuedForProcessing);
+
+        // If there are no queued checks, update the bulk check status to completed
+        // as all checks have been processed
+        if (!hasPending)
+        {
+            var bulkCheck = await _db.BulkChecks
+                .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+
+            if (bulkCheck != null)
+            {
+                bulkCheck.Status = BulkCheckStatus.Completed;
+                await _db.SaveChangesAsync();
+            }
+        }
+    }
+
 }

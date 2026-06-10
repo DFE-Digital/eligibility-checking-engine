@@ -245,6 +245,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                 record.Updated = DateTime.UtcNow;
             }
 
+            // set bulk check record to deleted
+            var bulkCheckRecord = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+            if (bulkCheckRecord != null)
+               bulkCheckRecord.Status = BulkCheckStatus.Deleted;
+
             await _db.SaveChangesAsync();
 
             _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
