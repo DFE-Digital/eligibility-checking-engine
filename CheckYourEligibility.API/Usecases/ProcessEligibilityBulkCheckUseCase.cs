@@ -101,9 +101,6 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                                 _logger.LogError(ex, "Error deleting queue item");
                             }
 
-                            // once all checks are complete, update bulk check status to completed    
-                            await UpdateBulkCheckStatusIfCompleted(checkData.Guid);
-
                         }
 
                     }
@@ -131,6 +128,12 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             });
 
             await Task.WhenAll(tasks);
+
+
+            // get bulk check id from first item in queue, as all items in the queue will have the same bulk check id, 
+            // and update bulk check status to completed if all items have been processed
+            var firstItemCheckData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(retrievedItemsFromQueue.First().Body));
+            await UpdateBulkCheckStatusIfCompleted(firstItemCheckData.Guid);
 
             st.Stop();
 
