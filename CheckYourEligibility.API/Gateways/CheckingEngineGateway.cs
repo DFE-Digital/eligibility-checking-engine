@@ -484,12 +484,10 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (checkStatusResult == CheckEligibilityStatus.error)
         {
-            // do not revert check to QueueForProcessing when DWP throws 422
-            if (capiClaimResponse.CAPIResponseCode != HttpStatusCode.UnprocessableEntity) {
-                // Revert status back and do not save changes
-                result.Status = CheckEligibilityStatus.queuedForProcessing;
-            }
-            
+            // map 422 to not found here
+            result.Status = capiClaimResponse.CAPIResponseCode == HttpStatusCode.UnprocessableEntity
+                ? CheckEligibilityStatus.notFound
+                : CheckEligibilityStatus.queuedForProcessing;
         }
         else
         {
