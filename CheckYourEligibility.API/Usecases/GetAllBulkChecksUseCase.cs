@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
@@ -8,32 +9,38 @@ namespace CheckYourEligibility.API.UseCases;
 ///     Interface for retrieving all bulk checks
 /// </summary>
 public interface IGetAllBulkChecksUseCase
-{
+{ 
     /// <summary>
-    ///     Execute the use case to get all bulk checks
+    ///     Execute the use case to get all bulk checks the user has access to,
+    ///     based on their organisation scope and metadata.
     /// </summary>
-    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user</param>
-    /// <returns>All bulk checks the user has access to</returns>
-    Task<CheckEligibilityBulkStatusesResponse> Execute(IList<int> allowedLocalAuthorityIds);
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user.</param>
+    /// <param name="meta">Metadata describing the user's organisation scope.</param>
+    /// <returns>All bulk checks the user has access to.</returns>
+    Task<CheckEligibilityBulkStatusesResponse> Execute(
+        IList<int> allowedLocalAuthorityIds,
+        CheckMetaData meta);
 }
 
 public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 {
     private readonly IBulkCheck _bulkCheckGateway;
     private readonly IMultiAcademyTrust _multiAcademyTrustGateway;
-    private readonly ILogger<GetAllBulkChecksUseCase> _logger;    
+    private readonly ILogger<GetAllBulkChecksUseCase> _logger;
 
     public GetAllBulkChecksUseCase(
         IBulkCheck bulkCheckGateway,
         IMultiAcademyTrust multiAcademyTrustGateway,
-        ILogger<GetAllBulkChecksUseCase> logger)        
+        ILogger<GetAllBulkChecksUseCase> logger)
     {
         _bulkCheckGateway = bulkCheckGateway;
         _multiAcademyTrustGateway = multiAcademyTrustGateway;
-        _logger = logger;       
+        _logger = logger;
     }
 
-    public async Task<CheckEligibilityBulkStatusesResponse> Execute(IList<int> allowedLocalAuthorityIds)
+    public async Task<CheckEligibilityBulkStatusesResponse> Execute(
+        IList<int> allowedLocalAuthorityIds,
+        CheckMetaData meta)
     {
         if (allowedLocalAuthorityIds == null || allowedLocalAuthorityIds.Count == 0)
         {
