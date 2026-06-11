@@ -44,14 +44,22 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         IList<int> allowedLocalAuthorityIds,
         CheckMetaData meta)
     {
-        if (allowedLocalAuthorityIds == null || allowedLocalAuthorityIds.Count == 0)
+        var hasLocalAuthorityAccess = allowedLocalAuthorityIds != null && allowedLocalAuthorityIds.Count > 0;
+        var hasOrganisationAccess =
+            meta.OrganisationID.HasValue &&
+            meta.OrganisationID.Value > 0 &&
+            !string.IsNullOrWhiteSpace(meta.OrganisationType);
+
+        if (!hasLocalAuthorityAccess && !hasOrganisationAccess)
         {
             throw new UnauthorizedAccessException("You do not have permission to access bulk checks");
         }
 
         IEnumerable<BulkCheck>? response;
 
-        if (allowedLocalAuthorityIds.Contains(0))
+        var safeAllowedLocalAuthorityIds = allowedLocalAuthorityIds ?? new List<int>();
+
+        if (safeAllowedLocalAuthorityIds.Contains(0))
         {
             response = await GetAllBulkChecksForAdmin();
         }
@@ -59,17 +67,17 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         {
             response = await GetBulkChecksForMultiAcademyTrust(
                 meta.OrganisationID ?? 0,
-                allowedLocalAuthorityIds);
+                safeAllowedLocalAuthorityIds);
         }
         else if (meta.OrganisationType == OrganisationType.establishment)
         {
             response = await GetBulkChecksForEstablishment(
                 meta.OrganisationID ?? 0,
-                allowedLocalAuthorityIds);
+                safeAllowedLocalAuthorityIds);
         }
         else
         {
-            response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+            response = await GetBulkChecksForLocalAuthorities(safeAllowedLocalAuthorityIds);
         }
 
         if (response == null || !response.Any())
