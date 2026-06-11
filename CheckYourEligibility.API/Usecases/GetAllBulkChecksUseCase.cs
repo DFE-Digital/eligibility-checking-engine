@@ -65,9 +65,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         }
         else if (meta.OrganisationType == OrganisationType.multi_academy_trust)
         {
-            response = await GetBulkChecksForMultiAcademyTrust(
-                meta.OrganisationID ?? 0,
-                safeAllowedLocalAuthorityIds);
+            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0);
         }
         else if (meta.OrganisationType == OrganisationType.establishment)
         {
@@ -143,21 +141,32 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
             establishmentId);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(
-    int multiAcademyTrustId,
-    IList<int> allowedLocalAuthorityIds)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId)
     {
         var establishmentIds = await _multiAcademyTrustGateway
-            .GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
+    .GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
 
-        var bulkChecks = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(
+            OrganisationType.multi_academy_trust,
+            multiAcademyTrustId);
 
-        return bulkChecks?.Where(x =>
-            (x.OrganisationType == OrganisationType.multi_academy_trust &&
-             x.OrganisationID == multiAcademyTrustId)
-            ||
-            (x.OrganisationType == OrganisationType.establishment &&
-             x.OrganisationID.HasValue &&
-             establishmentIds.Contains(x.OrganisationID.Value)));
+        var establishmentBulkChecks = new List<BulkCheck>();
+
+        foreach (var establishmentId in establishmentIds)
+        {
+            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(
+                OrganisationType.establishment,
+                establishmentId);
+
+            if (checks != null)
+            {
+                establishmentBulkChecks.AddRange(checks);
+            }
+        }
+
+        return (matBulkChecks ?? Enumerable.Empty<BulkCheck>())
+            .Concat(establishmentBulkChecks)
+            .GroupBy(x => x.BulkCheckID)
+            .Select(x => x.First());
     }
 }
