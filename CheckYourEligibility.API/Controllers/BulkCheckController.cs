@@ -368,6 +368,8 @@ public class BulkCheckController : BaseController
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     public async Task<ActionResult> GetAllBulkChecks()
     {
+        var meta = User.CalculateMetaData();
+
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
@@ -379,7 +381,7 @@ public class BulkCheckController : BaseController
                 });
             }
 
-            var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds);
+            var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds, meta);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
