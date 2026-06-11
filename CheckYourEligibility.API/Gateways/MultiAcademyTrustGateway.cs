@@ -53,4 +53,17 @@ public class MultiAcademyTrustGateway : IMultiAcademyTrust
 
         return mat;
     }
+
+    /// <summary>
+    /// Retrieves all establishment IDs linked to the specified Multi Academy Trust.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <returns>A list of establishment IDs linked to the specified Multi Academy Trust.</returns>
+    public async Task<IList<int>> GetEstablishmentIdsForMultiAcademyTrust(int multiAcademyTrustId)
+    {
+        return await _db.MultiAcademyTrustEstablishments
+            .Where(x => x.MultiAcademyTrustID == multiAcademyTrustId)
+            .Select(x => x.EstablishmentID)
+            .ToListAsync();
+    }
 }
