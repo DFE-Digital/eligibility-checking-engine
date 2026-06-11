@@ -1,7 +1,9 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -51,14 +53,22 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 
         if (allowedLocalAuthorityIds.Contains(0))
         {
-            // Admin user - get all non-deleted bulk checks
-            _logger.LogInformation("Admin user retrieving all bulk checks");
             response = await GetAllBulkChecksForAdmin();
+        }
+        else if (meta.OrganisationType == OrganisationType.multi_academy_trust)
+        {
+            response = await GetBulkChecksForMultiAcademyTrust(
+                meta.OrganisationID ?? 0,
+                allowedLocalAuthorityIds);
+        }
+        else if (meta.OrganisationType == OrganisationType.establishment)
+        {
+            response = await GetBulkChecksForEstablishment(
+                meta.OrganisationID ?? 0,
+                allowedLocalAuthorityIds);
         }
         else
         {
-            // Regular user - get bulk checks for their allowed local authorities
-            _logger.LogInformation($"User retrieving bulk checks for local authorities: {string.Join(",", allowedLocalAuthorityIds)}");
             response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
         }
 
