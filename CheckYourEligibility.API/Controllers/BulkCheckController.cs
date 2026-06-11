@@ -367,9 +367,7 @@ public class BulkCheckController : BaseController
     [HttpGet("/bulk-check")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     public async Task<ActionResult> GetAllBulkChecks()
-    {
-        var meta = User.CalculateMetaData();
-
+    {       
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
@@ -380,6 +378,8 @@ public class BulkCheckController : BaseController
                     Errors = [new Error { Title = "No local authority scope found" }]
                 });
             }
+
+            var meta = User.CalculateMetaData();
 
             var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds, meta);
 

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -34,7 +35,6 @@ namespace CheckYourEligibility.API.Tests.Controllers
             // Create minimal mocks - only create the ones that are actually needed
             var mockAudit = new Mock<IAudit>();
 
-
             _controller = new BulkCheckController(
                     _mockLogger.Object,
                 mockAudit.Object,
@@ -42,7 +42,6 @@ namespace CheckYourEligibility.API.Tests.Controllers
                     null!, null!, null!, null!, null!,
                     _mockUseCase.Object
                 );
-
         }
 
         [Test]
@@ -66,13 +65,18 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 }
             };
 
-            _mockUseCase.Setup(x => x.Execute(It.Is<IList<int>>(ids => ids.Contains(0))))
+            _mockUseCase.Setup(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(0)),
+                It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
             // Set up admin user context
             var claims = new List<Claim>
             {
-                new Claim("scope", "local_authority")
+                new Claim("scope", "local_authority"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "test-admin")
             };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
@@ -138,13 +142,19 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 Checks = new List<BulkCheck>()
             };
 
-            _mockUseCase.Setup(x => x.Execute(It.IsAny<IList<int>>()))
+            _mockUseCase.Setup(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0)),
+                It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
             // Set up user context with specific local authority
             var claims = new List<Claim>
             {
-                new Claim("scope", "local_authority:123")
+                new Claim("scope", "local_authority:123"),
+                new Claim("client_id", "test-client"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "test-user")
             };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
@@ -163,7 +173,9 @@ namespace CheckYourEligibility.API.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<ObjectResult>());
-            _mockUseCase.Verify(x => x.Execute(It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0))), Times.Once);
+            _mockUseCase.Verify(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0)),
+                It.IsAny<CheckMetaData>()), Times.Once);
         }
     }
 }
