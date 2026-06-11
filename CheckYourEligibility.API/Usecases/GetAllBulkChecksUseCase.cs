@@ -125,4 +125,33 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         // Remove duplicates and return
         return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
     }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(
+    int establishmentId,
+    IList<int> allowedLocalAuthorityIds)
+    {
+        var bulkChecks = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+
+        return bulkChecks?.Where(x =>
+            x.OrganisationType == OrganisationType.establishment &&
+            x.OrganisationID == establishmentId);
+    }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(
+    int multiAcademyTrustId,
+    IList<int> allowedLocalAuthorityIds)
+    {
+        var establishmentIds = await _multiAcademyTrustGateway
+            .GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
+
+        var bulkChecks = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+
+        return bulkChecks?.Where(x =>
+            (x.OrganisationType == OrganisationType.multi_academy_trust &&
+             x.OrganisationID == multiAcademyTrustId)
+            ||
+            (x.OrganisationType == OrganisationType.establishment &&
+             x.OrganisationID.HasValue &&
+             establishmentIds.Contains(x.OrganisationID.Value)));
+    }
 }
