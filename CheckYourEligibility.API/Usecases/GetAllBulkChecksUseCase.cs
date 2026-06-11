@@ -20,14 +20,17 @@ public interface IGetAllBulkChecksUseCase
 public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 {
     private readonly IBulkCheck _bulkCheckGateway;
-    private readonly ILogger<GetAllBulkChecksUseCase> _logger;
+    private readonly IMultiAcademyTrust _multiAcademyTrustGateway;
+    private readonly ILogger<GetAllBulkChecksUseCase> _logger;    
 
     public GetAllBulkChecksUseCase(
         IBulkCheck bulkCheckGateway,
-        ILogger<GetAllBulkChecksUseCase> logger)
+        IMultiAcademyTrust multiAcademyTrustGateway,
+        ILogger<GetAllBulkChecksUseCase> logger)        
     {
         _bulkCheckGateway = bulkCheckGateway;
-        _logger = logger;
+        _multiAcademyTrustGateway = multiAcademyTrustGateway;
+        _logger = logger;       
     }
 
     public async Task<CheckEligibilityBulkStatusesResponse> Execute(IList<int> allowedLocalAuthorityIds)
