@@ -195,4 +195,16 @@ public class BulkCheckGateway : IBulkCheck
 
         return bulkCheck;
     }
+
+    public async Task<IEnumerable<BulkCheck>?> GetBulkChecksByOrganisation(
+    string organisationType,
+    int organisationId)
+    {
+        return await _db.BulkChecks
+            .Where(x =>
+                x.OrganisationType == organisationType &&
+                x.OrganisationID == organisationId)
+            .OrderByDescending(x => x.SubmittedDate)
+            .ToListAsync();
+    }
 }

@@ -138,11 +138,9 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
     int establishmentId,
     IList<int> allowedLocalAuthorityIds)
     {
-        var bulkChecks = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
-
-        return bulkChecks?.Where(x =>
-            x.OrganisationType == OrganisationType.establishment &&
-            x.OrganisationID == establishmentId);
+        return await _bulkCheckGateway.GetBulkChecksByOrganisation(
+            OrganisationType.establishment,
+            establishmentId);
     }
 
     private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(

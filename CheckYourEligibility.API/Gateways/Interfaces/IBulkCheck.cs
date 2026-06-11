@@ -14,4 +14,7 @@ public interface IBulkCheck
     Task<BulkStatus?> GetBulkStatus(string guid);
     Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true);
     Task<BulkCheck?> GetBulkCheck(string guid);
+	Task<IEnumerable<BulkCheck>?> GetBulkChecksByOrganisation(
+		string organisationType,
+		int organisationId);
 }
