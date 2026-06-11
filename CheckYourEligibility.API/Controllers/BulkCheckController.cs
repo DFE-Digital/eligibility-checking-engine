@@ -370,16 +370,20 @@ public class BulkCheckController : BaseController
     {       
         try
         {
-            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
-            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            var meta = User.CalculateMetaData();
+
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName) ?? new List<int>();
+
+            if ((localAuthorityIds.Count == 0 || !localAuthorityIds.Any())
+                && (meta.OrganisationID == null
+                    || meta.OrganisationID == 0
+                    || string.IsNullOrWhiteSpace(meta.OrganisationType)))
             {
                 return BadRequest(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "No organisation scope found" }]
                 });
             }
-
-            var meta = User.CalculateMetaData();
 
             var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds, meta);
 
