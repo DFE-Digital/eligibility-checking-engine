@@ -62,6 +62,12 @@ public class CheckEligibilityGateway : ICheckEligibility
                 await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
             }
         }
+        else
+        {
+            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
+            bulkCheck.Status = BulkCheckStatus.Completed;
+            await _db.SaveChangesAsync();
+        }
     }
 
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
