@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using Newtonsoft.Json;
@@ -59,7 +60,7 @@ namespace CheckYourEligibility.API.Usecases
                         DateOfBirth = checkData.DateOfBirth,
                         CheckSubmittedDate = check.Created.ToString("yyyy-MM-dd"),
                         Outcome = check.Status.ToString(),
-                        Tier = check.Tier?.ToString(),
+                        Tier = GetTierDisplayValue(check.Tier),
                         CheckType = check.Type.ToString(),
                         ProcessingType = check.BulkCheckID != null ? "Batch" : "Individual",
                         CheckedBy = check.UserName ?? ""
@@ -71,6 +72,16 @@ namespace CheckYourEligibility.API.Usecases
             return new EligibilityCheckReportItemsResponse
             {
                 Data = itemsList
+            };
+        }
+
+        private static string GetTierDisplayValue(EligibilityTier? tier)
+        {
+            return tier switch
+            {
+                EligibilityTier.targeted => "Eligible targeted",
+                EligibilityTier.expanded => "Eligible expanded",
+                _ => "N/A"
             };
         }
     }
