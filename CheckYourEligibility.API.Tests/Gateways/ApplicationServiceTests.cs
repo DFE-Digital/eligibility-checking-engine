@@ -261,7 +261,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationSearchRequestData
             {
-                Statuses = new[] { statusItem },
+                StatusDescriptions = new[] { statusItem.ToString() },
                 Establishment = Establishment.EstablishmentID
             }
         };
@@ -290,7 +290,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationSearchRequestData
             {
-                Statuses = new[] { statusItem },
+                StatusDescriptions = new[] { statusItem.ToString() },
                 Establishment = Establishment.EstablishmentID,
                 LocalAuthority = Establishment.LocalAuthorityID,
                 ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
@@ -329,7 +329,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationSearchRequestData
             {
-                Statuses = new[] { statusItem },
+                StatusDescriptions = new[] { statusItem.ToString() },
                 Establishment = Establishment.EstablishmentID,
                 LocalAuthority = Establishment.LocalAuthorityID,
                 ParentDateOfBirth = postApplicationResponse.ParentDateOfBirth,
@@ -440,7 +440,7 @@ public class ApplicationServiceTests : TestBase.TestBase
             Data = new ApplicationSearchRequestData
             {
                 Establishment = Establishment.EstablishmentID,
-                Statuses = new[] { ApplicationStatus.Archived }
+                StatusDescriptions = new[] { ApplicationStatus.Archived.ToString() }
             }
         };
 
@@ -546,7 +546,7 @@ public class ApplicationServiceTests : TestBase.TestBase
         {
             Data = new ApplicationSearchRequestData
             {
-                Statuses = new[] { statusItem },
+                StatusDescriptions = new[] { statusItem.ToString() },
                 Establishment = Establishment.EstablishmentID,
                 LocalAuthority = Establishment.LocalAuthorityID,
                 MultiAcademyTrust = MultiAcademyTrust.MultiAcademyTrustID,

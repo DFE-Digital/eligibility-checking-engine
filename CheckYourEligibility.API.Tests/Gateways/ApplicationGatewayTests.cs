@@ -323,6 +323,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             Reference = _fixture.Create<string>().PadRight(8)[..8], // Limit length
             Type = CheckEligibilityType.FreeSchoolMeals,
             Status = Domain.Enums.ApplicationStatus.Entitled,
+            Tier =  EligibilityTier.expanded,
             ParentFirstName = _fixture.Create<string>().PadRight(20)[..20],
             ParentLastName = _fixture.Create<string>().PadRight(20)[..20],
             ParentNationalInsuranceNumber = _fixture.Create<string>().PadRight(9)[..9],
