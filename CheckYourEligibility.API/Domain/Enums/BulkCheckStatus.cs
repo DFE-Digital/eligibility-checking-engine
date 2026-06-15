@@ -38,5 +38,10 @@ public enum BulkCheckStatus
     /// <summary>
     /// Applications have been created from this bulk check
     /// </summary>
-    ApplicationsCreated
+    ApplicationsCreated,
+
+    /// <summary>
+    /// Application creation from this bulk check failed
+    /// </summary>
+    ApplicationCreationFailed
 }

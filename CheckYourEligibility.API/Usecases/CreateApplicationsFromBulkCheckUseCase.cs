@@ -57,6 +57,24 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             "Invalid bulk check status");
         }
 
+        var hasEligibleChecks = await dbContext.CheckEligibilities
+        .AnyAsync(x =>
+            x.BulkCheckID == bulkCheckId &&
+            x.Status == CheckEligibilityStatus.eligible &&
+            !x.IsDeleted);
+
+        if (!hasEligibleChecks)
+        {
+            throw new ValidationException(
+            [
+                new Error
+        {
+            Title = "No eligible checks found for this bulk check"
+        }
+            ],
+            "No eligible checks found");
+        }
+
         bulkCheck.Status = BulkCheckStatus.ApplicationCreationInProgress;
 
         await dbContext.SaveChangesAsync();
