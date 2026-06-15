@@ -115,19 +115,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 x.BulkCheckID == bulkCheckId &&
                 x.Status == CheckEligibilityStatus.eligible &&
                 !x.IsDeleted)
-            .ToListAsync();
-
-        if (!eligibleChecks.Any())
-        {
-            throw new ValidationException(
-            [
-                new Error
-            {
-                Title = "No eligible checks found for this bulk check"
-            }
-            ],
-            "No eligible checks found");
-        }
+            .ToListAsync();        
 
         foreach (var check in eligibleChecks)
         {
