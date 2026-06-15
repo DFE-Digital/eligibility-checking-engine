@@ -134,6 +134,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
             if (!int.TryParse(checkData.ChildSchoolURN, out var establishment))
             {
+                hasFailures = true;
+
                 _logger.LogWarning(
                     "Skipping eligibility check {EligibilityCheckId} because ChildSchoolURN is missing or invalid",
                     check.EligibilityCheckID);
