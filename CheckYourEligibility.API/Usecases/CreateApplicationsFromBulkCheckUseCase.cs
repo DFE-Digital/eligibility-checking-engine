@@ -81,8 +81,28 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     }
 
     public async Task ProcessApplications(
-        string bulkCheckId,
-        List<int> allowedLocalAuthorityIds)
+    string bulkCheckId,
+    List<int> allowedLocalAuthorityIds)
+    {
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+
+        var eligibleChecks = await dbContext.CheckEligibilities
+            .Where(x =>
+                x.BulkCheckID == bulkCheckId &&
+                x.Status == CheckEligibilityStatus.eligible &&
+                !x.IsDeleted)
+            .ToListAsync();
+
+        if (!eligibleChecks.Any())
         {
+            throw new ValidationException(
+            [
+                new Error
+            {
+                Title = "No eligible checks found for this bulk check"
+            }
+            ],
+            "No eligible checks found");
         }
+    }
 }
