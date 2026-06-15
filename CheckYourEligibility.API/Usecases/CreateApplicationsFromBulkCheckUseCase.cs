@@ -2,6 +2,9 @@
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Gateways;
+using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -84,8 +87,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     }
 
     public async Task ProcessApplications(
-    string bulkCheckId,
-    List<int> allowedLocalAuthorityIds)
+        string bulkCheckId,
+        List<int> allowedLocalAuthorityIds)
     {
         await using var dbContext = _dbContextFactory.CreateDbContext();
 
@@ -106,6 +109,60 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             }
             ],
             "No eligible checks found");
+        }
+
+        foreach (var check in eligibleChecks)
+        {
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
+
+            if (checkData == null)
+            {
+                _logger.LogWarning(
+                    "Skipping eligibility check {EligibilityCheckId} because CheckData could not be deserialised",
+                    check.EligibilityCheckID);
+
+                continue;
+            }
+
+            if (!int.TryParse(checkData.ChildSchoolURN, out var establishment))
+            {
+                _logger.LogWarning(
+                    "Skipping eligibility check {EligibilityCheckId} because ChildSchoolURN is missing or invalid",
+                    check.EligibilityCheckID);
+
+                continue;
+            }
+
+            var applicationRequest = new ApplicationRequest
+            {
+                Data = new ApplicationRequestData
+                {
+                    Type = CheckEligibilityType.FreeSchoolMeals,
+                    Establishment = establishment,
+                    ParentFirstName = checkData.FirstName!,
+                    ParentLastName = checkData.LastName!,
+                    ParentEmail = string.Empty,
+                    ParentNationalInsuranceNumber = checkData.NationalInsuranceNumber,
+                    ParentNationalAsylumSeekerServiceNumber = checkData.NationalAsylumSeekerServiceNumber,
+                    ParentDateOfBirth = checkData.DateOfBirth,
+                    ChildFirstName = checkData.ChildFirstName!,
+                    ChildLastName = checkData.ChildLastName!,
+                    ChildDateOfBirth = checkData.ChildDateOfBirth!,
+                    UserId = check.UserName,
+                    Evidence = []
+                }
+            };
+
+            await _createApplicationUseCase.Execute(applicationRequest, allowedLocalAuthorityIds);
+        }
+
+        var bulkCheck = await dbContext.BulkChecks
+            .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+
+        if (bulkCheck != null)
+        {
+            bulkCheck.Status = BulkCheckStatus.ApplicationsCreated;
+            await dbContext.SaveChangesAsync();
         }
     }
 }
