@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
@@ -194,12 +195,31 @@ public class ApplicationGateway : IApplication
             {
                 result.Status = data.Status;
                 await AddStatusHistory(result, result.Status.Value);
+
+                // If status is updated to Entitled/ReviewedEntitled, calculate and set EligibilityEndDate
+                if (data.Status == ApplicationStatus.Entitled || data.Status == ApplicationStatus.ReviewedEntitled)
+                {
+                    result.EligibilityEndDate = EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created);
+                }
+            }
+
+            if (data.Tier.HasValue)
+            {
+                result.Tier = data.Tier;
             }
 
             result.Updated = DateTime.UtcNow;
             var updates = await _db.SaveChangesAsync();
             return new ApplicationUpdateResponse
-            { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
+            {
+                Data = new ApplicationUpdateDataResponse
+                {
+                    Status = result.Status?.ToString(),
+                    Tier = result.Tier?.ToString(),
+                    EligibilityEndDate = result.EligibilityEndDate,
+                    EstablishmentUrn = data.EstablishmentUrn
+                }
+            };
         }
 
         return null;
