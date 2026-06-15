@@ -12,7 +12,7 @@
         "https://fake-capi.dwp.gov.uk/*"
     ],
     "mockResponsePlugin": {
-        "mocksFile": "capi-mocks-not-eligible.json"
+        "mocksFile": "capi-mocks-ac2-500-1007.json"
     },
     "logLevel": "information",
     "newVersionNotification": "stable",
