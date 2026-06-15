@@ -115,7 +115,9 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 x.BulkCheckID == bulkCheckId &&
                 x.Status == CheckEligibilityStatus.eligible &&
                 !x.IsDeleted)
-            .ToListAsync();        
+            .ToListAsync();
+
+        var hasFailures = false;
 
         foreach (var check in eligibleChecks)
         {
@@ -159,7 +161,19 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 }
             };
 
-            await _createApplicationUseCase.Execute(applicationRequest, allowedLocalAuthorityIds);
+            try
+            {
+                await _createApplicationUseCase.Execute(applicationRequest, allowedLocalAuthorityIds);
+            }
+            catch (Exception ex)
+            {
+                hasFailures = true;
+
+                _logger.LogError(
+                    ex,
+                    "Application creation failed for eligibility check {EligibilityCheckId}",
+                    check.EligibilityCheckID);
+            }
         }
 
         var bulkCheck = await dbContext.BulkChecks
