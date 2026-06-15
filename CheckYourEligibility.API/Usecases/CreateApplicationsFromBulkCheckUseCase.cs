@@ -15,13 +15,16 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 {
     private readonly IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<CreateApplicationsFromBulkCheckUseCase> _logger;
 
     public CreateApplicationsFromBulkCheckUseCase(
         IDbContextFactory<EligibilityCheckContext> dbContextFactory,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        ILogger<CreateApplicationsFromBulkCheckUseCase> logger)
     {
         _dbContextFactory = dbContextFactory;
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds)
@@ -65,9 +68,9 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                     bulkCheckId,
                     allowedLocalAuthorityIds);
             }
-            catch
+            catch (Exception ex)
             {
-                // we'll add logging shortly
+                _logger.LogError(ex, "Application creation failed for bulk check {BulkCheckId}", bulkCheckId);
             }
         });
 
