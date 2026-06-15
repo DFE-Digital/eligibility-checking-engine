@@ -38,7 +38,13 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
         if (bulkCheck.Status != BulkCheckStatus.Completed)
         {
             throw new ValidationException(
-                "Applications can only be created when bulk check status is 'Completed'");
+            [
+                new Error
+                {
+                    Title = "Applications can only be created when bulk check status is 'Completed'"
+                }
+            ],
+            "Invalid bulk check status");
         }
 
         bulkCheck.Status = BulkCheckStatus.ApplicationCreationInProgress;
