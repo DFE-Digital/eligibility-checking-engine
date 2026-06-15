@@ -30,6 +30,7 @@ public class BulkCheckController : BaseController
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
+    private readonly ICreateApplicationsFromBulkCheckUseCase _createApplicationsFromBulkCheckUseCase;
 
     public BulkCheckController(
         ILogger<BulkCheckController> logger,
@@ -40,7 +41,8 @@ public class BulkCheckController : BaseController
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
-        IGetAllBulkChecksUseCase getAllBulkChecksUseCase
+        IGetAllBulkChecksUseCase getAllBulkChecksUseCase,
+        ICreateApplicationsFromBulkCheckUseCase createApplicationsFromBulkCheckUseCase
     )
         : base(audit)
     {
@@ -54,6 +56,7 @@ public class BulkCheckController : BaseController
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
+        _createApplicationsFromBulkCheckUseCase = createApplicationsFromBulkCheckUseCase;
     }
 
 
