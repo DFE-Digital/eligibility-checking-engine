@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -75,7 +76,7 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                           $"Task_No....{i}\n" +
                           $"Check:{checkData.Guid}\n" +
                           $"Time_Elapsed: {st.ElapsedMilliseconds:N0} ms\n");
-                          i++;
+                        i++;
 
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
                         {
@@ -101,11 +102,16 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                                 _logger.LogError(ex, "Error deleting queue item");
                             }
 
-
                         }
 
                     }
+                    catch (NotFoundException ex) {
+                        //if check record is not found in the database
+                        // due to unexpected roll-back
+                        // delete the message from the queue.
+                        await _storageQueueGateway.DeleteMessageAsync(item, queueName);
 
+                    }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Queue processing");
@@ -130,6 +136,12 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
             await Task.WhenAll(tasks);
 
+
+            // get bulk check id from first item in queue, as all items in the queue will have the same bulk check id, 
+            // and update bulk check status to completed if all items have been processed
+            var firstItemCheckData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(retrievedItemsFromQueue.First().Body));
+            await UpdateBulkCheckStatusIfCompleted(firstItemCheckData.Guid);
+
             st.Stop();
 
             _logger.LogInformation(
@@ -140,4 +152,40 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
         return new MessageResponse { Data = "Queue Processed." };
 
     }
+
+
+    private async Task UpdateBulkCheckStatusIfCompleted(string checkID)
+    {
+        await using var _db = _dbContextFactory.CreateDbContext();
+
+        var bulkCheckId = await _db.CheckEligibilities
+            .Where(x => x.EligibilityCheckID == checkID)
+            .Select(x => x.BulkCheckID)
+            .FirstOrDefaultAsync();
+
+        // If bulkCheckId is null, it means this check isn't part of a bulk check, its single check, so we can skip the rest of the method
+        if (bulkCheckId == null)
+            return;
+
+        // Check if there are any pending checks for the same bulk check ID
+        var hasPending = await _db.CheckEligibilities
+            .AnyAsync(x =>
+                x.BulkCheckID == bulkCheckId &&
+                x.Status == CheckEligibilityStatus.queuedForProcessing);
+
+        // If there are no queued checks, update the bulk check status to completed
+        // as all checks have been processed
+        if (!hasPending)
+        {
+            var bulkCheck = await _db.BulkChecks
+                .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+
+            if (bulkCheck != null)
+            {
+                bulkCheck.Status = BulkCheckStatus.Completed;
+                await _db.SaveChangesAsync();
+            }
+        }
+    }
+
 }

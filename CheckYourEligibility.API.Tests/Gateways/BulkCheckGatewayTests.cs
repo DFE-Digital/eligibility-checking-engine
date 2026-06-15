@@ -135,6 +135,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
             FinalNameInCheck = "test.csv",
             SubmittedBy = "test@test.com",
             EligibilityType = CheckEligibilityType.FreeSchoolMeals,
+            Status = BulkCheckStatus.Completed,
             NumberOfRecords = 2
         });
         _fakeInMemoryDb.CheckEligibilities.AddRange(
@@ -220,6 +221,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
             Filename = "test.csv",
             FinalNameInCheck = "test.csv",
             SubmittedBy = "test@test.com",
+            Status = BulkCheckStatus.Deleted,
             EligibilityType = CheckEligibilityType.FreeSchoolMeals,
             NumberOfRecords = 2
         });
@@ -228,6 +230,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
             new EligibilityCheck { EligibilityCheckID = Guid.NewGuid().ToString(), BulkCheckID = bulkCheckId, Status = CheckEligibilityStatus.eligible, IsDeleted = true, Type = CheckEligibilityType.FreeSchoolMeals, CheckData = "{}", Created = DateTime.UtcNow, Updated = DateTime.UtcNow }
         );
         await _fakeInMemoryDb.SaveChangesAsync();
+        
 
         // Act
         var result = await _sut.GetBulkStatuses("201", new List<int> { 201 });

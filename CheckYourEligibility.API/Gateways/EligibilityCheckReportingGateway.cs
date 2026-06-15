@@ -112,7 +112,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 var checks = await query
                         .OrderBy(e => e.EligibilityCheckID)
                         .Take(BatchSize)
-                        .Where(c => c.CheckData != null && c.CheckData.Contains(eligiblityCheckType.ToString()))  
+                        .Where(c => c.Type == eligiblityCheckType)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
                             e.BulkCheck != null))

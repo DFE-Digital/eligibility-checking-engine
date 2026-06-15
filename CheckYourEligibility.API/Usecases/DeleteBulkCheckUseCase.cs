@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
@@ -44,6 +45,12 @@ namespace CheckYourEligibility.API.Usecases
             if (bulkCheck == null)
             {
                 throw new NotFoundException($"Bulk check with ID {groupId} not found.");
+            }
+
+    
+            if(bulkCheck.Status == BulkCheckStatus.InProgress)
+            {
+                throw new ValidationException(null, $"Cannot delete bulk check with ID {groupId} because it is currently in progress.");
             }
 
             // Check if user has permission to delete this bulk check

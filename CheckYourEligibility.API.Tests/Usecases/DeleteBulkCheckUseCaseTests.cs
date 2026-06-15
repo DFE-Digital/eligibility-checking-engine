@@ -1,5 +1,6 @@
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Usecases;
@@ -44,6 +45,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var allowedLocalAuthorityIDs = new List<int> { LocalAuthorityID };
         
         var bulkCheck = _fixture.Build<BulkCheck>()
+            .With(x => x.Status, BulkCheckStatus.Completed)
             .With(x => x.LocalAuthorityID, LocalAuthorityID)
             .Create();
         
@@ -70,6 +72,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var allowedLocalAuthorityIDs = new List<int> { 0 }; // Admin user
         
         var bulkCheck = _fixture.Build<BulkCheck>()
+            .With(x => x.Status, BulkCheckStatus.Completed)
             .With(x => x.LocalAuthorityID, bulkCheckLocalAuthorityID)
             .Create();
         
@@ -116,6 +119,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         var allowedLocalAuthorityIDs = new List<int> { 456 }; // Different LA
         
         var bulkCheck = _fixture.Build<BulkCheck>()
+            .With(x => x.Status, BulkCheckStatus.Completed)
             .With(x => x.LocalAuthorityID, bulkCheckLocalAuthorityID)
             .Create();
         
@@ -141,6 +145,7 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         
         var bulkCheck = _fixture.Build<BulkCheck>()
             .With(x => x.LocalAuthorityID, (int?)null)
+            .With(x => x.Status, BulkCheckStatus.Completed)
             .Create();
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
@@ -190,4 +195,27 @@ public class DeleteBulkCheckUseCaseTests : TestBase.TestBase
         _mockCheckGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
     }
 
+    [Test]
+    public async Task Execute_Should_Throw_ValidationException_When_BulkCheck_Is_InProgress()
+    {
+        // Arrange
+        var groupId = Guid.NewGuid().ToString();
+        var allowedLocalAuthorityIDs = new List<int> { 123 };
+        
+        var bulkCheck = _fixture.Build<BulkCheck>()
+            .With(x => x.Status, BulkCheckStatus.InProgress)
+            .Create();
+        
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(groupId)).ReturnsAsync(bulkCheck);
+        
+        // Act
+        Func<Task> act = async () => await _sut.Execute(groupId, allowedLocalAuthorityIDs);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<ValidationException>()
+            .WithMessage($"Cannot delete bulk check with ID {groupId} because it is currently in progress.");
+        
+        _mockBulkCheckGateway.Verify(s => s.GetBulkCheck(groupId), Times.Once);
+        _mockCheckGateway.Verify(s => s.DeleteByBulkCheckId(It.IsAny<string>()), Times.Never);
+    }
 }

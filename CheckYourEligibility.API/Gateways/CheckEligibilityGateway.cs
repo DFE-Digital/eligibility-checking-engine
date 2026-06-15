@@ -62,6 +62,12 @@ public class CheckEligibilityGateway : ICheckEligibility
                 await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
             }
         }
+        else
+        {
+            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
+            bulkCheck.Status = BulkCheckStatus.Completed;
+            await _db.SaveChangesAsync();
+        }
     }
 
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
@@ -244,6 +250,11 @@ public class CheckEligibilityGateway : ICheckEligibility
                 record.IsDeleted = true;
                 record.Updated = DateTime.UtcNow;
             }
+
+            // set bulk check record to deleted
+            var bulkCheckRecord = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+            if (bulkCheckRecord != null)
+               bulkCheckRecord.Status = BulkCheckStatus.Deleted;
 
             await _db.SaveChangesAsync();
 
