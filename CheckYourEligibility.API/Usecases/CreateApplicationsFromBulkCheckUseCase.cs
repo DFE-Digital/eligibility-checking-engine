@@ -8,6 +8,7 @@ namespace CheckYourEligibility.API.UseCases;
 public interface ICreateApplicationsFromBulkCheckUseCase
 {
     Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds);
+    Task ProcessApplications(string bulkCheckId, List<int> allowedLocalAuthorityIds);
 }
 
 public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBulkCheckUseCase
@@ -51,9 +52,34 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
         await dbContext.SaveChangesAsync();
 
+        _ = Task.Run(async () =>
+        {
+            using var scope = _scopeFactory.CreateScope();
+
+            var scopedUseCase =
+                scope.ServiceProvider.GetRequiredService<ICreateApplicationsFromBulkCheckUseCase>();
+
+            try
+            {
+                await scopedUseCase.ProcessApplications(
+                    bulkCheckId,
+                    allowedLocalAuthorityIds);
+            }
+            catch
+            {
+                // we'll add logging shortly
+            }
+        });
+
         return new MessageResponse
         {
             Data = "Application creation started."
         };
     }
+
+    public async Task ProcessApplications(
+        string bulkCheckId,
+        List<int> allowedLocalAuthorityIds)
+        {
+        }
 }
