@@ -148,7 +148,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                     ChildFirstName = checkData.ChildFirstName!,
                     ChildLastName = checkData.ChildLastName!,
                     ChildDateOfBirth = checkData.ChildDateOfBirth!,
-                    UserId = check.UserName,
+                    UserId = null,
                     Evidence = []
                 }
             };
