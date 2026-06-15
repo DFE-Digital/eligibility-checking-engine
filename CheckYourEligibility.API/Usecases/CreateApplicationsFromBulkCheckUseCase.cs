@@ -181,7 +181,10 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
         if (bulkCheck != null)
         {
-            bulkCheck.Status = BulkCheckStatus.ApplicationsCreated;
+            bulkCheck.Status = hasFailures
+                ? BulkCheckStatus.ApplicationCreationFailed
+                : BulkCheckStatus.ApplicationsCreated;
+
             await dbContext.SaveChangesAsync();
         }
     }
