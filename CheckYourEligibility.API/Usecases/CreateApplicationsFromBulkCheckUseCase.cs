@@ -16,15 +16,18 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     private readonly IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CreateApplicationsFromBulkCheckUseCase> _logger;
+    private readonly ICreateApplicationUseCase _createApplicationUseCase;
 
     public CreateApplicationsFromBulkCheckUseCase(
-        IDbContextFactory<EligibilityCheckContext> dbContextFactory,
-        IServiceScopeFactory scopeFactory,
-        ILogger<CreateApplicationsFromBulkCheckUseCase> logger)
+    IDbContextFactory<EligibilityCheckContext> dbContextFactory,
+    IServiceScopeFactory scopeFactory,
+    ILogger<CreateApplicationsFromBulkCheckUseCase> logger,
+    ICreateApplicationUseCase createApplicationUseCase)
     {
         _dbContextFactory = dbContextFactory;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _createApplicationUseCase = createApplicationUseCase;
     }
 
     public async Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds)
