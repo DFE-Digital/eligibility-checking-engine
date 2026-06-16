@@ -105,7 +105,7 @@ export function noNIAndNASSNRequestBody() {
 export function validApplicationSupportRequestBody() {
   return {
     data: {
-      nationalInsuranceNumber: "NN668767B",
+      nationalInsuranceNumber: "NE668767B",
       lastName: Cypress.env("lastName"),
       // lastName: "TESTER",
       dateOfBirth: "1967-03-07",
@@ -131,7 +131,7 @@ export function validApplicationRequestBody() {
       ParentFirstName: "Lebb",
       ParentLastName: Cypress.env("lastName"),
       // ParentLastName: "TESTER",
-      ParentNationalInsuranceNumber: "NN668767B",
+      ParentNationalInsuranceNumber: "NE668767B",
       ParentNationalAsylumSeekerServiceNumber: null,
       ParentDateOfBirth: "1967-03-07",
       ChildFirstName: "Alexa",

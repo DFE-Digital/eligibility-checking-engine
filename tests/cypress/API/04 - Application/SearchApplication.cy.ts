@@ -46,6 +46,7 @@ describe('Search Application', () => {
             childLastName: "sdf",
             childDateOfBirth: "2001-01-01",
             status: "Open",
+            tier: "targeted",
             user: null
         }
     ];

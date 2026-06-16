@@ -15,7 +15,7 @@ describe('Update Application Status', () => {
               cy.verifyApiResponseCode(response, 202);
               cy.apiRequest('POST', '/user', validUserRequestBody(), token).then((response) => {
                   validBaseApplicationRequest.Data.UserId = response.Data;
-                  cy.wait(60000);
+                  cy.wait(5000);
 
                   cy.apiRequest('POST', 'application', validBaseApplicationRequest, token).then((response) => {
                       // Assert the status and statusText
