@@ -1,7 +1,6 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
-using Microsoft.EntityFrameworkCore;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Gateways;
 using Newtonsoft.Json;
@@ -16,18 +15,18 @@ public interface ICreateApplicationsFromBulkCheckUseCase
 }
 
 public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBulkCheckUseCase
-{    
+{
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CreateApplicationsFromBulkCheckUseCase> _logger;
     private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly ICreateApplicationsFromBulkCheck _createApplicationsFromBulkCheckGateway;
 
-    public CreateApplicationsFromBulkCheckUseCase(    
+    public CreateApplicationsFromBulkCheckUseCase(
     IServiceScopeFactory scopeFactory,
     ILogger<CreateApplicationsFromBulkCheckUseCase> logger,
     ICreateApplicationUseCase createApplicationUseCase,
     ICreateApplicationsFromBulkCheck createApplicationsFromBulkCheckGateway)
-    {        
+    {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _createApplicationUseCase = createApplicationUseCase;
@@ -64,9 +63,9 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             throw new ValidationException(
             [
                 new Error
-        {
-            Title = "No eligible checks found for this bulk check"
-        }
+                {
+                    Title = "No eligible checks found for this bulk check"
+                }
             ],
             "No eligible checks found");
         }
@@ -115,8 +114,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     public async Task ProcessApplications(
         string bulkCheckId,
         List<int> allowedLocalAuthorityIds)
-    {   
-
+    {
         var eligibleChecks = await _createApplicationsFromBulkCheckGateway
             .GetEligibleChecks(bulkCheckId);
 
