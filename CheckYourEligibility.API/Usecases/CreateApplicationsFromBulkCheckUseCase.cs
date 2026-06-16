@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Gateways;
 using Newtonsoft.Json;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -20,17 +21,20 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CreateApplicationsFromBulkCheckUseCase> _logger;
     private readonly ICreateApplicationUseCase _createApplicationUseCase;
+    private readonly ICreateApplicationsFromBulkCheck _createApplicationsFromBulkCheckGateway;
 
     public CreateApplicationsFromBulkCheckUseCase(
     IDbContextFactory<EligibilityCheckContext> dbContextFactory,
     IServiceScopeFactory scopeFactory,
     ILogger<CreateApplicationsFromBulkCheckUseCase> logger,
-    ICreateApplicationUseCase createApplicationUseCase)
+    ICreateApplicationUseCase createApplicationUseCase,
+    ICreateApplicationsFromBulkCheck createApplicationsFromBulkCheckGateway)
     {
         _dbContextFactory = dbContextFactory;
         _scopeFactory = scopeFactory;
         _logger = logger;
         _createApplicationUseCase = createApplicationUseCase;
+        _createApplicationsFromBulkCheckGateway = createApplicationsFromBulkCheckGateway;
     }
 
     public async Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds)

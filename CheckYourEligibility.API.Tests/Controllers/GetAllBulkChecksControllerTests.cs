@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using CheckYourEligibility.API.UseCases;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {

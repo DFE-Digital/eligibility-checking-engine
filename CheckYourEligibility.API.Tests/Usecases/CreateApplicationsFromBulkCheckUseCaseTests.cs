@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using DomainValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
+
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -21,6 +23,7 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
     private Mock<ILogger<CreateApplicationsFromBulkCheckUseCase>> _mockLogger = null!;
     private Mock<ICreateApplicationUseCase> _mockCreateApplicationUseCase = null!;
     private CreateApplicationsFromBulkCheckUseCase _sut = null!;
+    private Mock<ICreateApplicationsFromBulkCheck> _mockCreateApplicationsFromBulkCheckGateway = null!;
 
     [SetUp]
     public void Setup()
@@ -34,12 +37,14 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         _mockScopeFactory = new Mock<IServiceScopeFactory>();
         _mockLogger = new Mock<ILogger<CreateApplicationsFromBulkCheckUseCase>>();
         _mockCreateApplicationUseCase = new Mock<ICreateApplicationUseCase>();
+        _mockCreateApplicationsFromBulkCheckGateway = new Mock<ICreateApplicationsFromBulkCheck>();
 
         _sut = new CreateApplicationsFromBulkCheckUseCase(
-            _dbContextFactory,
-            _mockScopeFactory.Object,
-            _mockLogger.Object,
-            _mockCreateApplicationUseCase.Object);
+    _dbContextFactory,
+    _mockScopeFactory.Object,
+    _mockLogger.Object,
+    _mockCreateApplicationUseCase.Object,
+    _mockCreateApplicationsFromBulkCheckGateway.Object);
     }
 
     [Test]
