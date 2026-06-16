@@ -9,7 +9,6 @@ public interface IEligibilityCheckReporting
     Task<int> GetLocalAuthorityIdForReport(Guid reportId, CancellationToken cancellationToken = default);
     Task DeleteEligibilityCheckReport(Guid reportId, CancellationToken cancellationToken = default);
     Task<EligibilityCheckReport?> GetEligibilityReportById(Guid reportId);
-    Task<List<EligibilityCheckReportItem>> GetEligibilityCheckReportItemsByReportId(Guid reportId);
     Task<Dictionary<Guid, EligibilityCheck>> GetEligibilityChecksByReportId(Guid reportId);
 
 }
