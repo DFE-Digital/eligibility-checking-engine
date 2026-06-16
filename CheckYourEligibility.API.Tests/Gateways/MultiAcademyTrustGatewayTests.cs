@@ -1,7 +1,10 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -9,6 +12,7 @@ public class MultiAcademyTrustGatewayTests : TestBase.TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private MultiAcademyTrustGateway _sut;
+    private Mock<ILogger<MultiAcademyTrustGateway>> _mockLogger = null!;
 
     [SetUp]
     public async Task Setup()
@@ -26,7 +30,9 @@ public class MultiAcademyTrustGatewayTests : TestBase.TestBase
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
-        _sut = new MultiAcademyTrustGateway(_fakeInMemoryDb);
+        _mockLogger = new Mock<ILogger<MultiAcademyTrustGateway>>();
+
+        _sut = new MultiAcademyTrustGateway(_fakeInMemoryDb, _mockLogger.Object);
     }
 
     [TearDown]
@@ -134,5 +140,92 @@ public class MultiAcademyTrustGatewayTests : TestBase.TestBase
 
         savedMat.Should().NotBeNull();
         savedMat!.AcademyCanReviewEvidence.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task GetEstablishmentsByMultiAcademyTrustId_WhenMatExists_ReturnsEstablishments()
+    {
+        // Arrange
+        var matId = 100;
+
+        var mat = new MultiAcademyTrust
+        {
+            MultiAcademyTrustID = matId,
+            Name = "Test MAT"
+        };
+
+        var establishment = new Establishment
+        {
+            EstablishmentID = 1,
+            EstablishmentName = "Test School",
+            County = "Test County",
+            Locality = "Test Locality",
+            Postcode = "AB1 2CD",
+            Street = "123 Test Street",
+            Town = "Test Town",
+            Type = "School"
+
+        };
+
+        var matLink = new MultiAcademyTrustEstablishment
+        {
+            MultiAcademyTrustID = matId,
+            EstablishmentID = establishment.EstablishmentID,
+            Establishment = establishment
+        };
+
+        _fakeInMemoryDb.MultiAcademyTrusts.Add(mat);
+        _fakeInMemoryDb.Establishments.Add(establishment);
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(matLink);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetEstablishmentsByMultiAcademyTrustId(matId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(1);
+
+        result[0].URN.Should().Be(establishment.EstablishmentID);
+        result[0].Name.Should().Be("Test School");
+    }
+
+    [Test]
+    public async Task GetEstablishmentsByMultiAcademyTrustId_WhenMatExistsButNoEstablishments_ReturnsEmptyList()
+    {
+        // Arrange
+        var matId = 200;
+
+        var mat = new MultiAcademyTrust
+        {
+            MultiAcademyTrustID = matId,
+            Name = "Empty MAT"
+        };
+
+        _fakeInMemoryDb.MultiAcademyTrusts.Add(mat);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetEstablishmentsByMultiAcademyTrustId(matId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    [Test]
+    public void GetEstablishmentsByMultiAcademyTrustId_WhenMatDoesNotExist_ThrowsNotFoundException()
+    {
+        // Arrange
+        var invalidMatId = 999;
+
+        // Act
+        Func<Task> act = async () =>
+            await _sut.GetEstablishmentsByMultiAcademyTrustId(invalidMatId);
+
+        // Assert
+        act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage($"Unable to find establishments: - {invalidMatId}*");
     }
 }
