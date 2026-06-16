@@ -52,31 +52,17 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         // Arrange
         var bulkCheckId = Guid.NewGuid().ToString();
 
-        await using (var dbContext = _dbContextFactory.CreateDbContext())
-        {
-            dbContext.BulkChecks.Add(new BulkCheck
+        _mockCreateApplicationsFromBulkCheckGateway
+            .Setup(x => x.GetBulkCheck(bulkCheckId))
+            .ReturnsAsync(new BulkCheck
             {
                 BulkCheckID = bulkCheckId,
-                Status = BulkCheckStatus.Completed,
-                EligibilityType = CheckEligibilityType.FreeSchoolMeals,
-                Filename = "test.csv",
-                SubmittedBy = "test-user",
-                SubmittedDate = DateTime.UtcNow
+                Status = BulkCheckStatus.Completed
             });
 
-            dbContext.CheckEligibilities.Add(new EligibilityCheck
-            {
-                EligibilityCheckID = Guid.NewGuid().ToString(),
-                BulkCheckID = bulkCheckId,
-                Status = CheckEligibilityStatus.parentNotFound,
-                Type = CheckEligibilityType.FreeSchoolMeals,
-                CheckData = "{}",
-                Created = DateTime.UtcNow,
-                Updated = DateTime.UtcNow
-            });
-
-            await dbContext.SaveChangesAsync();
-        }
+        _mockCreateApplicationsFromBulkCheckGateway
+            .Setup(x => x.HasEligibleChecks(bulkCheckId))
+            .ReturnsAsync(false);
 
         // Act
         Func<Task> act = async () => await _sut.Execute(bulkCheckId, new List<int> { 0 });
@@ -85,12 +71,11 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         await act.Should().ThrowAsync<DomainValidationException>()
             .Where(ex => ex.Errors.Any(error => error.Title == "No eligible checks found for this bulk check"));
 
-        await using var assertionContext = _dbContextFactory.CreateDbContext();
-
-        var updatedBulkCheck = await assertionContext.BulkChecks
-            .FirstAsync(x => x.BulkCheckID == bulkCheckId);
-
-        updatedBulkCheck.Status.Should().Be(BulkCheckStatus.Completed);
+        _mockCreateApplicationsFromBulkCheckGateway.Verify(
+            x => x.UpdateBulkCheckStatus(
+                It.IsAny<string>(),
+                It.IsAny<BulkCheckStatus>()),
+            Times.Never);
 
         _mockCreateApplicationUseCase.Verify(
             x => x.Execute(It.IsAny<ApplicationRequest>(), It.IsAny<List<int>>()),
