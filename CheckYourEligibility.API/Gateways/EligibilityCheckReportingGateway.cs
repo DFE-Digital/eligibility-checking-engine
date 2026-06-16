@@ -2,6 +2,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -27,16 +28,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         var report = await _db.EligibilityCheckReports.FirstOrDefaultAsync(r => r.EligibilityCheckReportId == reportId);
         return report;
     }
-    /// <summary>
-    /// Get all checks by report ID
-    /// </summary>
-    /// <param name="reportId"></param>
-    /// <returns></returns>
-    public async Task<List<EligibilityCheckReportItem>> GetEligibilityCheckReportItemsByReportId(Guid reportId) {
 
-        var reportItems = await _db.EligibilityCheckReportItem.Where(i => i.EligibilityCheckReportId == reportId).ToListAsync();
-        return reportItems;
-    }
     public async Task<Dictionary<Guid, EligibilityCheck>> GetEligibilityChecksByReportId(Guid reportId)
     {
         if (await GetEligibilityReportById(reportId) == null)
@@ -44,22 +36,19 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             _logger.LogWarning($"Eligibility check report with ID {reportId} not found");
             throw new NotFoundException();
         }
-        var reportItems = await  GetEligibilityCheckReportItemsByReportId(reportId);
+
+        var reportItems = await _db.EligibilityCheckReportItem
+            .Where(i => i.EligibilityCheckReportId == reportId)
+            .Include(x => x.EligibilityCheck)
+            .Select(x => x.EligibilityCheck)
+            .ToListAsync();
 
         if (!reportItems.Any())
             return new Dictionary<Guid, EligibilityCheck>();
 
-        var ids = reportItems.Select(x => x.EligibilityCheckID);
-
-        var idList = ids.ToList();
-
-        var checks = await _db.CheckEligibilities
-            .Where(c => idList.Contains(c.EligibilityCheckID) && !c.IsDeleted)
-            .ToListAsync();
-
-        return checks.ToDictionary(
-            c => Guid.Parse(c.EligibilityCheckID),
-            c => c
+        return reportItems.ToDictionary(
+             c => Guid.Parse(c.EligibilityCheckID),
+             c => c
         );
     }
 
@@ -92,7 +81,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
         // they could be a lot of checks, so we need to batch the inserts
         // to avoid loading them all into memory at once
-        const int BatchSize = 10_000;
+        const int BatchSize = 1000;
         var batch = new List<EligibilityCheckReportItem>(BatchSize);
         var totalResults = 0;
         string? lastProcessedCheckId = null;
@@ -115,7 +104,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                         .Where(c => c.Type == eligiblityCheckType)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
-                            e.BulkCheck != null))
+                            e.BulkCheckID != null))
                         .ToListAsync(cancellationToken);
 
                 // if no more checks, break the loop
