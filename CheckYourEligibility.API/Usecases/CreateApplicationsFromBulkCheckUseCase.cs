@@ -39,10 +39,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
     public async Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds)
     {
-        await using var dbContext = _dbContextFactory.CreateDbContext();
-
-        var bulkCheck = await dbContext.BulkChecks
-            .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+        var bulkCheck = await _createApplicationsFromBulkCheckGateway
+            .GetBulkCheck(bulkCheckId);
 
         if (bulkCheck == null)
         {
@@ -61,11 +59,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             "Invalid bulk check status");
         }
 
-        var hasEligibleChecks = await dbContext.CheckEligibilities
-        .AnyAsync(x =>
-            x.BulkCheckID == bulkCheckId &&
-            x.Status == CheckEligibilityStatus.eligible &&
-            !x.IsDeleted);
+        var hasEligibleChecks = await _createApplicationsFromBulkCheckGateway
+            .HasEligibleChecks(bulkCheckId);
 
         if (!hasEligibleChecks)
         {
@@ -79,9 +74,9 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             "No eligible checks found");
         }
 
-        bulkCheck.Status = BulkCheckStatus.ApplicationCreationInProgress;
-
-        await dbContext.SaveChangesAsync();
+        await _createApplicationsFromBulkCheckGateway.UpdateBulkCheckStatus(
+            bulkCheckId,
+            BulkCheckStatus.ApplicationCreationInProgress);
 
         _ = Task.Run(async () =>
         {
