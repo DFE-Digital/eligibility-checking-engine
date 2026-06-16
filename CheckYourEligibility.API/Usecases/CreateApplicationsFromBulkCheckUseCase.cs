@@ -16,21 +16,18 @@ public interface ICreateApplicationsFromBulkCheckUseCase
 }
 
 public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBulkCheckUseCase
-{
-    private readonly IDbContextFactory<EligibilityCheckContext> _dbContextFactory;
+{    
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CreateApplicationsFromBulkCheckUseCase> _logger;
     private readonly ICreateApplicationUseCase _createApplicationUseCase;
     private readonly ICreateApplicationsFromBulkCheck _createApplicationsFromBulkCheckGateway;
 
-    public CreateApplicationsFromBulkCheckUseCase(
-    IDbContextFactory<EligibilityCheckContext> dbContextFactory,
+    public CreateApplicationsFromBulkCheckUseCase(    
     IServiceScopeFactory scopeFactory,
     ILogger<CreateApplicationsFromBulkCheckUseCase> logger,
     ICreateApplicationUseCase createApplicationUseCase,
     ICreateApplicationsFromBulkCheck createApplicationsFromBulkCheckGateway)
-    {
-        _dbContextFactory = dbContextFactory;
+    {        
         _scopeFactory = scopeFactory;
         _logger = logger;
         _createApplicationUseCase = createApplicationUseCase;
@@ -118,8 +115,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     public async Task ProcessApplications(
         string bulkCheckId,
         List<int> allowedLocalAuthorityIds)
-    {
-        await using var dbContext = _dbContextFactory.CreateDbContext();
+    {   
 
         var eligibleChecks = await _createApplicationsFromBulkCheckGateway
             .GetEligibleChecks(bulkCheckId);

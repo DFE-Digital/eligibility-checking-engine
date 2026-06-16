@@ -40,11 +40,10 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         _mockCreateApplicationsFromBulkCheckGateway = new Mock<ICreateApplicationsFromBulkCheck>();
 
         _sut = new CreateApplicationsFromBulkCheckUseCase(
-    _dbContextFactory,
-    _mockScopeFactory.Object,
-    _mockLogger.Object,
-    _mockCreateApplicationUseCase.Object,
-    _mockCreateApplicationsFromBulkCheckGateway.Object);
+             _mockScopeFactory.Object,
+             _mockLogger.Object,
+             _mockCreateApplicationUseCase.Object,
+             _mockCreateApplicationsFromBulkCheckGateway.Object);
     }
 
     [Test]
