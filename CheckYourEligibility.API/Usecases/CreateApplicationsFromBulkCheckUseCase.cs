@@ -11,7 +11,7 @@ namespace CheckYourEligibility.API.UseCases;
 public interface ICreateApplicationsFromBulkCheckUseCase
 {
     Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds);
-    Task ProcessApplications(string bulkCheckId, List<int> allowedLocalAuthorityIds);
+    Task ProcessApplicationsFromBulkCheck(string bulkCheckId, List<int> allowedLocalAuthorityIds);
 }
 
 public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBulkCheckUseCase
@@ -83,7 +83,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
             try
             {
-                await scopedUseCase.ProcessApplications(
+                await scopedUseCase.ProcessApplicationsFromBulkCheck(
                     bulkCheckId,
                     allowedLocalAuthorityIds);
             }
@@ -111,7 +111,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             .Replace("\n", string.Empty);
     }
 
-    public async Task ProcessApplications(
+    public async Task ProcessApplicationsFromBulkCheck(
         string bulkCheckId,
         List<int> allowedLocalAuthorityIds)
     {
