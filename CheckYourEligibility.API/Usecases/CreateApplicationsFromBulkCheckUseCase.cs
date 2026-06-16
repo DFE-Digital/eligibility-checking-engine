@@ -121,12 +121,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
     {
         await using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var eligibleChecks = await dbContext.CheckEligibilities
-            .Where(x =>
-                x.BulkCheckID == bulkCheckId &&
-                x.Status == CheckEligibilityStatus.eligible &&
-                !x.IsDeleted)
-            .ToListAsync();
+        var eligibleChecks = await _createApplicationsFromBulkCheckGateway
+            .GetEligibleChecks(bulkCheckId);
 
         var hasFailures = false;
 
@@ -189,16 +185,10 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             }
         }
 
-        var bulkCheck = await dbContext.BulkChecks
-            .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
-
-        if (bulkCheck != null)
-        {
-            bulkCheck.Status = hasFailures
+        await _createApplicationsFromBulkCheckGateway.UpdateBulkCheckStatus(
+            bulkCheckId,
+            hasFailures
                 ? BulkCheckStatus.ApplicationCreationFailed
-                : BulkCheckStatus.ApplicationsCreated;
-
-            await dbContext.SaveChangesAsync();
-        }
+                : BulkCheckStatus.ApplicationsCreated);
     }
 }
