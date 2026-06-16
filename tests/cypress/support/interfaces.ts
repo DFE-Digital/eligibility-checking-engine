@@ -24,6 +24,7 @@ export interface LocalAuthority {
     childLastName: string;
     childDateOfBirth: string;
     status: string;
+    tier: string;
     user: any;
   }
   
