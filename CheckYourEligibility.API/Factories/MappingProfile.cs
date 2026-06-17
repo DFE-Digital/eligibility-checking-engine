@@ -53,6 +53,7 @@ public class MappingProfile : Profile
             .ForMember(x => x.ChildDateOfBirth, y => y.MapFrom(z => z.ChildDateOfBirth.ToString("yyyy-MM-dd")))
             .ForMember(x => x.Status, y => y.MapFrom(z => z.Status.ToString()))
             .ForMember(x => x.Evidence, y => y.MapFrom(z => z.Evidence))
+            .ForMember(x => x.Tier, y => y.MapFrom(z => z.Tier.ToString()))
             .ReverseMap();
 
         CreateMap<Establishment, ApplicationEstablishment>()

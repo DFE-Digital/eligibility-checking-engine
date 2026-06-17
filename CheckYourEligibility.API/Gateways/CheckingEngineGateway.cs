@@ -486,7 +486,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             // map 422 to not found here
             result.Status = capiClaimResponse.CAPIResponseCode == HttpStatusCode.UnprocessableEntity
-                ? CheckEligibilityStatus.notFound
+                ? CheckEligibilityStatus.parentNotFound
                 : CheckEligibilityStatus.queuedForProcessing;
         }
         else

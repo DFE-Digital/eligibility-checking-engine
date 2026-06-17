@@ -1,5 +1,3 @@
-// Ignore Spelling: Fsm
-
 using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.Boundary.Requests;
@@ -12,5 +10,8 @@ public class ApplicationUpdateRequest
 public class ApplicationUpdateData
 {
     public ApplicationStatus? Status { get; set; }
+
+    public EligibilityTier? Tier { get; set; }
+    
     public int? EstablishmentUrn { get; set; }
 }

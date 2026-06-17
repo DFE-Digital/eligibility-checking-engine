@@ -105,7 +105,8 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                         }
 
                     }
-                    catch (NotFoundException ex) {
+                    catch (NotFoundException ex)
+                    {
                         //if check record is not found in the database
                         // due to unexpected roll-back
                         // delete the message from the queue.
@@ -136,11 +137,12 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
             await Task.WhenAll(tasks);
 
-
-            // get bulk check id from first item in queue, as all items in the queue will have the same bulk check id, 
-            // and update bulk check status to completed if all items have been processed
-            var firstItemCheckData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(retrievedItemsFromQueue.First().Body));
-            await UpdateBulkCheckStatusIfCompleted(firstItemCheckData.Guid);
+            // Iterate all checks and ensure that completed bulk checks are marked as complete if the last check has been processed
+            var checks = retrievedItemsFromQueue.Select(x => JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(x.Body)));
+            foreach (var check in checks)
+            {
+                await UpdateBulkCheckStatusIfCompleted(check.Guid);
+            }
 
             st.Stop();
 

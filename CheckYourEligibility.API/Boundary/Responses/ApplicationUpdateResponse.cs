@@ -15,5 +15,9 @@ public class ApplicationUpdateDataResponse
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public DateTime? EligibilityEndDate { get; set; }
+
     public int? EstablishmentUrn { get; set; }
 }
