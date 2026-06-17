@@ -136,6 +136,10 @@ public class ApplicationGateway : IApplication
                 statusValuesOnly.Contains(a.Status.Value.ToString())
                 || statusAndTiers.Contains(a.Status.Value.ToString() + "." + a.Tier.Value.ToString())
             );
+        }   
+        if (model.Data.Statuses != null && model.Data.Statuses.Any())
+        {
+            query = query.Where(a => model.Data.Statuses.Contains(a.Status.Value));
         }
 
         // Apply other filters
