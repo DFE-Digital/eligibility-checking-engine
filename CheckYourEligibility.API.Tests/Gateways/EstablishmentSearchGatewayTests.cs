@@ -118,7 +118,7 @@ public class EstablishmentSearchGatewayTests : TestBase.TestBase
         // Assert
         response.Count().Should().Be(0);
     }
-        
+
     [Test]
     public async Task Given_Search_With_LA_Should_Return_ExpectedResult()
     {
@@ -150,30 +150,42 @@ public class EstablishmentSearchGatewayTests : TestBase.TestBase
         // Arrange
         var primarySchool = _fixture.Create<Establishment>();
         primarySchool.EstablishmentName = "primary school";
-        primarySchool.LocalAuthority.LocalAuthorityID = 1;
+        primarySchool.LocalAuthorityID = 1;
+
         var secondarySchool = _fixture.Create<Establishment>();
         secondarySchool.EstablishmentName = "secondary school";
-        secondarySchool.LocalAuthority.LocalAuthorityID = 2;
+        secondarySchool.LocalAuthorityID = 2;
         secondarySchool.StatusOpen = true;
+
         _fakeInMemoryDb.Establishments.Add(primarySchool);
-        _fakeInMemoryDb.SaveChanges();
         _fakeInMemoryDb.Establishments.Add(secondarySchool);
-        _fakeInMemoryDb.SaveChanges();
 
-        var multiAcademyTrustEstablishment = _fixture.Create<MultiAcademyTrustEstablishment>();
-        multiAcademyTrustEstablishment.EstablishmentID = secondarySchool.EstablishmentID;
-        multiAcademyTrustEstablishment.MultiAcademyTrust.MultiAcademyTrustID = 1;
-        multiAcademyTrustEstablishment.MultiAcademyTrustID = 1;
-        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(multiAcademyTrustEstablishment);
+        var mat = new MultiAcademyTrust
+        {
+            MultiAcademyTrustID = 1,
+            Name = "Test MAT"
+        };
 
-        _fakeInMemoryDb.SaveChanges();
+        _fakeInMemoryDb.MultiAcademyTrusts.Add(mat);
+
+        var matLink = new MultiAcademyTrustEstablishment
+        {
+            EstablishmentID = secondarySchool.EstablishmentID,
+            MultiAcademyTrustID = 1
+        };
+
+        _fakeInMemoryDb.MultiAcademyTrustEstablishments.Add(matLink);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
         string la = null;
-        string mat = "1";
+        string matParam = "1";
 
         // Act
-        var response = await _sut.Search("school", la, mat);
+        var response = await _sut.Search("school", la, matParam);
 
         // Assert
+        response.Should().NotBeEmpty();
         response.First().Name.Should().BeEquivalentTo(secondarySchool.EstablishmentName);
     }
 
