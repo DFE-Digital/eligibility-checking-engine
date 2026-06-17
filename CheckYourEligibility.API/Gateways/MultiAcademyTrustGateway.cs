@@ -83,6 +83,7 @@ public class MultiAcademyTrustGateway : IMultiAcademyTrust
                     URN = x.EstablishmentID,
                     Name = x.Establishment.EstablishmentName
                 })
+                .AsNoTracking()
                 .ToListAsync();
                 
             return result;
