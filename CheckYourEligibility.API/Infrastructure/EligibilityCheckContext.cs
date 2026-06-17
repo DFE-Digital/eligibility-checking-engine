@@ -102,19 +102,26 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     }
     public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data)
     {
-        using var transaction = base.Database.BeginTransaction();
-        try
+        // Add basic retry logic to resubmit batch checks
+        const int maxRetries = 3;
+        int attempt = 0;
+        while (true)
         {
-            this.BulkInsert(data);
-            transaction.Commit();
+            using var transaction = base.Database.BeginTransaction();
+            try
+            {
+                attempt++;
+                this.BulkInsert(data, config => { config.BatchSize = 1000; });
+                transaction.Commit();
+                break;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                if (attempt >= maxRetries) { throw; }
+                Thread.Sleep(TimeSpan.FromSeconds(2 * attempt));
+            }
         }
-        catch (Exception ex)
-        {
-
-            transaction.Rollback();
-            throw;
-        }
-
     }
 
 
@@ -314,7 +321,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         {
             b.Property(e => e.Status)
                     .HasConversion<string>()
-                    .HasMaxLength(50); 
+                    .HasMaxLength(50);
         });
 
         modelBuilder.Entity<LocalAuthority>()
@@ -329,7 +336,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .Property(e => e.TwoYearPolicyID)
             .HasDefaultValue(3);
 
-    var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
+        var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };
         SqlServerIndexBuilderExtensions.IncludeProperties(builder, expr);
 
