@@ -39,16 +39,27 @@ public class CheckEligibilityGateway : ICheckEligibility
     public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
-        List<EligibilityCheck> mappedBulkedChecks = new(); 
-        foreach (var d in data) {
-           
-           var item = await MapCheck(d, meta);
+        List<EligibilityCheck> mappedBulkedChecks = new();
+        foreach (var d in data)
+        {
+
+            var item = await MapCheck(d, meta);
             mappedBulkedChecks.Add(item);
-        } 
+        }
 
         // Insert all rows into the DB BEFORE sending any queue messages,
         // so the engine never processes a message for a row that doesn't exist yet.
-        _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+        try
+        {
+            _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+        }
+        catch (Exception e)
+        {
+            // If bulk check retry logic fails completely, set bulk check to failed
+            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
+            bulkCheck.Status = BulkCheckStatus.Failed;
+            await _db.SaveChangesAsync();
+        }
 
         // Now send queue messages for records that weren't resolved from the hash cache.
         // Reuse a single QueueClient for all bulk messages — they share the same queue.
@@ -70,7 +81,8 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
     }
 
-    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType {
+    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
+    {
 
         var item = await MapCheck(data, meta);
         await _db.CheckEligibilities.AddAsync(item);
@@ -186,7 +198,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                             hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
                             hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
                             item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");                            
+                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
                         }
                     }
                     catch (Exception ex)
@@ -204,14 +216,14 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
     }
 
-    public async Task<(CheckEligibilityStatus?,EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type)
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
                                                                            (type == CheckEligibilityType.None ||
                                                                             type == x.Type) &&
                                                                            x.IsDeleted == false);
         if (result != null) return (result.Status, result.Tier);
-        return (null,null);
+        return (null, null);
     }
 
     public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)
@@ -242,11 +254,11 @@ public class CheckEligibilityGateway : ICheckEligibility
             // Soft delete the EligibilityCheck records by setting IsDeleted to true, and updating the Updated timestamp
             foreach (var record in records)
             {
-                if(record.Status == CheckEligibilityStatus.queuedForProcessing) 
+                if (record.Status == CheckEligibilityStatus.queuedForProcessing)
                 {
                     record.Status = CheckEligibilityStatus.deleted;
                 }
-                
+
                 record.IsDeleted = true;
                 record.Updated = DateTime.UtcNow;
             }
@@ -254,7 +266,7 @@ public class CheckEligibilityGateway : ICheckEligibility
             // set bulk check record to deleted
             var bulkCheckRecord = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
             if (bulkCheckRecord != null)
-               bulkCheckRecord.Status = BulkCheckStatus.Deleted;
+                bulkCheckRecord.Status = BulkCheckStatus.Deleted;
 
             await _db.SaveChangesAsync();
 
@@ -402,7 +414,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     Type = type,
                     ClientIdentifier = checkItem.ClientIdentifier,
                     EligibilityEndDate = checkItem.EligibilityEndDate
-                    
+
                 };
         }
     }
