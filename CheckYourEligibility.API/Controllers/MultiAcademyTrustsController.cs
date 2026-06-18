@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -15,15 +16,18 @@ namespace CheckYourEligibility.API.Controllers;
 public class MultiAcademyTrustsController : BaseController
 {
     private readonly IMultiAcademyTrust _multiAcademyTrust;
+    private readonly IGetEstablishmentsByMultiAcademyTrustIdUseCase _getEstablismentsByMultiAcademyTrustId;
     private readonly string _multiAcademyTrustScopeName;
     private readonly string _adminScopeName;
 
     public MultiAcademyTrustsController(
     IMultiAcademyTrust multiAcademyTrust,
+    IGetEstablishmentsByMultiAcademyTrustIdUseCase getEstablishmentsByMultiAcademyTrustIdUseCase,
     IAudit audit,
     IConfiguration configuration) : base(audit)
     {
         _multiAcademyTrust = multiAcademyTrust;
+        _getEstablismentsByMultiAcademyTrustId = getEstablishmentsByMultiAcademyTrustIdUseCase;
         _multiAcademyTrustScopeName = configuration.GetValue<string>("Jwt:Scopes:multi_academy_trust") ?? "multi_academy_trust";
         _adminScopeName = configuration.GetValue<string>("Jwt:Scopes:admin") ?? "admin";
     }
@@ -87,5 +91,32 @@ public class MultiAcademyTrustsController : BaseController
         {
             AcademyCanReviewEvidence = updated.AcademyCanReviewEvidence
         });
+    }
+
+    [ProducesResponseType(typeof(EstablishmentResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/multi-academy-trusts/{multiAcademyTrustId:int}/establishments")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> GetEstablishmentsByMultiAcademyTrustId(int multiAcademyTrustId)
+    {
+        try
+        {
+            var establishments = await _getEstablismentsByMultiAcademyTrustId.Execute(multiAcademyTrustId);
+
+            return new OkObjectResult(establishments) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+
+            return NotFound(new ErrorResponse
+            {
+                Errors = [new Error { Status = StatusCodes.Status404NotFound, 
+                Title = $"Multi academy trust '{multiAcademyTrustId}' not found.", 
+                Detail = $"{ex}" }]
+            });
+
+        }
+
     }
 }

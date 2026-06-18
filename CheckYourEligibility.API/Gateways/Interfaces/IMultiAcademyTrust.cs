@@ -22,4 +22,11 @@ public interface IMultiAcademyTrust
     /// <param name="value">The value to set for the AcademyCanReviewEvidence flag.</param>
     /// <returns>The updated <see cref="MultiAcademyTrust"/> if successful; otherwise, null.</returns>
     Task<MultiAcademyTrust?> UpdateAcademyCanReviewEvidence(int multiAcademyTrustId, bool value);
+
+    /// <summary>
+    /// Get all establishments for MAT by id
+    /// </summary>
+    /// <param name="multiAcademyTrustId"></param>
+    /// <returns></returns>
+    Task<List<EstablishmentResponseItem>> GetEstablishmentsByMultiAcademyTrustId(int multiAcademyTrustId);
 }
