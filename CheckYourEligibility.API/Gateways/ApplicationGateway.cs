@@ -57,6 +57,12 @@ public class ApplicationGateway : IApplication
             else
                 item.Status = ApplicationStatus.SentForReview;
             item.Tier = hashCheck.Tier;
+            
+            // If status is Entitled, calculate and set EligibilityEndDate
+            if (item.Status == ApplicationStatus.Entitled )
+            {
+                item.EligibilityEndDate = EligibilityCheckHelper.GetEligibilityEndDateFSM(item.Created);
+            }
 
             try
             {
@@ -136,7 +142,7 @@ public class ApplicationGateway : IApplication
                 statusValuesOnly.Contains(a.Status.Value.ToString())
                 || statusAndTiers.Contains(a.Status.Value.ToString() + "." + a.Tier.Value.ToString())
             );
-        }   
+        }
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
         {
             query = query.Where(a => model.Data.Statuses.Contains(a.Status.Value));
