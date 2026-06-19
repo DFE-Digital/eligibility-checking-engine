@@ -10,4 +10,6 @@ public interface ILocalAuthority
     Task<LocalAuthority?> UpdateSchoolCanReviewEvidence(int localAuthorityId, bool value);
     Task<int> GetEligibilityPolicyIdForTypeAsync(int localAuthorityId, CheckEligibilityType type, EligibilityCheckContext? dbContextFactory);
 
+    Task <List<EstablishmentResponseItem>> GetEstablishmentsByLocalAuthorityId(int localAuthorityId);
+
 }

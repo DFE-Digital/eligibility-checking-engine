@@ -19,14 +19,16 @@ namespace CheckYourEligibility.API.Controllers;
 public class LocalAuthoritiesController : BaseController
 {
     private readonly ILocalAuthoritiesUseCase _localAuthorityUseCase;
+    private readonly IGetEstablishmentsByLocalAuthorityIdUseCase _getEstablismentsByLocalAuthorityId;
     private readonly ILocalAuthority _localAuthority;
     private const string AdminScope = "admin";
     private const string LocalAuthorityScope = "local_authority";
 
-    public LocalAuthoritiesController(ILocalAuthoritiesUseCase localAuthorityUseCase, IAudit audit, ILocalAuthority localAuthority) : base(audit)
+    public LocalAuthoritiesController(ILocalAuthoritiesUseCase localAuthorityUseCase, IAudit audit, ILocalAuthority localAuthority, IGetEstablishmentsByLocalAuthorityIdUseCase getEstablishmentsByLocalAuthorityIdUseCase) : base(audit)
     {
         _localAuthorityUseCase = localAuthorityUseCase;
-        _localAuthority  = localAuthority;
+        _localAuthority = localAuthority;
+        _getEstablismentsByLocalAuthorityId = getEstablishmentsByLocalAuthorityIdUseCase;
     }
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
@@ -43,7 +45,8 @@ public class LocalAuthoritiesController : BaseController
 
             return new OkObjectResult(laSettings);
         }
-        catch (NotFoundException ex) {
+        catch (NotFoundException ex)
+        {
 
             return NotFound(new ErrorResponse
             {
@@ -51,7 +54,7 @@ public class LocalAuthoritiesController : BaseController
             });
 
         }
-    
+
     }
 
     [ProducesResponseType(typeof(LocalAuthoritySettingsResponse), (int)HttpStatusCode.OK)]
@@ -91,4 +94,32 @@ public class LocalAuthoritiesController : BaseController
             SchoolCanReviewEvidence = updated.SchoolCanReviewEvidence
         });
     }
+
+    [ProducesResponseType(typeof(EstablishmentResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/local-authorities/{laCode:int}/establishments")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> GetEstablishmentsByLocalAuthorityId(int laCode)
+    {
+        try
+        {
+            var establishments = await _getEstablismentsByLocalAuthorityId.Execute(laCode);
+
+            return new OkObjectResult(establishments) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+
+            return NotFound(new ErrorResponse
+            {
+                Errors = [new Error { Status = StatusCodes.Status404NotFound, 
+                Title = $"Local authority '{laCode}' not found.", 
+                Detail = $"{ex}" }]
+            });
+
+        }
+
+    }
+
 }

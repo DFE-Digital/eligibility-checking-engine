@@ -10,7 +10,7 @@ public class ApplicationResponse
     public ApplicationEstablishment Establishment { get; set; }
     public string ParentFirstName { get; set; }
     public string ParentLastName { get; set; }
-    public string ParentEmail { get; set; }
+    public string? ParentEmail { get; set; }
     public string? ParentNationalInsuranceNumber { get; set; }
     public string? ParentNationalAsylumSeekerServiceNumber { get; set; }
     public string ParentDateOfBirth { get; set; }
@@ -18,7 +18,8 @@ public class ApplicationResponse
     public string ChildLastName { get; set; }
     public string ChildDateOfBirth { get; set; }
     public string Status { get; set; }
-    public DateTime EligibilityEndDate { get; set; }
+    public DateTime? EligibilityEndDate { get; set; }
+    
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public ApplicationUser User { get; set; }
     public DateTime Created { get; set; }
