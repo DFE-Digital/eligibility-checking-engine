@@ -118,10 +118,10 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         var allBulkChecks = new List<BulkCheck>();
 
         // Get bulk checks for each allowed local authority
-        // Pass false to get all bulk checks, not just from last 7 days
+        // Pass true to get all bulk checks from last 7 days
         foreach (var localAuthorityId in allowedLocalAuthorityIds)
         {
-            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: false);
+            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: true);
             if (bulkChecks != null)
             {
                 allBulkChecks.AddRange(bulkChecks);

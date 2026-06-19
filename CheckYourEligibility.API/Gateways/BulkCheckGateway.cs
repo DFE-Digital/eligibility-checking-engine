@@ -203,7 +203,8 @@ public class BulkCheckGateway : IBulkCheck
         return await _db.BulkChecks
             .Where(x =>
                 x.OrganisationType == organisationType &&
-                x.OrganisationID == organisationId)
+                x.OrganisationID == organisationId &&
+                x.SubmittedDate >= DateTime.UtcNow.AddDays(-7)) // default last 7 days until future pagination
             .OrderByDescending(x => x.SubmittedDate)
             .ToListAsync();
     }
