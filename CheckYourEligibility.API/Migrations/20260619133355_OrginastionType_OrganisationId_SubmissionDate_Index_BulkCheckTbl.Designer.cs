@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    [Migration("20260619093034_Index_OrganisationType_OrganisationId_Bulkchecktbl")]
-    partial class Index_OrganisationType_OrganisationId_Bulkchecktbl
+    [Migration("20260619133355_OrginastionType_OrganisationId_SubmissionDate_Index_BulkCheckTbl")]
+    partial class OrginastionType_OrganisationId_SubmissionDate_Index_BulkCheckTbl
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,7 +59,6 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ParentEmail")
-                        .IsRequired()
                         .HasColumnType("varchar(1000)");
 
                     b.Property<string>("ParentFirstName")
@@ -598,6 +597,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("MultiAcademyTrustEstablishmentID");
 
+                    b.HasIndex("EstablishmentID");
+
                     b.HasIndex("MultiAcademyTrustID");
 
                     b.ToTable("MultiAcademyTrustEstablishments");
@@ -1082,11 +1083,19 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustEstablishment", b =>
                 {
+                    b.HasOne("CheckYourEligibility.API.Domain.Establishment", "Establishment")
+                        .WithMany()
+                        .HasForeignKey("EstablishmentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("CheckYourEligibility.API.Domain.MultiAcademyTrust", "MultiAcademyTrust")
                         .WithMany("MultiAcademyTrustEstablishments")
                         .HasForeignKey("MultiAcademyTrustID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Establishment");
 
                     b.Navigation("MultiAcademyTrust");
                 });

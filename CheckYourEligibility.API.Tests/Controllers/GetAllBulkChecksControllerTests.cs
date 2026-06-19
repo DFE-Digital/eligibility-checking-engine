@@ -134,7 +134,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
             Assert.That(badRequestResult.Value, Is.InstanceOf<ErrorResponse>());
 
             var errorResponse = (ErrorResponse)badRequestResult.Value!;
-            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No organisation scope found"));
+            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No local authority scope found"));
         }
 
         [Test]
