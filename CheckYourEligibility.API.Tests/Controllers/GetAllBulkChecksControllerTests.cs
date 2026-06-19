@@ -107,8 +107,12 @@ namespace CheckYourEligibility.API.Tests.Controllers
         [Test]
         public async Task GetAllBulkChecks_WithNoScopes_ReturnsBadRequest()
         {
-            // Arrange - user with no local authority scopes
-            var claims = new List<Claim>();
+            // Arrange
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "test-user-id")
+            };
+
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
 
@@ -130,7 +134,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
             Assert.That(badRequestResult.Value, Is.InstanceOf<ErrorResponse>());
 
             var errorResponse = (ErrorResponse)badRequestResult.Value!;
-            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No local authority scope found"));
+            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No organisation scope found"));
         }
 
         [Test]
