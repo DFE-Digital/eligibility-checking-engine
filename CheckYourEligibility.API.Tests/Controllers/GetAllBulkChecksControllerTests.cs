@@ -105,7 +105,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
         }
 
         [Test]
-        public async Task GetAllBulkChecks_WithNoScopes_ReturnsBadRequest()
+        public async Task GetAllBulkChecks_WithNoScopes_ReturnsUnauth()
         {
             // Arrange
             var claims = new List<Claim>
@@ -129,12 +129,12 @@ namespace CheckYourEligibility.API.Tests.Controllers
             var result = await _controller.GetAllBulkChecks();
 
             // Assert
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-            var badRequestResult = (BadRequestObjectResult)result;
+            Assert.That(result, Is.InstanceOf<UnauthorizedObjectResult>());
+            var badRequestResult = (UnauthorizedObjectResult)result;
             Assert.That(badRequestResult.Value, Is.InstanceOf<ErrorResponse>());
 
             var errorResponse = (ErrorResponse)badRequestResult.Value!;
-            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No local authority scope found"));
+            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("Not authorised for local authority in scope"));
         }
 
         [Test]

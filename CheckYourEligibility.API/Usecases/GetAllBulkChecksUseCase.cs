@@ -44,38 +44,27 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         IList<int> allowedLocalAuthorityIds,
         CheckMetaData meta)
     {
-        var hasLocalAuthorityAccess = allowedLocalAuthorityIds != null && allowedLocalAuthorityIds.Count > 0;
-        var hasOrganisationAccess =
-            meta.OrganisationID.HasValue &&
-            meta.OrganisationID.Value > 0 &&
-            !string.IsNullOrWhiteSpace(meta.OrganisationType);
 
-        if (!hasLocalAuthorityAccess && !hasOrganisationAccess)
-        {
-            throw new UnauthorizedAccessException("You do not have permission to access bulk checks");
-        }
+        IEnumerable<BulkCheck>? response = [];
 
-        IEnumerable<BulkCheck>? response;
 
-        var safeAllowedLocalAuthorityIds = allowedLocalAuthorityIds ?? new List<int>();
-
-        if (safeAllowedLocalAuthorityIds.Contains(0))
-        {
-            response = await GetAllBulkChecksForAdmin();
-        }
-        else if (meta.OrganisationType == OrganisationType.multi_academy_trust)
+        if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.multi_academy_trust)
         {
             response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0);
         }
-        else if (meta.OrganisationType == OrganisationType.establishment)
+        else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.establishment)
         {
             response = await GetBulkChecksForEstablishment(
                 meta.OrganisationID ?? 0,
-                safeAllowedLocalAuthorityIds);
+                allowedLocalAuthorityIds);
         }
-        else
+        else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.local_authority)
         {
-            response = await GetBulkChecksForLocalAuthorities(safeAllowedLocalAuthorityIds);
+            response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+        }
+        else if (allowedLocalAuthorityIds.Contains(0))
+        {
+            response = await GetAllBulkChecksForAdmin();
         }
 
         if (response == null || !response.Any())

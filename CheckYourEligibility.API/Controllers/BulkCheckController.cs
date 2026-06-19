@@ -371,13 +371,13 @@ public class BulkCheckController : BaseController
         try
         {
             var meta = User.CalculateMetaData();
-
+            
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse
+                return Unauthorized(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "Not authorised for local authority in scope" }]
                 });
             }
 
