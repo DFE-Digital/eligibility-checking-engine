@@ -19,7 +19,9 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
 {
     private Fixture _fixture;
     private Mock<ILocalAuthority> _mockLocalAuthority;
+
     private Mock<ILocalAuthoritiesUseCase> _localAuthoritiesUseCase;
+    private Mock<IGetEstablishmentsByLocalAuthorityIdUseCase> _getEstablismentsByLocalAuthorityId;
     private Mock<IAudit> _mockAudit;
     private LocalAuthoritiesController _sut;
 
@@ -29,13 +31,14 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
         _fixture = new Fixture();
         _mockLocalAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
         _localAuthoritiesUseCase = new Mock<ILocalAuthoritiesUseCase>(MockBehavior.Strict);
+        _getEstablismentsByLocalAuthorityId = new Mock<IGetEstablishmentsByLocalAuthorityIdUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
 
         _sut = new LocalAuthoritiesController(
-
             _localAuthoritiesUseCase.Object,
             _mockAudit.Object,
-            _mockLocalAuthority.Object
+            _mockLocalAuthority.Object,
+            _getEstablismentsByLocalAuthorityId.Object
         );
     }
 
@@ -181,5 +184,75 @@ public class LocalAuthoritiesControllerTests : TestBase.TestBase
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task Given_GetEstablishmentsByLocalAuthorityId_When_ValidId_Returns200WithData()
+    {
+        // Arrange
+        var laCode = _fixture.Create<int>();
+
+        var response = new EstablishmentResponse
+        {
+            Data = new List<EstablishmentResponseItem>
+        {
+            new EstablishmentResponseItem
+            {
+                URN = 1,
+                Name = "Test School"
+            }
+        }
+        };
+
+        _getEstablismentsByLocalAuthorityId
+            .Setup(x => x.Execute(laCode))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.GetEstablishmentsByLocalAuthorityId(laCode);
+
+        // Assert
+        var ok = result as OkObjectResult;
+        ok.Should().NotBeNull();
+
+        var payload = ok!.Value as EstablishmentResponse;
+        payload.Should().NotBeNull();
+
+        payload!.Data.Should().NotBeNull();
+        payload.Data.Count.Should().Be(1);
+        payload.Data.First().Name.Should().Be("Test School");
+
+        _getEstablismentsByLocalAuthorityId.Verify(
+            x => x.Execute(laCode),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task Given_GetEstablishmentsByLocalAuthorityId_When_NotFound_ThrowsException_Returns404()
+    {
+        // Arrange
+        var laCode = _fixture.Create<int>();
+
+        _getEstablismentsByLocalAuthorityId
+            .Setup(x => x.Execute(laCode))
+            .ThrowsAsync(new NotFoundException("Not found"));
+
+        // Act
+        var result = await _sut.GetEstablishmentsByLocalAuthorityId(laCode);
+
+        // Assert
+        var notFound = result as NotFoundObjectResult;
+        notFound.Should().NotBeNull();
+
+        var payload = notFound!.Value as ErrorResponse;
+        payload.Should().NotBeNull();
+        payload!.Errors.Should().NotBeNullOrEmpty();
+
+        payload.Errors.First().Status
+            .Should().Be(StatusCodes.Status404NotFound);
+
+        payload.Errors.First().Title
+            .Should().Be($"Local authority '{laCode}' not found.");
     }
 }

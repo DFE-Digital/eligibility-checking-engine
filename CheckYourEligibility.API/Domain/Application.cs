@@ -53,6 +53,6 @@ public class Application
     [Column(TypeName = "nvarchar(50)")]
     public EligibilityTier? Tier { get; set; }
 
-    [Column(TypeName = "varchar(1000)")] public string ParentEmail { get; set; }
+    [Column(TypeName = "varchar(1000)")] public string? ParentEmail { get; set; }
     public virtual ICollection<ApplicationEvidence> Evidence { get; set; } = new List<ApplicationEvidence>();
 }
