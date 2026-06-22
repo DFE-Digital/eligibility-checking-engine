@@ -1,6 +1,9 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -10,46 +13,60 @@ namespace CheckYourEligibility.API.UseCases;
 public interface IGetAllBulkChecksUseCase
 {
     /// <summary>
-    ///     Execute the use case to get all bulk checks
+    ///     Execute the use case to get all bulk checks the user has access to,
+    ///     based on their organisation scope and metadata.
     /// </summary>
-    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user</param>
-    /// <returns>All bulk checks the user has access to</returns>
-    Task<CheckEligibilityBulkStatusesResponse> Execute(IList<int> allowedLocalAuthorityIds);
+    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user.</param>
+    /// <param name="meta">Metadata describing the user's organisation scope.</param>
+    /// <returns>All bulk checks the user has access to.</returns>
+    Task<CheckEligibilityBulkStatusesResponse> Execute(
+        IList<int> allowedLocalAuthorityIds,
+        CheckMetaData meta);
 }
 
 public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 {
     private readonly IBulkCheck _bulkCheckGateway;
+    private readonly IMultiAcademyTrust _multiAcademyTrustGateway;
     private readonly ILogger<GetAllBulkChecksUseCase> _logger;
 
     public GetAllBulkChecksUseCase(
         IBulkCheck bulkCheckGateway,
+        IMultiAcademyTrust multiAcademyTrustGateway,
         ILogger<GetAllBulkChecksUseCase> logger)
     {
         _bulkCheckGateway = bulkCheckGateway;
+        _multiAcademyTrustGateway = multiAcademyTrustGateway;
         _logger = logger;
     }
 
-    public async Task<CheckEligibilityBulkStatusesResponse> Execute(IList<int> allowedLocalAuthorityIds)
+    public async Task<CheckEligibilityBulkStatusesResponse> Execute(
+        IList<int> allowedLocalAuthorityIds,
+        CheckMetaData meta)
     {
-        if (allowedLocalAuthorityIds == null || allowedLocalAuthorityIds.Count == 0)
-        {
-            throw new UnauthorizedAccessException("You do not have permission to access bulk checks");
-        }
 
-        IEnumerable<BulkCheck>? response;
+        IEnumerable<BulkCheck>? response = [];
 
-        if (allowedLocalAuthorityIds.Contains(0))
+
+        if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.multi_academy_trust)
         {
-            // Admin user - get all non-deleted bulk checks
-            _logger.LogInformation("Admin user retrieving all bulk checks");
-            response = await GetAllBulkChecksForAdmin();
+            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0);
         }
-        else
+        else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.establishment)
         {
-            // Regular user - get bulk checks for their allowed local authorities
-            _logger.LogInformation($"User retrieving bulk checks for local authorities: {string.Join(",", allowedLocalAuthorityIds)}");
+            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0);
+        }
+        else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.local_authority)
+        {
+            response = await GetBulkChecksForLocalAuthority(meta.OrganisationID ?? 0);
+        }
+        else if (meta.OrganisationID == 0 && meta.OrganisationType == OrganisationType.local_authority)
+        {
             response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+        }
+        else if (allowedLocalAuthorityIds.Contains(0))
+        {
+            response = await GetAllBulkChecksForAdmin();
         }
 
         if (response == null || !response.Any())
@@ -73,6 +90,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
+                NumberOfRecords = bc.NumberOfRecords,
                 Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}"
             }).OrderByDescending(bc => bc.SubmittedDate)
         };
@@ -92,10 +110,10 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         var allBulkChecks = new List<BulkCheck>();
 
         // Get bulk checks for each allowed local authority
-        // Pass false to get all bulk checks, not just from last 7 days
+        // Pass true to get all bulk checks from last 7 days
         foreach (var localAuthorityId in allowedLocalAuthorityIds)
         {
-            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: false);
+            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: true);
             if (bulkChecks != null)
             {
                 allBulkChecks.AddRange(bulkChecks);
@@ -104,5 +122,35 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 
         // Remove duplicates and return
         return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
+    }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthority(int localAuthorityId)
+    {
+        return await GetBulkChecksForLocalAuthorities([localAuthorityId]);
+    }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId)
+    {
+        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+    }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId)
+    {
+        var establishmentIds = await _multiAcademyTrustGateway.GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
+        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, multiAcademyTrustId);
+        var establishmentBulkChecks = new List<BulkCheck>();
+
+        foreach (var establishmentId in establishmentIds)
+        {
+            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+            if (checks != null)
+            {
+                establishmentBulkChecks.AddRange(checks);
+            }
+        }
+        return (matBulkChecks ?? Enumerable.Empty<BulkCheck>())
+            .Concat(establishmentBulkChecks)
+            .GroupBy(x => x.BulkCheckID)
+            .Select(x => x.First());
     }
 }
