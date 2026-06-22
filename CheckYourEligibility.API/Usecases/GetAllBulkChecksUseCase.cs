@@ -11,7 +11,7 @@ namespace CheckYourEligibility.API.UseCases;
 ///     Interface for retrieving all bulk checks
 /// </summary>
 public interface IGetAllBulkChecksUseCase
-{ 
+{
     /// <summary>
     ///     Execute the use case to get all bulk checks the user has access to,
     ///     based on their organisation scope and metadata.
@@ -54,11 +54,13 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.establishment)
         {
-            response = await GetBulkChecksForEstablishment(
-                meta.OrganisationID ?? 0,
-                allowedLocalAuthorityIds);
+            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0);
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.local_authority)
+        {
+            response = await GetBulkChecksForLocalAuthority(meta.OrganisationID ?? 0);
+        }
+        else if (meta.OrganisationID == 0 && meta.OrganisationType == OrganisationType.local_authority)
         {
             response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
         }
@@ -88,6 +90,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
                 Status = bc.Status.ToString(),
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
+                NumberOfRecords = bc.NumberOfRecords,
                 Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}"
             }).OrderByDescending(bc => bc.SubmittedDate)
         };
@@ -121,38 +124,30 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(
-    int establishmentId,
-    IList<int> allowedLocalAuthorityIds)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthority(int localAuthorityId)
     {
-        return await _bulkCheckGateway.GetBulkChecksByOrganisation(
-            OrganisationType.establishment,
-            establishmentId);
+        return await GetBulkChecksForLocalAuthorities([localAuthorityId]);
+    }
+
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId)
+    {
+        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
     }
 
     private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId)
     {
-        var establishmentIds = await _multiAcademyTrustGateway
-    .GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
-
-        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(
-            OrganisationType.multi_academy_trust,
-            multiAcademyTrustId);
-
+        var establishmentIds = await _multiAcademyTrustGateway.GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
+        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, multiAcademyTrustId);
         var establishmentBulkChecks = new List<BulkCheck>();
 
         foreach (var establishmentId in establishmentIds)
         {
-            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(
-                OrganisationType.establishment,
-                establishmentId);
-
+            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
             if (checks != null)
             {
                 establishmentBulkChecks.AddRange(checks);
             }
         }
-
         return (matBulkChecks ?? Enumerable.Empty<BulkCheck>())
             .Concat(establishmentBulkChecks)
             .GroupBy(x => x.BulkCheckID)
