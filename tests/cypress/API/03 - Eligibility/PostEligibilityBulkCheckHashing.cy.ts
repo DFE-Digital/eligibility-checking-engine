@@ -1,5 +1,9 @@
-import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
-import { validLoginRequestBody } from "@/cypress/support/requestBodies";
+import {
+  CheckEligibilityResponseBulk,
+  BulkResultItem,
+} from "../../support/interfaces";
+import { getandVerifyBearerToken } from "../../support/apiHelpers";
+import { validLoginRequestBody } from "../../support/requestBodies";
 
 describe("Bulk Check - Hashing Behaviour", () => {
   it("Batch submitted with all NEW checks → all processed", () => {
@@ -8,18 +12,18 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const request = {
       data: [
         {
-          clientIdentifier: `test-${unique}-1`,
-          lastName: `Smith${unique}`,
+          clientIdentifier: "test-1",
+          lastName: "Smith",
           firstName: "John",
           dateOfBirth: "2010-01-01",
-          nationalInsuranceNumber: `AB12${unique.toString().slice(-4)}C`,
+          nationalInsuranceNumber: "AB123456C",
         },
         {
-          clientIdentifier: `test-${unique}-2`,
-          lastName: `Jones${unique}`,
+          clientIdentifier: "test-2",
+          lastName: "Jones",
           firstName: "Jane",
           dateOfBirth: "2011-02-02",
-          nationalInsuranceNumber: `CD34${unique.toString().slice(-4)}E`,
+          nationalInsuranceNumber: "AB123456C",
         },
       ],
     };
@@ -31,19 +35,37 @@ describe("Bulk Check - Hashing Behaviour", () => {
           `bulk-check/free-school-meals`,
           request,
           token,
-        ).then((response) => {
-
+        ).then((response: { body: CheckEligibilityResponseBulk }) => {
+          //  response validation
           cy.verifyApiResponseCode(response, 202);
           cy.verifyPostEligibilityBulkCheckResponse(response);
-            
-          ///cy.
-          /// more to do, check status etc... 
 
+          const links = response.body.links;
+        
+          const progress = links.get_Progress_Check;
+
+          // wait for async completion
+          cy.waitForBulkCompletion(progress, token).then(
+            () => {
+              // ✅ fetch results
+              cy.apiRequest(
+                "GET",
+                links.get_BulkCheck_Results,
+                {},
+                token,
+              ).then((response: { body: { data: BulkResultItem[] } }) => {
+
+                console.log(response);
+
+                const results = response.body.data;
+
+                // verify results
+                // cy.verifyBulkResults(results, request.data);
+              });
+            },
+          );
         });
       },
     );
-
- 
   });
-});
-
+}); 
