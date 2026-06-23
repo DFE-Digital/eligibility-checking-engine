@@ -241,6 +241,9 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     Status = string.IsNullOrWhiteSpace(row.ApplicationStatus)
                         ? ApplicationStatus.Receiving
                         : Enum.Parse<ApplicationStatus>(row.ApplicationStatus),
+                    Tier = string.IsNullOrWhiteSpace(row.Tier)
+                        ? null
+                        : Enum.Parse<EligibilityTier>(row.Tier, ignoreCase: true),
                     EligibilityCheckHashID = null // No hash for bulk import
                 };
                 applications.Add(application);
@@ -370,7 +373,8 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             ChildDateOfBirth = data.ChildDateOfBirth,
             ChildSchoolUrn = data.ChildSchoolUrn,
             EligibilityEndDate = data.EligibilityEndDate,
-            ApplicationStatus = data.ApplicationStatus
+            ApplicationStatus = data.ApplicationStatus,
+            Tier = data.Tier
         };
     }
 
