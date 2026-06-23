@@ -79,7 +79,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         }
 
         _logger.LogInformation($"Retrieved {response.Count()} bulk checks");
-
+        //TO DO: use map
         return new CheckEligibilityBulkStatusesResponse
         {
             Checks = response.Select(bc => new Boundary.Responses.BulkCheck
@@ -91,6 +91,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
                 Filename = bc.Filename,
                 SubmittedBy = bc.SubmittedBy,
                 NumberOfRecords = bc.NumberOfRecords,
+                FinalNameInCheck = bc.FinalNameInCheck,
                 Get_BulkCheck_Results = $"/bulk-check/{bc.BulkCheckID}"
             }).OrderByDescending(bc => bc.SubmittedDate)
         };
