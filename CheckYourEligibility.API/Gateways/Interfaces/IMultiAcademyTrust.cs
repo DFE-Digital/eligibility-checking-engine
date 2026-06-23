@@ -24,9 +24,17 @@ public interface IMultiAcademyTrust
     Task<MultiAcademyTrust?> UpdateAcademyCanReviewEvidence(int multiAcademyTrustId, bool value);
 
     /// <summary>
+    /// Retrieves all establishment IDs linked to the specified Multi Academy Trust.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <returns>A list of establishment IDs linked to the specified Multi Academy Trust.</returns>
+    Task<IList<int>> GetEstablishmentIdsForMultiAcademyTrust(int multiAcademyTrustId);
+
+    /// <summary>
     /// Get all establishments for MAT by id
     /// </summary>
     /// <param name="multiAcademyTrustId"></param>
     /// <returns></returns>
     Task<List<EstablishmentResponseItem>> GetEstablishmentsByMultiAcademyTrustId(int multiAcademyTrustId);
 }
+

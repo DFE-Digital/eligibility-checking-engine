@@ -11,6 +11,7 @@ public static class ClaimsPrincipalExtensions
     private static readonly string _localAuthority = "local_authority";
     private static readonly string _multiAcademyTrust = "multi_academy_trust";
     private static readonly string _establishment = "establishment";
+
     /// <summary>
     /// Check for colon in claim of type nameidentifier 
     /// if found -  source = left side of the colon , userName = right side of the colon
