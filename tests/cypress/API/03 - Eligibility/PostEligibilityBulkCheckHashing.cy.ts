@@ -176,8 +176,6 @@ describe("Bulk Check - Hashing Behaviour", () => {
 
           const links1 = res1.body.links;
 
-          console.log(res1);
-
           // fire second batch
           cy.apiRequest(
             "POST",
