@@ -153,7 +153,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const small2 = {
       data: [
         {
-          nationalInsuranceNumber: "NN654321C",
+          nationalInsuranceNumber: "NN123456C",
           lastName: "Small2",
           dateOfBirth: "2002-02-02",
           nationalAsylumSeekerServiceNumber: "",
@@ -247,7 +247,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const newSmall = {
       data: [
         {
-          nationalInsuranceNumber: "NN999999C", //  new
+          nationalInsuranceNumber: "NN123456C", //  new
           lastName: "SmallNew",
           dateOfBirth: "2005-05-05",
           nationalAsylumSeekerServiceNumber: "",
