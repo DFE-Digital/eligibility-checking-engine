@@ -146,26 +146,20 @@ Cypress.Commands.add('extractGuid', (response) => {
   cy.wrap(guid).as('Guid');
 });
 
-Cypress.Commands.add("waitForBulkCompletion", (progress: string, token: string) => {
-  
-  //
+Cypress.Commands.add('waitForBulkCompletion', (progress: string, token: string) => {
+
   const checkBulkStatusUntilCompleted = (
-      retries = 15,
+      retries = 15
     ): Cypress.Chainable<any> => {
 
       // using js closure, statusUrl + token come from outer function. no need to pass in.
 
-      /// this actually needs to be for each single check within that bulk check.
-
-      return cy.apiRequest("GET", progress, {}, token).then((res: any) => {
-
-        // console.log(res)
-
+      return cy.apiRequest("GET", progress, null, token).then((res) => {
         
         const data = res.body.data;
 
-        const total = data.Total;
-        const complete = data.Complete;
+        const total = data.total;
+        const complete = data.complete;
 
         //  Done when all records processed
         if (complete === total) {
