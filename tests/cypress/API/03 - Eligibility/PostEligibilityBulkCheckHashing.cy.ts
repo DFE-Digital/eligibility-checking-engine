@@ -142,8 +142,9 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const small1 = {
       data: [
         {
+          clientIdentifier: "123",
           nationalInsuranceNumber: "NN123456C",
-          lastName: "Small1",
+          lastName: "Tester",
           dateOfBirth: "2001-01-01",
           nationalAsylumSeekerServiceNumber: "",
         },
@@ -153,9 +154,10 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const small2 = {
       data: [
         {
+          clientIdentifier: "123",
           nationalInsuranceNumber: "NN123456C",
-          lastName: "Small2",
-          dateOfBirth: "2002-02-02",
+          lastName: "Tester",
+          dateOfBirth: "2001-01-01",
           nationalAsylumSeekerServiceNumber: "",
         },
       ],
@@ -173,6 +175,8 @@ describe("Bulk Check - Hashing Behaviour", () => {
           cy.verifyPostEligibilityBulkCheckResponse(res1);
 
           const links1 = res1.body.links;
+
+          console.log(res1);
 
           // fire second batch
           cy.apiRequest(
@@ -195,7 +199,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
                     cy.apiRequest(
                       "GET",
                       links1.get_BulkCheck_Results,
-                      null,
+                      {},
                       token,
                     ).then((r1) => {
                       cy.verifyApiResponseCode(r1, 200);
@@ -205,7 +209,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
                     cy.apiRequest(
                       "GET",
                       links2.get_BulkCheck_Results,
-                      null,
+                      {},
                       token,
                     ).then((r2) => {
                       cy.verifyApiResponseCode(r2, 200);
