@@ -17,6 +17,7 @@ public class ApplicationBulkImportRow
     public string ChildSchoolUrn { get; set; }
     public string EligibilityEndDate { get; set; }
     public string? ApplicationStatus { get; set; } // Optional for bulk import
+    public string? Tier { get; set; } // Optional for bulk import
 }
 
 [ExcludeFromCodeCoverage]
@@ -35,5 +36,6 @@ public class ApplicationBulkImportRowMap : ClassMap<ApplicationBulkImportRow>
         Map(m => m.ChildSchoolUrn).Name("Child School URN");
         Map(m => m.EligibilityEndDate).Name("Eligibility End Date");
         Map(m => m.ApplicationStatus).Name("Application Status").Optional(); // Optional for bulk import
+        Map(m => m.Tier).Name("tier").Optional(); // Optional for bulk import
     }
 }

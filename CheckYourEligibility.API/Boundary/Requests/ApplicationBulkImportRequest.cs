@@ -72,4 +72,9 @@ public class ApplicationBulkImportData
     /// Application status for bulk import, optional
     /// </summary>
     public string? ApplicationStatus { get; set; }
+
+    /// <summary>
+    /// Eligibility tier (targeted/expanded), optional
+    /// </summary>
+    public string? Tier { get; set; }
 }

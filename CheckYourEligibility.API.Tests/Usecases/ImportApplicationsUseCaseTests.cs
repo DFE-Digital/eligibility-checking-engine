@@ -813,10 +813,44 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.LocalAuthorityID.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
         capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
+        capturedApplication.Tier.Should().BeNull();
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         capturedApplication.Updated.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+    }
+
+    [Test]
+    [TestCase("targeted", EligibilityTier.targeted)]
+    [TestCase("expanded", EligibilityTier.expanded)]
+    public async Task Execute_Should_Set_Tier_From_CSV(string tierValue, EligibilityTier expectedTier)
+    {
+        // Arrange
+        var csvContent =
+            "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date,tier\n" +
+            $"John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31,{tierValue}";
+
+        var fileMock = CreateMockFile(csvContent, "text/csv");
+        var request = new ApplicationBulkImportRequest { File = fileMock.Object };
+        var allowedLocalAuthorityIDs = new List<int> { 1 };
+        var establishment = new DomainEstablishment { EstablishmentID = 123456, LocalAuthorityID = 1, EstablishmentName = "Test School" };
+        var establishmentLookup = new Dictionary<string, DomainEstablishment> { { "123456", establishment } };
+
+        Application capturedApplication = null!;
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Callback<IEnumerable<Application>>(apps => capturedApplication = apps.First())
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty, null))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.Execute(request, allowedLocalAuthorityIDs);
+
+        // Assert
+        result.SuccessfulImports.Should().Be(1);
+        capturedApplication.Tier.Should().Be(expectedTier);
     }
 
     private Mock<IFormFile> CreateMockFile(string content, string contentType)
@@ -1665,10 +1699,54 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.LocalAuthorityID.Should().Be(1);
         capturedApplication.Type.Should().Be(CheckEligibilityType.FreeSchoolMeals);
         capturedApplication.Status.Should().Be(ApplicationStatus.Receiving);
+        capturedApplication.Tier.Should().BeNull();
         capturedApplication.ApplicationID.Should().NotBeNullOrEmpty();
         capturedApplication.Reference.Should().NotBeNullOrEmpty();
         capturedApplication.Created.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         capturedApplication.Updated.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+    }
+
+    [Test]
+    [TestCase("targeted", EligibilityTier.targeted)]
+    [TestCase("expanded", EligibilityTier.expanded)]
+    public async Task ExecuteFromJson_Should_Set_Tier_From_Data(string tierValue, EligibilityTier expectedTier)
+    {
+        // Arrange
+        var applicationData = new ApplicationBulkImportData
+        {
+            ParentFirstName = "John",
+            ParentSurname = "Smith",
+            ParentDateOfBirth = "1985-03-15",
+            ParentNino = "AB123456C",
+            ParentEmail = "john.smith@example.com",
+            ChildFirstName = "Emma",
+            ChildSurname = "Smith",
+            ChildDateOfBirth = "2015-04-12",
+            ChildSchoolUrn = "123456",
+            EligibilityEndDate = "2025-07-31",
+            Tier = tierValue
+        };
+
+        var request = new ApplicationBulkImportJsonRequest { Applications = new List<ApplicationBulkImportData> { applicationData } };
+        var allowedLocalAuthorityIDs = new List<int> { 1 };
+        var establishment = new DomainEstablishment { EstablishmentID = 123456, LocalAuthorityID = 1, EstablishmentName = "Test School" };
+        var establishmentLookup = new Dictionary<string, DomainEstablishment> { { "123456", establishment } };
+
+        Application capturedApplication = null!;
+        _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+        _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Callback<IEnumerable<Application>>(apps => capturedApplication = apps.First())
+            .Returns(Task.CompletedTask);
+        _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty, null))
+            .ReturnsAsync("audit-id");
+
+        // Act
+        var result = await _sut.ExecuteFromJson(request, allowedLocalAuthorityIDs);
+
+        // Assert
+        result.SuccessfulImports.Should().Be(1);
+        capturedApplication.Tier.Should().Be(expectedTier);
     }
 
     #endregion ExecuteFromJson Tests
