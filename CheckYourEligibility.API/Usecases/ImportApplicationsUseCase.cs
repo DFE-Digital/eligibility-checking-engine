@@ -401,12 +401,6 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             result.ErrorMessages.Add("Parent NINO is required");
         }
 
-        if (string.IsNullOrWhiteSpace(row.ParentEmail))
-        {
-            result.IsValid = false;
-            result.ErrorMessages.Add("Parent Email Address is required");
-        }
-
         if (string.IsNullOrWhiteSpace(row.ChildFirstName))
         {
             result.IsValid = false;
