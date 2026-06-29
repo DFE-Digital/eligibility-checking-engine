@@ -155,6 +155,43 @@ public class AdministrationGatewayTests : TestBase.TestBase
         Assert.Pass();
     }
 
+    [Test]
+    public void Given_ImportEstablishments_When_LocalAuthorityExists_Should_PreservePolicySettings()
+    {
+        var data = _fixture.CreateMany<EstablishmentRow>(1).ToList();
+
+        var row = data.First();
+        row.LaCode = 213;
+        row.LaName = "Westminster";
+
+        var existingLocalAuthority = new LocalAuthority
+        {
+            LocalAuthorityID = 213,
+            LaName = "Westminster",
+            SchoolCanReviewEvidence = true,
+            EarlyYearsPupilPremiumPolicyID = 2,
+            FreeSchoolMealsPolicyID = 4,
+            TwoYearPolicyID = 3
+        };
+
+        _fakeInMemoryDb.LocalAuthorities.Add(existingLocalAuthority);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        _sut.ImportEstablishments(data);
+
+        // Assert
+        var localAuthority = _fakeInMemoryDb.LocalAuthorities.Single(x => x.LocalAuthorityID == 213);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(localAuthority.SchoolCanReviewEvidence, Is.True);
+            Assert.That(localAuthority.EarlyYearsPupilPremiumPolicyID, Is.EqualTo(2));
+            Assert.That(localAuthority.FreeSchoolMealsPolicyID, Is.EqualTo(4));
+            Assert.That(localAuthority.TwoYearPolicyID, Is.EqualTo(3));
+        });
+    }
+
     /// <summary>
     ///     Calling multiple times will generate concurrency errors, which is a limitation of in memory db
     /// </summary>
