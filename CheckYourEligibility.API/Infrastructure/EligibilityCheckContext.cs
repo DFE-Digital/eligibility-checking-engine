@@ -174,7 +174,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                     nameof(LocalAuthority.LaName)
                 };
 
-                            config.PropertiesToExcludeOnUpdate = new List<string>
+                config.PropertiesToExcludeOnUpdate = new List<string>
                 {
                     nameof(LocalAuthority.SchoolCanReviewEvidence),
                     nameof(LocalAuthority.EarlyYearsPupilPremiumPolicyID),
