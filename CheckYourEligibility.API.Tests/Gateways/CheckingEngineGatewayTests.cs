@@ -853,7 +853,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             LastName = dataItem.LastName,
             DateOfBirth = DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act

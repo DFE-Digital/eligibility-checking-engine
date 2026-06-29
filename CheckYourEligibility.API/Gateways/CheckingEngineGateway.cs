@@ -468,6 +468,11 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 checkStatusResult = await HO_Check(checkData, dbContextFactory);
                 source = ProcessEligibilityCheckSource.HO;
+
+                if (checkStatusResult == CheckEligibilityStatus.eligible)
+                {
+                    checkTierResult = EligibilityTier.targeted;
+                }
             }
         }
 
