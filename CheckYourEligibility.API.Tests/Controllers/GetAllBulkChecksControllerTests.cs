@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using CheckYourEligibility.API.UseCases;
+using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -71,12 +71,17 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 }
             };
 
-            _mockUseCase.Setup(x => x.Execute(It.Is<IList<int>>(ids => ids.Contains(0))))
+            _mockUseCase.Setup(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(0)),
+                It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
             var claims = new List<Claim>
             {
-                new Claim("scope", "local_authority")
+                new Claim("scope", "local_authority"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "test-admin")
             };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
@@ -105,10 +110,14 @@ namespace CheckYourEligibility.API.Tests.Controllers
         }
 
         [Test]
-        public async Task GetAllBulkChecks_WithNoScopes_ReturnsBadRequest()
+        public async Task GetAllBulkChecks_WithNoScopes_ReturnsUnauth()
         {
             // Arrange
-            var claims = new List<Claim>();
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "test-user-id")
+            };
+
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
 
@@ -125,12 +134,12 @@ namespace CheckYourEligibility.API.Tests.Controllers
             var result = await _controller.GetAllBulkChecks();
 
             // Assert
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-            var badRequestResult = (BadRequestObjectResult)result;
+            Assert.That(result, Is.InstanceOf<UnauthorizedObjectResult>());
+            var badRequestResult = (UnauthorizedObjectResult)result;
             Assert.That(badRequestResult.Value, Is.InstanceOf<ErrorResponse>());
 
             var errorResponse = (ErrorResponse)badRequestResult.Value!;
-            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("No local authority scope found"));
+            Assert.That(errorResponse.Errors.First().Title, Is.EqualTo("Not authorised for local authority in scope"));
         }
 
         [Test]
@@ -142,12 +151,18 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 Checks = new List<BulkCheck>()
             };
 
-            _mockUseCase.Setup(x => x.Execute(It.IsAny<IList<int>>()))
+            _mockUseCase.Setup(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0)),
+                It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
             var claims = new List<Claim>
             {
-                new Claim("scope", "local_authority:123")
+                new Claim("scope", "local_authority:123"),
+                new Claim("client_id", "test-client"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "test-user")
             };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
@@ -166,7 +181,9 @@ namespace CheckYourEligibility.API.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<ObjectResult>());
-            _mockUseCase.Verify(x => x.Execute(It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0))), Times.Once);
+            _mockUseCase.Verify(x => x.Execute(
+                It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0)),
+                It.IsAny<CheckMetaData>()), Times.Once);
         }
     }
 }

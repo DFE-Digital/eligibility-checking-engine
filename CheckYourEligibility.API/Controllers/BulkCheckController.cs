@@ -370,19 +370,21 @@ public class BulkCheckController : BaseController
     [HttpGet("/bulk-check")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     public async Task<ActionResult> GetAllBulkChecks()
-    {
+    {       
         try
         {
+            var meta = User.CalculateMetaData();
+            
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse
+                return Unauthorized(new ErrorResponse
                 {
-                    Errors = [new Error { Title = "No local authority scope found" }]
+                    Errors = [new Error { Title = "Not authorised for local authority in scope" }]
                 });
             }
 
-            var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds);
+            var result = await _getAllBulkChecksUseCase.Execute(localAuthorityIds, meta);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }

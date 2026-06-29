@@ -20,10 +20,11 @@ describe('GET eligibility soft check by Guid', () => {
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.apiRequest('POST', '/user', validUserRequestBody(), token).then((response) => {
-                    validApplicationRequest.Data.UserId = response.Data;
-                    cy.wait(60000);
+                    validApplicationRequest.Data.UserId = response.Data;                
+                    cy.wait(5000);
 
                     //Make post request for eligibility check
+                    cy.log(JSON.stringify(validApplicationRequest));
                     cy.apiRequest('POST', 'application', validApplicationRequest, token).then((response) => {
                         cy.verifyApiResponseCode(response, 201);
                         //extract Guid

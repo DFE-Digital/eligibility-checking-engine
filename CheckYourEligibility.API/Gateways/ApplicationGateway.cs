@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using ApplicationEvidence = CheckYourEligibility.API.Domain.ApplicationEvidence;
@@ -55,6 +56,13 @@ public class ApplicationGateway : IApplication
                 item.Status = ApplicationStatus.Entitled;
             else
                 item.Status = ApplicationStatus.SentForReview;
+            item.Tier = hashCheck.Tier;
+            
+            // If status is Entitled, calculate and set EligibilityEndDate
+            if (item.Status == ApplicationStatus.Entitled )
+            {
+                item.EligibilityEndDate = EligibilityCheckHelper.GetEligibilityEndDateFSM(item.Created);
+            }
 
             try
             {
@@ -85,7 +93,7 @@ public class ApplicationGateway : IApplication
 
             var saved = _db.Applications
                 .First(x => x.ApplicationID == item.ApplicationID);
-            
+
             return await GetApplication(saved.ApplicationID);
         }
         catch (Exception ex)
@@ -111,7 +119,11 @@ public class ApplicationGateway : IApplication
         {
             var item = _mapper.Map<ApplicationResponse>(result);
             item.CheckOutcome = new ApplicationResponse.ApplicationHash
-            { Outcome = result.EligibilityCheckHash?.Outcome.ToString() };
+            {
+                Outcome = result.EligibilityCheckHash?.Outcome.ToString(),
+                Tier = result.EligibilityCheckHash?.Tier.ToString()
+            };
+            item.Tier = result.Tier?.ToString();
             return item;
         }
 
@@ -120,17 +132,22 @@ public class ApplicationGateway : IApplication
 
     public async Task<ApplicationSearchResponse> GetApplications(ApplicationSearchRequest model)
     {
-        IQueryable<Application> query;
+        IQueryable<Application> query = _db.Applications;
 
+        if (model.Data.StatusDescriptions != null && model.Data.StatusDescriptions.Any())
+        {
+            var statusValuesOnly = model.Data.StatusDescriptions.Where(x => !x.Contains('.')).ToList();
+            var statusAndTiers = model.Data.StatusDescriptions.Where(x => x.Contains('.')).ToList();
+            query = query.Where(a =>
+                statusValuesOnly.Contains(a.Status.Value.ToString())
+                || statusAndTiers.Contains(a.Status.Value.ToString() + "." + a.Tier.Value.ToString())
+            );
+        }
         if (model.Data.Statuses != null && model.Data.Statuses.Any())
         {
-            query = _db.Applications.Where(a => model.Data.Statuses.Contains(a.Status.Value));
+            query = query.Where(a => model.Data.Statuses.Contains(a.Status.Value));
         }
-        else 
-        { 
-            query = _db.Applications; 
-        }
-            
+
         // Apply other filters
         query = ApplyAdditionalFilters(query, model);
 
@@ -150,6 +167,7 @@ public class ApplicationGateway : IApplication
             .ThenInclude(x => x.LocalAuthority)
             .Include(x => x.User)
             .Include(x => x.Evidence)
+            .Include(x => x.EligibilityCheckHash)
             .ToListAsync();
 
 
@@ -187,12 +205,31 @@ public class ApplicationGateway : IApplication
             {
                 result.Status = data.Status;
                 await AddStatusHistory(result, result.Status.Value);
+
+                // If status is updated to Entitled/ReviewedEntitled, calculate and set EligibilityEndDate
+                if (data.Status == ApplicationStatus.Entitled || data.Status == ApplicationStatus.ReviewedEntitled)
+                {
+                    result.EligibilityEndDate = EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created);
+                }
+            }
+
+            if (data.Tier.HasValue)
+            {
+                result.Tier = data.Tier;
             }
 
             result.Updated = DateTime.UtcNow;
             var updates = await _db.SaveChangesAsync();
             return new ApplicationUpdateResponse
-                { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
+            {
+                Data = new ApplicationUpdateDataResponse
+                {
+                    Status = result.Status?.ToString(),
+                    Tier = result.Tier?.ToString(),
+                    EligibilityEndDate = result.EligibilityEndDate,
+                    EstablishmentUrn = data.EstablishmentUrn
+                }
+            };
         }
 
         return null;
@@ -222,7 +259,7 @@ public class ApplicationGateway : IApplication
             result.Updated = DateTime.UtcNow;
             var updates = await _db.SaveChangesAsync();
             return new ApplicationUpdateResponse
-                { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
+            { Data = new ApplicationUpdateDataResponse { Status = result.Status?.ToString(), EstablishmentUrn = data.EstablishmentUrn } };
         }
 
         return null;

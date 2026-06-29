@@ -383,7 +383,6 @@ public class CheckingEngineGateway : ICheckingEngine
         //fallback to default policy from appsettings.
         return new EligibilityPolicy
         {
-
             CheckType = type,
             EligibilityCriteria = Enum.Parse<EligibilityCriteria>(_DWP_ApiCriteria[type]),
             UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[type],
@@ -486,7 +485,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             // map 422 to not found here
             result.Status = capiClaimResponse.CAPIResponseCode == HttpStatusCode.UnprocessableEntity
-                ? CheckEligibilityStatus.notFound
+                ? CheckEligibilityStatus.parentNotFound
                 : CheckEligibilityStatus.queuedForProcessing;
         }
         else
@@ -537,7 +536,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
     }
-
+ //To do: This method has little purpose, it needs to be reviewed and removed
     private static CheckProcessData GetCheckProcessDataType<T>(CheckEligibilityType type, string data)
         where T : IEligibilityServiceType
     {
@@ -560,8 +559,13 @@ public class CheckingEngineGateway : ICheckingEngine
             default:
                 return new CheckProcessData
                 {
+                    FirstName = checkItem.FirstName?.ToUpper(),
                     DateOfBirth = checkItem.DateOfBirth,
                     LastName = checkItem.LastName?.ToUpper(),
+                    ChildFirstName = checkItem.ChildFirstName?.ToUpper(),
+                    ChildLastName = checkItem.ChildLastName?.ToUpper(),
+                    ChildDateOfBirth = checkItem.ChildDateOfBirth?.ToUpper(),
+                    ChildSchoolURN = checkItem.ChildSchoolURN?.ToUpper(),
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,

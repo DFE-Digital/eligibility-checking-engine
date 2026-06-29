@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,14 +11,16 @@ namespace CheckYourEligibility.API.Gateways;
 public class MultiAcademyTrustGateway : IMultiAcademyTrust
 {
     private readonly IEligibilityCheckContext _db;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MultiAcademyTrustGateway"/> class.
     /// </summary>
     /// <param name="dbContext">The database context.</param>
-    public MultiAcademyTrustGateway(IEligibilityCheckContext dbContext)
+    public MultiAcademyTrustGateway(IEligibilityCheckContext dbContext, ILogger<MultiAcademyTrustGateway> logger)
     {
         _db = dbContext;
+        _logger = logger;
     }
 
     /// <summary>
@@ -52,5 +55,56 @@ public class MultiAcademyTrustGateway : IMultiAcademyTrust
         await _db.SaveChangesAsync();
 
         return mat;
+    }
+
+    /// <summary>
+    /// Retrieves all establishment IDs linked to the specified Multi Academy Trust.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <returns>A list of establishment IDs linked to the specified Multi Academy Trust.</returns>
+    public async Task<IList<int>> GetEstablishmentIdsForMultiAcademyTrust(int multiAcademyTrustId)
+    {
+        return await _db.MultiAcademyTrustEstablishments
+            .Where(x => x.MultiAcademyTrustID == multiAcademyTrustId)
+            .Select(x => x.EstablishmentID)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Get all establishments by MAT id
+    /// </summary>
+    /// <param name="multiAcademyTrustId"></param>
+    /// <returns></returns>
+    public async Task<List<EstablishmentResponseItem>> GetEstablishmentsByMultiAcademyTrustId(int multiAcademyTrustId)
+    {
+        try
+        {
+
+            var matExists = await _db.MultiAcademyTrusts
+                .AnyAsync(x => x.MultiAcademyTrustID == multiAcademyTrustId);
+
+            if (!matExists)
+            {
+                throw new NotFoundException($"MultiAcademyTrust: - {multiAcademyTrustId}, is not found");
+            }
+
+            var result = await _db.MultiAcademyTrustEstablishments
+                .Where(m => m.MultiAcademyTrustID == multiAcademyTrustId)
+                .Include(e => e.Establishment)
+                .Select(x => new EstablishmentResponseItem
+                {
+                    URN = x.EstablishmentID,
+                    Name = x.Establishment.EstablishmentName
+                })
+                .AsNoTracking()
+                .ToListAsync();
+                
+            return result;
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogError(ex, "Error retrieving establishments with Id: -", multiAcademyTrustId);
+            throw new NotFoundException($"Unable to find establishments: - {multiAcademyTrustId}, {ex.Message}");
+        }
     }
 }

@@ -41,7 +41,7 @@ public class ApplicationBulkImportData
     /// <summary>
     /// Parent's email address
     /// </summary>
-    public required string ParentEmail { get; set; }
+    public string? ParentEmail { get; set; }
 
     /// <summary>
     /// Child's first name
@@ -72,4 +72,9 @@ public class ApplicationBulkImportData
     /// Application status for bulk import, optional
     /// </summary>
     public string? ApplicationStatus { get; set; }
+
+    /// <summary>
+    /// Eligibility tier (targeted/expanded), optional
+    /// </summary>
+    public string? Tier { get; set; }
 }

@@ -10,4 +10,5 @@ public class MultiAcademyTrustEstablishment
     public int MultiAcademyTrustID { get; set; }
     public int EstablishmentID { get; set; }
     public virtual MultiAcademyTrust MultiAcademyTrust { get; set; }
+    public virtual Establishment Establishment { get; set; }
 }

@@ -8,6 +8,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
     // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
+    private string? nationalInsuranceNumber;
     //public int? Sequence { get; set; }
 
     public string? DateOfBirth { get; set; }
@@ -28,7 +29,15 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     }
 
     public string? EligibilityEndDate { get; set; }
-    public string? NationalInsuranceNumber { get; set; }
+
+    public string? NationalInsuranceNumber
+    {
+        get => nationalInsuranceNumber;
+        set => nationalInsuranceNumber = value == null
+            ? null
+            : value.Replace(" ", string.Empty).Trim();
+    }
+
 }
 
 public interface IEligibilityServiceType

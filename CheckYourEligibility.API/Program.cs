@@ -189,6 +189,8 @@ builder.Services.AddScoped<IDeleteEligibilityCheckReportUseCase, DeleteEligibili
 builder.Services.AddScoped<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase, GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>();
 builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
 builder.Services.AddScoped<ILocalAuthoritiesUseCase, LocalAuthoritiesUseCase>();
+builder.Services.AddScoped<IGetEstablishmentsByLocalAuthorityIdUseCase, GetEstablishmentsByLocalAuthorityIdUseCase>();
+builder.Services.AddScoped<IGetEstablishmentsByMultiAcademyTrustIdUseCase, GetEstablishmentsByMultiAcademyTrustIdIdUseCase>();
 builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
 builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibilityCheckStatusUseCase>();

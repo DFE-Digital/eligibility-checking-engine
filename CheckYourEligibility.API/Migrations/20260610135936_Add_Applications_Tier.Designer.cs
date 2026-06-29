@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260610135936_Add_Applications_Tier")]
+    partial class Add_Applications_Tier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,6 +59,7 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ParentEmail")
+                        .IsRequired()
                         .HasColumnType("varchar(1000)");
 
                     b.Property<string>("ParentFirstName")
@@ -594,8 +598,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("MultiAcademyTrustEstablishmentID");
 
-                    b.HasIndex("EstablishmentID");
-
                     b.HasIndex("MultiAcademyTrustID");
 
                     b.ToTable("MultiAcademyTrustEstablishments");
@@ -1080,19 +1082,11 @@ namespace CheckYourEligibility.API.Migrations
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustEstablishment", b =>
                 {
-                    b.HasOne("CheckYourEligibility.API.Domain.Establishment", "Establishment")
-                        .WithMany()
-                        .HasForeignKey("EstablishmentID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("CheckYourEligibility.API.Domain.MultiAcademyTrust", "MultiAcademyTrust")
                         .WithMany("MultiAcademyTrustEstablishments")
                         .HasForeignKey("MultiAcademyTrustID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Establishment");
 
                     b.Navigation("MultiAcademyTrust");
                 });
