@@ -165,6 +165,10 @@ public class BulkCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
+        catch (InvalidParsingException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
