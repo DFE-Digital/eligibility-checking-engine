@@ -23,15 +23,19 @@ public class AdministrationGatewayTests : TestBase.TestBase
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
     private AdministrationGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb", new InMemoryDatabaseRoot())
+            .UseInMemoryDatabase(nameof(AdministrationGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
