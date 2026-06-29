@@ -716,6 +716,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         status.Should().Be(CheckEligibilityStatus.parentNotFound);
+        tier.Should().BeNull();
     }
 
     [Test]
@@ -860,6 +861,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         status.Should().Be(CheckEligibilityStatus.eligible);
+        tier.Should().Be(EligibilityTier.targeted);
     }
 
     [Test]
