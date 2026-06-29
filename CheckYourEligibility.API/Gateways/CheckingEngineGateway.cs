@@ -126,7 +126,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 return (CheckEligibilityStatus.eligible, EligibilityTier.expanded);
 
             if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
-                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
+                return (CheckEligibilityStatus.eligible, null);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
                 return (CheckEligibilityStatus.notEligible, null);
