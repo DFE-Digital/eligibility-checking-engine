@@ -126,7 +126,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 return (CheckEligibilityStatus.eligible, EligibilityTier.expanded);
 
             if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
-                return (CheckEligibilityStatus.eligible, null);
+                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
             if (nino.StartsWith(
                     _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
                 return (CheckEligibilityStatus.notEligible, null);
@@ -141,7 +141,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             nass = nass.Substring(2, 2);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                return (CheckEligibilityStatus.eligible, null);
+                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
             if (nass == _configuration.GetValue<string>(
                     "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return (CheckEligibilityStatus.notEligible, null);
