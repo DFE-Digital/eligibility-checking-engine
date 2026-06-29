@@ -167,7 +167,21 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         try
         {
             this.BulkInsertOrUpdate(data, config =>
-            config.UpdateByProperties = new List<string> { nameof(LocalAuthority.LocalAuthorityID), nameof(LocalAuthority.LaName) });
+            {
+                config.UpdateByProperties = new List<string>
+                {
+                    nameof(LocalAuthority.LocalAuthorityID),
+                    nameof(LocalAuthority.LaName)
+                };
+
+                            config.PropertiesToExcludeOnUpdate = new List<string>
+                {
+                    nameof(LocalAuthority.SchoolCanReviewEvidence),
+                    nameof(LocalAuthority.EarlyYearsPupilPremiumPolicyID),
+                    nameof(LocalAuthority.FreeSchoolMealsPolicyID),
+                    nameof(LocalAuthority.TwoYearPolicyID)
+                };
+            });
             transaction.Commit();
         }
 
