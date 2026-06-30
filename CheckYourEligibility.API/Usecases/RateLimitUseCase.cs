@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -37,7 +38,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
-    
+
     /// <summary>
     ///     Executes logic to determine if a request is permitted for a particular rate limiter based on the RateLimiterMiddlewareOptions
     /// </summary>
@@ -82,17 +83,41 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
 
     private async Task<int> getQuerySize(HttpContext httpContext)
     {
-        if (httpContext.Request.Path.ToString().Contains("bulk-check"))
+        if (!httpContext.Request.Path.ToString().Contains("bulk-check"))
+            return 1;
+
+        httpContext.Request.EnableBuffering();
+
+        try
         {
-            httpContext.Request.EnableBuffering();
             var body = await JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body);
-            httpContext.Request.Body.Position = 0;
-            JsonNode data;
-            if (body.TryGetPropertyValue("data", out data))
-            {
-                return data.AsArray().Count;
-            }
+
+            if (body is null)
+                throw new InvalidParsingException("The uploaded file is empty or invalid.");
+
+            if (!body.TryGetPropertyValue("data", out JsonNode? data))
+                throw new InvalidParsingException("The uploaded file is missing required data.");
+
+            if (data is not JsonArray array)
+                throw new InvalidParsingException("The uploaded file has an invalid format.");
+
+            return array.Count;
         }
-        return 1;
+        catch (JsonException ex)
+        {
+            var message = MapJsonErrorHelper.MapJsonError(ex);
+
+            _logger.LogWarning(ex,
+                "parsing failed. Path: {Path}, Line: {Line}, Position: {Position}",
+                ex.Path,
+                ex.LineNumber,
+                ex.BytePositionInLine);
+
+            throw new InvalidParsingException(message);
+        }
+        finally
+        {
+            httpContext.Request.Body.Position = 0;
+        }
     }
 }

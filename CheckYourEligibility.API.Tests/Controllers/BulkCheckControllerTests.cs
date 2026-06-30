@@ -109,7 +109,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase.VerifyAll();
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
-        
+
         _mockAuditGateway.VerifyAll();
     }
 
@@ -140,7 +140,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Arrange
         var request = _fixture.Create<CheckEligibilityRequestBulk>();
         var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
-        var meta= _fixture.Create<CheckMetaData>();
+        var meta = _fixture.Create<CheckMetaData>();
 
         // Setup controller with local authority claims
         SetupControllerWithLocalAuthorityIds(localAuthorityIds);
@@ -157,6 +157,72 @@ public class BulkCheckControllerTests : TestBase.TestBase
         response.Should().BeOfType<BadRequestObjectResult>();
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value!).Errors.First().Title.Should().Be("Validation error");
+    }
+
+    [Test]
+    public async Task CheckEligibilityBulk_returns_bad_request_when_invalid_parsing_exception_thrown()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var localAuthorityIds = new List<int> { 1 };
+        var meta = _fixture.Create<CheckMetaData>();
+
+        // Setup controller with local authority claims
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(
+                request,
+                CheckEligibilityType.FreeSchoolMeals,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),
+                It.IsAny<CheckMetaData>()))
+            .ThrowsAsync(new InvalidParsingException("The uploaded file has an invalid format."));
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkFsm(request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequestResult = (BadRequestObjectResult)response;
+
+        ((ErrorResponse)badRequestResult.Value!)
+            .Errors.First().Title
+            .Should().Be("The uploaded file has an invalid format.");
+    }
+
+    [Test]
+    public async Task CheckEligibilityBulk_returns_bad_request_with_double_quote_message_when_json_has_single_quotes()
+    {
+        // Arrange
+        var request = _fixture.Create<CheckEligibilityRequestBulk>();
+        var localAuthorityIds = new List<int> { 1 };
+
+        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+
+        var expectedMessage =
+            "The uploaded file could not be processed. Please check the file format and try again. " +
+            "If submitting data programmatically, ensure text values use double quotes (\") rather than single quotes (').";
+
+        _mockCheckEligibilityBulkUseCase
+            .Setup(u => u.Execute(
+                request,
+                CheckEligibilityType.FreeSchoolMeals,
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),
+                It.IsAny<CheckMetaData>()))
+            .ThrowsAsync(new InvalidParsingException(expectedMessage));
+
+        // Act
+        var response = await _sut.CheckEligibilityBulkFsm(request);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequestResult = (BadRequestObjectResult)response;
+
+        ((ErrorResponse)badRequestResult.Value!)
+            .Errors.First().Title
+            .Should().Contain("double quotes");
     }
 
     [Test]
@@ -279,13 +345,13 @@ public class BulkCheckControllerTests : TestBase.TestBase
         var path = new PathString("/bulk-check/working-families");
         var meta = _fixture.Create<CheckMetaData>();
         httpContext.Request.Path = path;
-        
+
         // Preserve the existing user context and add the path
         if (_sut.ControllerContext.HttpContext.User != null)
         {
             httpContext.User = _sut.ControllerContext.HttpContext.User;
         }
-        
+
         _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
@@ -293,7 +359,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ReturnsAsync(executionResult);
 
         // Act
@@ -321,13 +387,13 @@ public class BulkCheckControllerTests : TestBase.TestBase
         var httpContext = new DefaultHttpContext();
         var path = new PathString("/bulk-check/working-families");
         httpContext.Request.Path = path;
-        
+
         // Preserve the existing user context and add the path
         if (_sut.ControllerContext.HttpContext.User != null)
         {
             httpContext.User = _sut.ControllerContext.HttpContext.User;
         }
-        
+
         _sut.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
@@ -335,7 +401,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCheckEligibilityBulkUseCase
             .Setup(u => u.Execute(request, CheckEligibilityType.WorkingFamilies,
-                _configuration.GetValue<int>("BulkEligibilityCheckLimit"),It.IsAny<CheckMetaData>()))
+                _configuration.GetValue<int>("BulkEligibilityCheckLimit"), It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new ValidationException("Validation error"));
 
         // Act
@@ -412,7 +478,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityBulkResponse();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -433,7 +499,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var executionResult = new CheckEligibilityBulkResponse();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -456,7 +522,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var bulkResponse = _fixture.Create<CheckEligibilityBulkResponse>();
         var executionResult = bulkResponse;
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -477,7 +543,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -499,7 +565,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        
+
         // Set up controller with NO local authority context (empty scopes)
         SetupControllerWithLocalAuthorityIds(new List<int>());
 
@@ -518,7 +584,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -538,7 +604,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = "";
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -560,7 +626,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var executionResult = _fixture.Create<CheckEligibilityBulkDeleteResponse>();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -581,7 +647,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        
+
         // Set up controller with local authority context
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
@@ -604,7 +670,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        
+
         // Set up controller with NO local authority context (empty scopes)
         SetupControllerWithLocalAuthorityIds(new List<int>());
 

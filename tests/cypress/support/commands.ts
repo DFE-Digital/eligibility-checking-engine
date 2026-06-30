@@ -6,6 +6,9 @@ declare namespace Cypress {
     apiRequest(method: string, url: string, requestBody: any, bearerToken?: string | null, failOnStatusCode?: boolean, contentType?: string | null): Chainable<any>;
     verifyPostEligibilityCheckResponse(response: any): Chainable<any>;
 
+    waitForBulkCompletion(statusUrl: string, token: string): Chainable<any>;
+    verifyBulkResults(results: any[], requestData: any[]): Chainable<void>;
+    
     verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
@@ -24,9 +27,6 @@ declare namespace Cypress {
     verifySchoolSearchResponse(response: any, expectedData: any): Chainable<void>;
     verifyApplicationSearchResponse(response: any, expectedDataArray: any[]): Chainable<void>;
     form_request(method: string, url: string, formData: FormData, token: string, done: (response: XMLHttpRequest) => void): Chainable<void>;
-
-  
-
   }
 }
 
@@ -96,6 +96,36 @@ Cypress.Commands.add('verifyPostEligibilityBulkCheckResponse', (response) => {
   expect(response.body.links).to.have.property('get_BulkCheck_Status');
 });
 
+
+Cypress.Commands.add('verifyBulkResults', (results, requestData) => {
+
+  console.log(results, requestData)
+
+  expect(results.length).to.eq(requestData.length);
+
+  results.forEach((item: any, index: number) => {
+
+    //  matches request
+    expect(item.clientIdentifier)
+      .to.eq(requestData[index].clientIdentifier);
+
+    //  not stuck in queue
+    expect(item.status)
+      .to.not.eq("queuedForProcessing");
+
+    // valid final status
+    expect([
+      "eligible",
+      "notEligible",
+      "checking",
+      "error"
+    ]).to.include(item.status);
+
+  });
+
+});
+
+
 Cypress.Commands.add('extractGuid', (response) => {
   let guid;
 
@@ -115,6 +145,67 @@ Cypress.Commands.add('extractGuid', (response) => {
 
   cy.wrap(guid).as('Guid');
 });
+
+Cypress.Commands.add('waitForBulkCompletion', (progress: string, token: string) => {
+
+  const checkBulkStatusUntilCompleted = (
+      retries = 15
+    ): Cypress.Chainable<any> => {
+
+      // using js closure, statusUrl + token come from outer function. no need to pass in.
+
+      return cy.apiRequest("GET", progress, null, token).then((res) => {
+        
+        const data = res.body.data;
+
+        const total = data.total;
+        const complete = data.complete;
+
+        //  Done when all records processed
+        if (complete === total) {
+          return;
+        }
+
+        //  Prevent infinite loop
+        if (retries <= 0) {
+          throw new Error("Timed out waiting for bulk check completion");
+        }
+
+        return cy
+          .wait(2000)
+          .then(() => checkBulkStatusUntilCompleted(retries - 1));
+      });
+    };
+
+    return checkBulkStatusUntilCompleted();
+  },
+
+);
+
+
+Cypress.Commands.add('verifyBulkResults', (results, requestData) => {
+
+  expect(results.length).to.eq(requestData.length);
+
+  results.forEach((item: any, index: number) => {
+
+    expect(item.clientIdentifier)
+      .to.eq(requestData[index].clientIdentifier);
+
+    expect(item.status)
+      .to.not.eq("queuedForProcessing");
+
+    expect([
+      "eligible",
+      "notEligible",
+      "checking",
+      "error"
+    ]).to.include(item.status);
+
+  });
+
+});
+
 
 Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, requestData) => {
   // Verify body has data and links properties

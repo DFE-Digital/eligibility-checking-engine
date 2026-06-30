@@ -716,6 +716,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         status.Should().Be(CheckEligibilityStatus.parentNotFound);
+        tier.Should().BeNull();
     }
 
     [Test]
@@ -852,7 +853,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             LastName = dataItem.LastName,
             DateOfBirth = DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
@@ -860,6 +861,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         status.Should().Be(CheckEligibilityStatus.eligible);
+        tier.Should().Be(EligibilityTier.targeted);
     }
 
     [Test]
