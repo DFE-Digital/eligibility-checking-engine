@@ -141,7 +141,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             nass = nass.Substring(2, 2);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                return (CheckEligibilityStatus.eligible, null);
+                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
             if (nass == _configuration.GetValue<string>(
                     "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return (CheckEligibilityStatus.notEligible, null);
@@ -468,6 +468,11 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 checkStatusResult = await HO_Check(checkData, dbContextFactory);
                 source = ProcessEligibilityCheckSource.HO;
+
+                if (checkStatusResult == CheckEligibilityStatus.eligible)
+                {
+                    checkTierResult = EligibilityTier.targeted;
+                }
             }
         }
 
