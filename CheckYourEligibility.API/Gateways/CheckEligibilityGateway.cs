@@ -409,6 +409,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     ChildLastName = checkItem.ChildLastName,
                     ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ChildSchoolURN = checkItem.ChildSchoolURN,
+                    EmailAddress = checkItem.EmailAddress,
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,

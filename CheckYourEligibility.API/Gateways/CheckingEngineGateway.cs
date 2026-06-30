@@ -571,6 +571,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     ChildLastName = checkItem.ChildLastName?.ToUpper(),
                     ChildDateOfBirth = checkItem.ChildDateOfBirth?.ToUpper(),
                     ChildSchoolURN = checkItem.ChildSchoolURN?.ToUpper(),
+                    EmailAddress = checkItem.EmailAddress,
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,
