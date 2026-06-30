@@ -90,7 +90,9 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
 
         try
         {
-            var body = await JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body);
+            // Use case-insensitive deserialization to ensure payloads from portals are correctly parsed
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var body = await JsonSerializer.DeserializeAsync<JsonObject>(httpContext.Request.Body, options);
 
             if (body is null)
                 throw new InvalidParsingException("The uploaded file is empty or invalid.");
