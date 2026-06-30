@@ -26,6 +26,10 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-GB");
 
 var builder = WebApplication.CreateBuilder(args);
 
+// appsettings.local.json: gitignored local overrides (DB connection string, Azurite, JWT key, etc.)
+// Loaded last so it wins over appsettings.json and appsettings.Development.json.
+builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
+
 // ------------------------
 // 1. Configure Services
 // ------------------------

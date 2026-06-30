@@ -1,0 +1,39 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dotnet/dev-proxy/main/schemas/v0.24.0/mockresponseplugin.schema.json",
+    "mocks": [
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/MoqDWP/token",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 200,
+                "body": {
+                    "access_token": "mock-token",
+                    "expires_in": 3600,
+                    "token_type": "Bearer"
+                }
+            }
+        },
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/v2/citizens/match",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 500,
+                "body": {
+                    "errors": [
+                        {
+                            "code": "1007",
+                            "detail": "Unexpected UC claims data found for this citizen. Please log a request with DWP support for further investigation",
+                            "id": "1-9688b40a-f003-48cb-bd2b-1d4fae30d469",
+                            "status": "500",
+                            "title": "Internal server error / failure. Please retry your request"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
