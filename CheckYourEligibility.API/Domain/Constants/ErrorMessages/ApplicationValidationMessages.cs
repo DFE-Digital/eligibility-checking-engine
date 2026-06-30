@@ -19,4 +19,5 @@ public static class ValidationMessages
     public const string NI_or_NASS = "National Insurance Number or National Asylum Seeker Service Number is required";
     public const string EligibilityCode = "Eligibility code must be 11 digits long";
     public const string SubmissionDate = "Submission date must not be in the future";
+    public const string Email = "Invalid Email Address";
 }

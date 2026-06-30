@@ -60,6 +60,13 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     .WithMessage("Invalid Child School URN");
             });
 
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).EmailAddress), () =>
+            {
+                RuleFor(x => ((CheckEligibilityRequestData)x).EmailAddress)
+                    .EmailAddress()
+                    .WithMessage(ValidationMessages.Email);
+            });
+
             RuleFor(x => ((CheckEligibilityRequestData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
