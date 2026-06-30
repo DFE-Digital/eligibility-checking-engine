@@ -182,31 +182,6 @@ Cypress.Commands.add('waitForBulkCompletion', (progress: string, token: string) 
 
 );
 
-
-Cypress.Commands.add('verifyBulkResults', (results, requestData) => {
-
-  expect(results.length).to.eq(requestData.length);
-
-  results.forEach((item: any, index: number) => {
-
-    expect(item.clientIdentifier)
-      .to.eq(requestData[index].clientIdentifier);
-
-    expect(item.status)
-      .to.not.eq("queuedForProcessing");
-
-    expect([
-      "eligible",
-      "notEligible",
-      "checking",
-      "error"
-    ]).to.include(item.status);
-
-  });
-
-});
-
-
 Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, requestData) => {
   // Verify body has data and links properties
   expect(response.body).to.have.property('data');
