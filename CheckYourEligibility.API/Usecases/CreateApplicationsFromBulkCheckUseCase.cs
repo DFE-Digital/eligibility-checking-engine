@@ -152,7 +152,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                     Establishment = establishment,
                     ParentFirstName = checkData.FirstName!,
                     ParentLastName = checkData.LastName!,
-                    ParentEmail = string.Empty,
+                    ParentEmail = checkData.EmailAddress,
                     ParentNationalInsuranceNumber = checkData.NationalInsuranceNumber,
                     ParentNationalAsylumSeekerServiceNumber = checkData.NationalAsylumSeekerServiceNumber,
                     ParentDateOfBirth = checkData.DateOfBirth,
