@@ -112,6 +112,16 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             .Replace("\n", string.Empty);
     }
 
+    /// <summary>
+    /// Determines whether a name value is missing or fails validation rules,
+    /// and logs a warning when the value is invalid.
+    /// </summary>
+    /// <param name="value">The name value to validate.</param>
+    /// <param name="fieldName">The field name being validated.</param>
+    /// <param name="eligibilityCheckId">The related eligibility check identifier.</param>
+    /// <returns>
+    /// True when the value is missing or invalid; otherwise false.
+    /// </returns>
     private bool InvalidName(
                string? value,
                string fieldName,
@@ -155,17 +165,6 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 continue;
             }
 
-            if (!int.TryParse(checkData.ChildSchoolURN, out var establishment) || establishment <= 0)
-            {
-                hasFailures = true;
-
-                _logger.LogWarning(
-                    "Skipping eligibility check {EligibilityCheckId} because ChildSchoolURN is missing or invalid",
-                    check.EligibilityCheckID);
-
-                continue;
-            }
-
             if (InvalidName(checkData.FirstName, "FirstName", check.EligibilityCheckID))
             {
                 hasFailures = true;
@@ -183,6 +182,17 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 hasFailures = true;
                 continue;
             }
+
+            if (!int.TryParse(checkData.ChildSchoolURN, out var establishment) || establishment <= 0)
+            {
+                hasFailures = true;
+
+                _logger.LogWarning(
+                    "Skipping eligibility check {EligibilityCheckId} because ChildSchoolURN is missing or invalid",
+                    check.EligibilityCheckID);
+
+                continue;
+            }          
 
             var applicationRequest = new ApplicationRequest
             {
