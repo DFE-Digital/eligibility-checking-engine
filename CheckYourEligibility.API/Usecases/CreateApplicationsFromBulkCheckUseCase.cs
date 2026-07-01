@@ -1,6 +1,7 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Gateways;
 using Newtonsoft.Json;
@@ -111,6 +112,25 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             .Replace("\n", string.Empty);
     }
 
+    private bool InvalidName(
+               string? value,
+               string fieldName,
+               string eligibilityCheckId)
+    {
+        if (!string.IsNullOrWhiteSpace(value) &&
+            DataValidation.BeAValidName(value))
+        {
+            return false;
+        }
+
+        _logger.LogWarning(
+            "Skipping eligibility check {EligibilityCheckId} because {FieldName} is missing or invalid",
+            eligibilityCheckId,
+            fieldName);
+
+        return true;
+    }
+
     public async Task ProcessApplicationsFromBulkCheck(
         string bulkCheckId,
         List<int> allowedLocalAuthorityIds)
@@ -126,6 +146,8 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
             if (checkData == null)
             {
+                hasFailures = true;
+
                 _logger.LogWarning(
                     "Skipping eligibility check {EligibilityCheckId} because CheckData could not be deserialised",
                     check.EligibilityCheckID);
@@ -133,7 +155,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                 continue;
             }
 
-            if (!int.TryParse(checkData.ChildSchoolURN, out var establishment))
+            if (!int.TryParse(checkData.ChildSchoolURN, out var establishment) || establishment <= 0)
             {
                 hasFailures = true;
 
@@ -141,6 +163,24 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
                     "Skipping eligibility check {EligibilityCheckId} because ChildSchoolURN is missing or invalid",
                     check.EligibilityCheckID);
 
+                continue;
+            }
+
+            if (InvalidName(checkData.FirstName, "FirstName", check.EligibilityCheckID))
+            {
+                hasFailures = true;
+                continue;
+            }
+
+            if (InvalidName(checkData.ChildFirstName, "ChildFirstName", check.EligibilityCheckID))
+            {
+                hasFailures = true;
+                continue;
+            }
+
+            if (InvalidName(checkData.ChildLastName, "ChildLastName", check.EligibilityCheckID))
+            {
+                hasFailures = true;
                 continue;
             }
 
