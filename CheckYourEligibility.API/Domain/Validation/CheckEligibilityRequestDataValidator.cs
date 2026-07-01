@@ -20,45 +20,6 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     .NotEmpty()
                     .WithMessage(ValidationMessages.LastName);
             });
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).LastName), () => {
-                RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
-                    .Must(DataValidation.BeAValidName)
-                    .WithMessage(ValidationMessages.LastName);
-            });
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).FirstName), () =>
-            {
-                RuleFor(x => ((CheckEligibilityRequestData)x).FirstName)
-                    .Must(DataValidation.BeAValidName)
-                    .WithMessage(ValidationMessages.FirstName);
-            });
-
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).ChildFirstName), () =>
-            {
-                RuleFor(x => ((CheckEligibilityRequestData)x).ChildFirstName)
-                    .Must(DataValidation.BeAValidName)
-                    .WithMessage(ValidationMessages.ChildFirstName);
-            });
-
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).ChildLastName), () =>
-            {
-                RuleFor(x => ((CheckEligibilityRequestData)x).ChildLastName)
-                    .Must(DataValidation.BeAValidName)
-                    .WithMessage(ValidationMessages.ChildLastName);
-            });
-
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).ChildDateOfBirth), () =>
-            {
-                RuleFor(x => ((CheckEligibilityRequestData)x).ChildDateOfBirth)
-                    .Must(DataValidation.BeAValidDate)
-                    .WithMessage(ValidationMessages.ChildDOB);
-            });
-
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).ChildSchoolURN), () =>
-            {
-                RuleFor(x => ((CheckEligibilityRequestData)x).ChildSchoolURN)
-                    .Must(x => int.TryParse(x, out var urn) && urn > 0)
-                    .WithMessage("Invalid Child School URN");
-            });
 
             When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).EmailAddress), () =>
             {

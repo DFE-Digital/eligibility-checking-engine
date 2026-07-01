@@ -108,7 +108,15 @@ public class CheckEligibilityGateway : ICheckEligibility
 
             var baseType = data as CheckEligibilityRequestDataBase;
 
+            _logger.LogInformation(
+    "3206 Incoming data JSON before CheckData save: {Data}",
+    JsonConvert.SerializeObject(data));
+
             item.CheckData = JsonConvert.SerializeObject(data);
+
+            _logger.LogInformation(
+    "3206 Initial item.CheckData: {CheckData}",
+    item.CheckData);
 
             item.Type = baseType.Type;
 
@@ -328,6 +336,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
                     item.ChildSchoolURN = CheckData.ChildSchoolURN;
                     item.EligibilityEndDate = CheckData.EligibilityEndDate;
+                    item.EmailAddress = CheckData.EmailAddress;
                     break;
             }
 
