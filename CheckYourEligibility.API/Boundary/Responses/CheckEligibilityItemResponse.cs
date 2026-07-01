@@ -23,6 +23,7 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string? ChildLastName { get; set; }
     public string? ChildDateOfBirth { get; set; }
     public string? ChildSchoolURN { get; set; }
+    public string? EmailAddress { get; set; }
 
     public string DateOfBirth { get; set; }
 

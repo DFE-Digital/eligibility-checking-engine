@@ -30,6 +30,7 @@ public class BulkCheckController : BaseController
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
+    private readonly ICreateApplicationsFromBulkCheckUseCase _createApplicationsFromBulkCheckUseCase;
 
     public BulkCheckController(
         ILogger<BulkCheckController> logger,
@@ -40,7 +41,8 @@ public class BulkCheckController : BaseController
         IGetBulkUploadProgressUseCase getBulkUploadProgressUseCase,
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
-        IGetAllBulkChecksUseCase getAllBulkChecksUseCase
+        IGetAllBulkChecksUseCase getAllBulkChecksUseCase,
+        ICreateApplicationsFromBulkCheckUseCase createApplicationsFromBulkCheckUseCase
     )
         : base(audit)
     {
@@ -54,6 +56,7 @@ public class BulkCheckController : BaseController
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
+        _createApplicationsFromBulkCheckUseCase = createApplicationsFromBulkCheckUseCase;
     }
 
 
@@ -449,6 +452,50 @@ public class BulkCheckController : BaseController
             { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
 
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///     Creates applications asynchronously for all eligible checks within a bulk check
+    /// </summary>
+    /// <param name="guid">The bulk check GUID</param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(MessageResponse), (int)HttpStatusCode.Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/bulk-check/{guid}/applications")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireApplicationScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> CreateApplicationsFromBulkCheck(string guid)
+    {
+        try
+        {
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "No local authority scope found" }]
+                });
+            }
+
+            var result = await _createApplicationsFromBulkCheckUseCase.Execute(guid, localAuthorityIds);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
         catch (FluentValidation.ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
