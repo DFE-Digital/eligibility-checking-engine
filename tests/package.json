@@ -3,7 +3,7 @@
     "@azure/identity": "^4.13.1",
     "@azure/keyvault-secrets": "^4.8.0",
     "cypress-plugin-api": "^2.11.1",
-    "junit-report-merger": "^7.0.0",
+    "junit-report-merger": "^9.0.4",
     "open": "^10.1.0",
     "typescript": "^5.4.5"
   },
