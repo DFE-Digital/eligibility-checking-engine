@@ -106,17 +106,9 @@ public class CheckEligibilityGateway : ICheckEligibility
         try
         {
 
-            var baseType = data as CheckEligibilityRequestDataBase;
+            var baseType = data as CheckEligibilityRequestDataBase;           
 
-            _logger.LogInformation(
-    "3206 Incoming data JSON before CheckData save: {Data}",
-    JsonConvert.SerializeObject(data));
-
-            item.CheckData = JsonConvert.SerializeObject(data);
-
-            _logger.LogInformation(
-    "3206 Initial item.CheckData: {CheckData}",
-    item.CheckData);
+            item.CheckData = JsonConvert.SerializeObject(data);          
 
             item.Type = baseType.Type;
 
