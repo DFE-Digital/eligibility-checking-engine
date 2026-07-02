@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Http;
@@ -182,6 +183,42 @@ namespace CheckYourEligibility.API.Tests.Controllers
             _mockUseCase.Verify(x => x.Execute(
                 It.Is<IList<int>>(ids => ids.Contains(123) && !ids.Contains(0)),
                 It.IsAny<CheckMetaData>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetBulkCheckSummary_WhenGuidDoesNotExist_ReturnsNotFound()
+        {
+            // Arrange
+            var bulkCheckId = Guid.NewGuid();
+
+            _mockBulkCheckSummaryUseCase
+                .Setup(x => x.Execute(
+                    bulkCheckId,
+                    It.IsAny<IList<int>>(),
+                    It.IsAny<CheckMetaData>()))
+                .ThrowsAsync(new NotFoundException());
+
+            var claims = new List<Claim>
+            {
+                new Claim("scope", "local_authority:123"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "free-school-meals-admin:test-user@test.com")
+            };
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims))
+                }
+            };
+
+            // Act
+            var result = await _controller.GetBulkCheckSummary(bulkCheckId);
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
         }
     }
 }
