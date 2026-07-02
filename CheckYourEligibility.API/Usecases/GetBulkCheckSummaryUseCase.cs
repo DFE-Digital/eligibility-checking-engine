@@ -37,6 +37,13 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
         {
             var results = await _bulkCheckGateway
                 .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
+
+            var outcomes = results
+            .GroupBy(result =>
+                string.IsNullOrWhiteSpace(result.Tier)
+                    ? result.Status
+                    : $"{result.Status}-{result.Tier}".ToLower())
+            .ToDictionary(group => group.Key, group => group.Count());
         }
     }
 }
