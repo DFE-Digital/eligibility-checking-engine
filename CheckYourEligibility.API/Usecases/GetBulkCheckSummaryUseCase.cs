@@ -51,7 +51,7 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
         }
 
         var results = await _bulkCheckGateway
-            .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
+            .GetBulkCheckResults<IList<CheckEligibilityItem>>(bulkCheckId.ToString());
 
         var outcomes = results
             .GroupBy(result =>
