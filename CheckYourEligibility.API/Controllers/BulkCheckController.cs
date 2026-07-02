@@ -467,14 +467,48 @@ public class BulkCheckController : BaseController
     /// <returns>
     /// A summary containing bulk check metadata and aggregated outcome counts.
     /// </returns>
-    [HttpGet("{bulkCheckId:guid}/summary")]
+    [HttpGet("/bulk-checks/{bulkCheckId:guid}/summary")]
     [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     [Authorize(Policy = PolicyNames.RequireFreeSchoolMealsAdminPortalSource)]
-    public async Task<IActionResult> GetBulkCheckSummary(Guid bulkCheckId)
+    public async Task<ActionResult> GetBulkCheckSummary(Guid bulkCheckId)
     {
-        // use case call will go here next
-        throw new NotImplementedException();
+        try
+        {
+            var meta = User.CalculateMetaData();
+
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return Unauthorized(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "Not authorised for local authority in scope" }]
+                });
+            }
+
+            var result = await _getBulkCheckSummaryUseCase.Execute(bulkCheckId, localAuthorityIds, meta);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
+            });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
     }
 
     /// <summary>
