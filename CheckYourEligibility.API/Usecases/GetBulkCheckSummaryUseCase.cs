@@ -1,5 +1,6 @@
-﻿using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -30,6 +31,11 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
         IList<int> allowedLocalAuthorityIds,
         CheckMetaData meta)
     {
-        throw new NotImplementedException();
+        var bulkCheck = await _bulkCheckGateway.GetBulkCheck(bulkCheckId.ToString());
+
+        if (bulkCheck == null)
+        {
+            throw new NotFoundException();
+        }
     }
 }
