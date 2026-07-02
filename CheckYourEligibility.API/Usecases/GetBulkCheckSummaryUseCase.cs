@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Polly;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -27,23 +28,34 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
     }
 
     public async Task<BulkCheckSummaryResponse> Execute(
-        Guid bulkCheckId,
-        IList<int> allowedLocalAuthorityIds,
-        CheckMetaData meta)
+    Guid bulkCheckId,
+    IList<int> allowedLocalAuthorityIds,
+    CheckMetaData meta)
     {
         var bulkCheck = await _bulkCheckGateway.GetBulkCheck(bulkCheckId.ToString());
 
         if (bulkCheck == null)
         {
-            var results = await _bulkCheckGateway
-                .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
+            throw new NotFoundException();
+        }
 
-            var outcomes = results
+        var results = await _bulkCheckGateway
+            .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
+
+        var outcomes = results
             .GroupBy(result =>
                 string.IsNullOrWhiteSpace(result.Tier)
                     ? result.Status
                     : $"{result.Status}-{result.Tier}".ToLower())
             .ToDictionary(group => group.Key, group => group.Count());
-        }
+
+        return new BulkCheckSummaryResponse
+        {
+            Filename = bulkCheck.Filename,
+            Status = bulkCheck.Status.ToString(),
+            SubmittedDate = bulkCheck.SubmittedDate,
+            SubmittedBy = bulkCheck.SubmittedBy,
+            Outcomes = outcomes
+        };
     }
 }
