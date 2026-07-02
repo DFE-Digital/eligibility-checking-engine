@@ -220,5 +220,67 @@ namespace CheckYourEligibility.API.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
         }
+
+        [Test]
+        public async Task GetBulkCheckSummary_WhenBulkCheckExists_ReturnsOkResult()
+        {
+            // Arrange
+            var bulkCheckId = Guid.NewGuid();
+
+            var expectedResponse = new BulkCheckSummaryResponse
+            {
+                Filename = "test.csv",
+                Status = "Complete",
+                SubmittedDate = DateTime.UtcNow,
+                SubmittedBy = "test-user@test.com",
+                Outcomes = new Dictionary<string, int>
+                {
+                    { "eligible", 5 },
+                    { "eligible-targeted", 10 },
+                    { "notEligible", 2 }
+                }
+            };
+
+            _mockBulkCheckSummaryUseCase
+                .Setup(x => x.Execute(
+                    bulkCheckId,
+                    It.IsAny<IList<int>>(),
+                    It.IsAny<CheckMetaData>()))
+                .ReturnsAsync(expectedResponse);
+
+            var claims = new List<Claim>
+            {
+                new Claim("scope", "local_authority:123"),
+                new Claim(
+                    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                    "free-school-meals-admin:test-user@test.com")
+            };
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims))
+                }
+            };
+
+            // Act
+            var result = await _controller.GetBulkCheckSummary(bulkCheckId);
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<ObjectResult>());
+
+            var objectResult = (ObjectResult)result;
+
+            Assert.That(objectResult.StatusCode, Is.EqualTo(200));
+            Assert.That(objectResult.Value, Is.InstanceOf<BulkCheckSummaryResponse>());
+
+            var response = (BulkCheckSummaryResponse)objectResult.Value!;
+
+            Assert.That(response.Filename, Is.EqualTo("test.csv"));
+            Assert.That(response.Outcomes["eligible"], Is.EqualTo(5));
+            Assert.That(response.Outcomes["eligible-targeted"], Is.EqualTo(10));
+            Assert.That(response.Outcomes["notEligible"], Is.EqualTo(2));
+        }
     }
 }
