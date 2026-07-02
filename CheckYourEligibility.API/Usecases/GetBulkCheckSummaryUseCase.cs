@@ -39,6 +39,17 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
             throw new NotFoundException();
         }
 
+        if (!allowedLocalAuthorityIds.Contains(0) &&
+            (bulkCheck.LocalAuthorityID == null ||
+             !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value)))
+        {
+            _logger.LogWarning(
+                $"User attempted to access bulk check {bulkCheckId} belonging to local authority {bulkCheck.LocalAuthorityID} without permission");
+
+            throw new UnauthorizedAccessException(
+                $"You do not have permission to access bulk check {bulkCheckId}");
+        }
+
         var results = await _bulkCheckGateway
             .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
 
