@@ -35,7 +35,8 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
 
         if (bulkCheck == null)
         {
-            throw new NotFoundException();
+            var results = await _bulkCheckGateway
+                .GetBulkCheckResults<List<CheckEligibilityItem>>(bulkCheckId.ToString());
         }
     }
 }
