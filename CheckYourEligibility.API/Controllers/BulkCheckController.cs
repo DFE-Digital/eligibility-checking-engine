@@ -460,6 +460,24 @@ public class BulkCheckController : BaseController
     }
 
     /// <summary>
+    /// Gets a summary of the specified bulk check, including outcome totals grouped by
+    /// outcome and eligibility tier.
+    /// </summary>
+    /// <param name="bulkCheckId">The unique identifier of the bulk check.</param>
+    /// <returns>
+    /// A summary containing bulk check metadata and aggregated outcome counts.
+    /// </returns>
+    [HttpGet("{bulkCheckId:guid}/summary")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireFreeSchoolMealsAdminPortalSource)]
+    public async Task<IActionResult> GetBulkCheckSummary(Guid bulkCheckId)
+    {
+        // use case call will go here next
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
     ///     Soft deletes bulk check given a group Id
     /// </summary>
     /// <param name="guid"></param>
