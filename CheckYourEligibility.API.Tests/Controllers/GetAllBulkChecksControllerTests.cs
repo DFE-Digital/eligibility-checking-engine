@@ -18,6 +18,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
         private Mock<IGetAllBulkChecksUseCase> _mockUseCase = null!;
         private BulkCheckController _controller = null!;
         private Mock<ILogger<BulkCheckController>> _mockLogger = null!;
+        private readonly Mock<IGetBulkCheckSummaryUseCase> _mockBulkCheckSummaryUseCase = new();
 
         [SetUp]
         public void Setup()
@@ -36,12 +37,13 @@ namespace CheckYourEligibility.API.Tests.Controllers
             var mockAudit = new Mock<IAudit>();
 
             _controller = new BulkCheckController(
-                    _mockLogger.Object,
+                _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
-                    null!, null!, null!, null!, null!,
-                    _mockUseCase.Object
-                );
+                null!, null!, null!, null!, null!,
+                _mockUseCase.Object,
+                _mockBulkCheckSummaryUseCase.Object
+            );
         }
 
         [Test]
