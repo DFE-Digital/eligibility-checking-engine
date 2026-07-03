@@ -405,6 +405,10 @@ public class BulkCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 
     /// <summary>
@@ -449,7 +453,6 @@ public class BulkCheckController : BaseController
             return NotFound(new ErrorResponse
             { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
-
         catch (FluentValidation.ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
