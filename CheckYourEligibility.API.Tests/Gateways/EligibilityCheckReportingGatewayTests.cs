@@ -82,7 +82,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
+        await _sut.EligibilityCheckReports(report.EligibilityCheckReportId, CheckEligibilityType.FreeSchoolMeals,null, CancellationToken.None);
 
         // Assert
         var updatedReport = await _fakeInMemoryDb.EligibilityCheckReports.SingleAsync();
@@ -130,7 +130,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var query = _sut.GetCheckQuery(report);
+        var query = _sut.GetCheckQuery(report, source);
 
         var results = await query
             .Select(e => new
@@ -182,7 +182,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         // Act
         await _sut.EligibilityCheckReports(
             report.EligibilityCheckReportId,
-            CheckEligibilityType.FreeSchoolMeals,
+            CheckEligibilityType.FreeSchoolMeals, null,
             CancellationToken.None);
 
         // Assert
@@ -197,7 +197,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     public async Task EligibilityCheckReports_ReportNotFound_Throws()
     {
         Func<Task> act = async () =>
-            await _sut.EligibilityCheckReports(Guid.NewGuid(), CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
+            await _sut.EligibilityCheckReports(Guid.NewGuid(), CheckEligibilityType.FreeSchoolMeals,null, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -209,7 +209,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         var emptyReportId = Guid.Empty;
 
         // Act
-        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CheckEligibilityType.FreeSchoolMeals, CancellationToken.None);
+        Func<Task> act = async () => await _sut.EligibilityCheckReports(emptyReportId, CheckEligibilityType.FreeSchoolMeals,null, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
