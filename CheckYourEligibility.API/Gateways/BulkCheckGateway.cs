@@ -108,7 +108,7 @@ public class BulkCheckGateway : IBulkCheck
     /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user (0 means admin access to all)</param>
     /// <param name="includeLast7DaysOnly">If true, only returns bulk checks from the last 7 days. If false, returns all non-deleted bulk checks.</param>
     /// <returns>Collection of bulk checks for the requested local authority (if user has permission)</returns>
-    public async Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, bool includeLast7DaysOnly = true)
+    public async Task<IEnumerable<BulkCheck>?> GetBulkStatuses(string localAuthorityId, IList<int> allowedLocalAuthorityIds, string source, bool includeLast7DaysOnly = true)
     {
         // Parse the requested local authority ID
         if (!int.TryParse(localAuthorityId, out var requestedLAId))
@@ -150,6 +150,22 @@ public class BulkCheckGateway : IBulkCheck
             {
                 // User has access to the specific requested local authority
                 query = query.Where(x => x.LocalAuthorityID == requestedLAId);
+
+                // Filter By Source based on the first check in each BulkCheck
+                // This ensures that we only return bulk checks that match the requested User's source
+                //  already filtered by local authority above
+                //  if there are no checks yet for a BulkCheck, (ie.. still being inserted) we allow it to be returned if it has a filename
+                // Note: Temp fix until user management is implemented 
+                query = query.Where(bc =>
+                !_db.CheckEligibilities.Any(ec => ec.BulkCheckID == bc.BulkCheckID)
+                    ? !string.IsNullOrEmpty(bc.Filename)
+                    : _db.CheckEligibilities
+                        .Where(ec => ec.BulkCheckID == bc.BulkCheckID)
+                        .Select(ec => ec.Source)
+                        .FirstOrDefault() == source
+                );
+
+
             }
             else
             {
@@ -167,23 +183,25 @@ public class BulkCheckGateway : IBulkCheck
         if (bulkChecks.Count == 0)
             return bulkChecks;
 
+        // Note: Filtering mostly done on front end, to be improved in future
+
         // Single aggregate query at the database level: count total and queued checks per BulkCheck.
         // This replaces the previous approach of loading all individual EligibilityCheck rows.
         // We count ALL rows (including soft-deleted) so we can distinguish:
         //   - no rows at all   → just submitted, treat as InProgress
         //   - rows but all deleted → Deleted
-        var bulkCheckIds = bulkChecks.Select(bc => bc.BulkCheckID).ToList();
-        var statusCounts = await _db.CheckEligibilities
-            .Where(x => bulkCheckIds.Contains(x.BulkCheckID!))
-            .GroupBy(x => x.BulkCheckID)
-            .Select(g => new
-            {
-                BulkCheckID = g.Key,
-                Total  = g.Count(x => !x.IsDeleted),
-                Queued = g.Count(x => !x.IsDeleted && x.Status == CheckEligibilityStatus.queuedForProcessing),
-                AnyRows = g.Count()
-            })
-            .ToDictionaryAsync(x => x.BulkCheckID!);
+        // var bulkCheckIds = bulkChecks.Select(bc => bc.BulkCheckID).ToList();
+        // var statusCounts = await _db.CheckEligibilities
+        //     .Where(x => bulkCheckIds.Contains(x.BulkCheckID!))
+        //     .GroupBy(x => x.BulkCheckID)
+        //     .Select(g => new
+        //     {
+        //         BulkCheckID = g.Key,
+        //         Total  = g.Count(x => !x.IsDeleted),
+        //         Queued = g.Count(x => !x.IsDeleted && x.Status == CheckEligibilityStatus.queuedForProcessing),
+        //         AnyRows = g.Count()
+        //     })
+        //     .ToDictionaryAsync(x => x.BulkCheckID!);
 
         return bulkChecks;
     }
@@ -198,14 +216,41 @@ public class BulkCheckGateway : IBulkCheck
 
     public async Task<IEnumerable<BulkCheck>?> GetBulkChecksByOrganisation(
     string organisationType,
+    string source,
     int organisationId)
     {
-        return await _db.BulkChecks
-            .Where(x =>
-                x.OrganisationType == organisationType &&
-                x.OrganisationID == organisationId &&
-                x.SubmittedDate >= DateTime.UtcNow.AddDays(-7)) // default last 7 days until future pagination
-            .OrderByDescending(x => x.SubmittedDate)
-            .ToListAsync();
+        try
+        {
+            var bulkChecks = _db.BulkChecks
+                .Where(bc =>
+                    bc.OrganisationType == organisationType &&
+                    bc.OrganisationID == organisationId &&
+                    bc.SubmittedDate >= DateTime.UtcNow.AddDays(-7));
+            
+            // Filter By Source based on the first check in each BulkCheck
+            // This ensures that we only return bulk checks that match the requested User's source
+            bulkChecks = bulkChecks.Where(bc =>
+                !_db.CheckEligibilities.Any(ec => ec.BulkCheckID == bc.BulkCheckID)
+                    ? !string.IsNullOrEmpty(bc.Filename)
+                    : _db.CheckEligibilities
+                        .Where(ec => ec.BulkCheckID == bc.BulkCheckID)
+                        .Select(ec => ec.Source)
+                        .FirstOrDefault() == source
+                );
+
+
+            return await bulkChecks
+                .OrderByDescending(bc => bc.SubmittedDate)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving bulk checks for OrganisationId {OrganisationId}",
+                organisationId);
+
+            throw;
+        }
     }
 }

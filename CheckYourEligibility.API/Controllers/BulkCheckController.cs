@@ -330,6 +330,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            var meta = User.CalculateMetaData();
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
@@ -341,7 +342,7 @@ public class BulkCheckController : BaseController
 
             var localAuthority = organisationId; // HttpContext.User.GetLocalAuthorityId("local_authority");
 
-            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority, localAuthorityIds);
+            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority, localAuthorityIds, meta.Source);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
@@ -404,6 +405,10 @@ public class BulkCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 
     /// <summary>
@@ -448,7 +453,6 @@ public class BulkCheckController : BaseController
             return NotFound(new ErrorResponse
             { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
-
         catch (FluentValidation.ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });

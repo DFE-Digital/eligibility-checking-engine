@@ -50,19 +50,19 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 
         if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.multi_academy_trust)
         {
-            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0);
+            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0, meta.Source);
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.establishment)
         {
-            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0);
+            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0, meta.Source);
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.local_authority)
         {
-            response = await GetBulkChecksForLocalAuthority(meta.OrganisationID ?? 0);
+            response = await GetBulkChecksForLocalAuthority(meta.OrganisationID ?? 0, meta.Source);
         }
         else if (meta.OrganisationID == 0 && meta.OrganisationType == OrganisationType.local_authority)
         {
-            response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds);
+            response = await GetBulkChecksForLocalAuthorities(allowedLocalAuthorityIds, meta.Source);
         }
         else if (allowedLocalAuthorityIds.Contains(0))
         {
@@ -103,10 +103,10 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         // We can use a dummy local authority ID since admin permissions (0 in allowedLocalAuthorityIds) 
         // will override the filtering in the gateway
         // Pass false to get all bulk checks, not just from last 7 days
-        return await _bulkCheckGateway.GetBulkStatuses("0", new List<int> { 0 }, includeLast7DaysOnly: false);
+        return await _bulkCheckGateway.GetBulkStatuses("0", new List<int> { 0 }, null, includeLast7DaysOnly: false);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthorities(IList<int> allowedLocalAuthorityIds)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthorities(IList<int> allowedLocalAuthorityIds, string source)
     {
         var allBulkChecks = new List<BulkCheck>();
 
@@ -114,7 +114,7 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         // Pass true to get all bulk checks from last 7 days
         foreach (var localAuthorityId in allowedLocalAuthorityIds)
         {
-            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, includeLast7DaysOnly: true);
+            var bulkChecks = await _bulkCheckGateway.GetBulkStatuses(localAuthorityId.ToString(), allowedLocalAuthorityIds, source, includeLast7DaysOnly: true);
             if (bulkChecks != null)
             {
                 allBulkChecks.AddRange(bulkChecks);
@@ -125,30 +125,31 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         return allBulkChecks.GroupBy(bc => bc.BulkCheckID).Select(g => g.First());
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthority(int localAuthorityId)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForLocalAuthority(int localAuthorityId, string source)
     {
-        return await GetBulkChecksForLocalAuthorities([localAuthorityId]);
+        return await GetBulkChecksForLocalAuthorities([localAuthorityId], source);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId, string source)
     {
-        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, source, establishmentId);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId, string source)
     {
         var establishmentIds = await _multiAcademyTrustGateway.GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
-        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, multiAcademyTrustId);
+        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, source, multiAcademyTrustId);
         var establishmentBulkChecks = new List<BulkCheck>();
 
         foreach (var establishmentId in establishmentIds)
         {
-            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, source, establishmentId);
             if (checks != null)
             {
                 establishmentBulkChecks.AddRange(checks);
             }
         }
+
         return (matBulkChecks ?? Enumerable.Empty<BulkCheck>())
             .Concat(establishmentBulkChecks)
             .GroupBy(x => x.BulkCheckID)
