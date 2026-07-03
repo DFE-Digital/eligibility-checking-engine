@@ -63,7 +63,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     /// <exception cref="InvalidOperationException"></exception>
     public async Task EligibilityCheckReports(
     Guid reportId,
-    CheckEligibilityType eligiblityCheckType,
+    CheckEligibilityType eligiblityCheckType,string? source,
     CancellationToken cancellationToken = default)
     {
         if (reportId == Guid.Empty)
@@ -90,7 +90,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         {
             while (true)
             {
-                var query = GetCheckQuery(report);
+                var query = GetCheckQuery(report, source);
 
                 // only apply filter after first batch
                 if (lastProcessedCheckId != null)
@@ -267,7 +267,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     );
 
     // public to allow testing
-    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request)
+    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request, string source )
     {
         return request.CheckType switch
         {
@@ -277,24 +277,26 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                         b.LocalAuthorityID == request.LocalAuthorityID &&
                         b.SubmittedDate >= request.StartDate &&
                         b.SubmittedDate <= request.EndDate)
-                    .SelectMany(b => b.EligibilityChecks!)
+                    .SelectMany(b => b.EligibilityChecks!).Where(c => c.Source == source)
                     .AsNoTracking(),
 
             CheckType.IndividualChecks =>
                 _db.CheckEligibilities
                     .Where(c =>
-                        c.BulkCheck == null &&
-                        c.OrganisationID == request.LocalAuthorityID &&
-                        c.Created >= request.StartDate &&
-                        c.Created <= request.EndDate)
+                       c.Source == source &&
+                       c.Created >= request.StartDate &&
+                       c.Created <= request.EndDate &&
+                       c.BulkCheckID == null &&
+                       c.OrganisationID == request.LocalAuthorityID)
                     .AsNoTracking(),
 
             CheckType.AllChecks =>
                 _db.CheckEligibilities
                     .Where(c =>
-                        c.OrganisationID == request.LocalAuthorityID &&
-                        c.Created >= request.StartDate &&
-                        c.Created <= request.EndDate)
+                       c.Source  == source &&
+                       c.Created >= request.StartDate &&
+                       c.Created <= request.EndDate &&
+                       c.OrganisationID == request.LocalAuthorityID)
                     .AsNoTracking(),
 
             _ => throw new ArgumentOutOfRangeException(nameof(request.CheckType))

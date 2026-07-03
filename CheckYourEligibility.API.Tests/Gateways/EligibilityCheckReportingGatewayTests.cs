@@ -89,8 +89,8 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         updatedReport.NumberOfResults.Should().Be(totalChecks);
     }
 
-    [Test]
-    public async Task EligibilityCheckReports_Should_Classify_Bulk_And_Single_Checks()
+    [TestCase("free-school-meals-admin")]
+    public async Task EligibilityCheckReports_Should_Classify_Bulk_And_Single_Checks(string source)
     {
         // Arrange
         var now = DateTime.UtcNow;
@@ -115,13 +115,16 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
                 EligibilityCheckID = "BULK",
                 OrganisationID = 948,
                 Created = now,
-                BulkCheck = bulkCheck
+                BulkCheck = bulkCheck,
+                Source = source,
             },
             new EligibilityCheck
             {
                 EligibilityCheckID = "SINGLE",
                 OrganisationID = 948,
-                Created = now
+                Created = now,
+                Source = source,
+                
             });
 
         await _fakeInMemoryDb.SaveChangesAsync();
