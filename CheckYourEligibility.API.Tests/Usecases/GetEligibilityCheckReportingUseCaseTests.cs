@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -113,6 +114,15 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             EndDate = DateTime.UtcNow.AddDays(-1)
         };
 
+        var metaData = new CheckMetaData {
+
+            OrganisationID = 894,
+            OrganisationType = "local-authority",
+            Source = "free-school-meals-admin",
+            UserName = "test@edication.gov.uk"
+            
+        };
+
         var reportId = Guid.NewGuid();
 
         _mockEligibilityCheckReportingGateway
@@ -128,7 +138,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
         .Returns(Task.CompletedTask);
 
         // Act
-        await _sut.Execute(model, null);
+        await _sut.Execute(model, metaData);
 
         // Give the background Task.Run time to execute
         await Task.Delay(50);
