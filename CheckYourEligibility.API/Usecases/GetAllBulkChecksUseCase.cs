@@ -50,11 +50,11 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
 
         if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.multi_academy_trust)
         {
-            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0);
+            response = await GetBulkChecksForMultiAcademyTrust(meta.OrganisationID ?? 0, meta.Source);
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.establishment)
         {
-            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0);
+            response = await GetBulkChecksForEstablishment(meta.OrganisationID ?? 0, meta.Source);
         }
         else if (meta.OrganisationID != 0 && meta.OrganisationType == OrganisationType.local_authority)
         {
@@ -130,25 +130,26 @@ public class GetAllBulkChecksUseCase : IGetAllBulkChecksUseCase
         return await GetBulkChecksForLocalAuthorities([localAuthorityId], source);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForEstablishment(int establishmentId, string source)
     {
-        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+        return await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, source, establishmentId);
     }
 
-    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId)
+    private async Task<IEnumerable<BulkCheck>?> GetBulkChecksForMultiAcademyTrust(int multiAcademyTrustId, string source)
     {
         var establishmentIds = await _multiAcademyTrustGateway.GetEstablishmentIdsForMultiAcademyTrust(multiAcademyTrustId);
-        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, multiAcademyTrustId);
+        var matBulkChecks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.multi_academy_trust, source, multiAcademyTrustId);
         var establishmentBulkChecks = new List<BulkCheck>();
 
         foreach (var establishmentId in establishmentIds)
         {
-            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, establishmentId);
+            var checks = await _bulkCheckGateway.GetBulkChecksByOrganisation(OrganisationType.establishment, source, establishmentId);
             if (checks != null)
             {
                 establishmentBulkChecks.AddRange(checks);
             }
         }
+
         return (matBulkChecks ?? Enumerable.Empty<BulkCheck>())
             .Concat(establishmentBulkChecks)
             .GroupBy(x => x.BulkCheckID)

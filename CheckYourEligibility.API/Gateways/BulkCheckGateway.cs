@@ -216,14 +216,41 @@ public class BulkCheckGateway : IBulkCheck
 
     public async Task<IEnumerable<BulkCheck>?> GetBulkChecksByOrganisation(
     string organisationType,
+    string source,
     int organisationId)
     {
-        return await _db.BulkChecks
-            .Where(x =>
-                x.OrganisationType == organisationType &&
-                x.OrganisationID == organisationId &&
-                x.SubmittedDate >= DateTime.UtcNow.AddDays(-7)) // default last 7 days until future pagination
-            .OrderByDescending(x => x.SubmittedDate)
-            .ToListAsync();
+        try
+        {
+            var bulkChecks = _db.BulkChecks
+                .Where(bc =>
+                    bc.OrganisationType == organisationType &&
+                    bc.OrganisationID == organisationId &&
+                    bc.SubmittedDate >= DateTime.UtcNow.AddDays(-7));
+            
+            // Filter By Source based on the first check in each BulkCheck
+            // This ensures that we only return bulk checks that match the requested User's source
+            bulkChecks = bulkChecks.Where(bc =>
+                !_db.CheckEligibilities.Any(ec => ec.BulkCheckID == bc.BulkCheckID)
+                    ? !string.IsNullOrEmpty(bc.Filename)
+                    : _db.CheckEligibilities
+                        .Where(ec => ec.BulkCheckID == bc.BulkCheckID)
+                        .Select(ec => ec.Source)
+                        .FirstOrDefault() == source
+                );
+
+
+            return await bulkChecks
+                .OrderByDescending(bc => bc.SubmittedDate)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving bulk checks for OrganisationId {OrganisationId}",
+                organisationId);
+
+            throw;
+        }
     }
 }
