@@ -14,8 +14,9 @@ public interface ICreateOrUpdateUserUseCase
     ///     Execute the use case.
     /// </summary>
     /// <param name="model"></param>
+    /// <param name="meta"></param>
     /// <returns></returns>
-    Task<UserSaveItemResponse> Execute(UserCreateRequest model);
+    Task<UserSaveItemResponse> Execute(UserCreateRequest model, CheckMetaData meta);
 }
 
 public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
@@ -29,9 +30,9 @@ public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
         _auditGateway = auditGateway;
     }
 
-    public async Task<UserSaveItemResponse> Execute(UserCreateRequest model)
+    public async Task<UserSaveItemResponse> Execute(UserCreateRequest model, CheckMetaData meta)
     {
-        var response = await _userGateway.Create(model.Data);
+        var response = await _userGateway.Create(model.Data, meta);
 
 
         return new UserSaveItemResponse { Data = response };

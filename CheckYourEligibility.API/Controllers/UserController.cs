@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
@@ -37,11 +38,13 @@ public class UserController : BaseController
     [Authorize(Policy = PolicyNames.RequireUserScope)]
     public async Task<ActionResult> User([FromBody] UserCreateRequest model)
     {
+        CheckMetaData meta = HttpContext.User.CalculateMetaData();
+
         if (model == null || model.Data == null)
             return BadRequest(new ErrorResponse
                 { Errors = [new Error { Title = "Invalid request, data is required." }] });
 
-        var response = await _createOrUpdateUserUseCase.Execute(model);
+        var response = await _createOrUpdateUserUseCase.Execute(model, meta);
         return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
     }
 }

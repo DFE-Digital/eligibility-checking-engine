@@ -172,7 +172,8 @@ public class ApplicationGatewayTests : TestBase.TestBase
         {
             UserID = "test-user-id",
             Email = "test@example.com",
-            Reference = "test-reference"
+            Reference = "test-reference",
+            UserType = UserType.FreeSchoolMealsParent
         };
 
         await _dbContext.LocalAuthorities.AddAsync(localAuthority);

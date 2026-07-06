@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -24,16 +25,19 @@ public class UsersGateway : IUsers
     ///     due to limitations on in memory db
     /// </summary>
     /// <param name="data"></param>
+    /// <param name="meta"></param>
     /// <returns></returns>
-    public async Task<string> Create(UserData data)
+    public async Task<string> Create(UserData data, CheckMetaData meta)
     {
         var existingUser = _db.Users.FirstOrDefault(x =>
             x.Email.ToLower() == data.Email.ToLower() && x.Reference.ToLower() == data.Reference.ToLower());
         if (existingUser != null) return existingUser.UserID;
 
-
         var item = _mapper.Map<User>(data);
+
         item.UserID = Guid.NewGuid().ToString();
+        item.OrganisationType = Enum.Parse<OrganisationType>(meta.OrganisationType, true); 
+
 
         await _db.Users.AddAsync(item);
         await _db.SaveChangesAsync();

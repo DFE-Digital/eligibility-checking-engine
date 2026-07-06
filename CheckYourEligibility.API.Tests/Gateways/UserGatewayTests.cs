@@ -57,9 +57,11 @@ public class UserGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserData>();
-        var response = _sut.Create(request);
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";
+        var response = _sut.Create(request, meta);
         // Act
-        response = _sut.Create(request);
+        response = _sut.Create(request, meta);
 
         // Assert
         response.Result.Should().BeOfType<String>();
@@ -70,9 +72,11 @@ public class UserGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserData>();
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";
 
         // Act
-        var response = _sut.Create(request);
+        var response = _sut.Create(request, meta);
 
         // Assert
         response.Result.Should().BeOfType<String>();
@@ -88,7 +92,9 @@ public class UserGatewayTests : TestBase.TestBase
         var request = _fixture.Create<UserData>();
 
         // Act
-        Func<Task> act = async () => await svc.Create(request);
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";    
+        Func<Task> act = async () => await svc.Create(request, meta);
 
         // Assert
         act.Should().ThrowExactlyAsync<Exception>();
@@ -107,10 +113,12 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>())).ThrowsAsync(ex);
         var existingUser = _fixture.Create<User>();
 
-        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference };
+        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference,  };
 
         // Act
-        Func<Task> act = async () => await svc.Create(request);
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";
+        Func<Task> act = async () => await svc.Create(request, meta);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();

@@ -41,14 +41,16 @@ public class UserControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserCreateRequest>();
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";
         var response = _fixture.Create<UserSaveItemResponse>();
-        _mockCreateOrUpdateUserUseCase.Setup(cs => cs.Execute(request)).ReturnsAsync(response);
+        _mockCreateOrUpdateUserUseCase.Setup(cs => cs.Execute(request, meta)).ReturnsAsync(response);
 
         var expectedResult = new ObjectResult(response)
             { StatusCode = StatusCodes.Status201Created };
 
         // Act
-        var result = await _sut.User(request);
+        var result = await _sut.User(request, meta);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);
@@ -59,6 +61,8 @@ public class UserControllerTests : TestBase.TestBase
     {
         // Arrange
         var request = new UserCreateRequest();
+        var meta = _fixture.Create<CheckMetaData>();
+        meta.OrganisationType = "FreeSchoolMealsParent";
 
         // Act
         var result = await _sut.User(request);
