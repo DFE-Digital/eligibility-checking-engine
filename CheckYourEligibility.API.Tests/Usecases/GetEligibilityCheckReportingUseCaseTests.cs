@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
     public void Execute_WhenModelIsNull_ThrowsValidationException()
     {
         var ex = Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(
-            async () => await _sut.Execute(null));
+            async () => await _sut.Execute(null,null));
 
         Assert.That(ex.Message, Is.EqualTo("Invalid request, model is required"));
     }
@@ -51,7 +52,7 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
 
         // Act
         var ex = Assert.ThrowsAsync<FluentValidation.ValidationException>(
-            async () => await _sut.Execute(invalidModel));
+            async () => await _sut.Execute(invalidModel, null));
 
         // Assert
         Assert.That(ex, Is.Not.Null);
@@ -85,12 +86,12 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             .ReturnsAsync(createdReport);
 
         _mockEligibilityCheckReportingGateway
-            .Setup(g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals, It.IsAny<CancellationToken>()))
+            .Setup(g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals,It.IsAny<string>() ,It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
 
         // Act
-        var result = await _sut.Execute(model);
+        var result = await _sut.Execute(model, null);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -113,6 +114,15 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             EndDate = DateTime.UtcNow.AddDays(-1)
         };
 
+        var metaData = new CheckMetaData {
+
+            OrganisationID = 894,
+            OrganisationType = "local-authority",
+            Source = "free-school-meals-admin",
+            UserName = "test@edication.gov.uk"
+            
+        };
+
         var reportId = Guid.NewGuid();
 
         _mockEligibilityCheckReportingGateway
@@ -124,18 +134,18 @@ public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
             });
 
         _mockEligibilityCheckReportingGateway
-        .Setup(g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals, It.IsAny<CancellationToken>()))
+        .Setup(g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals,It.IsAny<string>(), It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
         // Act
-        await _sut.Execute(model);
+        await _sut.Execute(model, metaData);
 
         // Give the background Task.Run time to execute
         await Task.Delay(50);
 
         // Assert
         _mockEligibilityCheckReportingGateway.Verify(
-            g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals, It.IsAny<CancellationToken>()),
+            g => g.EligibilityCheckReports(reportId, CheckEligibilityType.FreeSchoolMeals, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -167,7 +168,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
 
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(It.Is<EligibilityCheckReportRequest>(r => r.LocalAuthorityID == localAuthorityId))).ReturnsAsync(reportResponse);
+        _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(It.Is<EligibilityCheckReportRequest>(r => r.LocalAuthorityID == localAuthorityId),It.IsAny<CheckMetaData>())).ReturnsAsync(reportResponse);
 
         // Act
         var response = await _sut.EligibilityCheckReportRequest(reportRequest);
@@ -210,7 +211,7 @@ public class EligibilityCheckReportingControllerTests : TestBase.TestBase
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
         _mockEligibilityCheckReportingUseCase
-            .Setup(u => u.Execute(It.IsAny<EligibilityCheckReportRequest>()))
+            .Setup(u => u.Execute(It.IsAny<EligibilityCheckReportRequest>(), It.IsAny<CheckMetaData>()))
             .ThrowsAsync(new FluentValidation.ValidationException("Validation failed"));
 
         // Act
