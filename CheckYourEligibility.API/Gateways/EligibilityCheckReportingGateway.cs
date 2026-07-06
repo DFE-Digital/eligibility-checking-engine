@@ -98,14 +98,17 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                     query = query.Where(c => string.Compare(c.EligibilityCheckID, lastProcessedCheckId) > 0);
                 }
 
+                // filter by check type to match index on EligibilityCheck table
+                // order by check id to ensure we get the next batch of checks
+                // take the next batch of checks
+                // select the check id and whether it is a bulk check
                 var checks = await query
-                        .OrderBy(e => e.EligibilityCheckID)
-                        .Take(BatchSize)
-                        .Where(c => c.Type == eligiblityCheckType)
-                        .Select(e => new CheckResult(
-                            e.EligibilityCheckID,
-                            e.BulkCheckID != null))
-                        .ToListAsync(cancellationToken);
+                    .Where(c => c.Type == eligiblityCheckType)
+                    .OrderBy(e => e.EligibilityCheckID)
+                    .Take(BatchSize)
+                    .Select(e => new CheckResult(
+                        e.EligibilityCheckID,
+                        e.BulkCheckID != null)).ToListAsync(cancellationToken);
 
                 // if no more checks, break the loop
                 if (checks.Count == 0)
@@ -277,7 +280,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                         b.LocalAuthorityID == request.LocalAuthorityID &&
                         b.SubmittedDate >= request.StartDate &&
                         b.SubmittedDate <= request.EndDate)
-                    .SelectMany(b => b.EligibilityChecks!)
+                    .SelectMany(b => b.EligibilityChecks!)                    
                     .AsNoTracking(),
 
             CheckType.IndividualChecks =>
