@@ -44,7 +44,7 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
             var gateway = scope.ServiceProvider.GetRequiredService<IEligibilityCheckReporting>();
             try
             {
-                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, model.EligibilityCheckType,null, CancellationToken.None);
+                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, model.EligibilityCheckType,meta.Source, CancellationToken.None);
             }
             catch (Exception ex)
             {
@@ -61,7 +61,6 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
                 Status = reportRequest.Status.ToString()
             }
         };
-
         
     }
 }
