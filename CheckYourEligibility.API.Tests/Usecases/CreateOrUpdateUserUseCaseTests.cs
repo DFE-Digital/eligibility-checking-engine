@@ -36,16 +36,14 @@ public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserCreateRequest>();
-        var meta = _fixture.Create<CheckMetaData>();
-        meta.OrganisationType = "FreeSchoolMealsParent";
         var responseId = _fixture.Create<string>();
 
-        _mockUserGateway.Setup(us => us.Create(request.Data, meta)).ReturnsAsync(responseId);
+        _mockUserGateway.Setup(us => us.Create(request.Data)).ReturnsAsync(responseId);
 
         var expectedResponse = new UserSaveItemResponse { Data = responseId };
 
         // Act
-        var result = await _sut.Execute(request, meta);
+        var result = await _sut.Execute(request);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResponse);

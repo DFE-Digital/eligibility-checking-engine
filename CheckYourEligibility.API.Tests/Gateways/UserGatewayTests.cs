@@ -57,11 +57,9 @@ public class UserGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserData>();
-        var meta = _fixture.Create<CheckMetaData>();
-        meta.OrganisationType = "FreeSchoolMealsParent";
-        var response = _sut.Create(request, meta);
+        var response = _sut.Create(request);
         // Act
-        response = _sut.Create(request, meta);
+        response = _sut.Create(request);
 
         // Assert
         response.Result.Should().BeOfType<String>();
@@ -72,11 +70,9 @@ public class UserGatewayTests : TestBase.TestBase
     {
         // Arrange
         var request = _fixture.Create<UserData>();
-        var meta = _fixture.Create<CheckMetaData>();
-        meta.OrganisationType = "FreeSchoolMealsParent";
 
         // Act
-        var response = _sut.Create(request, meta);
+        var response = _sut.Create(request);
 
         // Assert
         response.Result.Should().BeOfType<String>();
@@ -91,10 +87,8 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.Add(It.IsAny<User>())).Throws(new Exception());
         var request = _fixture.Create<UserData>();
 
-        // Act
-        var meta = _fixture.Create<CheckMetaData>();
-        meta.OrganisationType = "FreeSchoolMealsParent";    
-        Func<Task> act = async () => await svc.Create(request, meta);
+        // Act 
+        Func<Task> act = async () => await svc.Create(request);
 
         // Assert
         act.Should().ThrowExactlyAsync<Exception>();
@@ -116,9 +110,7 @@ public class UserGatewayTests : TestBase.TestBase
         var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference,  };
 
         // Act
-        var meta = _fixture.Create<CheckMetaData>();
-        meta.OrganisationType = "FreeSchoolMealsParent";
-        Func<Task> act = async () => await svc.Create(request, meta);
+        Func<Task> act = async () => await svc.Create(request);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();

@@ -38,13 +38,11 @@ public class UserController : BaseController
     [Authorize(Policy = PolicyNames.RequireUserScope)]
     public async Task<ActionResult> User([FromBody] UserCreateRequest model)
     {
-        CheckMetaData meta = HttpContext.User.CalculateMetaData();
-
         if (model == null || model.Data == null)
             return BadRequest(new ErrorResponse
                 { Errors = [new Error { Title = "Invalid request, data is required." }] });
 
-        var response = await _createOrUpdateUserUseCase.Execute(model, meta);
+        var response = await _createOrUpdateUserUseCase.Execute(model);
         return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
     }
 }

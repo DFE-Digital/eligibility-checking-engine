@@ -6,5 +6,5 @@ namespace CheckYourEligibility.API.Gateways.Interfaces;
 
 public interface IUsers
 {
-    Task<string> Create(UserData data, CheckMetaData meta);
+    Task<string> Create(UserData data);
 }
