@@ -269,6 +269,18 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<Establishment>()
             .HasOne(e => e.LocalAuthority);
 
+        modelBuilder.Entity<Establishment>()
+            .Property(e => e.EstablishmentName)
+            .HasMaxLength(450);
+
+        modelBuilder.Entity<Establishment>()
+            .HasIndex(e => e.EstablishmentName,
+                "idx_Establishment_EstablishmentName");
+
+        modelBuilder.Entity<Establishment>()
+            .HasIndex(e => new { e.LocalAuthorityID, e.EstablishmentName },
+                "idx_Establishment_LocalAuthorityID_EstablishmentName");
+
         // MultiAcademyTrustSchool to MultiAcademyTrust relationship
         modelBuilder.Entity<MultiAcademyTrustEstablishment>()
             .HasOne(s => s.MultiAcademyTrust)
