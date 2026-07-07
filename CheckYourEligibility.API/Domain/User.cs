@@ -11,12 +11,11 @@ public class User
     [Column(TypeName = "datetime2")]
     public DateTime? Created { get; init; } = DateTime.UtcNow;
 
-
     [Column(TypeName = "bit")]
     public bool? IsEnabled { get; set; } = true;
 
-
-    public UserType UserType { get; set; }
+    [Column(TypeName = "varchar(200)")]
+    public UserType? UserType { get; set; }
 
 
     [Column(TypeName = "datetime2")]
@@ -40,6 +39,8 @@ public class User
     [MaxLength(200)]
     public string? DisplayName { get; set; }
 
+
+    [Column(TypeName = "varchar(200)")]
     public OrganisationType? OrganisationType { get; set; }
 
 
