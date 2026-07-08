@@ -48,12 +48,21 @@ public class StorageQueueGateway : IStorageQueue
 
     public async Task UpdateMessageAsync(QueueMessage message, string queueName, int visibilityTimeout)
     {
-        QueueClient queueClient = GetQueueClient(queueName);
-        await queueClient.UpdateMessageAsync(
-                           message.MessageId,
-                           message.PopReceipt,
-                           message.Body,
-                           TimeSpan.FromSeconds(visibilityTimeout));
+        try
+        {
+            QueueClient queueClient = GetQueueClient(queueName);
+            await queueClient.UpdateMessageAsync(
+                               message.MessageId,
+                               message.PopReceipt,
+                               message.Body,
+                               TimeSpan.FromSeconds(visibilityTimeout));
+        }
+
+        catch (Exception ex) {
+
+            throw;
+        }
+        
     }
 
 
