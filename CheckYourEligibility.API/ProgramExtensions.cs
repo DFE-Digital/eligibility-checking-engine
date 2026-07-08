@@ -51,7 +51,6 @@ public static class ProgramExtensions
         services.AddTransient<IBulkCheck, BulkCheckGateway>();
         services.AddTransient<ICheckingEngine, CheckingEngineGateway>();
         services.AddTransient<IStorageQueue, StorageQueueGateway>();
-        services.AddTransient<IStorageQueueMessage, StorageQueueMessageGateway>();
         services.AddTransient<IApplication, ApplicationGateway>();
         services.AddTransient<ILocalAuthority, LocalAuthorityGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();

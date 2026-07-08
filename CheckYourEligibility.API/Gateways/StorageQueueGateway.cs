@@ -2,7 +2,12 @@
 
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
+using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -49,6 +54,24 @@ public class StorageQueueGateway : IStorageQueue
                            message.PopReceipt,
                            message.Body,
                            TimeSpan.FromSeconds(visibilityTimeout));
+    }
+
+
+    [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
+    public async Task<string> SendMessage(EligibilityCheck item, string queueName)
+    {
+        var queueClient = GetQueueClient(queueName);
+        await queueClient.SendMessageAsync(
+            JsonConvert.SerializeObject(new QueueMessageCheck
+            {
+                Type = item.Type.ToString(),
+                Guid = item.EligibilityCheckID,
+                ProcessUrl = $"{CheckLinks.ProcessLink}{item.EligibilityCheckID}",
+                SetStatusUrl = $"{CheckLinks.GetLink}{item.EligibilityCheckID}/status"
+            }));
+
+
+        return queueClient.Name;
     }
 
     private QueueClient GetQueueClient(string queueName)

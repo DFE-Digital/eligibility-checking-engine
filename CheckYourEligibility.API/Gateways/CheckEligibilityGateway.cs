@@ -20,19 +20,19 @@ public class CheckEligibilityGateway : ICheckEligibility
     private readonly IEligibilityCheckContext _db;
 
     private readonly IHash _hashGateway;
-    private readonly IStorageQueueMessage _storageQueueMessageGateway;
+    private readonly IStorageQueue _storageQueueGateway;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
     private string _groupId;
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
-        IConfiguration configuration, IHash hashGateway, IStorageQueueMessage storageQueueMessageGateway)
+        IConfiguration configuration, IHash hashGateway, IStorageQueue storageQueueGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
         _hashGateway = hashGateway;
-        _storageQueueMessageGateway = storageQueueMessageGateway;
+        _storageQueueGateway = storageQueueGateway;
         _configuration = configuration;
     }
 
@@ -88,11 +88,11 @@ public class CheckEligibilityGateway : ICheckEligibility
         var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
         if (queuedBulkItems.Any())
         {
-            var bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
-            var bulkQueueClient = _storageQueueMessageGateway.GetQueueClient(bulkQueueName);
+            string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+         
             foreach (var item in queuedBulkItems)
             {
-                await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
+                await _storageQueueGateway.SendMessage(item, bulkQueueName);
             }
         }
         else
@@ -114,8 +114,7 @@ public class CheckEligibilityGateway : ICheckEligibility
         if (item.Status == CheckEligibilityStatus.queuedForProcessing)
         {
             var singleQueueName = _configuration[$"Queue:Single:{item.Type}"];
-            var singleQueueClient = _storageQueueMessageGateway.GetQueueClient(singleQueueName);
-            await _storageQueueMessageGateway.SendMessage(item, singleQueueClient);
+            await _storageQueueGateway.SendMessage(item, singleQueueName);
         }
 
         return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status, Tier = item.Tier };
