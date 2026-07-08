@@ -52,6 +52,25 @@ public class CheckEligibilityGateway : ICheckEligibility
         try
         {
             _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+            // Now send queue messages for records that weren't resolved from the hash cache.
+            // Reuse a single QueueClient for all bulk messages — they share the same queue.
+            var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
+
+            if (queuedBulkItems.Any())
+            {
+                string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+
+                foreach (var item in queuedBulkItems)
+                {
+                    await _storageQueueGateway.SendMessage(item, bulkQueueName);
+                }
+            }
+            else
+            {
+                var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
+                bulkCheck.Status = BulkCheckStatus.Completed;
+                await _db.SaveChangesAsync();
+            }
         }
         catch (Exception e)
         {
@@ -83,24 +102,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
         }
 
-        // Now send queue messages for records that weren't resolved from the hash cache.
-        // Reuse a single QueueClient for all bulk messages — they share the same queue.
-        var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
-        if (queuedBulkItems.Any())
-        {
-            string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
-         
-            foreach (var item in queuedBulkItems)
-            {
-                await _storageQueueGateway.SendMessage(item, bulkQueueName);
-            }
-        }
-        else
-        {
-            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
-            bulkCheck.Status = BulkCheckStatus.Completed;
-            await _db.SaveChangesAsync();
-        }
+
     }
 
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
