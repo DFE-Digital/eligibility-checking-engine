@@ -30,6 +30,7 @@ public class BulkCheckController : BaseController
     private readonly IGetAllBulkChecksUseCase _getAllBulkChecksUseCase;
     private readonly ILogger<BulkCheckController> _logger;
     private readonly string _localAuthorityScopeName;
+    private readonly IGetBulkCheckSummaryUseCase _getBulkCheckSummaryUseCase;
     private readonly ICreateApplicationsFromBulkCheckUseCase _createApplicationsFromBulkCheckUseCase;
 
     public BulkCheckController(
@@ -42,6 +43,7 @@ public class BulkCheckController : BaseController
         IGetBulkUploadResultsUseCase getBulkUploadResultsUseCase,
         IDeleteBulkCheckUseCase deleteBulkUploadUseCase,
         IGetAllBulkChecksUseCase getAllBulkChecksUseCase,
+        IGetBulkCheckSummaryUseCase getBulkCheckSummaryUseCase,
         ICreateApplicationsFromBulkCheckUseCase createApplicationsFromBulkCheckUseCase
     )
         : base(audit)
@@ -56,6 +58,7 @@ public class BulkCheckController : BaseController
         _getBulkUploadResultsUseCase = getBulkUploadResultsUseCase;
         _deleteBulkUploadUseCase = deleteBulkUploadUseCase;
         _getAllBulkChecksUseCase = getAllBulkChecksUseCase;
+        _getBulkCheckSummaryUseCase = getBulkCheckSummaryUseCase;
         _createApplicationsFromBulkCheckUseCase = createApplicationsFromBulkCheckUseCase;
     }
 
@@ -333,6 +336,7 @@ public class BulkCheckController : BaseController
     {
         try
         {
+            var meta = User.CalculateMetaData();
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
@@ -344,7 +348,7 @@ public class BulkCheckController : BaseController
 
             var localAuthority = organisationId; // HttpContext.User.GetLocalAuthorityId("local_authority");
 
-            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority, localAuthorityIds);
+            var result = await _getBulkCheckStatusesUseCase.Execute(localAuthority, localAuthorityIds, meta.Source);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
@@ -407,6 +411,10 @@ public class BulkCheckController : BaseController
         {
             return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
     }
 
     /// <summary>
@@ -451,7 +459,58 @@ public class BulkCheckController : BaseController
             return NotFound(new ErrorResponse
             { Errors = [new Error { Title = guid, Status = StatusCodes.Status404NotFound }] });
         }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
 
+    /// <summary>
+    /// Gets a summary of the specified bulk check, including outcome totals grouped by
+    /// outcome and eligibility tier.
+    /// </summary>
+    /// <param name="bulkCheckId">The unique identifier of the bulk check.</param>
+    /// <returns>
+    /// A summary containing bulk check metadata and aggregated outcome counts.
+    /// </returns>
+    [HttpGet("/bulk-checks/{bulkCheckId:guid}/summary")]
+    [Authorize(Policy = PolicyNames.RequireBulkCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    [Authorize(Policy = PolicyNames.RequireFreeSchoolMealsAdminPortalSource)]
+    public async Task<ActionResult> GetBulkCheckSummary(Guid bulkCheckId)
+    {
+        try
+        {
+            var meta = User.CalculateMetaData();
+
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return Unauthorized(new ErrorResponse
+                {
+                    Errors = [new Error { Title = "Not authorised for local authority in scope" }]
+                });
+            }
+
+            var result = await _getBulkCheckSummaryUseCase.Execute(bulkCheckId, localAuthorityIds, meta);
+
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Not Found" }] });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
+            });
+        }
         catch (FluentValidation.ValidationException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });

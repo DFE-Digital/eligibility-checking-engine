@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260707083325_AddEstablishmentSearchIndexes")]
+    partial class AddEstablishmentSearchIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -636,44 +639,13 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("UserID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastLogin")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("OrganisationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OrganisationType")
-                        .HasMaxLength(50)
                         .HasColumnType("varchar(200)");
 
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("UserType")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(200)");
 
                     b.HasKey("UserID");
 
@@ -887,14 +859,9 @@ namespace CheckYourEligibility.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("UserID")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("EligibilityCheckReportId");
 
                     b.HasIndex("LocalAuthorityID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("EligibilityCheckReports");
                 });
@@ -1142,13 +1109,7 @@ namespace CheckYourEligibility.API.Migrations
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID");
 
-                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
-                        .WithMany("EligibilityCheckReports")
-                        .HasForeignKey("UserID");
-
                     b.Navigation("LocalAuthority");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EligibilityCheckReportItem", b =>
@@ -1205,11 +1166,6 @@ namespace CheckYourEligibility.API.Migrations
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
                 {
                     b.Navigation("MultiAcademyTrustEstablishments");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
-                {
-                    b.Navigation("EligibilityCheckReports");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>

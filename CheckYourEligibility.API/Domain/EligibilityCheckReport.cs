@@ -17,4 +17,8 @@ public class EligibilityCheckReport
     public ReportStatus? Status { get; set; } 
     public CheckType CheckType { get; set; }
     public bool IsDeleted { get; set; } = false;
+
+    // User
+    public string? UserID { get; set; }
+    public User? User { get; set; }
 }

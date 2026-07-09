@@ -371,7 +371,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
     {
 
-        if (organisationType == OrganisationType.local_authority && orgId is int LaId && LaId != 0)
+        if (organisationType == Domain.Constants.OrganisationType.local_authority && orgId is int LaId && LaId != 0)
         {
             int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type, dbContextFactory);
             // get policy for the LA          

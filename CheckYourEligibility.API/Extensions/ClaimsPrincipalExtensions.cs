@@ -19,7 +19,7 @@ public static class ClaimsPrincipalExtensions
     /// </summary>
     /// <param name="user"></param>
     /// <returns>source of check and username</returns>
-    private static (string?, string) GetCheckSourceAndUserNameFromClientId(this ClaimsPrincipal user)
+    internal static (string?, string) GetCheckSourceAndUserNameFromClientId(this ClaimsPrincipal user)
     {
 
         string userName = user.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;

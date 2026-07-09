@@ -55,10 +55,32 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
         catch (Exception e)
         {
-            // If bulk check retry logic fails completely, set bulk check to failed
-            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
-            bulkCheck.Status = BulkCheckStatus.Failed;
-            await _db.SaveChangesAsync();
+
+            _logger.LogError(e,
+                    "Bulk insert failed for BulkCheck {BulkCheckId}",
+                    groupId);
+
+            try
+            {
+
+                var bulkCheck = await _db.BulkChecks
+                    .FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+
+                if (bulkCheck != null)
+                {
+                    bulkCheck.Status = BulkCheckStatus.Failed;
+                    await _db.SaveChangesAsync();
+                }
+            }
+            catch (Exception statusUpdateEx)
+            {
+                _logger.LogError(statusUpdateEx,
+                    "Unable to mark BulkCheck {BulkCheckId} as Failed",
+                    groupId);
+            }
+
+            throw;
+
         }
 
         // Now send queue messages for records that weren't resolved from the hash cache.

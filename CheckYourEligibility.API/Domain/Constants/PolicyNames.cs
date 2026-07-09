@@ -19,4 +19,5 @@ public static class PolicyNames
     public const string RequireLaOrMatScope = "RequireLaOrMatScope";
     public const string RequireLaOrMatOrSchoolScope = "RequireLaOrMatOrSchoolScope";
     public const string RequireLaOrAdminScope = "RequireLaOrAdminScope";
+    public const string RequireFreeSchoolMealsAdminPortalSource = "RequireFreeSchoolMealsAdminPortalSource";
 }

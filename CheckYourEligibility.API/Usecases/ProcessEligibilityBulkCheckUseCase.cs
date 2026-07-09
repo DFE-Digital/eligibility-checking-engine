@@ -53,7 +53,6 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
         }
 
         var retrievedItemsFromQueue = await _storageQueueGateway.ProcessQueueAsync(queueName);
-        var sw = Stopwatch.StartNew();
         var st = Stopwatch.StartNew();
         int i = 1;
         if (retrievedItemsFromQueue.Count() > 0)
@@ -64,18 +63,19 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             {
                 using (var dbContext = _dbContextFactory.CreateDbContext())
                 {
-                    sw.Restart();
+                    var sw = Stopwatch.StartNew();
                     var checkData = JsonConvert.DeserializeObject<QueueMessageCheck>(Encoding.UTF8.GetString(item.Body));
+                    bool deleteQueueMessage = false;
                     try
                     {
                         await Task.Delay(3);
 
+                        _logger.LogInformation($"Item {i} - {checkData.Guid} - starting use case");
+
                         var response = await _processEligibilityCheckUseCase.Execute(checkData.Guid, dbContext);
 
-                        _logger.LogInformation(
-                          $"Task_No....{i}\n" +
-                          $"Check:{checkData.Guid}\n" +
-                          $"Time_Elapsed: {st.ElapsedMilliseconds:N0} ms\n");
+                        _logger.LogInformation($"Item {i} - {checkData.Guid} - use case completed in {sw.ElapsedMilliseconds}ms\r\nResponse: {JsonConvert.SerializeObject(response)}");
+
                         i++;
 
                         if ((CheckEligibilityStatus)Enum.Parse(typeof(CheckEligibilityStatus), response.Data.Status) == CheckEligibilityStatus.queuedForProcessing)
@@ -83,35 +83,33 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                             //If we've tried more than retry limit
                             if (item.DequeueCount >= _configuration.GetValue<int>($"Queue:Settings:{queueName}:Retries"))
                             {
-                                //Delete message and update status to error
+                                _logger.LogInformation($"Item {i} - {checkData.Guid} - exceeded retry limit. Marking as error and for deletion from queue");
+
+                                // Update check status to error
                                 await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                     new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, dbContext);
 
-                                await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                                // Mark for deletion from queue
+                                deleteQueueMessage = true;
+                            }
+                            else
+                            {
+                                _logger.LogInformation($"Item {i} - {checkData.Guid} - re-queued for processing");
                             }
                         }
                         else
                         {
-                            try
-                            {
+                            _logger.LogInformation($"Item {i} - {checkData.Guid} - processed successfully. Marking for deletion from queue");
 
-                                await _storageQueueGateway.DeleteMessageAsync(item, queueName);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Error deleting queue item");
-                            }
-
+                            // Mark for deletion from queue
+                            deleteQueueMessage = true;
                         }
-
                     }
                     catch (NotFoundException ex)
                     {
-                        //if check record is not found in the database
-                        // due to unexpected roll-back
-                        // delete the message from the queue.
-                        await _storageQueueGateway.DeleteMessageAsync(item, queueName);
-
+                        //if check record is not found in the database due to unexpected roll-back delete the message from the queue.
+                        _logger.LogInformation($"Item {i} - {checkData.Guid} - GUID not found in database. Deleting from queue.");
+                        deleteQueueMessage = true;
                     }
                     catch (Exception ex)
                     {
@@ -121,16 +119,38 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                         {
                             await _checkEligibilityGateway.UpdateEligibilityCheckStatus(checkData.Guid,
                                 new EligibilityCheckStatusData { Status = CheckEligibilityStatus.error }, dbContext);
-                            await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+
+                            // Mark for deletion from queue
+                            deleteQueueMessage = true;
                         }
                         else
                         {
                             // update message invisibility by 5 seocnds
-                            await _storageQueueGateway.UpdateMessageAsync(item, queueName, 5);
+                            try
+                            {
+                                await _storageQueueGateway.UpdateMessageAsync(item, queueName, 5);
+
+                            }
+                            catch (Exception queueUpdateException)
+                            {
+                                _logger.LogError(queueUpdateException, $"Item {i} - {checkData.Guid} - error updating queue item");
+                            }
                         }
                     }
 
-                    _logger.LogInformation($"Processing queue item in {sw.ElapsedMilliseconds} ms");
+                    if (deleteQueueMessage)
+                    {
+                        try
+                        {
+                            await _storageQueueGateway.DeleteMessageAsync(item, queueName);
+                        }
+                        catch (Exception queueDeleteException)
+                        {
+                            _logger.LogError(queueDeleteException, $"Item {i} - {checkData.Guid} - error deleting queue item");
+                        }
+                    }
+
+                    _logger.LogInformation($"Item {i} - {checkData.Guid} - processed in {sw.ElapsedMilliseconds}ms");
                 }
 
             });
@@ -145,14 +165,9 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             }
 
             st.Stop();
-
-            _logger.LogInformation(
-                $"Queue {queueName.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} processed successfully");
-
-
+            _logger.LogInformation($"Queue {queueName.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} processed successfully in {st.ElapsedMilliseconds}ms");
         }
         return new MessageResponse { Data = "Queue Processed." };
-
     }
 
 
@@ -167,26 +182,35 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
 
         // If bulkCheckId is null, it means this check isn't part of a bulk check, its single check, so we can skip the rest of the method
         if (bulkCheckId == null)
+        {
             return;
+        }
 
         // Check if there are any pending checks for the same bulk check ID
-        var hasPending = await _db.CheckEligibilities
-            .AnyAsync(x =>
+        _logger.LogInformation($"Checking for pending checks for bulk check ID: {bulkCheckId}");
+        var countPending = await _db.CheckEligibilities
+            .CountAsync(x =>
                 x.BulkCheckID == bulkCheckId &&
                 x.Status == CheckEligibilityStatus.queuedForProcessing);
 
+
         // If there are no queued checks, update the bulk check status to completed
         // as all checks have been processed
-        if (!hasPending)
+        if (countPending == 0)
         {
-            var bulkCheck = await _db.BulkChecks
-                .FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+            _logger.LogInformation($"No pending checks found for bulk check ID: {bulkCheckId}");
+            var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
 
             if (bulkCheck != null)
             {
+                _logger.LogInformation($"Updating bulk check status to Completed for ID: {bulkCheckId}");
                 bulkCheck.Status = BulkCheckStatus.Completed;
                 await _db.SaveChangesAsync();
             }
+        }
+        else
+        {
+            _logger.LogInformation($"{countPending} pending checks found for bulk check ID: {bulkCheckId}. Bulk check status not be updated.");
         }
     }
 

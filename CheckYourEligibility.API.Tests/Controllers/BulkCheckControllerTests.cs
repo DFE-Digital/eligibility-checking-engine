@@ -37,6 +37,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
+    private readonly Mock<IGetBulkCheckSummaryUseCase> _mockBulkCheckSummaryUseCase = new();
     private Mock<ICreateApplicationsFromBulkCheckUseCase> _mockCreateApplicationsFromBulkCheckUseCase = null!;
 
     private BulkCheckController _sut;
@@ -79,6 +80,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
             _mockGetAllBulkChecksUseCase.Object,
+            _mockBulkCheckSummaryUseCase.Object,            
             _mockCreateApplicationsFromBulkCheckUseCase.Object
         );
 
