@@ -3,6 +3,7 @@ using AutoMapper;
 using CheckYourEligibility.API.Data.Mappings;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -22,6 +23,7 @@ public class FosterFamilyGatewayTests : TestBase.TestBase
     private FosterFamilyRequest _testFosterFamily = null!;
     private FosterFamilyUpdateRequest _testFosterFamilyUpdateRequest = null!;
     private string myGuid = null!;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
@@ -73,10 +75,13 @@ public class FosterFamilyGatewayTests : TestBase.TestBase
                 };
 
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(nameof(FosterFamilyGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _dbContext = new EligibilityCheckContext(options);
+
+        _dbContext.Database.EnsureDeleted();
+        _dbContext.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var mapper = config.CreateMapper();
