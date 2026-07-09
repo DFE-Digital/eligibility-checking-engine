@@ -244,8 +244,7 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireMatOrAdminScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
-                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
-            const string freeSchoolMealsAdminPortal = "free-school-meals-admin";
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));            
 
             options.AddPolicy(PolicyNames.RequireFreeSchoolMealsAdminPortalSource, policy =>
                 policy.RequireAssertion(context =>
