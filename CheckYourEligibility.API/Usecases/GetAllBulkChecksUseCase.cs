@@ -1,9 +1,8 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Constants;
+using OrganisationType = CheckYourEligibility.API.Domain.Constants.OrganisationType;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
-using CheckYourEligibility.API.Domain.Enums;
 
 namespace CheckYourEligibility.API.UseCases;
 

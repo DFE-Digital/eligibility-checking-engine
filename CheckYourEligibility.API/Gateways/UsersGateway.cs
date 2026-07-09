@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -31,8 +32,8 @@ public class UsersGateway : IUsers
             x.Email.ToLower() == data.Email.ToLower() && x.Reference.ToLower() == data.Reference.ToLower());
         if (existingUser != null) return existingUser.UserID;
 
-
         var item = _mapper.Map<User>(data);
+
         item.UserID = Guid.NewGuid().ToString();
 
         await _db.Users.AddAsync(item);

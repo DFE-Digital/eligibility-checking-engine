@@ -317,6 +317,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
 
+        modelBuilder.Entity<User>(u => 
+        {
+            u.Property(p => p.UserType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<User>(u => 
+        {
+            u.Property(p => p.OrganisationType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+        });
+
         modelBuilder.Entity<FosterChild>()
             .HasOne(fc => fc.FosterCarer)
             .WithOne(c => c.FosterChild)

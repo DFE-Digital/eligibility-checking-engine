@@ -87,7 +87,7 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.Add(It.IsAny<User>())).Throws(new Exception());
         var request = _fixture.Create<UserData>();
 
-        // Act
+        // Act 
         Func<Task> act = async () => await svc.Create(request);
 
         // Assert
@@ -107,7 +107,7 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>())).ThrowsAsync(ex);
         var existingUser = _fixture.Create<User>();
 
-        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference };
+        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference,  };
 
         // Act
         Func<Task> act = async () => await svc.Create(request);
