@@ -37,6 +37,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
+    private readonly Mock<IGetBulkCheckSummaryUseCase> _mockBulkCheckSummaryUseCase = new();
 
     private BulkCheckController _sut;
 
@@ -76,7 +77,8 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
-            _mockGetAllBulkChecksUseCase.Object
+            _mockGetAllBulkChecksUseCase.Object,
+            _mockBulkCheckSummaryUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest

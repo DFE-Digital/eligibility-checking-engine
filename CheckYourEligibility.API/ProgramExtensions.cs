@@ -11,6 +11,7 @@ using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Security;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 namespace CheckYourEligibility.API;
@@ -243,7 +244,18 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireMatOrAdminScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
-                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));            
+
+            options.AddPolicy(PolicyNames.RequireFreeSchoolMealsAdminPortalSource, policy =>
+                policy.RequireAssertion(context =>
+                {
+                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+
+                    return string.Equals(
+                        checkSourceAndUserName.Item1,
+                        "free-school-meals-admin",
+                        StringComparison.OrdinalIgnoreCase);
+                }));
         });
         return services;
     }
