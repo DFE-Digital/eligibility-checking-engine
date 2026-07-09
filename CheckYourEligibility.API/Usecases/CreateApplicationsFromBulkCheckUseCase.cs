@@ -95,10 +95,12 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             }
             catch (Exception ex)
             {
+                var sanitizedBulkCheckId = SanitizeForLog(bulkCheckId);
+
                 _logger.LogError(
                     ex,
                     "Application creation failed for bulk check {BulkCheckId}",
-                    bulkCheckId);
+                    sanitizedBulkCheckId);
             }
         });
 
@@ -106,7 +108,20 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
         {
             Data = "Application creation started."
         };
-    }   
+    }
+
+    /// <summary>
+    /// Removes line breaks before logging user-provided values to prevent log injection attacks. 
+    /// This is a basic sanitization step and may need to be enhanced based on specific security requirements.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns>Cleaned string</returns>
+    private static string SanitizeForLog(string input)
+    {
+        return (input ?? string.Empty)
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
+    }
 
     /// <summary>
     /// Determines whether a name value is missing or fails validation rules,
