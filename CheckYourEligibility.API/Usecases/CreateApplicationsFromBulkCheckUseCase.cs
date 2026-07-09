@@ -1,18 +1,22 @@
-﻿using CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Domain.Validation;
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Gateways;
-using Newtonsoft.Json;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface ICreateApplicationsFromBulkCheckUseCase
 {
     Task<MessageResponse> Execute(string bulkCheckId, List<int> allowedLocalAuthorityIds);
-    Task ProcessApplicationsFromBulkCheck(string bulkCheckId, List<int> allowedLocalAuthorityIds);
+    Task ProcessApplicationsFromBulkCheck(
+        string bulkCheckId,
+        List<EligibilityCheck> eligibleChecks,
+        List<int> allowedLocalAuthorityIds);
 }
 
 public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBulkCheckUseCase
@@ -49,24 +53,24 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             throw new ValidationException(
             [
                 new Error
-                {
-                    Title = "Applications can only be created when bulk check status is 'Completed'"
-                }
+            {
+                Title = "Applications can only be created when bulk check status is 'Completed'"
+            }
             ],
             "Invalid bulk check status");
         }
 
-        var hasEligibleChecks = await _createApplicationsFromBulkCheckGateway
-            .HasEligibleChecks(bulkCheckId);
+        var eligibleChecks = await _createApplicationsFromBulkCheckGateway
+            .GetEligibleChecks(bulkCheckId);
 
-        if (!hasEligibleChecks)
+        if (!eligibleChecks.Any())
         {
             throw new ValidationException(
             [
                 new Error
-                {
-                    Title = "No eligible checks found for this bulk check"
-                }
+            {
+                Title = "No eligible checks found for this bulk check"
+            }
             ],
             "No eligible checks found");
         }
@@ -86,6 +90,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             {
                 await scopedUseCase.ProcessApplicationsFromBulkCheck(
                     bulkCheckId,
+                    eligibleChecks,
                     allowedLocalAuthorityIds);
             }
             catch (Exception ex)
@@ -143,11 +148,9 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
 
     public async Task ProcessApplicationsFromBulkCheck(
         string bulkCheckId,
+        List<EligibilityCheck> eligibleChecks,
         List<int> allowedLocalAuthorityIds)
     {
-        var eligibleChecks = await _createApplicationsFromBulkCheckGateway
-            .GetEligibleChecks(bulkCheckId);
-
         var hasFailures = false;
 
         foreach (var check in eligibleChecks)

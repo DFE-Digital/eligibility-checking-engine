@@ -13,7 +13,6 @@ using Moq;
 using Newtonsoft.Json;
 using DomainValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
-
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
@@ -42,10 +41,10 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         _mockCreateApplicationsFromBulkCheckGateway = new Mock<ICreateApplicationsFromBulkCheck>();
 
         _sut = new CreateApplicationsFromBulkCheckUseCase(
-             _mockScopeFactory.Object,
-             _mockLogger.Object,
-             _mockCreateApplicationUseCase.Object,
-             _mockCreateApplicationsFromBulkCheckGateway.Object);
+            _mockScopeFactory.Object,
+            _mockLogger.Object,
+            _mockCreateApplicationUseCase.Object,
+            _mockCreateApplicationsFromBulkCheckGateway.Object);
     }
 
     [Test]
@@ -63,8 +62,8 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
             });
 
         _mockCreateApplicationsFromBulkCheckGateway
-            .Setup(x => x.HasEligibleChecks(bulkCheckId))
-            .ReturnsAsync(false);
+            .Setup(x => x.GetEligibleChecks(bulkCheckId))
+            .ReturnsAsync(new List<EligibilityCheck>());
 
         // Act
         Func<Task> act = async () => await _sut.Execute(bulkCheckId, new List<int> { 0 });
@@ -91,28 +90,27 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         var bulkCheckId = Guid.NewGuid().ToString();
         var allowedLocalAuthorityIds = new List<int> { 0 };
 
-        var eligibilityCheck = new EligibilityCheck
+        var eligibleChecks = new List<EligibilityCheck>
         {
-            EligibilityCheckID = Guid.NewGuid().ToString(),
-            CheckData = JsonConvert.SerializeObject(new CheckProcessData
+            new()
             {
-                FirstName = "Parent",
-                LastName = "Tester",
-                DateOfBirth = "1980-01-01",
-                NationalInsuranceNumber = "NA123456C",
-                ChildFirstName = "Child",
-                ChildLastName = "Tester",
-                ChildDateOfBirth = "2015-01-01",
-                ChildSchoolURN = "123456",
-                EmailAddress = "parent@example.com"
-            })
+                EligibilityCheckID = Guid.NewGuid().ToString(),
+                CheckData = JsonConvert.SerializeObject(new CheckProcessData
+                {
+                    FirstName = "Parent",
+                    LastName = "Tester",
+                    DateOfBirth = "1980-01-01",
+                    NationalInsuranceNumber = "NA123456C",
+                    ChildFirstName = "Child",
+                    ChildLastName = "Tester",
+                    ChildDateOfBirth = "2015-01-01",
+                    ChildSchoolURN = "123456",
+                    EmailAddress = "parent@example.com"
+                })
+            }
         };
 
         ApplicationRequest? capturedRequest = null;
-
-        _mockCreateApplicationsFromBulkCheckGateway
-            .Setup(x => x.GetEligibleChecks(bulkCheckId))
-            .ReturnsAsync(new List<EligibilityCheck> { eligibilityCheck });
 
         _mockCreateApplicationUseCase
             .Setup(x => x.Execute(It.IsAny<ApplicationRequest>(), allowedLocalAuthorityIds))
@@ -120,7 +118,10 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
             .ReturnsAsync(new ApplicationSaveItemResponse());
 
         // Act
-        await _sut.ProcessApplicationsFromBulkCheck(bulkCheckId, allowedLocalAuthorityIds);
+        await _sut.ProcessApplicationsFromBulkCheck(
+            bulkCheckId,
+            eligibleChecks,
+            allowedLocalAuthorityIds);
 
         // Assert
         capturedRequest.Should().NotBeNull();
@@ -138,29 +139,29 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         var bulkCheckId = Guid.NewGuid().ToString();
         var allowedLocalAuthorityIds = new List<int> { 0 };
 
-        var eligibilityCheck = new EligibilityCheck
+        var eligibleChecks = new List<EligibilityCheck>
         {
-            EligibilityCheckID = Guid.NewGuid().ToString(),
-            CheckData = JsonConvert.SerializeObject(new CheckProcessData
+            new()
             {
-                FirstName = null,
-                LastName = "Tester",
-                DateOfBirth = "1980-01-01",
-                NationalInsuranceNumber = "NA123456C",
-                ChildFirstName = "Child",
-                ChildLastName = "Tester",
-                ChildDateOfBirth = "2015-01-01",
-                ChildSchoolURN = "123456"
-            })
+                EligibilityCheckID = Guid.NewGuid().ToString(),
+                CheckData = JsonConvert.SerializeObject(new CheckProcessData
+                {
+                    FirstName = null,
+                    LastName = "Tester",
+                    DateOfBirth = "1980-01-01",
+                    NationalInsuranceNumber = "NA123456C",
+                    ChildFirstName = "Child",
+                    ChildLastName = "Tester",
+                    ChildDateOfBirth = "2015-01-01",
+                    ChildSchoolURN = "123456"
+                })
+            }
         };
-
-        _mockCreateApplicationsFromBulkCheckGateway
-            .Setup(x => x.GetEligibleChecks(bulkCheckId))
-            .ReturnsAsync(new List<EligibilityCheck> { eligibilityCheck });
 
         // Act
         await _sut.ProcessApplicationsFromBulkCheck(
             bulkCheckId,
+            eligibleChecks,
             allowedLocalAuthorityIds);
 
         // Assert
@@ -192,3 +193,4 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
         }
     }
 }
+
