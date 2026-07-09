@@ -42,10 +42,15 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
-                null!, null!, null!, null!, null!,
+                null!,
+                null!,
+                null!,
+                null!,
+                null!,
                 _mockUseCase.Object,
-                _mockBulkCheckSummaryUseCase.Object
-            );               
+                _mockBulkCheckSummaryUseCase.Object,
+                _mockCreateApplicationsFromBulkCheckUseCase.Object
+            );
         }
 
         [Test]

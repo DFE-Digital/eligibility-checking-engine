@@ -95,12 +95,10 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
             }
             catch (Exception ex)
             {
-                var sanitizedBulkCheckId = SanitizeForLog(bulkCheckId);
-
                 _logger.LogError(
                     ex,
                     "Application creation failed for bulk check {BulkCheckId}",
-                    sanitizedBulkCheckId);
+                    bulkCheckId);
             }
         });
 
@@ -108,14 +106,7 @@ public class CreateApplicationsFromBulkCheckUseCase : ICreateApplicationsFromBul
         {
             Data = "Application creation started."
         };
-    }
-
-    private static string SanitizeForLog(string input)
-    {
-        return (input ?? string.Empty)
-            .Replace("\r", string.Empty)
-            .Replace("\n", string.Empty);
-    }
+    }   
 
     /// <summary>
     /// Determines whether a name value is missing or fails validation rules,
