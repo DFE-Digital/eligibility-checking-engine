@@ -13,15 +13,19 @@ public class RateLimiterServiceTests : TestBase.TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private RateLimitGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb", new InMemoryDatabaseRoot())
+            .UseInMemoryDatabase(nameof(RateLimiterServiceTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var configForRLCleanUp = new Dictionary<string, string?>
         {

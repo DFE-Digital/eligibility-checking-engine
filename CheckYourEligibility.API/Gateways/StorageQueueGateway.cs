@@ -22,7 +22,7 @@ public class StorageQueueGateway : IStorageQueue
         QueueServiceClient queueServiceClient,
         IConfiguration configuration)
     {
-        _logger = logger.CreateLogger("ServiceCheckEligibility");
+        _logger = logger.CreateLogger("StorageQueueGateway");
         _configuration = configuration;
         _queueServiceClient = queueServiceClient;
     }
@@ -30,32 +30,25 @@ public class StorageQueueGateway : IStorageQueue
     [ExcludeFromCodeCoverage(Justification = "Queue is external dependency.")]
     public async Task<QueueMessage[]> ProcessQueueAsync(string queName)
     {
-
-        QueueMessage[] retrievedMessages = [];
-        
         QueueClient queueClient = GetQueueClient(queName);
-        retrievedMessages = await queueClient.ReceiveMessagesAsync(_configuration.GetValue<int>($"Queue:Settings:{queName}:FetchSize"));
+        QueueMessage[] retrievedMessages = await queueClient.ReceiveMessagesAsync(_configuration.GetValue<int>($"Queue:Settings:{queName}:FetchSize"));
         return retrievedMessages;
     }
 
     public async Task DeleteMessageAsync(QueueMessage message, string queueName)
     {
-
         QueueClient queueClient = GetQueueClient(queueName);
         await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
-
     }
+
     public async Task UpdateMessageAsync(QueueMessage message, string queueName, int visibilityTimeout)
     {
-
         QueueClient queueClient = GetQueueClient(queueName);
         await queueClient.UpdateMessageAsync(
                            message.MessageId,
                            message.PopReceipt,
                            message.Body,
                            TimeSpan.FromSeconds(visibilityTimeout));
-
-
     }
 
     private QueueClient GetQueueClient(string queueName)

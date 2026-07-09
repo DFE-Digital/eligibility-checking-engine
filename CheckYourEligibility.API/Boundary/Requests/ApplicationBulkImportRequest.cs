@@ -41,7 +41,7 @@ public class ApplicationBulkImportData
     /// <summary>
     /// Parent's email address
     /// </summary>
-    public required string ParentEmail { get; set; }
+    public string? ParentEmail { get; set; }
 
     /// <summary>
     /// Child's first name

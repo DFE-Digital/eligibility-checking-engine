@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using CheckYourEligibility.API.Domain;
+﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -167,7 +165,21 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         try
         {
             this.BulkInsertOrUpdate(data, config =>
-            config.UpdateByProperties = new List<string> { nameof(LocalAuthority.LocalAuthorityID), nameof(LocalAuthority.LaName) });
+            {
+                config.UpdateByProperties = new List<string>
+                {
+                    nameof(LocalAuthority.LocalAuthorityID),
+                    nameof(LocalAuthority.LaName)
+                };
+
+                config.PropertiesToExcludeOnUpdate = new List<string>
+                {
+                    nameof(LocalAuthority.SchoolCanReviewEvidence),
+                    nameof(LocalAuthority.EarlyYearsPupilPremiumPolicyID),
+                    nameof(LocalAuthority.FreeSchoolMealsPolicyID),
+                    nameof(LocalAuthority.TwoYearPolicyID)
+                };
+            });
             transaction.Commit();
         }
 
@@ -257,6 +269,18 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<Establishment>()
             .HasOne(e => e.LocalAuthority);
 
+        modelBuilder.Entity<Establishment>()
+            .Property(e => e.EstablishmentName)
+            .HasMaxLength(450);
+
+        modelBuilder.Entity<Establishment>()
+            .HasIndex(e => e.EstablishmentName,
+                "idx_Establishment_EstablishmentName");
+
+        modelBuilder.Entity<Establishment>()
+            .HasIndex(e => new { e.LocalAuthorityID, e.EstablishmentName },
+                "idx_Establishment_LocalAuthorityID_EstablishmentName");
+
         // MultiAcademyTrustSchool to MultiAcademyTrust relationship
         modelBuilder.Entity<MultiAcademyTrustEstablishment>()
             .HasOne(s => s.MultiAcademyTrust)
@@ -292,6 +316,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
+
+        modelBuilder.Entity<User>(u => 
+        {
+            u.Property(p => p.UserType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<User>(u => 
+        {
+            u.Property(p => p.OrganisationType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+        });
 
         modelBuilder.Entity<FosterChild>()
             .HasOne(fc => fc.FosterCarer)

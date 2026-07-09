@@ -14,7 +14,7 @@ public interface IGetBulkCheckStatusesUseCase
     /// </summary>
     /// <param name="guid">The group ID of the bulk upload</param>
     /// <returns>Bulk upload progress status</returns>
-    Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds);
+    Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority, IList<int> allowedLocalAuthorityIds, string source);
 }
 
 public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
@@ -31,7 +31,7 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
     }
 
     public async Task<CheckEligibilityBulkStatusesResponse> Execute(string localAuthority,
-        IList<int> allowedLocalAuthorityIds)
+        IList<int> allowedLocalAuthorityIds, string source)
     {
         if (string.IsNullOrEmpty(localAuthority))
             throw new ValidationException(null, "Invalid Request, localAuthority is required.");
@@ -42,7 +42,7 @@ public class GetBulkCheckStatusesUseCase : IGetBulkCheckStatusesUseCase
                 "You do not have permission to access applications for this establishment's local authority");
         }
 
-        var response = await _bulkCheckGateway.GetBulkStatuses(localAuthority, allowedLocalAuthorityIds);
+        var response = await _bulkCheckGateway.GetBulkStatuses(localAuthority, allowedLocalAuthorityIds, source);
         if (response == null)
         {
             _logger.LogWarning(

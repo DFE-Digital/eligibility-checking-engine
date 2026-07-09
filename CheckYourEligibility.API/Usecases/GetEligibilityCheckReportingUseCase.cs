@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Requests;
 using System.ComponentModel.DataAnnotations;
 
 public interface IGetEligibilityCheckReportingUseCase
@@ -7,7 +8,7 @@ public interface IGetEligibilityCheckReportingUseCase
     /// </summary>
     /// <param name="model">The request model containing parameters for report generation</param>
     /// <returns>A stream containing the generated report</returns>
-    Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model);
+    Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model, CheckMetaData meta);
 }
 
 public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReportingUseCase
@@ -23,7 +24,7 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
         _scopeFactory = scopeFactory;
     }
 
-    public async Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model)
+    public async Task<EligibilityCheckReportResponse> Execute(EligibilityCheckReportRequest model, CheckMetaData meta)
     {
         if (model == null) throw new ValidationException("Invalid request, model is required");
 
@@ -43,7 +44,7 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
             var gateway = scope.ServiceProvider.GetRequiredService<IEligibilityCheckReporting>();
             try
             {
-                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, model.EligibilityCheckType, CancellationToken.None);
+                await gateway.EligibilityCheckReports(reportRequest.EligibilityCheckReportId, model.EligibilityCheckType,meta.Source, CancellationToken.None);
             }
             catch (Exception ex)
             {
@@ -60,7 +61,6 @@ public class GetEligibilityCheckReportingUseCase : IGetEligibilityCheckReporting
                 Status = reportRequest.Status.ToString()
             }
         };
-
         
     }
 }

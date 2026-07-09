@@ -137,7 +137,8 @@ public class EligibilityCheckReportingController : BaseController
                 });
             }
 
-            var result = await _getEligibilityCheckReportingUseCase.Execute(model);
+            var meta = User.CalculateMetaData();
+            var result = await _getEligibilityCheckReportingUseCase.Execute(model,meta);
 
             return new ObjectResult(result) { StatusCode = StatusCodes.Status202Accepted };
         }

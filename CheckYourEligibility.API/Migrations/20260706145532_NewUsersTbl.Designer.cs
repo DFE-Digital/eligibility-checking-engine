@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260706145532_NewUsersTbl")]
+    partial class NewUsersTbl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -447,8 +450,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("EstablishmentName")
                         .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("InPrivateBeta")
                         .HasColumnType("bit");
@@ -481,9 +483,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("EstablishmentID");
 
-                    b.HasIndex(new[] { "EstablishmentName" }, "idx_Establishment_EstablishmentName");
-
-                    b.HasIndex(new[] { "LocalAuthorityID", "EstablishmentName" }, "idx_Establishment_LocalAuthorityID_EstablishmentName");
+                    b.HasIndex("LocalAuthorityID");
 
                     b.ToTable("Establishments");
                 });
@@ -656,12 +656,15 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime?>("LastLogin")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("NewUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int?>("OrganisationId")
                         .HasColumnType("int");
 
                     b.Property<string>("OrganisationType")
                         .HasMaxLength(50)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Reference")
                         .IsRequired()
@@ -673,7 +676,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("UserType")
                         .HasMaxLength(50)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("UserID");
 

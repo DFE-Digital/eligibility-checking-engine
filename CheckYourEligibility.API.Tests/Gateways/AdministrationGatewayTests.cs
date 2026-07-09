@@ -23,15 +23,19 @@ public class AdministrationGatewayTests : TestBase.TestBase
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
     private AdministrationGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb", new InMemoryDatabaseRoot())
+            .UseInMemoryDatabase(nameof(AdministrationGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
@@ -153,6 +157,43 @@ public class AdministrationGatewayTests : TestBase.TestBase
 
         // Assert
         Assert.Pass();
+    }
+
+    [Test]
+    public void Given_ImportEstablishments_When_LocalAuthorityExists_Should_PreservePolicySettings()
+    {
+        var data = _fixture.CreateMany<EstablishmentRow>(1).ToList();
+
+        var row = data.First();
+        row.LaCode = 213;
+        row.LaName = "Westminster";
+
+        var existingLocalAuthority = new LocalAuthority
+        {
+            LocalAuthorityID = 213,
+            LaName = "Westminster",
+            SchoolCanReviewEvidence = true,
+            EarlyYearsPupilPremiumPolicyID = 2,
+            FreeSchoolMealsPolicyID = 4,
+            TwoYearPolicyID = 3
+        };
+
+        _fakeInMemoryDb.LocalAuthorities.Add(existingLocalAuthority);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        _sut.ImportEstablishments(data);
+
+        // Assert
+        var localAuthority = _fakeInMemoryDb.LocalAuthorities.Single(x => x.LocalAuthorityID == 213);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(localAuthority.SchoolCanReviewEvidence, Is.True);
+            Assert.That(localAuthority.EarlyYearsPupilPremiumPolicyID, Is.EqualTo(2));
+            Assert.That(localAuthority.FreeSchoolMealsPolicyID, Is.EqualTo(4));
+            Assert.That(localAuthority.TwoYearPolicyID, Is.EqualTo(3));
+        });
     }
 
     /// <summary>

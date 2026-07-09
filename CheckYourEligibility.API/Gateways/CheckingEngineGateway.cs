@@ -141,7 +141,7 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             nass = nass.Substring(2, 2);
             if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                return (CheckEligibilityStatus.eligible, null);
+                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
             if (nass == _configuration.GetValue<string>(
                     "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
                 return (CheckEligibilityStatus.notEligible, null);
@@ -371,7 +371,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
     {
 
-        if (organisationType == OrganisationType.local_authority && orgId is int LaId && LaId != 0)
+        if (organisationType == Domain.Constants.OrganisationType.local_authority && orgId is int LaId && LaId != 0)
         {
             int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type, dbContextFactory);
             // get policy for the LA          
@@ -468,6 +468,11 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 checkStatusResult = await HO_Check(checkData, dbContextFactory);
                 source = ProcessEligibilityCheckSource.HO;
+
+                if (checkStatusResult == CheckEligibilityStatus.eligible)
+                {
+                    checkTierResult = EligibilityTier.targeted;
+                }
             }
         }
 
