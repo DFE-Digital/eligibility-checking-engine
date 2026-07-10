@@ -463,7 +463,8 @@ Cypress.Commands.add('verifyGetApplicationResponse', (response, expectedData) =>
     Object.keys(responseData.establishment).length +
     Object.keys(responseData.establishment.localAuthority).length +
     Object.keys(responseLinks).length;
-  cy.verifyTotalElements(totalElements, 24);
+  // GET /application now includes the top-level 'user' object, increasing the total response element count.
+  cy.verifyTotalElements(totalElements, 25);
 
   expect(responseData).to.have.property('id');
   expect(responseData).to.have.property('reference');
@@ -473,6 +474,13 @@ Cypress.Commands.add('verifyGetApplicationResponse', (response, expectedData) =>
   expect(responseData.establishment).to.have.property('localAuthority');
   expect(responseData.establishment.localAuthority).to.have.property('id');
   expect(responseData.establishment.localAuthority).to.have.property('name');
+
+  expect(responseData).to.have.property('user');
+  expect(responseData.user).to.have.property(
+    'userID',
+    expectedData.Data.UserId
+  );
+
   expect(responseData).to.have.property('parentFirstName', expectedData.Data.ParentFirstName);
   expect(responseData).to.have.property('parentLastName', expectedData.Data.ParentLastName);
   expect(responseData).to.have.property('parentEmail', expectedData.Data.ParentEmail);

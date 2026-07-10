@@ -6,7 +6,7 @@ describe('Testing the API', function () {
         // Declarations
         const fileName = 'HMRCManualEligibilityEvent.xlsm'; // File name including extension
         const method = 'POST';
-        const url = Cypress.config('baseUrl') + '/admin/import-wf-hmrc-data';
+        const url = Cypress.config('baseUrl') + 'admin/import-wf-hmrc-data';
         const fileType = 'text/xml'; // XML file type     
         const expectedAnswer = '{"data":"HMRCManualEligibilityEvent.xlsm - HMRC File Processed."}';
 
