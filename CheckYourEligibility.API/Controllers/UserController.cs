@@ -27,22 +27,38 @@ public class UserController : BaseController
     }
 
     /// <summary>
-    ///     creates or returns existing user Id
+    ///  Creates a new user or returns the identifier of an existing user.
     /// </summary>
-    /// <param name="model"></param>
-    /// <returns></returns>
-    [ProducesResponseType(typeof(UserSaveItemResponse), (int)HttpStatusCode.Created)]
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    /// <param name="model">
+    /// The user creation request.
+    /// </param>
+    /// <returns>
+    /// A response containing the user identifier.
+    /// </returns>
     [HttpPost("/user")]
     [Authorize(Policy = PolicyNames.RequireUserScope)]
     public async Task<ActionResult> User([FromBody] UserCreateRequest model)
     {
-        if (model == null || model.Data == null)
-            return BadRequest(new ErrorResponse
-                { Errors = [new Error { Title = "Invalid request, data is required." }] });
+        try
+        {
+            if (model?.Data == null)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "Invalid request, data is required" }]});
+            }
 
-        var response = await _createOrUpdateUserUseCase.Execute(model);
-        return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
+            model.metaData = HttpContext.User.CalculateMetaData();
+            var response = await _createOrUpdateUserUseCase.Execute(model);
+
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
+        }
+        catch (UserSaveException ex)
+        {
+            _logger.LogWarning(ex, "Failed to create or update user");
+
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = ex.Message }]
+            });
+        }
     }
 }

@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
@@ -23,10 +25,21 @@ public class UserControllerTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _mockCreateOrUpdateUserUseCase = new Mock<ICreateOrUpdateUserUseCase>(MockBehavior.Strict);
+        _mockCreateOrUpdateUserUseCase =
+            new Mock<ICreateOrUpdateUserUseCase>(MockBehavior.Strict);
+
         _mockLogger = Mock.Of<ILogger<UserController>>();
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new UserController(_mockLogger, _mockCreateOrUpdateUserUseCase.Object, _mockAuditGateway.Object);
+
+        _mockAuditGateway =
+            new Mock<IAudit>(MockBehavior.Strict);
+
+        _sut = new UserController(
+            _mockLogger,
+            _mockCreateOrUpdateUserUseCase.Object,
+            _mockAuditGateway.Object);
+
+        SetupControllerWithUser();
+
         _fixture = new Fixture();
     }
 
@@ -37,33 +50,120 @@ public class UserControllerTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_valid_Request_Post_Should_Return_Status201Created()
+    public async Task Given_Valid_Request_Should_Return_Status201Created()
     {
         // Arrange
-        var request = _fixture.Create<UserCreateRequest>();
-        var response = _fixture.Create<UserSaveItemResponse>();
-        _mockCreateOrUpdateUserUseCase.Setup(cs => cs.Execute(request)).ReturnsAsync(response);
+        var request = new UserCreateRequest
+        {
+            Data = new UserData
+            {
+                Email = "test@test.com",
+                Reference = "ABC123"
+            }
+        };
 
-        var expectedResult = new ObjectResult(response)
-            { StatusCode = StatusCodes.Status201Created };
+        var response = _fixture.Create<UserSaveItemResponse>();
+
+        UserCreateRequest capturedRequest = null!;
+
+        _mockCreateOrUpdateUserUseCase
+            .Setup(x => x.Execute(It.IsAny<UserCreateRequest>()))
+            .Callback<UserCreateRequest>(r => capturedRequest = r)
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.User(request);
 
         // Assert
-        result.Should().BeEquivalentTo(expectedResult);
+        capturedRequest.Should().NotBeNull();
+
+        capturedRequest.metaData.Should().NotBeNull();
+        capturedRequest.metaData.Source.Should().Be("childcare-admin");
+        capturedRequest.metaData.UserName.Should().Be("test-user");
+        capturedRequest.metaData.OrganisationID.Should().Be(123);
+        capturedRequest.metaData.OrganisationType.Should().Be("local-authority");
+
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(StatusCodes.Status201Created);
+
+        objectResult.Value.Should().BeEquivalentTo(response);
     }
 
     [Test]
-    public async Task Given_InValidRequest_Should_Return_Status400BadRequest()
+    public async Task Given_Null_Data_Should_Return_BadRequest()
     {
         // Arrange
-        var request = new UserCreateRequest();
+        var request = new UserCreateRequest
+        {
+            Data = null
+        };
 
         // Act
         var result = await _sut.User(request);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        badRequest.Value.Should().BeOfType<ErrorResponse>();
+    }
+
+    [Test]
+    public async Task Given_UseCase_Throws_UserSaveException_Should_Return_BadRequest()
+    {
+        // Arrange
+        var request = new UserCreateRequest
+        {
+            Data = new UserData
+            {
+                Email = "test@test.com",
+                Reference = "ABC123"
+            }
+        };
+
+        _mockCreateOrUpdateUserUseCase
+            .Setup(x => x.Execute(It.IsAny<UserCreateRequest>()))
+            .ThrowsAsync(new UserSaveException("Failed to save user"));
+
+        // Act
+        var result = await _sut.User(request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be("Failed to save user");
+    }
+
+    private void SetupControllerWithUser()
+    {
+        var httpContext = new DefaultHttpContext();
+
+        var claims = new List<Claim>
+        {
+            new(
+                ClaimTypes.NameIdentifier,
+                "childcare-admin:test-user"),
+
+            new(
+                "scope",
+                "local_authority:123")
+        };
+
+        httpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity(claims));
+
+        _sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = httpContext
+        };
     }
 }

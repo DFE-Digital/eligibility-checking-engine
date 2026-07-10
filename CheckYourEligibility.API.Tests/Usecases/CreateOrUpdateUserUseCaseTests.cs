@@ -1,7 +1,4 @@
-using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
@@ -9,43 +6,66 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
-[TestFixture]
-public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
+public class CreateOrUpdateUserUseCaseTests
 {
-    [SetUp]
-    public void Setup()
-    {
-        _mockUserGateway = new Mock<IUsers>(MockBehavior.Strict);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new CreateOrUpdateUserUseCase(_mockUserGateway.Object, _mockAuditGateway.Object);
-    }
-
-    [TearDown]
-    public void Teardown()
-    {
-        _mockUserGateway.VerifyAll();
-        _mockAuditGateway.VerifyAll();
-    }
-
-    private Mock<IUsers> _mockUserGateway;
-    private Mock<IAudit> _mockAuditGateway;
-    private CreateOrUpdateUserUseCase _sut;
-
     [Test]
-    public async Task Execute_Should_Return_UserSaveItemResponse_When_Successful()
+    public async Task Execute_Should_Return_UserId()
     {
         // Arrange
-        var request = _fixture.Create<UserCreateRequest>();
-        var responseId = _fixture.Create<string>();
+        var userGateway = new Mock<IUsers>();
 
-        _mockUserGateway.Setup(us => us.Create(request.Data)).ReturnsAsync(responseId);
+        userGateway
+            .Setup(x => x.Create(It.IsAny<UserCreateRequest>()))
+            .ReturnsAsync("123");
 
-        var expectedResponse = new UserSaveItemResponse { Data = responseId };
+        var sut = new CreateOrUpdateUserUseCase(
+            userGateway.Object);
 
         // Act
-        var result = await _sut.Execute(request);
+        var response = await sut.Execute(
+            new UserCreateRequest());
 
         // Assert
-        result.Should().BeEquivalentTo(expectedResponse);
+        response.Data.Should().Be("123");
+    }
+
+    [Test]
+    public async Task Execute_Should_Call_Create_On_Gateway()
+    {
+        // Arrange
+        var userGateway = new Mock<IUsers>();
+
+        var sut = new CreateOrUpdateUserUseCase(
+            userGateway.Object);
+
+        var request = new UserCreateRequest();
+
+        // Act
+        await sut.Execute(request);
+
+        // Assert
+        userGateway.Verify(
+            x => x.Create(request),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Execute_Should_Propagate_UserSaveException()
+    {
+        // Arrange
+        var userGateway = new Mock<IUsers>();
+
+        userGateway
+            .Setup(x => x.Create(It.IsAny<UserCreateRequest>()))
+            .ThrowsAsync(new UserSaveException("Failed to save user"));
+
+        var sut = new CreateOrUpdateUserUseCase(
+            userGateway.Object);
+
+        // Act
+        Func<Task> act = () => sut.Execute(new UserCreateRequest());
+
+        // Assert
+        await act.Should().ThrowAsync<UserSaveException>();
     }
 }

@@ -1,40 +1,54 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.UseCases;
 
 /// <summary>
-///     Interface for creating or updating a user.
+/// Creates a new user or updates an existing user's last login timestamp.
 /// </summary>
 public interface ICreateOrUpdateUserUseCase
 {
     /// <summary>
-    ///     Execute the use case.
+    /// Creates or updates a user using the supplied request data.
     /// </summary>
-    /// <param name="model"></param>
-    /// <param name="meta"></param>
-    /// <returns></returns>
+    /// <param name="model">
+    /// The user creation request.
+    /// </param>
+    /// <returns>
+    /// A response containing the user identifier.
+    /// </returns>
     Task<UserSaveItemResponse> Execute(UserCreateRequest model);
 }
 
 public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
 {
-    private readonly IAudit _auditGateway;
     private readonly IUsers _userGateway;
 
-    public CreateOrUpdateUserUseCase(IUsers userGateway, IAudit auditGateway)
+    public CreateOrUpdateUserUseCase(IUsers userGateway)
     {
         _userGateway = userGateway;
-        _auditGateway = auditGateway;
     }
 
+    /// <summary>
+    /// Executes the create or update user use case.
+    /// </summary>
+    /// <param name="model">
+    /// The user creation request.
+    /// </param>
+    /// <returns>
+    /// A response containing the user identifier.
+    /// </returns>
     public async Task<UserSaveItemResponse> Execute(UserCreateRequest model)
     {
-        var response = await _userGateway.Create(model.Data);
+        if (model == null)
+            throw new UserSaveException("User request is required.");
 
+        var userId = await _userGateway.Create(model);
 
-        return new UserSaveItemResponse { Data = response };
+        return new UserSaveItemResponse
+        {
+            Data = userId
+        };
     }
 }
