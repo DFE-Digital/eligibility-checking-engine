@@ -396,8 +396,18 @@ public class ApplicationGateway : IApplication
 
             _logger.LogInformation($"Starting bulk import of {applicationsList.Count} applications");
 
+            // Record the initial status of each imported application in the status history,
+            // matching what happens when an application is created individually (AddStatusHistory).
+            var statusHistory = applicationsList.Select(application => new Domain.ApplicationStatus
+            {
+                ApplicationStatusID = Guid.NewGuid().ToString(),
+                ApplicationID = application.ApplicationID,
+                Type = application.Status ?? ApplicationStatus.Receiving,
+                TimeStamp = application.Created
+            }).ToList();
+
             // Use the bulk insert method from the context
-            _db.BulkInsert_Applications(applicationsList);
+            _db.BulkInsert_Applications(applicationsList, statusHistory);
 
             _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
 
@@ -539,6 +549,8 @@ public class ApplicationGateway : IApplication
             .OrderByDescending(x => x.TimeStamp)
             .FirstOrDefaultAsync();
 
+        if (lastStatus == null)
+            throw new BadRequest("No previous non-archived status found for this application, unable to restore");
 
         application.Status = lastStatus.Type;
         application.Updated = DateTime.UtcNow;

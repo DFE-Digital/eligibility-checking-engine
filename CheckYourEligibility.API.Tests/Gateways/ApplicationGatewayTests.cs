@@ -310,7 +310,91 @@ public class ApplicationGatewayTests : TestBase.TestBase
         await act.Should().ThrowAsync<BadRequest>();
     }
 
+    [Test]
+    public async Task RestoreArchivedApplicationStatus_ShouldThrow_BadRequest_WhenNoNonArchivedHistoryExists()
+    {
+        // Arrange - simulates a legacy bulk-imported application with no status history at all
+        // (or one whose only history entry is Archived itself)
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
 
+        // Act
+        Func<Task> act = async () => await _sut.RestoreArchivedApplicationStatus(app.ApplicationID);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequest>()
+            .WithMessage("No previous non-archived status found for this application, unable to restore");
+    }
+
+    #endregion
+
+    #region BulkImportApplications Tests
+
+    [Test]
+    public async Task BulkImportApplications_ShouldCreateStatusHistory_ForEachApplication()
+    {
+        // Arrange
+        var app1 = CreateTestApplication();
+        app1.Status = Domain.Enums.ApplicationStatus.Receiving;
+        var app2 = CreateTestApplication();
+        app2.Status = Domain.Enums.ApplicationStatus.Entitled;
+        var applications = new List<Application> { app1, app2 };
+
+        var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
+        List<Application> capturedApplications = null!;
+        List<ApplicationStatus> capturedStatusHistory = null!;
+        db.Setup(x => x.BulkInsert_Applications(It.IsAny<IEnumerable<Application>>(), It.IsAny<IEnumerable<ApplicationStatus>>()))
+            .Callback<IEnumerable<Application>, IEnumerable<ApplicationStatus>>((apps, statuses) =>
+            {
+                capturedApplications = apps.ToList();
+                capturedStatusHistory = statuses.ToList();
+            });
+
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var mapper = config.CreateMapper();
+        var sut = new ApplicationGateway(
+            Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
+            db.Object,
+            mapper,
+            _configuration);
+
+        // Act
+        await sut.BulkImportApplications(applications);
+
+        // Assert
+        capturedApplications.Should().HaveCount(2);
+        capturedStatusHistory.Should().HaveCount(2);
+        capturedStatusHistory.Should()
+            .ContainSingle(s => s.ApplicationID == app1.ApplicationID && s.Type == Domain.Enums.ApplicationStatus.Receiving);
+        capturedStatusHistory.Should()
+            .ContainSingle(s => s.ApplicationID == app2.ApplicationID && s.Type == Domain.Enums.ApplicationStatus.Entitled);
+        capturedStatusHistory.Should().OnlyContain(s => !string.IsNullOrEmpty(s.ApplicationStatusID));
+    }
+
+    [Test]
+    public async Task BulkImportApplications_NoApplications_DoesNotCallBulkInsert()
+    {
+        // Arrange
+        var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
+
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var mapper = config.CreateMapper();
+        var sut = new ApplicationGateway(
+            Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
+            db.Object,
+            mapper,
+            _configuration);
+
+        // Act
+        await sut.BulkImportApplications(new List<Application>());
+
+        // Assert
+        db.Verify(
+            x => x.BulkInsert_Applications(It.IsAny<IEnumerable<Application>>(), It.IsAny<IEnumerable<ApplicationStatus>>()),
+            Times.Never);
+    }
 
     #endregion
 
