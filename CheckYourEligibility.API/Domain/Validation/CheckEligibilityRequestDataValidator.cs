@@ -20,11 +20,14 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     .NotEmpty()
                     .WithMessage(ValidationMessages.LastName);
             });
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).LastName), () => {
+
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).LastName), () =>
+            {
                 RuleFor(x => ((CheckEligibilityRequestData)x).LastName)
                     .Must(DataValidation.BeAValidName)
                     .WithMessage(ValidationMessages.LastName);
             });
+
             When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).FirstName), () =>
             {
                 RuleFor(x => ((CheckEligibilityRequestData)x).FirstName)
@@ -60,6 +63,13 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     .WithMessage("Invalid Child School URN");
             });
 
+            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).EmailAddress), () =>
+            {
+                RuleFor(x => ((CheckEligibilityRequestData)x).EmailAddress)
+                    .EmailAddress()
+                    .WithMessage(ValidationMessages.Email);
+            });
+
             RuleFor(x => ((CheckEligibilityRequestData)x).DateOfBirth)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidDate)
@@ -70,9 +80,11 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                     .Empty()
                     .WithMessage(ValidationMessages.NI_and_NASS);
+
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
                     .Must(DataValidation.BeAValidNi)
                     .WithMessage(ValidationMessages.NI);
+
             }).Otherwise(() =>
             {
                 When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber), () =>
@@ -81,6 +93,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                         .Must(DataValidation.BeAValidNass)
                         .WithMessage(ValidationMessages.NASS);
                 });
+
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                     .NotEmpty()
                     .WithMessage(ValidationMessages.NI_or_NASS);

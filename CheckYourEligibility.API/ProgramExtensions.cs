@@ -50,6 +50,7 @@ public static class ProgramExtensions
         services.AddTransient<ICheckEligibility, CheckEligibilityGateway>();
         services.AddTransient<IEligibilityCheckReporting, EligibilityCheckReportingGateway>();
         services.AddTransient<IBulkCheck, BulkCheckGateway>();
+        services.AddTransient<ICreateApplicationsFromBulkCheck, CreateApplicationsFromBulkCheckGateway>();
         services.AddTransient<ICheckingEngine, CheckingEngineGateway>();
         services.AddTransient<IStorageQueue, StorageQueueGateway>();
         services.AddTransient<IStorageQueueMessage, StorageQueueMessageGateway>();

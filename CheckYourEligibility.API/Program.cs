@@ -165,6 +165,7 @@ builder.Services.AddScoped<IUpsertWorkingFamiliesEventUseCase, UpsertWorkingFami
 builder.Services.AddScoped<IDeleteWorkingFamiliesEventUseCase, DeleteWorkingFamiliesEventUseCase>();
 builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
+builder.Services.AddScoped<ICreateApplicationsFromBulkCheckUseCase, CreateApplicationsFromBulkCheckUseCase>();
 builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
 builder.Services.AddScoped<IUpdateFosterFamilyUseCase, UpdateFosterFamilyUseCase>();

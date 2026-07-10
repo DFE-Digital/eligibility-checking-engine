@@ -128,9 +128,9 @@ public class CheckEligibilityGateway : ICheckEligibility
         try
         {
 
-            var baseType = data as CheckEligibilityRequestDataBase;
+            var baseType = data as CheckEligibilityRequestDataBase;           
 
-            item.CheckData = JsonConvert.SerializeObject(data);
+            item.CheckData = JsonConvert.SerializeObject(data);          
 
             item.Type = baseType.Type;
 
@@ -183,6 +183,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                                 hashCheckData.ChildLastName = checkData.ChildLastName;
                                 hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
                                 hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
+                                hashCheckData.EmailAddress = checkData.EmailAddress;
                                 item.CheckData = JsonConvert.SerializeObject(hashCheckData);
                                 _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
                                 break;
@@ -219,6 +220,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                             hashCheckData.ChildLastName = checkData.ChildLastName;
                             hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
                             hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
+                            hashCheckData.EmailAddress = checkData.EmailAddress;
                             item.CheckData = JsonConvert.SerializeObject(hashCheckData);
                             _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
                         }
@@ -348,6 +350,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
                     item.ChildSchoolURN = CheckData.ChildSchoolURN;
                     item.EligibilityEndDate = CheckData.EligibilityEndDate;
+                    item.EmailAddress = CheckData.EmailAddress;
                     break;
             }
 
@@ -431,6 +434,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     ChildLastName = checkItem.ChildLastName,
                     ChildDateOfBirth = checkItem.ChildDateOfBirth,
                     ChildSchoolURN = checkItem.ChildSchoolURN,
+                    EmailAddress = checkItem.EmailAddress,
                     NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
                     NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
                     Type = type,

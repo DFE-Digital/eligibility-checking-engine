@@ -17,6 +17,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
     public class GetAllBulkChecksControllerTests
     {
         private Mock<IGetAllBulkChecksUseCase> _mockUseCase = null!;
+        private Mock<ICreateApplicationsFromBulkCheckUseCase> _mockCreateApplicationsFromBulkCheckUseCase = null!;
         private BulkCheckController _controller = null!;
         private Mock<ILogger<BulkCheckController>> _mockLogger = null!;
         private readonly Mock<IGetBulkCheckSummaryUseCase> _mockBulkCheckSummaryUseCase = new();
@@ -25,6 +26,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
         public void Setup()
         {
             _mockUseCase = new Mock<IGetAllBulkChecksUseCase>();
+            _mockCreateApplicationsFromBulkCheckUseCase = new Mock<ICreateApplicationsFromBulkCheckUseCase>();
             _mockLogger = new Mock<ILogger<BulkCheckController>>();
 
             var configuration = new ConfigurationBuilder()
@@ -34,16 +36,20 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 })
                 .Build();
 
-            // Create minimal mocks - only create the ones that are actually needed
             var mockAudit = new Mock<IAudit>();
 
             _controller = new BulkCheckController(
                 _mockLogger.Object,
                 mockAudit.Object,
                 configuration,
-                null!, null!, null!, null!, null!,
+                null!,
+                null!,
+                null!,
+                null!,
+                null!,
                 _mockUseCase.Object,
-                _mockBulkCheckSummaryUseCase.Object
+                _mockBulkCheckSummaryUseCase.Object,
+                _mockCreateApplicationsFromBulkCheckUseCase.Object
             );
         }
 
@@ -73,7 +79,6 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
-            // Set up admin user context
             var claims = new List<Claim>
             {
                 new Claim("scope", "local_authority"),
@@ -154,7 +159,6 @@ namespace CheckYourEligibility.API.Tests.Controllers
                 It.IsAny<CheckMetaData>()))
                 .ReturnsAsync(expectedResponse);
 
-            // Set up user context with specific local authority
             var claims = new List<Claim>
             {
                 new Claim("scope", "local_authority:123"),
