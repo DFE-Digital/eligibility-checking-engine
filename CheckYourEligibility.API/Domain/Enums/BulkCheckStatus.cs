@@ -28,5 +28,20 @@ public enum BulkCheckStatus
     /// <summary>
     /// The bulk check has been deleted (soft delete)
     /// </summary>
-    Deleted
+    Deleted,
+
+    /// <summary>
+    /// Application creation from this bulk check is currently in progress
+    /// </summary>
+    ApplicationCreationInProgress,
+
+    /// <summary>
+    /// Applications have been created from this bulk check
+    /// </summary>
+    ApplicationsCreated,
+
+    /// <summary>
+    /// Application creation from this bulk check failed
+    /// </summary>
+    ApplicationCreationFailed
 }

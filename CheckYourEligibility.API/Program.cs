@@ -169,6 +169,7 @@ builder.Services.AddScoped<IUpsertWorkingFamiliesEventUseCase, UpsertWorkingFami
 builder.Services.AddScoped<IDeleteWorkingFamiliesEventUseCase, DeleteWorkingFamiliesEventUseCase>();
 builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
+builder.Services.AddScoped<ICreateApplicationsFromBulkCheckUseCase, CreateApplicationsFromBulkCheckUseCase>();
 builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
 builder.Services.AddScoped<IUpdateFosterFamilyUseCase, UpdateFosterFamilyUseCase>();
@@ -184,6 +185,7 @@ builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUse
 
 builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
 builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
+builder.Services.AddScoped<IGetBulkCheckSummaryUseCase, GetBulkCheckSummaryUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckReportingUseCase, GetEligibilityCheckReportingUseCase>();
 builder.Services.AddScoped<IGetEligibilityReportStatusUseCase, GetEligibilityReportStatusUseCase>();
 builder.Services.AddScoped<IGetEligibilityCheckReportItemsUseCase, GetEligibilityCheckReportItemsUseCase>();
