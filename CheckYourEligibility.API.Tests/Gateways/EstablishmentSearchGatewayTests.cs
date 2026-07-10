@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.API.Tests;
@@ -14,15 +15,23 @@ public class EstablishmentSearchGatewayTests : TestBase.TestBase
     private IEligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;
     private Establishment Establishment;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(nameof(EstablishmentSearchGatewayTests), InMemoryDatabaseRoot)
             .Options;
+
         _fakeInMemoryDb = new EligibilityCheckContext(options);
-        _sut = new EstablishmentSearchGateway(new NullLoggerFactory(), _fakeInMemoryDb);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
+
+        _sut = new EstablishmentSearchGateway(
+            new NullLoggerFactory(),
+            _fakeInMemoryDb);
     }
 
     [TearDown]
