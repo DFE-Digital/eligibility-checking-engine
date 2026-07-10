@@ -19,6 +19,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -38,13 +39,13 @@ public class BulkCheckGatewayTests : TestBase.TestBase
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<ICheckEligibility> _moqCheckEligibility;
     private BulkCheckGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public async Task Setup()
     {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
+            .UseInMemoryDatabase(nameof(BulkCheckGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
