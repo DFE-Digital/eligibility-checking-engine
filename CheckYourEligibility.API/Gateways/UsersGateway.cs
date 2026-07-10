@@ -86,7 +86,11 @@ public class UsersGateway : IUsers
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, $"Failed to create user ${newUser.Email}");
+            var sanitizedEmail = (newUser.Email ?? string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty);
+
+            _logger.LogError(ex, "Failed to create user {Email}", sanitizedEmail);
 
             throw new UserSaveException(
                 $"Failed to create or update user '{newUser.Email}'",
