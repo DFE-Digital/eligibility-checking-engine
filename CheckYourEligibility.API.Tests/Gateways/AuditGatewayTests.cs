@@ -1,7 +1,5 @@
 // Ignore Spelling: Levenshtein
 
-using System.Net;
-using System.Security.Claims;
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
@@ -12,9 +10,12 @@ using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Net;
+using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -25,15 +26,19 @@ public class AuditGatewayTests : TestBase.TestBase
     private IHttpContextAccessor _httpContextAccessor;
     private IMapper _mapper;
     private AuditGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(nameof(AuditGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
