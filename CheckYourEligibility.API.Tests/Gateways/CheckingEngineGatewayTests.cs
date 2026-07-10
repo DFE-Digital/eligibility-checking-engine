@@ -18,6 +18,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -43,20 +44,19 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueueMessage> _moqStorageQueueGateway;
     private CheckingEngineGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public async Task Setup()
-    {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
+    {       
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
+            .UseInMemoryDatabase(nameof(CheckingEngineGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
@@ -202,43 +202,46 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public void Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException()
+    public async Task Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.eligible;
         item.Type = CheckEligibilityType.None;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID);
 
         // Assert
-        act.Should().ThrowExactlyAsync<ProcessCheckException>();
+        await act.Should().ThrowExactlyAsync<ProcessCheckException>();
     }
 
     [Ignore("Temporarily disabled")]
     [Test]
-    public void Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException_InvalidStatus()
+    public async Task Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException_InvalidStatus()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.eligible;
         item.Type = CheckEligibilityType.FreeSchoolMeals;
+
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
+
         var dataItem = GetCheckProcessData(fsm);
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID);
 
         // Assert
-        act.Should().ThrowExactlyAsync<ProcessCheckException>().Result
+        await act.Should()
+            .ThrowExactlyAsync<ProcessCheckException>()
             .WithMessage($"Error checkItem {item.EligibilityCheckID} not queuedForProcessing. {item.Status}");
     }
 
@@ -323,7 +326,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -392,7 +395,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -420,7 +423,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Pending - Keep checking" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -447,7 +450,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "Manual process" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
@@ -474,7 +477,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
         { Status = "0", ErrorCode = "0", Qualifier = "No Trace - Check data" };
@@ -504,7 +507,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = fsm.Type;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
 
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(value: null);
@@ -532,7 +535,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
         var ecsSoapCheckResponse = new SoapCheckResponse
         { Status = "0", ErrorCode = "-1", Qualifier = "refer to admin" };
@@ -564,7 +567,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
@@ -597,7 +600,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
@@ -635,7 +638,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.CAPIResponseCode = HttpStatusCode.OK;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         
@@ -708,7 +711,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
@@ -739,7 +742,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             Surname = fsm.LastName,
             DateOfBirth = DateTime.ParseExact(fsm.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
 
@@ -778,7 +781,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             DateOfBirth =
                 DateTime.ParseExact(dataItem.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None)
         });
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
