@@ -290,7 +290,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
@@ -317,7 +317,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check,eligibilityEndDate));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
@@ -377,7 +377,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         check.LastName = "simpson";
         item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
         _fakeInMemoryDb.CheckEligibilities.Add(item);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
         var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
