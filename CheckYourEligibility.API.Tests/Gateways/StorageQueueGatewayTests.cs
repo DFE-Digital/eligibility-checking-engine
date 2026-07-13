@@ -38,7 +38,7 @@ public class StorageQueueGatewayTests : TestBase.TestBase
     private Mock<ICheckingEngine> _moqCheckingEngineGateway;
     private Mock<ICheckEligibility> _moqCheckEligibilityGateway;
     private Mock<IDwpAdapter> _moqDwpGateway;
-    private Mock<IStorageQueueMessage> _moqStorageQueueGateway;
+    private Mock<IStorageQueue> _moqStorageQueueGateway;
     private StorageQueueGateway _sut;
 
     [SetUp]
@@ -75,7 +75,7 @@ public class StorageQueueGatewayTests : TestBase.TestBase
 
         _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
         _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
-        _moqStorageQueueGateway = new Mock<IStorageQueueMessage>();
+        _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqCheckEligibilityGateway = new Mock<ICheckEligibility>();
         _moqCheckingEngineGateway = new Mock<ICheckingEngine>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);

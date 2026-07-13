@@ -41,7 +41,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     private Mock<ILocalAuthority> _localAuthority;
     private Mock<IEligibilityPolicy> _eligibilityPolicy;
     private Mock<IDwpAdapter> _moqDwpGateway;
-    private Mock<IStorageQueueMessage> _moqStorageQueueGateway;
+    private Mock<IStorageQueue> _moqStorageQueueGateway;
     private CheckingEngineGateway _sut;
 
     [SetUp]
@@ -87,7 +87,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
         _localAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
         _eligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
-        _moqStorageQueueGateway = new Mock<IStorageQueueMessage>();
+        _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 
