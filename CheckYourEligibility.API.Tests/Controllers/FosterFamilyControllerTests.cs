@@ -1,8 +1,7 @@
-using AutoFixture;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +10,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
+using CheckYourEligibility.Core.Boundary.Requests;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class FosterFamilyControllerTests : TestBase.TestBase
+public class FosterFamilyControllerTests : TestBase
 {
     private IConfigurationRoot _configuration = null!;
     //private new Fixture _fixture = null!; // Added 'new' keyword

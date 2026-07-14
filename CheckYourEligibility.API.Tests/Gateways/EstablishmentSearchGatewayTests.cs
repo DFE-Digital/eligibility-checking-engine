@@ -1,15 +1,12 @@
-// Ignore Spelling: Levenshtein
-
 using AutoFixture;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class EstablishmentSearchGatewayTests : TestBase.TestBase
+public class EstablishmentSearchGatewayTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;

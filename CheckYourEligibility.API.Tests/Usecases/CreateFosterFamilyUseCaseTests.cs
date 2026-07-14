@@ -1,13 +1,14 @@
 using AutoFixture;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
+public class CreateFosterFamilyUseCaseTests : TestBase
 {
      private Mock<IFosterFamily> _mockFosterFamilyGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;

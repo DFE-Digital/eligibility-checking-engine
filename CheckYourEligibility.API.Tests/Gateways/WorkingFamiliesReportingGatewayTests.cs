@@ -1,19 +1,17 @@
 using AutoFixture;
 using AutoMapper;
-using Castle.Core.Logging;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 using NUnit.Framework.Legacy;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
+public class WorkingFamiliesReportingGatewayTests() : TestBase
 {
     private new Fixture _fixture = null!;
     private Mock<ILogger<WorkingFamiliesReportingGateway>> _mockLogger = null!;

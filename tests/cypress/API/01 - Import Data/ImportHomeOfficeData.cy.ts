@@ -6,7 +6,7 @@ describe('Testing the API', function () {
         // Declarations
         const fileName = 'HODataSubset.csv'; // File name including extension
         const method = 'POST';
-        const url = Cypress.config('baseUrl') + 'admin/import-home-office-data';
+        const url = Cypress.config('baseUrl') + '/admin/import-home-office-data';
         const fileType = 'text/csv'; // CSV file type     
         const expectedAnswer = '{"data":"HODataSubset.csv - HomeOffice File Processed."}';
 

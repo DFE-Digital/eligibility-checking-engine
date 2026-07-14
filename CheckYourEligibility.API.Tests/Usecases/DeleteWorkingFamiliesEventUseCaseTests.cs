@@ -1,6 +1,6 @@
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -8,7 +8,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class DeleteWorkingFamiliesEventUseCaseTests : TestBase.TestBase
+public class DeleteWorkingFamiliesEventUseCaseTests : TestBase
 {
     private Mock<IWorkingFamiliesEvent> _mockGateway = null!;
     private Mock<ILogger<DeleteWorkingFamiliesEventUseCase>> _mockLogger = null!;

@@ -1,13 +1,12 @@
 using System.Security.Claims;
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Usecases;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +17,7 @@ using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class BulkCheckControllerTests : TestBase.TestBase
+public class BulkCheckControllerTests : TestBase
 {
     private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
@@ -309,7 +308,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
 
         _mockCreateApplicationsFromBulkCheckUseCase
             .Setup(u => u.Execute(guid, It.Is<List<int>>(ids => ids.Contains(201))))
-            .ThrowsAsync(new CheckYourEligibility.API.Domain.Exceptions.ValidationException(
+            .ThrowsAsync(new CheckYourEligibility.Core.Domain.Exceptions.ValidationException(
             [
                 new Error
             {

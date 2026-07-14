@@ -1,0 +1,112 @@
+﻿using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace CheckYourEligibility.Core.Gateways;
+
+/// <summary>
+/// Provides data access and update operations for Multi Academy Trusts.
+/// </summary>
+public class MultiAcademyTrustGateway : IMultiAcademyTrust
+{
+    private readonly IEligibilityCheckContext _db;
+    private readonly ILogger _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiAcademyTrustGateway"/> class.
+    /// </summary>
+    /// <param name="dbContext">The database context.</param>
+    public MultiAcademyTrustGateway(IEligibilityCheckContext dbContext, ILogger<MultiAcademyTrustGateway> logger)
+    {
+        _db = dbContext;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Retrieves a Multi Academy Trust by its unique identifier.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <returns>The matching <see cref="MultiAcademyTrust"/> if found; otherwise, null.</returns>
+    public Task<MultiAcademyTrust?> GetMultiAcademyTrustById(int multiAcademyTrustId)
+    {
+        return _db.MultiAcademyTrusts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MultiAcademyTrustID == multiAcademyTrustId);
+    }
+
+    /// <summary>
+    /// Updates the flag indicating whether academies under the specified Multi Academy Trust
+    /// are allowed to review evidence.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <param name="value">The value to set for the AcademyCanReviewEvidence flag.</param>
+    /// <returns>The updated <see cref="MultiAcademyTrust"/> if successful; otherwise, null.</returns>
+    public async Task<MultiAcademyTrust?> UpdateAcademyCanReviewEvidence(int multiAcademyTrustId, bool value)
+    {
+        var mat = await _db.MultiAcademyTrusts
+            .FirstOrDefaultAsync(x => x.MultiAcademyTrustID == multiAcademyTrustId);
+
+        if (mat == null)
+            return null;
+
+        mat.AcademyCanReviewEvidence = value;
+
+        await _db.SaveChangesAsync();
+
+        return mat;
+    }
+
+    /// <summary>
+    /// Retrieves all establishment IDs linked to the specified Multi Academy Trust.
+    /// </summary>
+    /// <param name="multiAcademyTrustId">The unique identifier of the Multi Academy Trust.</param>
+    /// <returns>A list of establishment IDs linked to the specified Multi Academy Trust.</returns>
+    public async Task<IList<int>> GetEstablishmentIdsForMultiAcademyTrust(int multiAcademyTrustId)
+    {
+        return await _db.MultiAcademyTrustEstablishments
+            .Where(x => x.MultiAcademyTrustID == multiAcademyTrustId)
+            .Select(x => x.EstablishmentID)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Get all establishments by MAT id
+    /// </summary>
+    /// <param name="multiAcademyTrustId"></param>
+    /// <returns></returns>
+    public async Task<List<EstablishmentResponseItem>> GetEstablishmentsByMultiAcademyTrustId(int multiAcademyTrustId)
+    {
+        try
+        {
+
+            var matExists = await _db.MultiAcademyTrusts
+                .AnyAsync(x => x.MultiAcademyTrustID == multiAcademyTrustId);
+
+            if (!matExists)
+            {
+                throw new NotFoundException($"MultiAcademyTrust: - {multiAcademyTrustId}, is not found");
+            }
+
+            var result = await _db.MultiAcademyTrustEstablishments
+                .Where(m => m.MultiAcademyTrustID == multiAcademyTrustId)
+                .Include(e => e.Establishment)
+                .Select(x => new EstablishmentResponseItem
+                {
+                    URN = x.EstablishmentID,
+                    Name = x.Establishment.EstablishmentName
+                })
+                .AsNoTracking()
+                .ToListAsync();
+                
+            return result;
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogError(ex, "Error retrieving establishments with Id: -", multiAcademyTrustId);
+            throw new NotFoundException($"Unable to find establishments: - {multiAcademyTrustId}, {ex.Message}");
+        }
+    }
+}

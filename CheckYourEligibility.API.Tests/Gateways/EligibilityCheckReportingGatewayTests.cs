@@ -1,10 +1,6 @@
-
-using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,7 +10,7 @@ using NUnit.Framework.Internal;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
-public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
+public class EligibilityCheckReportingGatewayTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
 
@@ -538,64 +534,6 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
     #endregion
 
     #region Helper Methods
-    private BulkCheck GetBulkCheckWithEligibilityChecks(int numberOfChecks, CheckEligibilityType type, int localAuthorityId)
-    {
-        var bulkCheck = new BulkCheck
-        {
-            BulkCheckID = Guid.NewGuid().ToString(),
-            Filename = "test.csv",
-            EligibilityType = type,
-            LocalAuthorityID = localAuthorityId,
-            SubmittedDate = DateTime.UtcNow,
-            Status = BulkCheckStatus.InProgress,
-            EligibilityChecks = new List<EligibilityCheck>()
-        };
-
-        for (var i = 0; i < numberOfChecks; i++)
-        {
-            var request = _fixture.Create<CheckEligibilityRequestData>();
-            request.DateOfBirth = DateTime.UtcNow.AddYears(-18).ToString("yyyy-MM-dd"); // Always valid date
-            var eligibilityCheck = new EligibilityCheck
-            {
-                EligibilityCheckID = Guid.NewGuid().ToString(),
-                Type = type,
-                Status = CheckEligibilityStatus.eligible,
-                CheckData = JsonConvert.SerializeObject(GetCheckProcessData(request)),
-                BulkCheckID = bulkCheck.BulkCheckID, // Set FK
-                BulkCheck = bulkCheck                // Set navigation property
-            };
-            bulkCheck.EligibilityChecks.Add(eligibilityCheck);
-        }
-
-        return bulkCheck;
-    }
-
-    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
-    {
-        return new CheckProcessData
-        {
-            DateOfBirth = request.DateOfBirth ?? "1990-01-01",
-            LastName = request.LastName,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
-            NationalInsuranceNumber = request.NationalInsuranceNumber,
-            Type = request.Type
-        };
-    }
-
-    private CheckProcessData GetCheckProcessData(CheckEligibilityRequestWorkingFamiliesData request)
-    {
-        return new CheckProcessData
-        {
-            EligibilityCode = request.EligibilityCode,
-            LastName = request.LastName,
-            GracePeriodEndDate = request.GracePeriodEndDate,
-            ValidityStartDate = request.ValidityStartDate,
-            ValidityEndDate = request.ValidityEndDate,
-            NationalInsuranceNumber = request.NationalInsuranceNumber,
-            DateOfBirth = request.DateOfBirth,
-            Type = CheckEligibilityType.WorkingFamilies
-        };
-    }
 
     private string GenerateCheckData(CheckEligibilityType eligibilityCheckType)
     {

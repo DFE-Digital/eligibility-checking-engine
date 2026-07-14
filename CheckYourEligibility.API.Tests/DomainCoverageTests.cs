@@ -1,13 +1,13 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.Api.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
-using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
+using ApplicationStatus = CheckYourEligibility.Core.Domain.Enums.ApplicationStatus;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class DomainCoverageTests : TestBase.TestBase
+public class DomainCoverageTests : TestBase
 {
     [SetUp]
     public void Setup()

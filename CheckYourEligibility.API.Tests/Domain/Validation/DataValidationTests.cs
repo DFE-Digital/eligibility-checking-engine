@@ -1,5 +1,5 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Enums;
 using FeatureManagement.Domain.Validation;
 using FluentAssertions;
 

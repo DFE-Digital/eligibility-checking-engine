@@ -1,7 +1,7 @@
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Data.Mappings;
-using Microsoft.AspNetCore.Mvc;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ using NUnit.Framework.Internal;
 namespace CheckYourEligibility.API.Tests.Gateways;
 
 [TestFixture]
-public class FosterFamilyGatewayTests : TestBase.TestBase
+public class FosterFamilyGatewayTests : TestBase
 {
     private new Fixture _fixture = null!;
     private Mock<ILogger<FosterFamilyGateway>> _mockLogger = null!;

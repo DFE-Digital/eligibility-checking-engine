@@ -1,6 +1,5 @@
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,7 @@ using NUnit.Framework.Internal;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class LocalAuthorityGatewayTests : TestBase.TestBase
+public class LocalAuthorityGatewayTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private LocalAuthorityGateway _sut;

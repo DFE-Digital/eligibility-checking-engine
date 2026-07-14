@@ -1,8 +1,8 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Moq;
 

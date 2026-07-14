@@ -1,0 +1,72 @@
+﻿using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+
+namespace CheckYourEligibility.Core.UseCases
+{
+
+    /// <summary>
+    ///     Interface for creating or updating a user.
+    /// </summary>
+    public interface IDeleteBulkCheckUseCase
+    {
+        /// <summary>
+        ///     Execute the use case.
+        /// </summary>
+        /// <param name="groupId">The group ID of the bulk check to delete</param>
+        /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs for the user (0 means admin access to all)</param>
+        /// <returns></returns>
+        Task<CheckEligibilityBulkDeleteResponse> Execute(string groupId, IList<int> allowedLocalAuthorityIds);
+    }
+
+    public class DeleteBulkCheckUseCase : IDeleteBulkCheckUseCase
+    {
+        private readonly ICheckEligibility _checkGateway;
+        private readonly IBulkCheck _bulkCheckGateway;
+        private readonly ILogger<DeleteBulkCheckUseCase> _logger;
+
+        public DeleteBulkCheckUseCase(ICheckEligibility checkGateway, IBulkCheck bulkCheckGateway, ILogger<DeleteBulkCheckUseCase> logger)
+        {
+            _checkGateway = checkGateway;
+            _bulkCheckGateway = bulkCheckGateway;
+            _logger = logger;
+        }
+
+        public async Task<CheckEligibilityBulkDeleteResponse> Execute(string groupId,
+            IList<int> allowedLocalAuthorityIds)
+        {
+            if (string.IsNullOrEmpty(groupId))
+                throw new ValidationException(null, "Invalid Request, group ID is required.");
+
+            // First, get the bulk check to validate ownership
+            var bulkCheck = await _bulkCheckGateway.GetBulkCheck(groupId);
+
+            if (bulkCheck == null)
+            {
+                throw new NotFoundException($"Bulk check with ID {groupId} not found.");
+            }
+
+    
+            if(bulkCheck.Status == BulkCheckStatus.InProgress)
+            {
+                throw new ValidationException(null, $"Cannot delete bulk check with ID {groupId} because it is currently in progress.");
+            }
+
+            // Check if user has permission to delete this bulk check
+            if (!allowedLocalAuthorityIds.Contains(0)) // Not an admin
+            {
+                if (!bulkCheck.LocalAuthorityID.HasValue ||
+                    !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value))
+                {
+                    throw new InvalidScopeException(
+                        $"Access denied. You can only delete bulk checks for your assigned local authority.");
+                }
+            }
+
+            _logger.LogInformation(
+                $"Deleting EligibilityChecks for GroupId: {groupId?.Replace(Environment.NewLine, "")}");
+            return new CheckEligibilityBulkDeleteResponse() { Data = await _checkGateway.DeleteByBulkCheckId(groupId) };
+        }
+    }
+}

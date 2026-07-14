@@ -1,19 +1,18 @@
-﻿using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Extensions;
-using CheckYourEligibility.API.Filters;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+﻿using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Gateways;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Security;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using CheckYourEligibility.API.Filters;
+using CheckYourEligibility.Core.Extensions;
 namespace CheckYourEligibility.API;
 
 [ExcludeFromCodeCoverage(Justification = "extension of program")]

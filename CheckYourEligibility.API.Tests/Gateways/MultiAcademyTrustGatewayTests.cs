@@ -1,6 +1,5 @@
-﻿using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
+﻿using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class MultiAcademyTrustGatewayTests : TestBase.TestBase
+public class MultiAcademyTrustGatewayTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private MultiAcademyTrustGateway _sut;

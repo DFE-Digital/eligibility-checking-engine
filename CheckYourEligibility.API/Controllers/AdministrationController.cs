@@ -1,9 +1,9 @@
 ﻿// Ignore Spelling: Fsm
 
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;

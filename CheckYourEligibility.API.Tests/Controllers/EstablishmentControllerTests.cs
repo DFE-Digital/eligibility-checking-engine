@@ -1,8 +1,8 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +11,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class EstablishmentControllerTests : TestBase.TestBase
+public class EstablishmentControllerTests : TestBase
 {
     private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;

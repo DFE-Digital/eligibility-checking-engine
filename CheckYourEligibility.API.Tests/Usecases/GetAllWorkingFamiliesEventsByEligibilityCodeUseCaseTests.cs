@@ -1,9 +1,8 @@
 using AutoFixture;
-using Castle.Core.Logging;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,7 +10,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase.TestBase
+public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
 {
     private Mock<IWorkingFamiliesReporting> _mockWorkingFamiliesReportingGateway;
     private Mock<ILogger<GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>> _mockLogger;
@@ -41,14 +40,14 @@ public class GetAllWorkingFamiliesEventsByEligibilityCodeUseCaseTests : TestBase
         var localAuthorityIds = new List<int> { 123, 456 };
 
         // single app
-        var wfResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
+        var wfResponse = new WorkingFamilyEventByEligibilityCodeResponse
         {
-            Data = new List<WorkingFamilyEventByEligibilityCodeRepsonseItem>
+            Data = new List<WorkingFamilyEventByEligibilityCodeResponseItem>
         {
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C3-A",
                     SubmissionDate = new DateTime(2025,08,01)

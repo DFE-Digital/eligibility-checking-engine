@@ -1,6 +1,4 @@
-using System;
-using NUnit.Framework;
-using CheckYourEligibility.API.Helpers;
+using CheckYourEligibility.Core.Helpers;
 
 namespace CheckYourEligibility.API.Tests.Helpers
 {

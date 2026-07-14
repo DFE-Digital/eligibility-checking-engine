@@ -1,9 +1,9 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +13,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class NotificationControllerTests : TestBase.TestBase
+public class NotificationControllerTests : TestBase
 {
     private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;

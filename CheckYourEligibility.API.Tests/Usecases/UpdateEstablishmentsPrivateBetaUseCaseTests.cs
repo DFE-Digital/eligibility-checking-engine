@@ -1,8 +1,7 @@
 using AutoFixture;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.CsvImport;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.CsvImport;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase.TestBase
+public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

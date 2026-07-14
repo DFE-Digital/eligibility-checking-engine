@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using AutoFixture;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Responses;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -8,7 +8,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetEligibilityReportHistoryUseCaseTests : TestBase.TestBase
+public class GetEligibilityReportHistoryUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

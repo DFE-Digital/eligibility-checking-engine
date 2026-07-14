@@ -1,21 +1,21 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
+using ValidationException = CheckYourEligibility.Core.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class CheckEligibilityUseCaseTests : TestBase.TestBase
+public class CheckEligibilityUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

@@ -1,6 +1,5 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Boundary.Requests;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -8,7 +7,7 @@ using Notify.Interfaces;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class NotifyGatewayTests : TestBase.TestBase
+public class NotifyGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private Mock<INotificationClient> _mockClient;

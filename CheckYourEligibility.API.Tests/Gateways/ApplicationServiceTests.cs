@@ -1,27 +1,22 @@
-// Ignore Spelling: Levenshtein
-
-using System.Diagnostics.CodeAnalysis;
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
-using Establishment = CheckYourEligibility.API.Domain.Establishment;
+using ApplicationStatus = CheckYourEligibility.Core.Domain.Enums.ApplicationStatus;
+using Establishment = CheckYourEligibility.Core.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Tests;
 
 [ExcludeFromCodeCoverage(Justification = "test")]
-public class ApplicationServiceTests : TestBase.TestBase
+public class ApplicationServiceTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;

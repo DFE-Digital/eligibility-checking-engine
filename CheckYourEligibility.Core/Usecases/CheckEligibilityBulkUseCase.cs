@@ -1,0 +1,165 @@
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using FluentValidation;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using BulkCheck = CheckYourEligibility.Core.Domain.BulkCheck;
+using ValidationException = CheckYourEligibility.Core.Domain.Exceptions.ValidationException;
+
+namespace CheckYourEligibility.Core.UseCases;
+
+/// <summary>
+/// Interface for bulk eligibility checking operations
+/// </summary>
+public interface ICheckEligibilityBulkUseCase
+{
+    Task<CheckEligibilityResponseBulk> Execute<T>(
+        T model,
+        CheckEligibilityType type,
+        int recordCountLimit,
+        CheckMetaData metaData) where T : CheckEligibilityRequestBulk;
+}
+
+/// <summary>
+/// Use case implementation for bulk eligibility checking operations
+/// </summary>
+public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
+
+{
+    private readonly IValidator<IEligibilityServiceType> _validator;
+    private readonly IAudit _auditGateway;
+    private readonly IBulkCheck _bulkCheckGateway;
+    private readonly ICheckEligibility _checkEligibilityGateway;
+    private readonly ILogger<CheckEligibilityBulkUseCase> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    /// <summary>
+    /// Use case for bulk eligibility checking operations
+    /// </summary>
+    public CheckEligibilityBulkUseCase(
+        IValidator<IEligibilityServiceType> validator,
+        ICheckEligibility checkEligibilityGateway,
+        IBulkCheck bulkCheckGateway,
+        IAudit auditGateway,
+        ILogger<CheckEligibilityBulkUseCase> logger,
+        IServiceScopeFactory scopeFactory)
+    {
+        _validator = validator;
+        _checkEligibilityGateway = checkEligibilityGateway;
+        _bulkCheckGateway = bulkCheckGateway;
+        _auditGateway = auditGateway;
+        _logger = logger;
+        _scopeFactory = scopeFactory;
+    }
+
+    public async Task<CheckEligibilityResponseBulk> Execute<T>(
+        T model,
+        CheckEligibilityType type,
+        int recordCountLimit,
+        CheckMetaData meta) where T : CheckEligibilityRequestBulk
+    {
+        var modelBulk = EligibilityBulkModelFactory.CreateBulkFromGeneric(model, type);
+        var bulkData = (modelBulk as dynamic).Data;
+        if (modelBulk == null || bulkData == null)
+
+            throw new ValidationException(null, "Invalid Request, data is required.");
+
+        if (bulkData.Count > recordCountLimit)
+        {
+            var errorMessage =
+                $"Invalid Request, data limit of {recordCountLimit} exceeded, {bulkData.Count} records.";
+            _logger.LogWarning(errorMessage);
+            throw new ValidationException([], errorMessage);
+        }
+
+        List<Error> errors = new List<Error>();
+
+        int index = 0;
+
+        foreach (var item in bulkData)
+        {
+            item.NationalInsuranceNumber = item.NationalInsuranceNumber?.ToUpperInvariant();
+            if (type != CheckEligibilityType.WorkingFamilies)
+            {
+                item.NationalAsylumSeekerServiceNumber = item.NationalAsylumSeekerServiceNumber?.ToUpperInvariant();
+            }
+
+            var result = _validator.Validate(item);
+            if (!result.IsValid)
+            {
+                for (int i = 0; i < result.Errors.Count; i++)
+                {
+                    Error error = new Error
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Title = result.Errors[i].ToString(),
+                        Detail = item.ClientIdentifier ?? $"Data at index {index} has no clientIdentifier"
+                    };
+                    errors.Add(error);
+                }
+            }
+
+            index++;
+        }
+
+        if (errors.Count > 0)
+            throw new ValidationException(errors, string.Empty);
+
+        var groupId = Guid.NewGuid().ToString();
+        
+        // Create BulkCheck record via gateway
+        var bulkCheck = new BulkCheck
+        {
+            BulkCheckID = groupId,
+            Filename = model.Meta?.Filename ?? string.Empty,
+            SubmittedBy = model.Meta?.SubmittedBy ?? string.Empty,
+            EligibilityType = type,
+            Status = BulkCheckStatus.InProgress,
+            OrganisationType = meta.OrganisationType,
+            OrganisationID = meta.OrganisationID,
+            SubmittedDate = DateTime.UtcNow,
+            LocalAuthorityID = model.Meta?.LocalAuthorityId,
+            FinalNameInCheck = bulkData[index - 1].LastName ?? string.Empty,
+            NumberOfRecords = bulkData.Count
+        };
+
+        await _bulkCheckGateway.CreateBulkCheck(bulkCheck);
+
+        // Capture the data as a typed list before the request scope ends.
+        // PostCheck runs in its own DI scope so it owns its DbContext and
+        // other scoped services for as long as the background work takes.
+        // Each invocation gets a fresh gateway instance, so concurrent bulk
+        // submissions cannot share state or overwrite each other's groupId.
+        var capturedData = ((IEnumerable<IEligibilityServiceType>)bulkData).ToList();
+        _ = Task.Run(async () =>
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var gateway = scope.ServiceProvider.GetRequiredService<ICheckEligibility>();
+            try
+            {
+                await gateway.PostCheck(capturedData, groupId, meta);
+            } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background PostCheck failed for bulk check group ID: {GroupId}", groupId);
+            }
+        });
+
+        _logger.LogInformation($"Bulk eligibility check created with group ID: {groupId}");
+        return new CheckEligibilityResponseBulk
+        {
+            Data = new StatusValue { Status = $"{Messages.Processing}" },
+            Links = new CheckEligibilityResponseBulkLinks
+            {
+                Get_Progress_Check = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.BulkCheckProgress}",
+
+                Get_BulkCheck_Status = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.Status}{Messages.Processing}",
+                
+                Get_BulkCheck_Results = $"{CheckLinks.BulkCheckLink}{groupId}{CheckLinks.BulkCheckResults}"
+            }
+        };
+    }
+}

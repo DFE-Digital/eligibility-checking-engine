@@ -1,12 +1,13 @@
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetEstablishmentsByMultiAcademyTrustIdUseCaseTests : TestBase.TestBase
+public class GetEstablishmentsByMultiAcademyTrustIdUseCaseTests : TestBase
 {
     private Mock<IMultiAcademyTrust> _mockGateway;
     private Mock<ILogger<GetEstablishmentsByMultiAcademyTrustIdIdUseCase>> _mockLogger;

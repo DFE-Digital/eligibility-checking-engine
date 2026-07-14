@@ -1,11 +1,7 @@
-// Ignore Spelling: Levenshtein
-
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,9 +9,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using String = string;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Gateways;
 
-public class UserGatewayTests : TestBase.TestBase
+public class UserGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;

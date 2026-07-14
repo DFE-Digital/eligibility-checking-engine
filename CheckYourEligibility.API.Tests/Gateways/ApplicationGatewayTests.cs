@@ -1,22 +1,20 @@
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ApplicationStatus = CheckYourEligibility.API.Domain.ApplicationStatus;
+using ApplicationStatus = CheckYourEligibility.Core.Domain.ApplicationStatus;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
 [TestFixture]
-public class ApplicationGatewayTests : TestBase.TestBase
+public class ApplicationGatewayTests : TestBase
 {
     private new Fixture _fixture = null!;
     private Mock<ILogger<ApplicationGateway>> _mockLogger = null!;
@@ -132,7 +130,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
     {
         // Arrange
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
@@ -154,7 +152,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             LaName = "Test LA"
         };
 
-        var establishment = new Domain.Establishment
+        var establishment = new Core.Domain.Establishment
         {
             EstablishmentID = 1,
             EstablishmentName = "Test School",
@@ -182,7 +180,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         await _dbContext.SaveChangesAsync();
 
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Entitled;
         app.EstablishmentId = establishment.EstablishmentID;
         app.LocalAuthorityID = localAuthority.LocalAuthorityID;
         app.UserId = user.UserID;
@@ -208,7 +206,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             LaName = "Test LA 2"
         };
 
-        var establishment = new Domain.Establishment
+        var establishment = new Core.Domain.Establishment
         {
             EstablishmentID = 2,
             EstablishmentName = "Test School 2",
@@ -227,7 +225,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         await _dbContext.SaveChangesAsync();
 
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         app.EstablishmentId = establishment.EstablishmentID;
         app.LocalAuthorityID = localAuthority.LocalAuthorityID;
 
@@ -246,7 +244,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
     {
         // Arrange
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Entitled;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
@@ -266,10 +264,10 @@ public class ApplicationGatewayTests : TestBase.TestBase
     {
         // Arrange
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         await _dbContext.Applications.AddAsync(app);
         var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
-        previousStatus.Type = Domain.Enums.ApplicationStatus.Entitled;
+        previousStatus.Type = Core.Domain.Enums.ApplicationStatus.Entitled;
         await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
         await _dbContext.SaveChangesAsync();
 
@@ -280,7 +278,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         result.Should().BeOfType<ApplicationStatusRestoreResponse>();
         var updatedApp = await _dbContext.Applications.FirstOrDefaultAsync(a => a.ApplicationID == app.ApplicationID);
         updatedApp.Should().NotBeNull();
-        updatedApp!.Status.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+        updatedApp!.Status.Should().Be(Core.Domain.Enums.ApplicationStatus.Entitled);
     }
 
     [Test]
@@ -301,7 +299,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
     {
         // Arrange
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Entitled;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
         // Act
@@ -323,7 +321,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             ApplicationID = Guid.NewGuid().ToString(),
             Reference = _fixture.Create<string>().PadRight(8)[..8], // Limit length
             Type = CheckEligibilityType.FreeSchoolMeals,
-            Status = Domain.Enums.ApplicationStatus.Entitled,
+            Status = Core.Domain.Enums.ApplicationStatus.Entitled,
             Tier =  EligibilityTier.expanded,
             ParentFirstName = _fixture.Create<string>().PadRight(20)[..20],
             ParentLastName = _fixture.Create<string>().PadRight(20)[..20],
@@ -348,7 +346,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         {
             ApplicationStatusID = Guid.NewGuid().ToString(),
             ApplicationID = applicationId,
-            Type = Domain.Enums.ApplicationStatus.Entitled,
+            Type = Core.Domain.Enums.ApplicationStatus.Entitled,
             TimeStamp = DateTime.UtcNow
         };
     }

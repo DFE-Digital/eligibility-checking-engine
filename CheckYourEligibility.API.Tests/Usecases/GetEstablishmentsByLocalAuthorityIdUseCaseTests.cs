@@ -1,13 +1,13 @@
-
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetEstablishmentsByLocalAuthorityIdUseCaseTests : TestBase.TestBase
+public class GetEstablishmentsByLocalAuthorityIdUseCaseTests : TestBase
 {
     private Mock<ILocalAuthority> _mockGateway;
     private Mock<ILogger<GetEstablishmentsByLocalAuthorityIdUseCase>> _mockLogger;

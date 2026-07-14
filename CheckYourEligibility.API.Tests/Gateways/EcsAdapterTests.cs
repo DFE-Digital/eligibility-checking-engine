@@ -1,11 +1,10 @@
 using System.Net;
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +15,7 @@ using Resources = CheckYourEligibility.API.Tests.Properties.Resources;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class EcsAdapterTests : TestBase.TestBase
+public class EcsAdapterTests : TestBase
 {
     // private IEligibilityCheckContext _fakeInMemoryDb;
     private IConfiguration _configuration;

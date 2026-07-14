@@ -1,9 +1,9 @@
 using AutoFixture;
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;

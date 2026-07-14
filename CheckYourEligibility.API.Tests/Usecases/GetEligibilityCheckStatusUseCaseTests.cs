@@ -1,8 +1,8 @@
 using AutoFixture;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -10,7 +10,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
+public class GetEligibilityCheckStatusUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

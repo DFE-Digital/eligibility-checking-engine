@@ -1,18 +1,17 @@
 using AutoFixture;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.CsvImport;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.API.Tests.Properties;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using CheckYourEligibility.Core.Gateways.CsvImport;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ImportMatsUseCaseTests : TestBase.TestBase
+public class ImportMatsUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

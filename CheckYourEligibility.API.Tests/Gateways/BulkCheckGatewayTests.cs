@@ -1,33 +1,20 @@
-// Ignore Spelling: Levenshtein
-
-using System.Globalization;
-using System.Net;
 using AutoFixture;
 using AutoMapper;
-using Azure.Storage.Queues;
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Newtonsoft.Json;
-using DomainBulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
+using DomainBulkCheck = CheckYourEligibility.Core.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class BulkCheckGatewayTests : TestBase.TestBase
+public class BulkCheckGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;

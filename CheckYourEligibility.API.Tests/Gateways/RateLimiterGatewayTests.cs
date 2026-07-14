@@ -1,6 +1,5 @@
 using AutoFixture;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class RateLimiterServiceTests : TestBase.TestBase
+public class RateLimiterServiceTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private RateLimitGateway _sut;

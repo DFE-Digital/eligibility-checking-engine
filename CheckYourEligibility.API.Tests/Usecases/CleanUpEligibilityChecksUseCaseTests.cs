@@ -1,13 +1,13 @@
 using AutoFixture;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class CleanUpEligibilityChecksUseCaseTests : TestBase.TestBase
+public class CleanUpEligibilityChecksUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

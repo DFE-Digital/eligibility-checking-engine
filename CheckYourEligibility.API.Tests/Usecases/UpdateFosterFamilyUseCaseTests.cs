@@ -1,5 +1,5 @@
-using AutoFixture;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Moq;
 

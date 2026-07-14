@@ -1,10 +1,10 @@
 using System.Text;
 using AutoFixture;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.API.Tests.Properties;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -13,7 +13,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ImportFsmHMRCDataUseCaseTests : TestBase.TestBase
+public class ImportFsmHMRCDataUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

@@ -1,10 +1,10 @@
 ﻿using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class MultiAcademyTrustsControllerTests : TestBase.TestBase
+public class MultiAcademyTrustsControllerTests : TestBase
 {
     private Fixture _fixture;
     private Mock<IMultiAcademyTrust> _mockMultiAcademyTrust;

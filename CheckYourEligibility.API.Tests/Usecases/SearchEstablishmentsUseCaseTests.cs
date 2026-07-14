@@ -1,15 +1,15 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class SearchEstablishmentsUseCaseTests : TestBase.TestBase
+public class SearchEstablishmentsUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

@@ -1,0 +1,80 @@
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+
+namespace CheckYourEligibility.Core.UseCases;
+
+/// <summary>
+///     Interface for processing eligibility checks
+/// </summary>
+public interface IProcessEligibilityCheckUseCase
+{
+    /// <summary>
+    ///     Execute the use case
+    /// </summary>
+    /// <param name="guid">The ID of the eligibility check</param>
+    /// <returns>Processed eligibility check status</returns>
+    Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null);
+}
+
+public class ProcessEligibilityCheckUseCase : IProcessEligibilityCheckUseCase
+{
+    private readonly IAudit _auditGateway;
+    private readonly ICheckingEngine _checkingEngineGateway;
+    private readonly ILogger<ProcessEligibilityCheckUseCase> _logger;
+
+    public ProcessEligibilityCheckUseCase(
+        ICheckingEngine checkingEngineGateway,
+        IAudit auditGateway,
+        ILogger<ProcessEligibilityCheckUseCase> logger)
+    {
+        _checkingEngineGateway = checkingEngineGateway;
+        _auditGateway = auditGateway;
+        _logger = logger;
+    }
+
+    public async Task<CheckEligibilityStatusResponse> Execute(string guid, EligibilityCheckContext dbContextFactory = null)
+    {
+        if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
+
+        try
+        {
+                // pass dbContext
+              
+                var (status, tier) = await _checkingEngineGateway.ProcessCheckAsync(guid, dbContextFactory);
+               
+            if (status == null)
+            {
+                _logger.LogWarning(
+                    $"Eligibility check with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+                throw new NotFoundException(guid);
+            }
+
+        
+
+            _logger.LogInformation(
+                $"Processed eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}, status: {status.Value}");
+
+            var resultResponse = new CheckEligibilityStatusResponse
+            {
+                Data = new StatusValue
+                {
+                    Status = status.Value.ToString(),
+                    Tier  = tier?.ToString()
+                }
+            };
+            // When status is Queued For Processing, i.e. not error
+               //if (response.Value == CheckEligibilityStatus.queuedForProcessing)
+               // throw new ApplicationException("Eligibility check still queued for processing.");
+
+            return resultResponse;
+        }
+        catch (ProcessCheckException ex)
+        {
+            _logger.LogError(ex,
+                $"Error processing eligibility check with ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
+            throw new ValidationException(null, "Failed to process eligibility check.");
+        }
+    }
+}

@@ -1,10 +1,10 @@
 using AutoFixture;
 using Azure.Storage.Queues.Models;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
+public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
 {
     private Mock<IStorageQueue> _mockGateway;
     private Mock<ILogger<ProcessEligibilityBulkCheckUseCase>> _mockLogger;
@@ -172,7 +172,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
     {
         using var db = new EligibilityCheckContext(_dbOptions);
 
-        db.BulkChecks.Add(new Domain.BulkCheck
+        db.BulkChecks.Add(new Core.Domain.BulkCheck
         {
             BulkCheckID = bulkId,
             Status = BulkCheckStatus.InProgress
@@ -180,7 +180,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
 
         foreach (var c in checks)
         {
-            db.CheckEligibilities.Add(new Domain.EligibilityCheck    
+            db.CheckEligibilities.Add(new Core.Domain.EligibilityCheck    
             {
                 EligibilityCheckID = c.id,
                 BulkCheckID = bulkId,

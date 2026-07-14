@@ -5,7 +5,7 @@ using AutoFixture.AutoMoq;
 using AutoFixture.Idioms;
 using Moq;
 
-namespace CheckYourEligibility.TestBase;
+namespace CheckYourEligibility;
 
 [ExcludeFromCodeCoverage]
 public abstract class TestBase

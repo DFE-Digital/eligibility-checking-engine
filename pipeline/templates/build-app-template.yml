@@ -38,7 +38,7 @@ stages:
           script: |
             export PATH="$PATH:$HOME/.dotnet/tools"
             dotnet tool install --global dotnet-ef --version ${{ parameters.dotnetEfVersion }}
-            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
+            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.Core/CheckYourEligibility.Core.csproj
             mv efbundle $(Build.ArtifactStagingDirectory)
           failOnStderr: true
 

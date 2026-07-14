@@ -1,12 +1,12 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
-public class GetEligibilityCheckReportingUseCaseTests : TestBase.TestBase
+public class GetEligibilityCheckReportingUseCaseTests : TestBase
 {
     private Mock<IEligibilityCheckReporting> _mockEligibilityCheckReportingGateway;
     private Mock<ILogger<GetEligibilityCheckReportingUseCase>> _mockLogger;

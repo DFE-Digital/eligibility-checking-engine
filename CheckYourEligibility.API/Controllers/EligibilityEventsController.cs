@@ -1,9 +1,9 @@
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.API.Filters;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;

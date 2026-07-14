@@ -1,15 +1,13 @@
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Requests.DWP;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +19,7 @@ using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class CheckEligibilityGatewayTests : TestBase.TestBase
+public class CheckEligibilityGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
@@ -571,37 +569,6 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             Type = request.Type,
             EligibilityEndDate = eligiblityEndDate
         };
-    }
-    private Domain.BulkCheck GetBulkCheckWithEligibilityChecks(int numberOfChecks, CheckEligibilityType type, int localAuthorityId)
-    {
-        var bulkCheck = new Domain.BulkCheck
-        {
-            BulkCheckID = Guid.NewGuid().ToString(),
-            Filename = "test.csv",
-            EligibilityType = type,
-            LocalAuthorityID = localAuthorityId,
-            SubmittedDate = DateTime.UtcNow,
-            Status = BulkCheckStatus.InProgress,
-            EligibilityChecks = new List<EligibilityCheck>()
-        };
-
-        for (var i = 0; i < numberOfChecks; i++)
-        {
-            var request = _fixture.Create<CheckEligibilityRequestData>();
-            request.DateOfBirth = DateTime.UtcNow.AddYears(-18).ToString("yyyy-MM-dd"); // Always valid date
-            var eligibilityCheck = new EligibilityCheck
-            {
-                EligibilityCheckID = Guid.NewGuid().ToString(),
-                Type = type,
-                Status = CheckEligibilityStatus.eligible,
-                CheckData = JsonConvert.SerializeObject(GetCheckProcessData(request)),
-                BulkCheckID = bulkCheck.BulkCheckID, // Set FK
-                BulkCheck = bulkCheck                // Set navigation property
-            };
-            bulkCheck.EligibilityChecks.Add(eligibilityCheck);
-        }
-
-        return bulkCheck;
     }
     
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)

@@ -1,8 +1,7 @@
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,7 +10,7 @@ using Newtonsoft.Json;
 namespace CheckYourEligibility.API.Tests.Usecases
 {
     [TestFixture]
-    public class GetEligibilityCheckReportItemsUseCaseTests : TestBase.TestBase
+    public class GetEligibilityCheckReportItemsUseCaseTests : TestBase
     {
         private Mock<IEligibilityCheckReporting> _mockReportingGateway;
         private Mock<ILogger<GetEligibilityCheckReportItemsUseCase>> _mockLogger;

@@ -1,13 +1,8 @@
-// Ignore Spelling: Levenshtein
-
-using System.Diagnostics.CodeAnalysis;
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.CsvImport;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.CsvImport;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -17,7 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace CheckYourEligibility.API.Tests;
 
 [ExcludeFromCodeCoverage]
-public class AdministrationGatewayTests : TestBase.TestBase
+public class AdministrationGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;

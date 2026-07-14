@@ -1,8 +1,8 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -10,7 +10,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
+public class UpsertWorkingFamiliesEventUseCaseTests : TestBase
 {
     private Mock<IWorkingFamiliesEvent> _mockGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;

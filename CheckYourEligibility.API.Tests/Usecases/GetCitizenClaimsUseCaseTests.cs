@@ -1,13 +1,13 @@
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetCitizenClaimsUseCaseTests : TestBase.TestBase
+public class GetCitizenClaimsUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

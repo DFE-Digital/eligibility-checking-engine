@@ -1,22 +1,22 @@
 using System.Text;
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ApplicationStatus = CheckYourEligibility.API.Domain.Enums.ApplicationStatus;
-using DomainEstablishment = CheckYourEligibility.API.Domain.Establishment;
+using ApplicationStatus = CheckYourEligibility.Core.Domain.Enums.ApplicationStatus;
+using DomainEstablishment = CheckYourEligibility.Core.Domain.Establishment;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ImportApplicationsUseCaseTests : TestBase.TestBase
+public class ImportApplicationsUseCaseTests : TestBase
 {
     private Mock<IApplication> _mockApplicationGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;

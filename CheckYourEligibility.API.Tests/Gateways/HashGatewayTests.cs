@@ -1,13 +1,12 @@
-// Ignore Spelling: Levenshtein
-
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Data.Mappings;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +15,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class HashGatewayTests : TestBase.TestBase
+public class HashGatewayTests : TestBase
 {
     private readonly int _hashCheckDays = 7;
     private readonly int _hashCheckDaysWF = 1;

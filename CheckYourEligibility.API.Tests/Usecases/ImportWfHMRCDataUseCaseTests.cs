@@ -1,9 +1,9 @@
 using System.Reflection;
 using AutoFixture;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
+public class ImportWfHMRCDataUseCaseTests : TestBase
 {
     private Mock<IAdministration> _mockGateway;
     private Mock<IAudit> _mockAuditGateway;

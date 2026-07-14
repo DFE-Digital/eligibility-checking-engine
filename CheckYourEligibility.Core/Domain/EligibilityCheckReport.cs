@@ -1,0 +1,24 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using CheckYourEligibility.Core.Domain;
+
+public class EligibilityCheckReport
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public Guid EligibilityCheckReportId { get; init; } = Guid.NewGuid();
+    public DateTime ReportGeneratedDate { get; init; } = DateTime.UtcNow;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public string GeneratedBy { get; set; }
+    public int NumberOfResults { get; set; }
+    public int? LocalAuthorityID { get; set; }
+    public virtual LocalAuthority? LocalAuthority { get; set; }
+    public ReportStatus? Status { get; set; } 
+    public CheckType CheckType { get; set; }
+    public bool IsDeleted { get; set; } = false;
+
+    // User
+    public string? UserID { get; set; }
+    public User? User { get; set; }
+}

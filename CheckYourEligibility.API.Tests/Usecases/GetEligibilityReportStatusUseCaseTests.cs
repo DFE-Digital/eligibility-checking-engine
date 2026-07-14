@@ -1,11 +1,11 @@
-using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class GetEligibilityReportStatusUseCaseTests : TestBase.TestBase
+public class GetEligibilityReportStatusUseCaseTests : TestBase
 {
     private Mock<IEligibilityCheckReporting> _mockGateway;
     private Mock<ILogger<GetEligibilityReportStatusUseCase>> _mockLogger;

@@ -1,35 +1,30 @@
-// Ignore Spelling: Levenshtein
-
 using AutoFixture;
 using AutoMapper;
-using Azure.Storage.Queues;
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Wordprocessing;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Requests.DWP;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Data.Mappings;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Net;
-using System.Runtime.CompilerServices;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class CheckingEngineGatewayTests : TestBase.TestBase
+public class CheckingEngineGatewayTests : TestBase
    
 {
     private IConfiguration _configuration;

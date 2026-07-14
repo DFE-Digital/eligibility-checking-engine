@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using System.Text;
 using AutoFixture;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Middleware;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

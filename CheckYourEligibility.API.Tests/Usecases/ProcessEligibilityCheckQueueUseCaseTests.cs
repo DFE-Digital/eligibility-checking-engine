@@ -1,7 +1,7 @@
 using AutoFixture;
 using Azure.Storage.Queues.Models;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +12,7 @@ using System.Reflection;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
+public class ProcessEligibilityCheckQueueUseCaseTests : TestBase
 {
     [SetUp]
     public void Setup()

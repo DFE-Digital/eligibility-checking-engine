@@ -1,17 +1,16 @@
-﻿using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+﻿using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
-using DomainValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
+using DomainValidationException = CheckYourEligibility.Core.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
 
@@ -55,7 +54,7 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
 
         _mockCreateApplicationsFromBulkCheckGateway
             .Setup(x => x.GetBulkCheck(bulkCheckId))
-            .ReturnsAsync(new CheckYourEligibility.API.Domain.BulkCheck
+            .ReturnsAsync(new CheckYourEligibility.Core.Domain.BulkCheck
             {
                 BulkCheckID = bulkCheckId,
                 Status = BulkCheckStatus.Completed

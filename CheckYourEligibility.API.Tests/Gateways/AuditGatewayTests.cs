@@ -1,14 +1,10 @@
-// Ignore Spelling: Levenshtein
-
 using System.Net;
 using System.Security.Claims;
 using AutoFixture;
 using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +14,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests;
 
-public class AuditGatewayTests : TestBase.TestBase
+public class AuditGatewayTests : TestBase
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
