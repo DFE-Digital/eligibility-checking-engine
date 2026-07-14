@@ -1,6 +1,5 @@
-﻿using System.Net;
-using CheckYourEligibility.API.Domain.Enums;
-using Microsoft.AspNetCore.Mvc;
+﻿using CheckYourEligibility.API.Domain.Enums;
+using System.Net;
 
 namespace CheckYourEligibility.API.Boundary.Responses
 {
@@ -10,6 +9,8 @@ namespace CheckYourEligibility.API.Boundary.Responses
         public HttpStatusCode CAPIResponseCode { get; set; }
         public string Reason { get; set; }
         public string CAPIEndpoint { get; set; }
+        public string RequestBody { get; set; }
+        public string ResponseBody { get; set; }
         public CheckEligibilityStatus CheckEligibilityStatus { get; set; }
     }
 }

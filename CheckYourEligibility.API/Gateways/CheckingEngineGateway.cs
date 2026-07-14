@@ -421,7 +421,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 //To ensure correct LA ID is passed when using ECS for checks
 
                 string localAuthorityId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
-                
+
                 checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
                 if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
                 {
@@ -438,11 +438,21 @@ public class CheckingEngineGateway : ICheckingEngine
                     {
 
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
-                        
+
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
                         source = ProcessEligibilityCheckSource.DWP;
+                        var capiAudit = new CAPIAudit(
+                      Guid.Parse(result.EligibilityCheckID),
+                      Guid.Parse(correlationId),
+                      capiClaimResponse.CAPIEndpoint,
+                      capiClaimResponse.RequestBody,
+                      capiClaimResponse.ResponseBody,
+                      capiClaimResponse.CAPIResponseCode);
+
+                        await _db.CAPIAudits.AddAsync(capiAudit);
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
+
                     }
                     else // do both checks
                     {
@@ -498,7 +508,7 @@ public class CheckingEngineGateway : ICheckingEngine
             result.EligibilityCheckHashID =
                await _hashGateway.Create(checkData, checkStatusResult, result.Tier, source, dbContextFactory);
 
-            //If CAPI returns a different result from ECS
+            // If CAPI returns a different result from ECS
             // Create a record
             if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
             {
@@ -520,7 +530,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 };
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
 
-            }           
+            }
         }
         await context.SaveChangesAsync();
 
@@ -541,7 +551,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 throw new NotImplementedException($"Type:-{type} not supported.");
         }
     }
- //To do: This method has little purpose, it needs to be reviewed and removed
+    //To do: This method has little purpose, it needs to be reviewed and removed
     private static CheckProcessData GetCheckProcessDataType<T>(CheckEligibilityType type, string data)
         where T : IEligibilityServiceType
     {
@@ -684,7 +694,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 "DWPcorrelationId: {correlationId} \n" +
                 "NINO:{nino} \n" +
                 "LastName:{lastName}\n" +
-                "DateOfBirth:{dateOfBirth}", 
+                "DateOfBirth:{dateOfBirth}",
                 citizenResponse.CAPIResponseCode,
                 correlationId,
                 data.NationalInsuranceNumber,
