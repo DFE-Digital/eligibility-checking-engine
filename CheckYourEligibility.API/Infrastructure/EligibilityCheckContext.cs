@@ -148,9 +148,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         transaction.Commit();
     }
 
-    public void BulkInsert_Applications(IEnumerable<Application> data)
+    public void BulkInsert_Applications(IEnumerable<Application> data, IEnumerable<ApplicationStatus> statusHistory)
     {
-        this.BulkInsert(data);
+        using var transaction = base.Database.BeginTransaction();
+        try
+        {
+            this.BulkInsert(data);
+            this.BulkInsert(statusHistory);
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 
     public void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data)
