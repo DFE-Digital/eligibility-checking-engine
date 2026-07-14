@@ -15,6 +15,10 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
         <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.6" />
         <PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="7.2.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.5" />
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
         <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
@@ -26,7 +30,7 @@
 
 
     <ItemGroup>
-      <ProjectReference Include="..\CheckYourEligibility.Core\CheckYourEligibility.Core.csproj" />
+        <ProjectReference Include="..\CheckYourEligibility.Core\CheckYourEligibility.Core.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 # Check Your Eligibility API
 
-This repo contains the API for Eligibility Checking Engine (ECE) and the Check Free School Meals (FSM) service.
+This repo contains shared business logic and the API for the Eligibility Checking Engine (ECE) service.
 
 ## Setup
 
@@ -9,14 +9,13 @@ This is a .NET 8 project - you'll need the latest .NET SDK etc to run it locally
 ### Config
 
 When you first clone the repo, you'll want to define your own config. You'll want to copy up the
-file [appsettings.json](CheckYourEligibility.API/appsettings.json), name the copy `appsettings.developmnent.json`
-in the same folder. Update the values in this new file as needed. This file should not be committed, nor will it with
-our .gitignore.
+file [appsettings.json](CheckYourEligibility.API/appsettings.json), name the copy `appsettings.development.json`
+in the same folder. Update the values in this new file as needed. This file should not be committed (and is in the .gitignore file by default).
 
 #### Credentials
 
 You can get the credentials through following the instructions
-in [check-your-eligibility-infrastructure](https://github.com/DFE-Digital/check-your-eligibility-infrastructure).
+in [eligibility-checking-engine-documentation](https://github.com/DFE-Digital/eligibility-checking-engine-documentation).
 Otherwise, just ask your Lead Developer or fellow colleague.
 
 ### Queue
@@ -26,7 +25,7 @@ the application, mock it, or connect to the dev queue. Credentials in keyvault.
 
 ## JWT authenticate your request
 
-Each request needs to be authenticated with a JWT token. YOu get this token bu calling `/api/Login` with the following
+Each request needs to be authenticated with a JWT token. You get this token by calling `/api/Login` with the following
 object:
 `
 {
@@ -45,15 +44,12 @@ We have two test-suites - one .NET NUnit for unit tests and one Cypress for inte
 running application responding to http calls.
 
 ### .NET
-
-VisualStudio does most of this for you, there'll be a button in your UI. Correctly set up Rider too.
 `
 cd CheckYourEligibility.API.Tests
 dotnet test
 `
 
 ### Cypress
-
 Assuming you have NPM installed.
 `
 cd tests
@@ -114,29 +110,27 @@ The contents is then POSTed to `/importEstablishments`
 
 ![Deployment](docs/images/api-pipeline.png)
 
-### Miscellaneous
+### Migrations
 
-#### Migrations
+Entity Framework migrations are should be performed from the CheckYourEligibility.API project directory, however the migration code is stored in the CheckYourEligibility.Core project in the CheckYourEligibility.Core.Migrations namespace.
 
-##### Run Latest migration
+#### Run Latest migration
 
 `dotnet ef update-database`
 
-##### How to add a migration
+#### How to add a migration
 
-Add-Migration BaseMigration
+`dotnet ef migrations add <migration-name> --project ..\CheckYourEligibility.Core`
 
-##### Update db to latest migration
+#### List migrations
 
-update-database
+`dotnet ef migrations list`
 
-##### List Migrations
+#### Remove a migration
 
-Get-Migration
+`dotnet ef migrations remove <migration-name> --project ..\CheckYourEligibility.Core`
 
-Remove-Migration -Force
-Remove-Migration
+#### Run specific migration
 
-##### Run specific migration
+`dotnet ef update-database -migration <migration-name>`
 
-update-database -migration BaseMigration
