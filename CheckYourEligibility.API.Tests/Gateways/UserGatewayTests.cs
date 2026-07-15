@@ -65,6 +65,7 @@ public class UserGatewayTests : TestBase.TestBase
         {
             UserID = Guid.NewGuid().ToString(),
             Email = "test@test.com",
+            Reference = "",
             UserName = "test@test.com",
             UserType = userType,
             OrganisationType = Domain.Enums.OrganisationType.local_authority,
@@ -81,7 +82,8 @@ public class UserGatewayTests : TestBase.TestBase
         {
             Data = new()
             {
-                Email = "test@test.com"
+                Email = "test@test.com",
+                Reference = ""
             },
             MetaData = new()
             {
