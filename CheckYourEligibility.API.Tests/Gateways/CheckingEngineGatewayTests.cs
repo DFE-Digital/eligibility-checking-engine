@@ -208,6 +208,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Arrange
 
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.parentNotFound;
         citizenResponse.Guid = string.Empty;
@@ -516,6 +517,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPIClaimResponseBase capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
         capiClaimResponse.ResponseCode = HttpStatusCode.OK;
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         item.IsDeleted = false;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
@@ -546,6 +548,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         item.IsDeleted = false;
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
@@ -584,6 +587,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         item.Status = CheckEligibilityStatus.queuedForProcessing;
 
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
@@ -629,6 +633,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
 
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -719,6 +724,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         citizenResponse.Guid = string.Empty;
 
         var item = _fixture.Create<EligibilityCheck>();
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         fsm.DateOfBirth = "1990-01-01";
