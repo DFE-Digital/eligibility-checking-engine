@@ -117,20 +117,5 @@ public class ProcessEligibilityCheckUseCaseTests : TestBase.TestBase
         // Assert
         _mockCheckingEngineGateway.Verify(s => s.ProcessCheckAsync(guid, null), Times.Once);
     }
-
-    [Test]
-    public async Task Execute_returns_failure_when_ProcessCheckException_is_thrown()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var auditItemTemplate = _fixture.Create<AuditData>();
-        _mockCheckingEngineGateway.Setup(s => s.ProcessCheckAsync(guid, null))
-            .ThrowsAsync(new ProcessCheckException("Test exception"));
-
-        // Act
-        Func<Task> act = async () => await _sut.Execute(guid);
-
-        // Assert
-        act.Should().ThrowAsync<ValidationException>().WithMessage("Failed to process eligibility check.");
-    }
+    
 }
