@@ -284,6 +284,39 @@ public class ApplicationGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task RestoreArchivedApplicationStatus_ShouldRestorePreviousTier_WhenApplicationIsArchived()
+    {
+        // Arrange - application was 'expanded' at the time it was archived (per CreateTestApplication default),
+        // but the last non-archived history entry recorded 'targeted' - restore should bring back 'targeted'.
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Tier = EligibilityTier.expanded;
+        await _dbContext.Applications.AddAsync(app);
+        var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
+        previousStatus.Type = Domain.Enums.ApplicationStatus.Entitled;
+        previousStatus.Tier = EligibilityTier.targeted;
+        await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.RestoreArchivedApplicationStatus(app.ApplicationID);
+
+        // Assert
+        result.Data.Tier.Should().Be(EligibilityTier.targeted.ToString());
+
+        var updatedApp = await _dbContext.Applications.FirstOrDefaultAsync(a => a.ApplicationID == app.ApplicationID);
+        updatedApp.Should().NotBeNull();
+        updatedApp!.Tier.Should().Be(EligibilityTier.targeted);
+
+        var newHistoryEntry = await _dbContext.ApplicationStatuses
+            .Where(s => s.ApplicationID == app.ApplicationID)
+            .OrderByDescending(s => s.TimeStamp)
+            .FirstOrDefaultAsync();
+        newHistoryEntry.Should().NotBeNull();
+        newHistoryEntry!.Tier.Should().Be(EligibilityTier.targeted);
+    }
+
+    [Test]
     public async Task RestoredArchivedApplicationStatus_ShouldThrowNotFoundException_WhenApplicationDoesNotExist()
     {
         // Arrange
@@ -371,6 +404,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         capturedStatusHistory.Should()
             .ContainSingle(s => s.ApplicationID == app2.ApplicationID && s.Type == Domain.Enums.ApplicationStatus.Entitled);
         capturedStatusHistory.Should().OnlyContain(s => !string.IsNullOrEmpty(s.ApplicationStatusID));
+        capturedStatusHistory.Should().OnlyContain(s => s.Tier == EligibilityTier.expanded);
     }
 
     [Test]
@@ -394,6 +428,99 @@ public class ApplicationGatewayTests : TestBase.TestBase
         db.Verify(
             x => x.BulkInsert_Applications(It.IsAny<IEnumerable<Application>>(), It.IsAny<IEnumerable<ApplicationStatus>>()),
             Times.Never);
+    }
+
+    #endregion
+
+    #region UpdateApplication Tests
+
+    [Test]
+    public async Task UpdateApplication_TierOnlyChange_CreatesStatusHistoryEntry()
+    {
+        // Arrange - Tier changes without a Status change should still be tracked in history
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.Tier = EligibilityTier.targeted;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        var updateData = new Boundary.Requests.ApplicationUpdateData { Tier = EligibilityTier.expanded };
+
+        // Act
+        await _sut.UpdateApplication(app.ApplicationID, updateData);
+
+        // Assert
+        var updatedApp = await _dbContext.Applications.FirstOrDefaultAsync(a => a.ApplicationID == app.ApplicationID);
+        updatedApp!.Tier.Should().Be(EligibilityTier.expanded);
+
+        var historyEntries = await _dbContext.ApplicationStatuses
+            .Where(s => s.ApplicationID == app.ApplicationID)
+            .ToListAsync();
+        historyEntries.Should().ContainSingle();
+        historyEntries[0].Type.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+        historyEntries[0].Tier.Should().Be(EligibilityTier.expanded);
+    }
+
+    [Test]
+    public async Task UpdateApplication_StatusAndTierChangedTogether_CreatesOnlyOneStatusHistoryEntry()
+    {
+        // Arrange
+        var app = CreateTestApplication();
+        app.Status = Domain.Enums.ApplicationStatus.SentForReview;
+        app.Tier = null;
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        var updateData = new Boundary.Requests.ApplicationUpdateData
+        {
+            Status = Domain.Enums.ApplicationStatus.Entitled,
+            Tier = EligibilityTier.expanded
+        };
+
+        // Act
+        await _sut.UpdateApplication(app.ApplicationID, updateData);
+
+        // Assert
+        var historyEntries = await _dbContext.ApplicationStatuses
+            .Where(s => s.ApplicationID == app.ApplicationID)
+            .ToListAsync();
+        historyEntries.Should().ContainSingle();
+        historyEntries[0].Type.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+        historyEntries[0].Tier.Should().Be(EligibilityTier.expanded);
+    }
+
+    [Test]
+    public async Task UpdateApplication_NoStatusOrTierChange_DoesNotCreateStatusHistoryEntry()
+    {
+        // Arrange - e.g. only the establishment is being changed
+        var app = CreateTestApplication();
+        var establishment = new Domain.Establishment
+        {
+            EstablishmentID = _fixture.Create<int>(),
+            EstablishmentName = "Another School",
+            LocalAuthorityID = app.LocalAuthorityID,
+            Postcode = "AB1 2CD",
+            Street = "Street",
+            Locality = "",
+            Town = "Town",
+            County = "County",
+            Type = "School",
+            StatusOpen = true
+        };
+        await _dbContext.Establishments.AddAsync(establishment);
+        await _dbContext.Applications.AddAsync(app);
+        await _dbContext.SaveChangesAsync();
+
+        var updateData = new Boundary.Requests.ApplicationUpdateData { EstablishmentUrn = establishment.EstablishmentID };
+
+        // Act
+        await _sut.UpdateApplication(app.ApplicationID, updateData);
+
+        // Assert
+        var historyEntries = await _dbContext.ApplicationStatuses
+            .Where(s => s.ApplicationID == app.ApplicationID)
+            .ToListAsync();
+        historyEntries.Should().BeEmpty();
     }
 
     #endregion

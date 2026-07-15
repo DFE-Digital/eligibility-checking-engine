@@ -20,19 +20,19 @@ public class CheckEligibilityGateway : ICheckEligibility
     private readonly IEligibilityCheckContext _db;
 
     private readonly IHash _hashGateway;
-    private readonly IStorageQueueMessage _storageQueueMessageGateway;
+    private readonly IStorageQueue _storageQueueGateway;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
     private string _groupId;
 
     public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
-        IConfiguration configuration, IHash hashGateway, IStorageQueueMessage storageQueueMessageGateway)
+        IConfiguration configuration, IHash hashGateway, IStorageQueue storageQueueGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
         _hashGateway = hashGateway;
-        _storageQueueMessageGateway = storageQueueMessageGateway;
+        _storageQueueGateway = storageQueueGateway;
         _configuration = configuration;
     }
 
@@ -52,6 +52,25 @@ public class CheckEligibilityGateway : ICheckEligibility
         try
         {
             _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+            // Now send queue messages for records that weren't resolved from the hash cache.
+            // Reuse a single QueueClient for all bulk messages — they share the same queue.
+            var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
+
+            if (queuedBulkItems.Any())
+            {
+                string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+
+                foreach (var item in queuedBulkItems)
+                {
+                    await _storageQueueGateway.SendMessage(item, bulkQueueName);
+                }
+            }
+            else
+            {
+                var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
+                bulkCheck.Status = BulkCheckStatus.Completed;
+                await _db.SaveChangesAsync();
+            }
         }
         catch (Exception e)
         {
@@ -83,24 +102,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
         }
 
-        // Now send queue messages for records that weren't resolved from the hash cache.
-        // Reuse a single QueueClient for all bulk messages — they share the same queue.
-        var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
-        if (queuedBulkItems.Any())
-        {
-            var bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
-            var bulkQueueClient = _storageQueueMessageGateway.GetQueueClient(bulkQueueName);
-            foreach (var item in queuedBulkItems)
-            {
-                await _storageQueueMessageGateway.SendMessage(item, bulkQueueClient);
-            }
-        }
-        else
-        {
-            var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
-            bulkCheck.Status = BulkCheckStatus.Completed;
-            await _db.SaveChangesAsync();
-        }
+
     }
 
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
@@ -114,8 +116,7 @@ public class CheckEligibilityGateway : ICheckEligibility
         if (item.Status == CheckEligibilityStatus.queuedForProcessing)
         {
             var singleQueueName = _configuration[$"Queue:Single:{item.Type}"];
-            var singleQueueClient = _storageQueueMessageGateway.GetQueueClient(singleQueueName);
-            await _storageQueueMessageGateway.SendMessage(item, singleQueueClient);
+            await _storageQueueGateway.SendMessage(item, singleQueueName);
         }
 
         return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status, Tier = item.Tier };
