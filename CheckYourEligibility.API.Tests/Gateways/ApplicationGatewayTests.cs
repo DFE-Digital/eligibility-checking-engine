@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -23,6 +24,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
     private IConfiguration _configuration = null!;
     private EligibilityCheckContext _dbContext = null!;
     private ApplicationGateway _sut = null!;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public void Setup()
@@ -32,10 +34,13 @@ public class ApplicationGatewayTests : TestBase.TestBase
 
         // Setup in-memory database
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(nameof(ApplicationGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _dbContext = new EligibilityCheckContext(options);
+
+        _dbContext.Database.EnsureDeleted();
+        _dbContext.Database.EnsureCreated();
 
         // Configure real configuration
         var configData = new Dictionary<string, string?>

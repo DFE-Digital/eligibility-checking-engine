@@ -7,7 +7,6 @@ using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -26,11 +25,7 @@ public class EcsAdapterTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        httpClient = new HttpClient();
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
-            .Options;
-
+        httpClient = new HttpClient();   
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var configForSmsApi = new Dictionary<string, string>
