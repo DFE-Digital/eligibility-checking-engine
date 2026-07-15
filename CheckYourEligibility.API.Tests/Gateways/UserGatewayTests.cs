@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -17,6 +18,8 @@ namespace CheckYourEligibility.API.Tests;
 
 public class UserGatewayTests : TestBase.TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -26,25 +29,35 @@ public class UserGatewayTests : TestBase.TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(
+                nameof(UserGatewayTests),
+                InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
+
         var configForSmsApi = new Dictionary<string, string>
         {
             { "QueueFsmCheckStandard", "notSet" },
             { "HashCheckDays", "7" }
         };
+
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
+
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _sut = new UsersGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper);
+        _sut = new UsersGateway(
+            new NullLoggerFactory(),
+            _fakeInMemoryDb,
+            _mapper);
     }
 
     [TearDown]
@@ -87,7 +100,7 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.Add(It.IsAny<User>())).Throws(new Exception());
         var request = _fixture.Create<UserData>();
 
-        // Act
+        // Act 
         Func<Task> act = async () => await svc.Create(request);
 
         // Assert
@@ -107,7 +120,7 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>())).ThrowsAsync(ex);
         var existingUser = _fixture.Create<User>();
 
-        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference };
+        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference,  };
 
         // Act
         Func<Task> act = async () => await svc.Create(request);

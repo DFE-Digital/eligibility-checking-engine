@@ -11,7 +11,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel;
@@ -28,10 +27,7 @@ public class DwpAdapterTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        httpClient = new HttpClient();
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
-            .Options;
+        httpClient = new HttpClient();        
 
         //"c": "ecs.education.gov.uk",
         //"EcsServiceVersion": "20170701",

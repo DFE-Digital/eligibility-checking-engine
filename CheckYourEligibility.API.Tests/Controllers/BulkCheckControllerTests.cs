@@ -37,6 +37,8 @@ public class BulkCheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
+    private readonly Mock<IGetBulkCheckSummaryUseCase> _mockBulkCheckSummaryUseCase = new();
+    private Mock<ICreateApplicationsFromBulkCheckUseCase> _mockCreateApplicationsFromBulkCheckUseCase = null!;
 
     private BulkCheckController _sut;
 
@@ -55,6 +57,7 @@ public class BulkCheckControllerTests : TestBase.TestBase
         _mockGetEligibilityCheckItemUseCase = new Mock<IGetEligibilityCheckItemUseCase>(MockBehavior.Strict);
         _mockDeleteBulkCheckUseCase = new Mock<IDeleteBulkCheckUseCase>(MockBehavior.Strict);
         _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
+        _mockCreateApplicationsFromBulkCheckUseCase = new Mock<ICreateApplicationsFromBulkCheckUseCase>();
 
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<BulkCheckController>>();
@@ -76,7 +79,9 @@ public class BulkCheckControllerTests : TestBase.TestBase
             _mockGetBulkUploadProgressUseCase.Object,
             _mockGetBulkUploadResultsUseCase.Object,
             _mockDeleteBulkCheckUseCase.Object,
-            _mockGetAllBulkChecksUseCase.Object
+            _mockGetAllBulkChecksUseCase.Object,
+            _mockBulkCheckSummaryUseCase.Object,            
+            _mockCreateApplicationsFromBulkCheckUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest
@@ -248,6 +253,79 @@ public class BulkCheckControllerTests : TestBase.TestBase
         var objectResult = (ObjectResult)response;
         objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
         objectResult.Value.Should().Be(bulkResponse);
+    }
+
+    [Test]
+    public async Task CreateApplicationsFromBulkCheck_returns_accepted_when_use_case_returns_valid_result()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var response = new MessageResponse { Data = "Application creation started." };
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockCreateApplicationsFromBulkCheckUseCase
+            .Setup(u => u.Execute(guid, It.Is<List<int>>(ids => ids.Contains(201))))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.CreateApplicationsFromBulkCheck(guid);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)result;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+        objectResult.Value.Should().Be(response);
+    }
+
+    [Test]
+    public async Task CreateApplicationsFromBulkCheck_returns_not_found_when_use_case_throws_not_found()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockCreateApplicationsFromBulkCheckUseCase
+            .Setup(u => u.Execute(guid, It.Is<List<int>>(ids => ids.Contains(201))))
+            .ThrowsAsync(new NotFoundException($"Bulk check {guid} not found"));
+
+        // Act
+        var result = await _sut.CreateApplicationsFromBulkCheck(guid);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var notFoundResult = (NotFoundObjectResult)result;
+        ((ErrorResponse)notFoundResult.Value!).Errors.First().Title.Should().Be($"Bulk check {guid} not found");
+    }
+
+    [Test]
+    public async Task CreateApplicationsFromBulkCheck_returns_bad_request_when_use_case_throws_validation_exception()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockCreateApplicationsFromBulkCheckUseCase
+            .Setup(u => u.Execute(guid, It.Is<List<int>>(ids => ids.Contains(201))))
+            .ThrowsAsync(new CheckYourEligibility.API.Domain.Exceptions.ValidationException(
+            [
+                new Error
+            {
+                Title = "Applications can only be created when bulk check status is 'Completed'"
+            }
+            ],
+            "Invalid bulk check status"));
+
+        // Act
+        var result = await _sut.CreateApplicationsFromBulkCheck(guid);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)result;
+        ((ErrorResponse)badRequestResult.Value!).Errors.First().Title
+            .Should().Be("Applications can only be created when bulk check status is 'Completed'");
     }
 
     #region Working Families

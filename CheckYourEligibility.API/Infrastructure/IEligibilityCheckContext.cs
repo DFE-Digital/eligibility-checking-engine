@@ -34,7 +34,7 @@ public interface IEligibilityCheckContext
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     int SaveChanges();
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
-    void BulkInsert_Applications(IEnumerable<Application> data);
+    void BulkInsert_Applications(IEnumerable<Application> data, IEnumerable<ApplicationStatus> statusHistory);
     void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data);
     void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData);
     void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data);
