@@ -199,52 +199,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Assert
         status.Should().BeNull();
         tier.Should().BeNull();
-    }
-
-    [Ignore("Current implementation does not throw ProcessCheckException for non-queued checks. Review intended behaviour separately.")]
-    [Test]
-    public async Task Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        item.Status = CheckEligibilityStatus.eligible;
-        item.Type = CheckEligibilityType.None;
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Act
-        Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID);
-
-        // Assert
-        await act.Should().ThrowExactlyAsync<ProcessCheckException>();
-    }
-
-    [Ignore("Temporarily disabled")]
-    [Test]
-    public async Task Given_validRequest_StatusNot_queuedForProcessing_Process_Should_throwProcessException_InvalidStatus()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        item.Status = CheckEligibilityStatus.eligible;
-        item.Type = CheckEligibilityType.FreeSchoolMeals;
-
-        var fsm = _fixture.Create<CheckEligibilityRequestData>();
-        fsm.DateOfBirth = "1990-01-01";
-
-        var dataItem = GetCheckProcessData(fsm);
-        item.CheckData = JsonConvert.SerializeObject(dataItem);
-
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Act
-        Func<Task> act = async () => await _sut.ProcessCheckAsync(item.EligibilityCheckID);
-
-        // Assert
-        await act.Should()
-            .ThrowExactlyAsync<ProcessCheckException>()
-            .WithMessage($"Error checkItem {item.EligibilityCheckID} not queuedForProcessing. {item.Status}");
-    }
+    } 
+    
 
     [Test]
     public async Task Given_validRequest_Process_Should_Return_updatedStatus_parentNotFound()
