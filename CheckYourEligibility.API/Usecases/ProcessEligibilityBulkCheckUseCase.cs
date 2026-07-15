@@ -204,7 +204,10 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             if (bulkCheck != null)
             {
                 _logger.LogInformation($"Updating bulk check status to Completed for ID: {bulkCheckId}");
+
                 bulkCheck.Status = BulkCheckStatus.Completed;
+                bulkCheck.CompletedDate = DateTime.UtcNow;
+
                 await _db.SaveChangesAsync();
             }
         }

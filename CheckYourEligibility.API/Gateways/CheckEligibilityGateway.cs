@@ -67,9 +67,16 @@ public class CheckEligibilityGateway : ICheckEligibility
             }
             else
             {
-                var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
-                bulkCheck.Status = BulkCheckStatus.Completed;
-                await _db.SaveChangesAsync();
+                var bulkCheck = await _db.BulkChecks
+                    .FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+
+                if (bulkCheck != null)
+                {
+                    bulkCheck.Status = BulkCheckStatus.Completed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
+                    await _db.SaveChangesAsync();
+                }
             }
         }
         catch (Exception e)
@@ -88,6 +95,8 @@ public class CheckEligibilityGateway : ICheckEligibility
                 if (bulkCheck != null)
                 {
                     bulkCheck.Status = BulkCheckStatus.Failed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
                     await _db.SaveChangesAsync();
                 }
             }
