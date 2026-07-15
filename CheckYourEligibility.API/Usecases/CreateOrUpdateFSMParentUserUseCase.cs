@@ -8,7 +8,7 @@ namespace CheckYourEligibility.API.UseCases;
 /// <summary>
 ///     Interface for creating or updating a user.
 /// </summary>
-public interface ICreateOrUpdateUserUseCase
+public interface ICreateOrUpdateFSMParentUserUseCase
 {
     /// <summary>
     ///     Execute the use case.
@@ -19,12 +19,12 @@ public interface ICreateOrUpdateUserUseCase
     Task<UserSaveItemResponse> Execute(UserCreateRequest model);
 }
 
-public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
+public class CreateOrUpdateFSMParentUserUseCase : ICreateOrUpdateFSMParentUserUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly IUsers _userGateway;
 
-    public CreateOrUpdateUserUseCase(IUsers userGateway, IAudit auditGateway)
+    public CreateOrUpdateFSMParentUserUseCase(IUsers userGateway, IAudit auditGateway)
     {
         _userGateway = userGateway;
         _auditGateway = auditGateway;
@@ -32,7 +32,7 @@ public class CreateOrUpdateUserUseCase : ICreateOrUpdateUserUseCase
 
     public async Task<UserSaveItemResponse> Execute(UserCreateRequest model)
     {
-        var response = await _userGateway.Create(model.Data);
+        var response = await _userGateway.CreateOrUpdateFSMParentUser(model);
 
 
         return new UserSaveItemResponse { Data = response };
