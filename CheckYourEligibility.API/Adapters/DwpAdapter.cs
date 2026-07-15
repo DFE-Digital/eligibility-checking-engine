@@ -142,10 +142,10 @@ public class DwpAdapter : IDwpAdapter
                 response.StatusCode);
 
             long capiResponseCode = 0;
-            var dwpError = JsonConvert.DeserializeObject<DwpError>(responseBody);
-            if (!string.IsNullOrEmpty(dwpError?.Code))
+            var DwpErrorResponse = JsonConvert.DeserializeObject<DwpErrorResponse>(responseBody);
+            if (DwpErrorResponse.Errors.Length > 0)
             {
-                long.TryParse(dwpError.Code, out capiResponseCode);
+                long.TryParse(DwpErrorResponse.Errors.FirstOrDefault().Code, out capiResponseCode);
             }
 
             return new CAPIClaimResponseBase
@@ -354,10 +354,10 @@ public class DwpAdapter : IDwpAdapter
             }
 
             long capiResponseCode = 0;
-            var dwpError = JsonConvert.DeserializeObject<DwpError>(responseBody);
-            if (!string.IsNullOrEmpty(dwpError?.Code))
+            var DwpErrorResponse = JsonConvert.DeserializeObject<DwpErrorResponse>(responseBody);
+            if (DwpErrorResponse.Errors.Length > 0)
             {
-                long.TryParse(dwpError.Code, out capiResponseCode);
+                long.TryParse(DwpErrorResponse.Errors.FirstOrDefault().Code, out capiResponseCode);
             }
             // Handle no match found
             if (response.StatusCode == HttpStatusCode.NotFound)
