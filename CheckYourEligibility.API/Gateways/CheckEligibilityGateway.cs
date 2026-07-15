@@ -76,6 +76,15 @@ public class CheckEligibilityGateway : ICheckEligibility
                     bulkCheck.CompletedDate = DateTime.UtcNow;
 
                     await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    _logger.LogInformation(
+                        "BulkCheckFinished BulkCheckId={BulkCheckId} Status={Status} CompletedDate={CompletedDate} ElapsedMilliseconds={ElapsedMilliseconds}",
+                        bulkCheck.BulkCheckID,
+                        bulkCheck.Status,
+                        bulkCheck.CompletedDate,
+                        elapsedTime.TotalMilliseconds);
                 }
             }
         }
@@ -98,6 +107,15 @@ public class CheckEligibilityGateway : ICheckEligibility
                     bulkCheck.CompletedDate = DateTime.UtcNow;
 
                     await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    _logger.LogInformation(
+                        "BulkCheckFinished BulkCheckId={BulkCheckId} Status={Status} CompletedDate={CompletedDate} ElapsedMilliseconds={ElapsedMilliseconds}",
+                        bulkCheck.BulkCheckID,
+                        bulkCheck.Status,
+                        bulkCheck.CompletedDate,
+                        elapsedTime.TotalMilliseconds);
                 }
             }
             catch (Exception statusUpdateEx)
