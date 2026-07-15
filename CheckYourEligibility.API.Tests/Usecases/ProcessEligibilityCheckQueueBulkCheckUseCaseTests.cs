@@ -100,6 +100,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
         var bulk = db.BulkChecks.First(x => x.BulkCheckID == bulkId);
 
         bulk.Status.Should().Be(BulkCheckStatus.InProgress);
+        bulk.CompletedDate.Should().BeNull();
     }
 
     [Test]
@@ -132,6 +133,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
         var bulk = db.BulkChecks.First(x => x.BulkCheckID == bulkId);
 
         bulk.Status.Should().Be(BulkCheckStatus.InProgress);
+        bulk.CompletedDate.Should().BeNull();
     }
 
     [Test]
