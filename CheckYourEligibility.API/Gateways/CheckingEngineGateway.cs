@@ -442,13 +442,15 @@ public class CheckingEngineGateway : ICheckingEngine
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
                         source = ProcessEligibilityCheckSource.DWP;
+
                         var capiAudit = new CAPIAudit(
-                      Guid.Parse(result.EligibilityCheckID),
-                      Guid.Parse(correlationId),
-                      capiClaimResponse.CAPIEndpoint,
-                      capiClaimResponse.RequestBody,
-                      capiClaimResponse.ResponseBody,
-                      capiClaimResponse.CAPIResponseCode);
+                              Guid.Parse(result.EligibilityCheckID),
+                              Guid.Parse(correlationId),
+                              capiClaimResponse.CAPIEndpoint,
+                              capiClaimResponse.RequestBody,
+                              capiClaimResponse.ResponseBody,
+                              capiClaimResponse.ResponseCode,
+                              capiClaimResponse.CAPIResponseCode);
 
                         await _db.CAPIAudits.AddAsync(capiAudit);
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
@@ -499,7 +501,7 @@ public class CheckingEngineGateway : ICheckingEngine
         if (checkStatusResult == CheckEligibilityStatus.error)
         {
             // map 422 to not found here
-            result.Status = capiClaimResponse.CAPIResponseCode == HttpStatusCode.UnprocessableEntity
+            result.Status = capiClaimResponse.ResponseCode == HttpStatusCode.UnprocessableEntity
                 ? CheckEligibilityStatus.parentNotFound
                 : CheckEligibilityStatus.queuedForProcessing;
         }
@@ -525,7 +527,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     EligibilityCheckHashID = result.EligibilityCheckHashID,
                     CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
                     Reason = capiClaimResponse.Reason,
-                    CAPIResponseCode = capiClaimResponse.CAPIResponseCode
+                    CAPIResponseCode = capiClaimResponse.ResponseCode
 
                 };
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
@@ -695,7 +697,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 "NINO:{nino} \n" +
                 "LastName:{lastName}\n" +
                 "DateOfBirth:{dateOfBirth}",
-                citizenResponse.CAPIResponseCode,
+                citizenResponse.ResponseCode,
                 correlationId,
                 data.NationalInsuranceNumber,
                 data.LastName,
@@ -712,13 +714,13 @@ public class CheckingEngineGateway : ICheckingEngine
                 DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
             _logger.LogInformation("Dwp after getting claim,correlationId:{correlationId}", correlationId);
 
-            if (result.CAPIResponseCode == HttpStatusCode.OK)
+            if (result.ResponseCode == HttpStatusCode.OK)
             {
                 result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
                 _logger.LogInformation("Dwp is eligible correlationId:{correlationId}", correlationId);
 
             }
-            else if (result.CAPIResponseCode == HttpStatusCode.NotFound)
+            else if (result.ResponseCode == HttpStatusCode.NotFound)
             {
                 result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
 
@@ -726,7 +728,7 @@ public class CheckingEngineGateway : ICheckingEngine
             }
             else
             {
-                _logger.LogError($"Dwp Error unknown Response status code:-{result.CAPIResponseCode}.");
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.ResponseCode}.");
                 result.CheckEligibilityStatus = CheckEligibilityStatus.error;
             }
 

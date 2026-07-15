@@ -23,7 +23,8 @@ namespace CheckYourEligibility.API.Migrations
                     Endpoint = table.Column<string>(type: "nvarchar(210)", nullable: false),
                     RequestBody = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResponseBody = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CAPIResponseCode = table.Column<int>(type: "int", nullable: false)
+                    ResponseCode = table.Column<int>(type: "int", nullable: false),
+                    CAPIResponseCode = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -22,19 +22,22 @@ namespace CheckYourEligibility.API.Domain
         public string Endpoint { get; set; } = string.Empty;
         public string RequestBody { get; set; } = string.Empty;
         public string ResponseBody { get; set; } = string.Empty;
-        public HttpStatusCode CAPIResponseCode { get; set; }
+        public HttpStatusCode ResponseCode {get;set;}
+        public long CAPIResponseCode { get; set; }
 
         public CAPIAudit(Guid eligibilityCheckId, Guid dwpCorrelationId,
             string endpoint,
             string requestBody,
             string responseBody,
-            HttpStatusCode capiResponseCode)
+            HttpStatusCode responseCode,
+            long capiResponseCode)
         {
             EligibilityCheckId = eligibilityCheckId;
             DWPCorrelationId = dwpCorrelationId;
             Endpoint = endpoint ?? string.Empty;
             RequestBody = requestBody ?? string.Empty;
             ResponseBody = responseBody ?? string.Empty;
+            ResponseCode = responseCode;
             CAPIResponseCode = capiResponseCode;
             TimeStamp = DateTime.UtcNow;
         }

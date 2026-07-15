@@ -6,7 +6,8 @@ namespace CheckYourEligibility.API.Boundary.Responses
     public class CAPIClaimResponseBase
     {
         public EligibilityTier? EligibilityTier { get; set; }
-        public HttpStatusCode CAPIResponseCode { get; set; }
+        public HttpStatusCode ResponseCode { get; set; }
+        public long CAPIResponseCode { get; set; }
         public string Reason { get; set; }
         public string CAPIEndpoint { get; set; }
         public string RequestBody { get; set; }

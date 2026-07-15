@@ -262,8 +262,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditId"));
 
-                    b.Property<int>("CAPIResponseCode")
-                        .HasColumnType("int");
+                    b.Property<long>("CAPIResponseCode")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("DWPCorrelationId")
                         .HasColumnType("uniqueidentifier");
@@ -282,6 +282,9 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("ResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResponseCode")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime2");

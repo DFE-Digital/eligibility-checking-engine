@@ -554,7 +554,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Arrange
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         CAPIClaimResponseBase capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
-        capiClaimResponse.CAPIResponseCode = HttpStatusCode.OK;
+        capiClaimResponse.ResponseCode = HttpStatusCode.OK;
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -589,7 +589,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.IsDeleted = false;
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
-        capiClaimResponse.CAPIResponseCode = HttpStatusCode.NotFound;
+        capiClaimResponse.ResponseCode = HttpStatusCode.NotFound;
         item.Status = CheckEligibilityStatus.queuedForProcessing;
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
@@ -620,7 +620,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         // Arrange
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
-        capiClaimResponse.CAPIResponseCode = capiStatusCode;
+        capiClaimResponse.ResponseCode = capiStatusCode;
 
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
@@ -633,7 +633,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
-        citizenResponse.CAPIResponseCode = HttpStatusCode.OK;
+        citizenResponse.ResponseCode = HttpStatusCode.OK;
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.SaveChangesAsync();
 
@@ -662,7 +662,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         // Arrange
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
-        citizenResponse.CAPIResponseCode = capiStatusCode;
+        citizenResponse.ResponseCode = capiStatusCode;
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
 
@@ -1336,7 +1336,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-        citizenResponse.CAPIResponseCode = 0;
+        citizenResponse.ResponseCode = 0;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
         citizenResponse.Reason = "ECE failed making a requet to GET citizen.";
         string correlationId = Guid.NewGuid().ToString();
@@ -1349,7 +1349,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo(citizenResponse.CAPIEndpoint);
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.error);
         response.Reason.Should().Contain(citizenResponse.Reason);
-        response.CAPIResponseCode.Should().Be(citizenResponse.CAPIResponseCode);
+        response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
     [Test]
     public async Task Given_Citizen_Request_Failed_Should_Return_Error()
@@ -1358,7 +1358,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-        citizenResponse.CAPIResponseCode = HttpStatusCode.InternalServerError;
+        citizenResponse.ResponseCode = HttpStatusCode.InternalServerError;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
         citizenResponse.Reason = "CAPI failed getting citizen.";
         string correlationId = Guid.NewGuid().ToString();
@@ -1379,7 +1379,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo(citizenResponse.CAPIEndpoint);
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.error);
         response.Reason.Should().Contain(citizenResponse.Reason);
-        response.CAPIResponseCode.Should().Be(citizenResponse.CAPIResponseCode);
+        response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
     [Test]
     public async Task Given_Citizen_Has_Possible_Conflict_Should_Return_Error()
@@ -1388,7 +1388,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-        citizenResponse.CAPIResponseCode = HttpStatusCode.UnprocessableEntity;
+        citizenResponse.ResponseCode = HttpStatusCode.UnprocessableEntity;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
         citizenResponse.Reason = "Possible conflict";
         string correlationId = Guid.NewGuid().ToString();
@@ -1407,7 +1407,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo(citizenResponse.CAPIEndpoint);
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.error);
         response.Reason.Should().Contain(citizenResponse.Reason);
-        response.CAPIResponseCode.Should().Be(citizenResponse.CAPIResponseCode);
+        response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
     [Test]
     public async Task Given_Citizen_Is_Not_Found_Should_Return_ParentNotFound()
@@ -1416,7 +1416,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.parentNotFound;
-        citizenResponse.CAPIResponseCode = HttpStatusCode.NotFound;
+        citizenResponse.ResponseCode = HttpStatusCode.NotFound;
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
         citizenResponse.Reason = "No citizen found";
         string correlationId = Guid.NewGuid().ToString();
@@ -1437,7 +1437,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo(citizenResponse.CAPIEndpoint);
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.parentNotFound);
         response.Reason.Should().Contain(citizenResponse.Reason);
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.NotFound);
+        response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Request_Attempt_Fails_Should_Return_Error()
@@ -1456,7 +1456,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
        
 
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
-       .With(x => x.CAPIResponseCode, HttpStatusCode.InternalServerError)
+       .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
        .With(x => x.Reason, "ECE failed to POST to CAPI")
        .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
        .Create();
@@ -1474,7 +1474,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.error);
         response.Reason.Should().Contain("ECE failed to POST to CAPI");
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.InternalServerError);
+        response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error__Should_Return_Error()
@@ -1494,7 +1494,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
        var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
       .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
-      .With(x => x.CAPIResponseCode, HttpStatusCode.InternalServerError)
+      .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
       .With(x => x.Reason, "Get CAPI citizen claim failed")
       .Create();
 
@@ -1511,7 +1511,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.error);
         response.Reason.Should().Contain("Get CAPI citizen claim failed");
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.InternalServerError);
+        response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Returns_200_Check_Benefit_Logic_Entitlemment_Is_False_Should_Return_Not_Eligible()
@@ -1521,7 +1521,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
 
-        .With(x => x.CAPIResponseCode, HttpStatusCode.NotFound)
+        .With(x => x.ResponseCode, HttpStatusCode.NotFound)
         .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
         .With(x => x.Reason, "CAPI returned status 200, but no benefits found after using business logic")
         .Create();
@@ -1549,7 +1549,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.notEligible);
         response.Reason.Should().Be("CAPI returned status 200, but no benefits found after using business logic");
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.NotFound);
+        response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Is_Not_Found_Should_Return_Not_Eligible()
@@ -1562,7 +1562,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         string reason = "CAPI did not find any data for this citizen";
 
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
-        .With(x => x.CAPIResponseCode, HttpStatusCode.NotFound)
+        .With(x => x.ResponseCode, HttpStatusCode.NotFound)
         .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
         .With(x => x.Reason, reason)
         .Create();
@@ -1586,7 +1586,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.notEligible);
         response.Reason.Should().Be(reason);
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.NotFound);
+        response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Is_Found_Result_Should_Return_Eligible_Standard()
@@ -1604,7 +1604,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             "or universal_credit ";
 
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
-        .With(x => x.CAPIResponseCode, HttpStatusCode.OK)
+        .With(x => x.ResponseCode, HttpStatusCode.OK)
         .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
         .With(x => x.Reason, reason)
         .Create();
@@ -1627,7 +1627,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.eligible);
         response.Reason.Should().Be(reason);
-        response.CAPIResponseCode.Should().Be(HttpStatusCode.OK);
+        response.ResponseCode.Should().Be(HttpStatusCode.OK);
     }
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)

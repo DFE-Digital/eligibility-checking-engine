@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    [Migration("20260714165012_Create_CAPIAudits")]
+    [Migration("20260715100912_Create_CAPIAudits")]
     partial class Create_CAPIAudits
     {
         /// <inheritdoc />
@@ -265,8 +265,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditId"));
 
-                    b.Property<int>("CAPIResponseCode")
-                        .HasColumnType("int");
+                    b.Property<long>("CAPIResponseCode")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("DWPCorrelationId")
                         .HasColumnType("uniqueidentifier");
@@ -285,6 +285,9 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("ResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResponseCode")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime2");
