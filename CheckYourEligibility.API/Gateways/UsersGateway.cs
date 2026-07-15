@@ -51,7 +51,7 @@ public class UsersGateway : IUsers
 
             _logger.LogInformation(
                 "Updated last login for user {UserName}",
-                existingUser.UserName);
+                (existingUser.UserName ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty));
         }
         else
         {
@@ -71,7 +71,7 @@ public class UsersGateway : IUsers
 
             _logger.LogInformation(
                 "Created user {UserName}",
-                existingUser.UserName);
+                (existingUser.UserName ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty));
         }
 
         await _db.SaveChangesAsync();
