@@ -46,7 +46,21 @@ internal static class DataValidation
     internal static bool BeAValidName(string value)
     {
         var regexString =
-            @"^[a-zA-Z ,.''\u2018\u2019-]+$";
+            @"^[a-zA-Z" +
+            @"ÁáÉéÍíÓóÚúÝýĆćĹĺŃńŔŕŚśŹź" +
+            @"ÀàÈèÌìÒòÙùẀẁỲỳ" +
+            @"ÂâÊêÎîÔôÛûĈĉĜĝĤĥĴĵŜŝŴŵŶŷ" +
+            @"ÃãÑñÕõĨĩŨũẼẽỸỹ" +
+            @"ÄäËëÏïÖöÜüŸÿ" +
+            @"ÇçĢģĶķĻļŅņŖŗŞşŢţ" +
+            @"ÅåŮů" +
+            @"ĀāĒēĪīŌōŪūȲȳ" +
+            @"ĂăĔĕĞğĬĭŎŏŬŭ" +
+            @"ĊċĖėĠġİẊẋŻż" +
+            @"ĄąĘęĮįŲų" +
+            @"ŐőŰű" +
+            @" ,.''\u2018\u2019-]+$";
+
         var rg = new Regex(regexString);
         var res = rg.Match(value);
         return res.Success;
