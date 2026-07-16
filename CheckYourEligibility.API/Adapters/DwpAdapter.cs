@@ -115,13 +115,13 @@ public class DwpAdapter : IDwpAdapter
             if (response.IsSuccessStatusCode)
             {               
                 var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(responseBody);
-                var (isEntitled, eligbilityTier) = CheckBenefitEntitlement(guid, claims, type, eligibilityPolicy);
+                var (isEntitled, eligibilityTier) = CheckBenefitEntitlement(guid, claims, type, eligibilityPolicy);
 
                 // if citizien is entitled
                 if (isEntitled)
                 {
                     capiClaimResponse.ResponseCode = HttpStatusCode.OK;
-                    capiClaimResponse.EligibilityTier = eligbilityTier;
+                    capiClaimResponse.EligibilityTier = eligibilityTier;
 
                     return capiClaimResponse;
                 }
@@ -130,7 +130,7 @@ public class DwpAdapter : IDwpAdapter
                 // return status to notFound for claims
                 // NotFound claim results get resolved to notEligible in the gateway
                 capiClaimResponse.ResponseCode = HttpStatusCode.NotFound;
-                capiClaimResponse.EligibilityTier = eligbilityTier;
+                capiClaimResponse.EligibilityTier = eligibilityTier;
               
                 return capiClaimResponse;
   
@@ -141,12 +141,7 @@ public class DwpAdapter : IDwpAdapter
                 _httpClient.BaseAddress + uri,
                 response.StatusCode);
 
-            long capiResponseCode = 0;
-            var DwpErrorResponse = JsonConvert.DeserializeObject<DwpErrorResponse>(responseBody);
-            if (DwpErrorResponse.Errors.Length > 0)
-            {
-                long.TryParse(DwpErrorResponse.Errors.FirstOrDefault().Code, out capiResponseCode);
-            }
+            var capiResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
 
             return new CAPIClaimResponseBase
             {
@@ -353,12 +348,7 @@ public class DwpAdapter : IDwpAdapter
                 return citizenResponse;
             }
 
-            long capiResponseCode = 0;
-            var DwpErrorResponse = JsonConvert.DeserializeObject<DwpErrorResponse>(responseBody);
-            if (DwpErrorResponse.Errors.Length > 0)
-            {
-                long.TryParse(DwpErrorResponse.Errors.FirstOrDefault().Code, out capiResponseCode);
-            }
+            citizenResponse.CAPIResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
             // Handle no match found
             if (response.StatusCode == HttpStatusCode.NotFound)
             {

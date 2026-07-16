@@ -37,19 +37,9 @@ namespace CheckYourEligibility.API.Migrations
                 column: "DWPCorrelationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CAPIAudits_DWPCorrelationId_TimeStamp",
-                table: "CAPIAudits",
-                columns: new[] { "DWPCorrelationId", "TimeStamp" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CAPIAudits_EligibilityCheckId",
                 table: "CAPIAudits",
                 column: "EligibilityCheckId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CAPIAudits_EligibilityCheckId_TimeStamp",
-                table: "CAPIAudits",
-                columns: new[] { "EligibilityCheckId", "TimeStamp" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CAPIAudits_TimeStamp",

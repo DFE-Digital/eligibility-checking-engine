@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    [Migration("20260715100912_Create_CAPIAudits")]
+    [Migration("20260716101739_Create_CAPIAudits")]
     partial class Create_CAPIAudits
     {
         /// <inheritdoc />
@@ -150,6 +150,9 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("ApplicationID")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Tier")
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime2");
@@ -299,10 +302,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex("EligibilityCheckId");
 
                     b.HasIndex("TimeStamp");
-
-                    b.HasIndex("DWPCorrelationId", "TimeStamp");
-
-                    b.HasIndex("EligibilityCheckId", "TimeStamp");
 
                     b.ToTable("CAPIAudits");
                 });
@@ -500,7 +499,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("EstablishmentName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("InPrivateBeta")
                         .HasColumnType("bit");
@@ -533,7 +533,9 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("EstablishmentID");
 
-                    b.HasIndex("LocalAuthorityID");
+                    b.HasIndex(new[] { "EstablishmentName" }, "idx_Establishment_EstablishmentName");
+
+                    b.HasIndex(new[] { "LocalAuthorityID", "EstablishmentName" }, "idx_Establishment_LocalAuthorityID_EstablishmentName");
 
                     b.ToTable("Establishments");
                 });
@@ -686,13 +688,44 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("UserID")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OrganisationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OrganisationType")
+                        .HasMaxLength(50)
                         .HasColumnType("varchar(200)");
 
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserType")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(200)");
 
                     b.HasKey("UserID");
 
@@ -906,9 +939,14 @@ namespace CheckYourEligibility.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("UserID")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("EligibilityCheckReportId");
 
                     b.HasIndex("LocalAuthorityID");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("EligibilityCheckReports");
                 });
@@ -1156,7 +1194,13 @@ namespace CheckYourEligibility.API.Migrations
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID");
 
+                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
+                        .WithMany("EligibilityCheckReports")
+                        .HasForeignKey("UserID");
+
                     b.Navigation("LocalAuthority");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EligibilityCheckReportItem", b =>
@@ -1213,6 +1257,11 @@ namespace CheckYourEligibility.API.Migrations
             modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
                 {
                     b.Navigation("MultiAcademyTrustEstablishments");
+                });
+
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
+                {
+                    b.Navigation("EligibilityCheckReports");
                 });
 
             modelBuilder.Entity("FosterCarer", b =>

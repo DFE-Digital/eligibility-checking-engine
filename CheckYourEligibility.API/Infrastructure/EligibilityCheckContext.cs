@@ -123,7 +123,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         }
     }
 
-
     public void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data)
     {
         using var transaction = base.Database.BeginTransaction();
@@ -246,18 +245,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<CAPIAudit>().HasIndex(x => x.EligibilityCheckId);
 
         modelBuilder.Entity<CAPIAudit>().HasIndex(x => x.TimeStamp);
-
-        modelBuilder.Entity<CAPIAudit>().HasIndex(x => new
-        {
-            x.EligibilityCheckId,
-            x.TimeStamp
-        });
-
-        modelBuilder.Entity<CAPIAudit>().HasIndex(x => new
-        {
-            x.DWPCorrelationId,
-            x.TimeStamp
-        });
 
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");
         modelBuilder.Entity<EligibilityCheck>()

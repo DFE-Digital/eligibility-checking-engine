@@ -300,10 +300,6 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasIndex("TimeStamp");
 
-                    b.HasIndex("DWPCorrelationId", "TimeStamp");
-
-                    b.HasIndex("EligibilityCheckId", "TimeStamp");
-
                     b.ToTable("CAPIAudits");
                 });
 
