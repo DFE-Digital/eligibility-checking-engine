@@ -20,7 +20,6 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockLogger = new Mock<ILogger<GetEligibilityCheckStatusUseCase>>(MockBehavior.Loose);
         _sut = new GetEligibilityCheckStatusUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
             _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -34,7 +33,6 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<GetEligibilityCheckStatusUseCase>> _mockLogger;
     private GetEligibilityCheckStatusUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     [TestCase(null)]
@@ -72,21 +70,16 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var type = _fixture.Create<CheckEligibilityType>();
-        var auditId = _fixture.Create<string>();
+        var expectedStatusCode = CheckEligibilityStatus.queuedForProcessing;
+        _mockCheckGateway.Setup(s => s.GetStatusAsync(guid, type)).ReturnsAsync((expectedStatusCode, null));
 
-
-        var statusValue = _fixture.Create<CheckEligibilityStatus>();
-        _mockCheckGateway.Setup(s => s.GetStatusAsync(guid, type)).ReturnsAsync((statusValue, null));
-
-        var expectedStausCode = CheckEligibilityStatus.queuedForProcessing;
-       
         // Act
         var result = await _sut.Execute(guid, type);
 
         // Assert
         result.Data.Should().NotBeNull();
        
-        result.Data.Status.Should().Be(expectedStausCode.ToString());
+        result.Data.Status.Should().Be(expectedStatusCode.ToString());
     }
 
     [Test]

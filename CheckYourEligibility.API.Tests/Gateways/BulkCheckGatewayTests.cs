@@ -19,6 +19,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -38,20 +39,19 @@ public class BulkCheckGatewayTests : TestBase.TestBase
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<ICheckEligibility> _moqCheckEligibility;
     private BulkCheckGateway _sut;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     [SetUp]
     public async Task Setup()
     {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
+            .UseInMemoryDatabase(nameof(BulkCheckGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         // Ensure database is created and clean
-        var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
+        var context = (EligibilityCheckContext)_fakeInMemoryDb;       
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
@@ -341,7 +341,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
     [Test]
     public void Given_ValidRequest_GetBulkStatus_Should_Return_status()
     {
-        // Arrange
+        // Arrange()
         var items = _fixture.CreateMany<EligibilityCheck>();
         var guid = _fixture.Create<string>();
         foreach (var item in items)

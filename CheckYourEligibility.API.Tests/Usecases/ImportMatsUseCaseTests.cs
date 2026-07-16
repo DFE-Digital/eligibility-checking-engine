@@ -21,7 +21,6 @@ public class ImportMatsUseCaseTests : TestBase.TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportMatsUseCase>>(MockBehavior.Loose);
         _sut = new ImportMatsUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -35,7 +34,6 @@ public class ImportMatsUseCaseTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ImportMatsUseCase>> _mockLogger;
     private ImportMatsUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     public async Task Execute_Should_ImportMats_When_File_Is_Valid()

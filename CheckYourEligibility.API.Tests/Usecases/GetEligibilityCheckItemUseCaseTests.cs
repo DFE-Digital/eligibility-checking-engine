@@ -22,7 +22,6 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         _mockLogger = new Mock<ILogger<GetEligibilityCheckItemUseCase>>(MockBehavior.Loose);
         _sut = new GetEligibilityCheckItemUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
             _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -36,7 +35,6 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<GetEligibilityCheckItemUseCase>> _mockLogger;
     private GetEligibilityCheckItemUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     [TestCase(null)]
