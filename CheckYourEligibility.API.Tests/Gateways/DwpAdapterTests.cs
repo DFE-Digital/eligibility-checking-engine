@@ -62,6 +62,32 @@ public class DwpAdapterTests : TestBase.TestBase
     }
 
     [Test]
+    public void Given_ResponseBody_With_DwpErrors_ProcessCapiResponseCode_Should_Return_Parsed_Code()
+    {
+        // Arrange
+        var responseBody = "{\"errors\":[{\"code\":\"12345\",\"detail\":\"example\"}]}";
+
+        // Act
+        var result = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+
+        // Assert
+        result.Should().Be(12345);
+    }
+
+    [Test]
+    public void Given_ResponseBody_Without_DwpErrors_ProcessCapiResponseCode_Should_Return_Zero()
+    {
+        // Arrange
+        var responseBody = "{\"data\":[]}";
+
+        // Act
+        var result = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    [Test]
     public void Given_Claims_have_pensions_credit_and_Policy_Is_Standard_CheckBenefitEntitlement_Should_Return_true_Tier_Should_Ne_Null()
     {
         // Arrange
