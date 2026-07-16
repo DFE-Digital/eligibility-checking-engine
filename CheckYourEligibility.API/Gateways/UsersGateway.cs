@@ -20,6 +20,13 @@ public class UsersGateway : IUsers
         _mapper = mapper;
     }
 
+    private static string SanitizeForLog(string? value)
+    {
+        return (value ?? string.Empty)
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
+    }
+
     
     public async Task CreateOrUpdateUser(UserCreateRequest request)
     {
@@ -51,7 +58,7 @@ public class UsersGateway : IUsers
 
             _logger.LogInformation(
                 "Updated last login for user {UserName}",
-                existingUser.UserName);
+                SanitizeForLog(existingUser.UserName));
         }
         else
         {
@@ -71,7 +78,7 @@ public class UsersGateway : IUsers
 
             _logger.LogInformation(
                 "Created user {UserName}",
-                existingUser.UserName);
+                SanitizeForLog(existingUser.UserName));
         }
 
         await _db.SaveChangesAsync();
