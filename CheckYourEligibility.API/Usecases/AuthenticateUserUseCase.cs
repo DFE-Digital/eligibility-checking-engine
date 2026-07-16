@@ -159,10 +159,14 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         }
         catch (Exception ex)
         {
+            var safeClientId = (credentials.client_id ?? string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty);
+
             _logger.LogWarning(
                 ex,
                 "Failed to create or update user for client {ClientId}",
-                credentials.client_id);
+                safeClientId);
 
             // Do not fail authentication.
             // JWT generation and validation have already succeeded.
