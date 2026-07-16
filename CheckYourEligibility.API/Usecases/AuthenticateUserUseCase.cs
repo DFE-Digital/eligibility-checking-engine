@@ -103,43 +103,77 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <summary>
     ///     Execute the authentication process.
     /// </summary>
-    private async Task<JwtAuthResponse> ExecuteAuthentication(SystemUser credentials, JwtConfig jwtConfig)
+    private async Task<JwtAuthResponse> ExecuteAuthentication(
+    SystemUser credentials,
+    JwtConfig jwtConfig)
     {
-        // NOTE : This will remain for now until we implement a bettet way to audit passed scopes
-        await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
+        // NOTE : This will remain for now until we implement a better way to audit passed scopes
+        await _auditGateway.CreateAuditEntry(
+            AuditType.Client,
+            credentials.client_id);
 
-        if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret)) throw new InvalidClientException();
+        if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret))
+        {
+            throw new InvalidClientException();
+        }
 
-        if (!ValidateScopes(credentials.scope, jwtConfig.AllowedScopes)) throw new InvalidScopeException();
+        if (!ValidateScopes(credentials.scope, jwtConfig.AllowedScopes))
+        {
+            throw new InvalidScopeException();
+        }
 
-        var tokenString = GenerateJSONWebToken(credentials.client_id, credentials.scope, jwtConfig, out var expires);
+        var tokenString = GenerateJSONWebToken(
+            credentials.client_id,
+            credentials.scope,
+            jwtConfig,
+            out var expires);
+
+        if (string.IsNullOrEmpty(tokenString))
+        {
+            throw new ServerErrorException();
+        }
+
         var expiresInSeconds = (int)(expires - DateTime.UtcNow).TotalSeconds;
 
-        if (string.IsNullOrEmpty(tokenString)) throw new ServerErrorException();
-
-        // create or update user 
-        var userDetails = GetUserDetailsFromClientId(credentials.client_id);
-        var organisationDetails = GetOrganisationDetails(credentials.scope);
-
-        await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
+        try
         {
-            Data = new()
-            {
-                Email = userDetails.Email,
-                Reference = ""   // gov uk login or dfe sign in reference???
-            },
+            var userDetails = GetUserDetailsFromClientId(credentials.client_id);
+            var organisationDetails = GetOrganisationDetails(credentials.scope);
 
-            MetaData = new()
+            await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
             {
-                Source = userDetails.UserType.ToString(),
-                UserName = userDetails.UserName,
-                OrganisationID = organisationDetails.OrganisationId,
-                OrganisationType = organisationDetails.OrganisationType
-            }
-        });
+                Data = new()
+                {
+                    Email = userDetails.Email, 
+                    Reference = Guid.NewGuid().ToString() // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
+                },
+
+                MetaData = new()
+                {
+                    Source = userDetails.UserType.ToString(),
+                    UserName = userDetails.UserName,
+                    OrganisationID = organisationDetails.OrganisationId,
+                    OrganisationType = organisationDetails.OrganisationType
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to create or update user for client {ClientId}",
+                credentials.client_id);
+
+            // Do not fail authentication.
+            // JWT generation and validation have already succeeded.
+        }
 
         return new JwtAuthResponse
-        { expires_in = expiresInSeconds, access_token = tokenString, token_type = "Bearer" };
+        {
+            expires_in = expiresInSeconds,
+            access_token = tokenString,
+            token_type = "Bearer"
+        };
     }
 
 
@@ -238,7 +272,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return (
                 Source: UserType.API,
                 UserName: clientId, // so production-something
-                Email: ""); // api user no email
+                Email: clientId); // api user no email but will have production-something
         }
 
         // Portal user

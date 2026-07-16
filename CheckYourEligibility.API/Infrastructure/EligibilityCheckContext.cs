@@ -326,7 +326,15 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
 
         modelBuilder.Entity<User>()
-            .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
+            .HasIndex(p => new { p.Email, p.Reference, p.UserType }).IsUnique();
+        
+        modelBuilder.Entity<User>().HasIndex(x  => new {
+            x.UserName,
+            x.OrganisationType,
+            x.OrganisationId,
+            x.UserType
+        }).IsUnique();
+
 
         modelBuilder.Entity<User>(u => 
         {

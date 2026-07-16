@@ -3,6 +3,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -27,28 +28,38 @@ public class UsersGateway : IUsers
             .Replace("\n", string.Empty);
     }
 
-    
+    /// <summary>
+    ///  Creates a new user if one does not already exist, otherwise updates the user's last login timestamp
+    ///  API users are matched using UserName, OrganisationType and OrganisationId
+    ///  Portal users are matched using Email, UserType, OrganisationType and  OrganisationId
+    ///  </summary> <param name="request">
+    ///  Details of the user to create or update </param> 
+    ///  <returns> A task representing the asynchronous operation </returns>
     public async Task CreateOrUpdateUser(UserCreateRequest request)
     {
-        var isApiUser = Enum.TryParse<UserType>(request.MetaData.Source, true, out var userType) && userType == UserType.API;
+        var isApiUser =
+            Enum.TryParse<UserType>(request.MetaData.Source, true, out var userType)
+            && userType == UserType.API;
+
+        var organisationType =
+            Enum.Parse<OrganisationType>(request.MetaData.OrganisationType);
 
         User? existingUser;
 
         if (isApiUser)
         {
-            // API user
-            existingUser = _db.Users.FirstOrDefault(u =>
+            existingUser = await _db.Users.FirstOrDefaultAsync(u =>
                 u.UserName.ToLower() == request.MetaData.UserName.ToLower() &&
-                u.OrganisationType.ToString() == request.MetaData.OrganisationType &&
+                u.UserType == UserType.API &&
+                u.OrganisationType == organisationType &&
                 u.OrganisationId == request.MetaData.OrganisationID);
         }
         else
         {
-            // Portal user
-            existingUser = _db.Users.FirstOrDefault(u =>
+            existingUser = await _db.Users.FirstOrDefaultAsync(u =>
                 u.Email.ToLower() == request.Data.Email.ToLower() &&
                 u.UserType == userType &&
-                u.OrganisationType.ToString() == request.MetaData.OrganisationType &&
+                u.OrganisationType == organisationType &&
                 u.OrganisationId == request.MetaData.OrganisationID);
         }
 
@@ -65,11 +76,11 @@ public class UsersGateway : IUsers
             existingUser = new User
             {
                 UserID = Guid.NewGuid().ToString(),
-                Reference = string.Empty,
+                Reference = request.Data.Reference,
                 UserName = request.MetaData.UserName,
                 Email = request.Data.Email,
-                UserType = isApiUser ? UserType.API : Enum.Parse<UserType>(request.MetaData.Source),
-                OrganisationType = Enum.Parse<OrganisationType>(request.MetaData.OrganisationType),
+                UserType = isApiUser ? UserType.API : userType,
+                OrganisationType = organisationType,
                 OrganisationId = request.MetaData.OrganisationID,
                 LastLogin = DateTime.UtcNow
             };
@@ -96,7 +107,9 @@ public class UsersGateway : IUsers
     public async Task<string> CreateOrUpdateFSMParentUser(UserCreateRequest request)
     {
         var existingUser = _db.Users.FirstOrDefault(x =>
-            x.Email.ToLower() == request.Data.Email.ToLower() && x.Reference.ToLower() == request.Data.Reference.ToLower());
+            x.Email.ToLower() == request.Data.Email.ToLower()
+            && x.Reference.ToLower() == request.Data.Reference.ToLower()
+            && x.UserType == UserType.FreeSchoolMealsParent);
 
         if (existingUser != null)
         {
