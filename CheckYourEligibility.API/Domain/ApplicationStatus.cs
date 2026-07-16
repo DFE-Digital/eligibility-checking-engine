@@ -14,5 +14,7 @@ public class ApplicationStatus
 
     [Column(TypeName = "varchar(100)")] public Enums.ApplicationStatus Type { get; set; }
 
+    [Column(TypeName = "nvarchar(50)")] public Enums.EligibilityTier? Tier { get; set; }
+
     public DateTime TimeStamp { get; set; }
 }
