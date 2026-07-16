@@ -14,7 +14,6 @@ namespace CheckYourEligibility.API.Tests.Gateways;
 [TestFixture]
 public class FosterFamilyGatewayTests : TestBase.TestBase
 {
-    private new Fixture _fixture = null!;
     private Mock<ILogger<FosterFamilyGateway>> _mockLogger = null!;
     private IConfiguration _configuration = null!;
     private EligibilityCheckContext _dbContext = null!;
@@ -28,7 +27,6 @@ public class FosterFamilyGatewayTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _fixture = new Fixture();
         _mockLogger = new Mock<ILogger<FosterFamilyGateway>>();
 
         _testFosterFamily = new FosterFamilyRequest()

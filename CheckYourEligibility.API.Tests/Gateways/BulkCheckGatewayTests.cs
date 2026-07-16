@@ -341,7 +341,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
     [Test]
     public void Given_ValidRequest_GetBulkStatus_Should_Return_status()
     {
-        // Arrange
+        // Arrange()
         var items = _fixture.CreateMany<EligibilityCheck>();
         var guid = _fixture.Create<string>();
         foreach (var item in items)
