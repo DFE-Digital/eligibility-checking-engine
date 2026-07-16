@@ -24,8 +24,6 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
         _mockDbContextFactory = new Mock<IDbContextFactory<EligibilityCheckContext>>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
         _sut = new ProcessEligibilityBulkCheckUseCase(_mockGateway.Object, _mockLogger.Object, _mockProcessEligibilityCheckUseCase.Object, _mockConf.Object, _mockCheckEligibilityGateway.Object, _mockDbContextFactory.Object);
-      
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -40,7 +38,6 @@ public class ProcessEligibilityCheckQueueUseCaseTests : TestBase.TestBase
     private Mock<ILogger<ProcessEligibilityBulkCheckUseCase>> _mockLogger;
     private ProcessEligibilityBulkCheckUseCase _sut;
     private Mock<IProcessEligibilityCheckUseCase> _mockProcessEligibilityCheckUseCase;
-    private Fixture _fixture;
 
     [Test]
     [TestCase(null)]

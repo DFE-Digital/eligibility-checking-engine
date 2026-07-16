@@ -23,7 +23,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     private Mock<ILogger<ImportApplicationsUseCase>> _mockLogger = null!;
     private Mock<IMapper> _mockMapper = null!;
     private ImportApplicationsUseCase _sut = null!;
-    private new Fixture _fixture = null!;
 
     [SetUp]
     public void Setup()
@@ -32,7 +31,6 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportApplicationsUseCase>>(MockBehavior.Loose);
         _mockMapper = new Mock<IMapper>(MockBehavior.Strict);
-        _fixture = new Fixture();
 
         _sut = new ImportApplicationsUseCase(
             _mockApplicationGateway.Object,
