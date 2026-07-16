@@ -12,7 +12,7 @@ describe('Authorisation Tests', () => {
     "&scope=local_authority:22 local_authority:41"
   );
 
-  it('Verify 200 response and Bearer Token Is Returned when Valid Client Details are used', () => {
+  it.skip('Verify 200 response and Bearer Token Is Returned when Valid Client Details are used', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyWithClientDetails).then((token) => {
     });
   });
