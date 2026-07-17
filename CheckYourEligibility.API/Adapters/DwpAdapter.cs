@@ -22,6 +22,13 @@ public interface IDwpAdapter
         CheckEligibilityType type, string correaltionId, EligibilityPolicy eligibilityPolicy);
 
     Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId);
+
+    /// <summary>
+    /// Calls DWP CAPI GET /v2/citizens/{guid} directly (doc section 8.1) - returns the raw citizen
+    /// record, unlike GetCitizenClaims which calls the /claims sub-resource. Diagnostic use only -
+    /// this endpoint is not otherwise used by the eligibility check flow.
+    /// </summary>
+    Task<CAPIClaimResponseBase> GetCitizenByGuid(string guid, string correlationId, CheckEligibilityType type);
 }
 
 [ExcludeFromCodeCoverage]
@@ -163,6 +170,55 @@ public class DwpAdapter : IDwpAdapter
                 ResponseCode = HttpStatusCode.InternalServerError,
                 ResponseBody = ex.Message              
             });
+        }
+    }
+
+    /// <summary>
+    /// Calls DWP CAPI GET /v2/citizens/{guid} directly (doc section 8.1). Diagnostic-only - not
+    /// part of the normal eligibility check flow, which only ever calls /match and /claims.
+    /// </summary>
+    public async Task<CAPIClaimResponseBase> GetCitizenByGuid(string guid, string correlationId, CheckEligibilityType type)
+    {
+        var uri = $"{_DWP_ApiHost}/v2/citizens/{guid}";
+
+        try
+        {
+            string token = await GetToken();
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            requestMessage.Headers.Add("context", GetContext(type));
+            requestMessage.Headers.Add("access-level", _DWP_ApiAccessLevel);
+            requestMessage.Headers.Add("correlation-id", correlationId);
+            requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
+
+            _logger.LogInformation("Dwp diagnostics: GET citizen before request, correlationId:{CorrelationId}", correlationId);
+            var response = await _httpClient.SendAsync(requestMessage);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Dwp diagnostics: GET citizen after request, correlationId:{CorrelationId}, status:{StatusCode}",
+                correlationId, response.StatusCode);
+
+            var capiResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+
+            return new CAPIClaimResponseBase
+            {
+                ResponseCode = response.StatusCode,
+                CAPIResponseCode = capiResponseCode,
+                CAPIEndpoint = uri,
+                ResponseBody = responseBody
+            };
+        }
+        catch (Exception ex)
+        {
+            string errorMessage = $"ECE failed to GET citizen from CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+            _logger.LogError(ex, errorMessage);
+
+            return new CAPIClaimResponseBase
+            {
+                CAPIEndpoint = uri,
+                ResponseCode = HttpStatusCode.InternalServerError,
+                ResponseBody = ex.Message
+            };
         }
     }
 
