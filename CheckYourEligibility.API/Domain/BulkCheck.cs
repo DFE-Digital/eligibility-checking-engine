@@ -16,7 +16,9 @@ public class BulkCheck
     public CheckEligibilityType EligibilityType { get; set; }
     
     public DateTime SubmittedDate { get; set; }
-    
+
+    public DateTime? CompletedDate { get; set; }
+
     [Column(TypeName = "varchar(100)")]
     public string SubmittedBy { get; set; } = string.Empty;
     
