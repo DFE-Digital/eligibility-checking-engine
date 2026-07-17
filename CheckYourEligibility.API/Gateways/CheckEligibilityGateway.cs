@@ -268,14 +268,25 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
     }
 
-    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type)
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?, string?)> GetStatusAsync(
+        string guid,
+        CheckEligibilityType type)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-                                                                           (type == CheckEligibilityType.None ||
-                                                                            type == x.Type) &&
-                                                                           x.IsDeleted == false);
-        if (result != null) return (result.Status, result.Tier);
-        return (null, null);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x =>
+            x.EligibilityCheckID == guid &&
+            (type == CheckEligibilityType.None || type == x.Type) &&
+            x.IsDeleted == false);
+
+        if (result != null)
+        {
+            var checkData = string.IsNullOrWhiteSpace(result.CheckData)
+                ? null
+                : JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+
+            return (result.Status, result.Tier, checkData?.ErrorCode);
+        }
+
+        return (null, null, null);
     }
 
     public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)
