@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 public interface IEligibilityCheckContext
 {
+    DbSet<CAPIAudit> CAPIAudits { get; set; }
     DbSet<ECSConflict> ECSConflicts { get; set; }
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
 	DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }

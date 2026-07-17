@@ -41,6 +41,29 @@ public class DataValidationTests
             because: reason);
     }
 
+    [TestCase("ÁáÉéÍíÓóÚúÝýĆćĹĺŃńŔŕŚśŹź", "acute")]
+    [TestCase("ÀàÈèÌìÒòÙùẀẁỲỳ", "grave")]
+    [TestCase("ÂâÊêÎîÔôÛûĈĉĜĝĤĥĴĵŜŝŴŵŶŷ", "circumflex")]
+    [TestCase("ÃãÑñÕõĨĩŨũẼẽỸỹ", "tilde")]
+    [TestCase("ÄäËëÏïÖöÜüŸÿ", "umlaut or diaeresis")]
+    [TestCase("ÇçĢģĶķĻļŅņŖŗŞşŢţ", "cedilla")]
+    [TestCase("ÅåŮů", "ring")]
+    [TestCase("ĀāĒēĪīŌōŪūȲȳ", "macron")]
+    [TestCase("ĂăĔĕĞğĬĭŎŏŬŭ", "breve")]
+    [TestCase("ĊċĖėĠġİẊẋŻż", "dot above")]
+    [TestCase("ĄąĘęĮįŲų", "ogonek")]
+    [TestCase("ŐőŰű", "double acute")]
+    public void LastName_with_accented_characters_passes_validation(
+    string lastName,
+    string accentType)
+    {
+        var result = _validator.Validate(ValidRequestWith(lastName));
+
+        result.Errors.Should().NotContain(
+            e => e.PropertyName.Contains("LastName"),
+            because: $"{accentType} accented characters are supported");
+    }
+
     [TestCase("Smith123",   "digits not allowed")]
     [TestCase("O/Brien",    "forward slash not allowed")]
     [TestCase("Smith@Jones","at-sign not allowed")]
@@ -67,6 +90,42 @@ public class DataValidationTests
         NationalInsuranceNumber = "AB123456C",
         Type = CheckEligibilityType.FreeSchoolMeals
     };
+
+    [TestCase("FirstName", "José")]
+    [TestCase("LastName", "González")]
+    [TestCase("ChildFirstName", "Dénis")]
+    [TestCase("ChildLastName", "Müller")]
+    public void Parent_and_child_name_fields_with_accented_characters_pass_validation(
+    string fieldName,
+    string value)
+    {
+        var request = ValidRequestWithOptionalApplicationData();
+
+        switch (fieldName)
+        {
+            case nameof(request.FirstName):
+                request.FirstName = value;
+                break;
+            case nameof(request.LastName):
+                request.LastName = value;
+                break;
+            case nameof(request.ChildFirstName):
+                request.ChildFirstName = value;
+                break;
+            case nameof(request.ChildLastName):
+                request.ChildLastName = value;
+                break;
+            default:
+                Assert.Fail($"Unsupported name field: {fieldName}");
+                break;
+        }
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().NotContain(
+            e => e.PropertyName.Contains(fieldName),
+            because: $"{fieldName} should allow accented characters");
+    }
 
     [Test]
     public void Optional_application_fields_with_valid_values_pass_validation()
