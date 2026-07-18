@@ -281,6 +281,38 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Given_CheckDataContainsErrorCode_GetStatus_Should_Return_ErrorCode()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.Status = CheckEligibilityStatus.eligible;
+        item.Tier = null;
+        item.IsDeleted = false;
+        item.CheckData = JsonConvert.SerializeObject(new CheckProcessData
+        {
+            ErrorCode = "STE10"
+        });
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            CheckEligibilityType.FreeSchoolMeals);
+
+        var status = result.Item1;
+        var tier = result.Item2;
+        var errorCode = result.Item3;
+
+        // Assert
+        status.Should().Be(item.Status);
+        tier.Should().BeNull();
+        errorCode.Should().Be("STE10");
+    }
+
+    [Test]
     public async Task Given_ValidRequest_SameType_GetStatus_Should_Return_status()
     {
         // Arrange
