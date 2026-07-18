@@ -368,6 +368,7 @@ public class DwpAdapter : IDwpAdapter
             string errorMessage = $"CAPI failed to match citizen. URI: {uri} | Response: {response.StatusCode}";
             _logger.LogWarning(errorMessage);
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.ErrorCode = "STE10";
             citizenResponse.Reason = errorMessage;
             return citizenResponse;
         }
@@ -376,6 +377,7 @@ public class DwpAdapter : IDwpAdapter
             string errorMessage = $"Exception occurred while calling CAPI citizen match endpoint. URI: {uri}";
             _logger.LogError(ex, errorMessage);
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.ErrorCode = "STE11";
             citizenResponse.ResponseCode = HttpStatusCode.InternalServerError;
             citizenResponse.ResponseBody = ex.Message;
             return citizenResponse;
