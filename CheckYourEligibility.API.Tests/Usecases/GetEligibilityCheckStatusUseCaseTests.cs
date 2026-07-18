@@ -93,6 +93,31 @@ public class GetEligibilityCheckStatusUseCaseTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Execute_returns_success_with_error_code_when_gateway_returns_error_code()
+    {
+        // Arrange
+        var guid = _fixture.Create<string>();
+        var type = _fixture.Create<CheckEligibilityType>();
+        var expectedStatusCode = CheckEligibilityStatus.error;
+        const string expectedErrorCode = "STE10";
+
+        _mockCheckGateway
+            .Setup(s => s.GetStatusAsync(guid, type))
+            .ReturnsAsync((
+                (CheckEligibilityStatus?)expectedStatusCode,
+                (EligibilityTier?)null,
+                expectedErrorCode));
+
+        // Act
+        var result = await _sut.Execute(guid, type);
+
+        // Assert
+        result.Data.Should().NotBeNull();
+        result.Data.Status.Should().Be(expectedStatusCode.ToString());
+        result.Data.ErrorCode.Should().Be(expectedErrorCode);
+    }
+
+    [Test]
     public async Task Execute_calls_gateway_GetStatus_with_correct_guid()
     {
         // Arrange
