@@ -441,8 +441,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
-                        checkData.ErrorCode = capiClaimResponse.ErrorCode;
-                        result.CheckData = JsonConvert.SerializeObject(checkData);
+                        checkData.ErrorCode = capiClaimResponse.ErrorCode;                        
 
                         source = ProcessEligibilityCheckSource.DWP;
 
@@ -493,13 +492,20 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult == CheckEligibilityStatus.eligible)
         {
-            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
-            result.CheckData = JsonConvert.SerializeObject(checkData);
+            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");            
         }
 
         result.Status = checkStatusResult;
         result.Tier = checkTierResult;
         result.Updated = DateTime.UtcNow;
+
+        if (checkStatusResult == CheckEligibilityStatus.error &&
+            string.IsNullOrWhiteSpace(checkData.ErrorCode))
+        {
+            checkData.ErrorCode = "STE50";
+        }
+
+        result.CheckData = JsonConvert.SerializeObject(checkData);
 
         if (checkStatusResult == CheckEligibilityStatus.error)
         {
