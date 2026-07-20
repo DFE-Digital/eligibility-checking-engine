@@ -642,10 +642,10 @@ public class ApplicationGateway : IApplication
                 query = query.Where(
                     x =>
                         x.Reference.Contains(keyword) ||
-                        x.ChildFirstName.Contains(keyword) ||
-                        x.ChildLastName.Contains(keyword) ||
-                        x.ParentFirstName.Contains(keyword) ||
-                        x.ParentLastName.Contains(keyword) ||
+                        EF.Functions.Collate(x.ChildFirstName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ChildLastName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ParentFirstName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ParentLastName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
                         x.ParentNationalInsuranceNumber.Contains(keyword) ||
                         x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword) ||
                         x.ParentEmail.Contains(keyword) ||
