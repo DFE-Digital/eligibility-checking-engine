@@ -441,6 +441,9 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
+                        checkData.ErrorCode = capiClaimResponse.ErrorCode;
+                        result.CheckData = JsonConvert.SerializeObject(checkData);
+
                         source = ProcessEligibilityCheckSource.DWP;
 
                         var capiAudit = new CAPIAudit(
