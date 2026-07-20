@@ -137,32 +137,37 @@ public class DwpAdapter : IDwpAdapter
             }
 
             // CAPI returns a non-successful code
-            _logger.LogWarning("Get CAPI citizen claim failed. uri:-{Uri} Response:- {StatusCode}",
+            _logger.LogWarning(
+                "Get CAPI citizen claim failed. uri:-{Uri} Response:- {StatusCode}",
                 _httpClient.BaseAddress + uri,
                 response.StatusCode);
 
-            var capiResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+            var capiResponseCode =
+                CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
 
             return new CAPIClaimResponseBase
             {
                 CAPIResponseCode = capiResponseCode,
                 ResponseCode = response.StatusCode,
                 CAPIEndpoint = uri,
-                ResponseBody = responseBody
+                ResponseBody = responseBody,
+                ErrorCode = "STE20"
             };
         }
         catch (Exception ex)
         {
-                   
-            string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+            string errorMessage =
+                $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+
             _logger.LogError(ex, errorMessage);
 
-            return (new CAPIClaimResponseBase
+            return new CAPIClaimResponseBase
             {
                 CAPIEndpoint = uri,
                 ResponseCode = HttpStatusCode.InternalServerError,
-                ResponseBody = ex.Message              
-            });
+                ResponseBody = ex.Message,
+                ErrorCode = "STE21"
+            };
         }
     }
 
