@@ -579,11 +579,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
     [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
     [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.parentNotFound)]
-    public async Task Given_validRequest_DWP_Citizen_Claim_Request_Throws_Error_Process_Should_Return_checkStatus(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
+    public async Task Given_validRequest_DWP_Citizen_Claim_Request_Throws_Error_Process_Should_Return_checkStatus(
+    HttpStatusCode capiStatusCode,
+    CheckEligibilityStatus checkStatus)
     {
         // Arrange
         var capiClaimResponse = _fixture.Create<CAPIClaimResponseBase>();
         capiClaimResponse.ResponseCode = capiStatusCode;
+        capiClaimResponse.ErrorCode = "STE20";
 
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
@@ -592,31 +595,56 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         var fsm = _fixture.Create<CheckEligibilityRequestData>();
         fsm.DateOfBirth = "1990-01-01";
+
         var dataItem = GetCheckProcessData(fsm);
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData = JsonConvert.SerializeObject(dataItem);
 
-        CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
+        var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         citizenResponse.ResponseCode = HttpStatusCode.OK;
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
-        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        
-        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
+        _moqEcsGateway
+            .Setup(x => x.UseEcsforChecks)
+            .Returns("false");
+
+        _moqDwpGateway
+            .Setup(x => x.GetCitizen(
+                It.IsAny<CitizenMatchRequest>(),
+                It.IsAny<CheckEligibilityType>(),
+                It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        
-        _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-         It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), It.IsAny<EligibilityPolicy>()))
-     .ReturnsAsync(capiClaimResponse);
 
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+        _moqDwpGateway
+            .Setup(x => x.GetCitizenClaims(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CheckEligibilityType>(),
+                It.IsAny<string>(),
+                It.IsAny<EligibilityPolicy>()))
+            .ReturnsAsync(capiClaimResponse);
 
+        _moqAudit
+            .Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null))
+            .ReturnsAsync("");
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
         // Assert
         status.Should().Be(checkStatus);
+
+        var updatedCheck = _fakeInMemoryDb.CheckEligibilities
+            .First(x => x.EligibilityCheckID == item.EligibilityCheckID);
+
+        var checkData =
+            JsonConvert.DeserializeObject<CheckProcessData>(updatedCheck.CheckData);
+
+        checkData.Should().NotBeNull();
+        checkData!.ErrorCode.Should().Be("STE20");
     }
 
 
@@ -629,6 +657,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         citizenResponse.ResponseCode = capiStatusCode;
         citizenResponse.Guid = string.Empty;
         citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+        citizenResponse.ErrorCode = "STE10";
 
         var item = _fixture.Create<EligibilityCheck>();
         item.IsDeleted = false;
@@ -657,6 +686,64 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
         // Assert
         status.Should().Be(checkStatus);
+
+        var updatedCheck = _fakeInMemoryDb.CheckEligibilities
+            .First(x => x.EligibilityCheckID == item.EligibilityCheckID);
+
+        var checkData =
+            JsonConvert.DeserializeObject<CheckProcessData>(updatedCheck.CheckData);
+
+        checkData.Should().NotBeNull();
+        checkData!.ErrorCode.Should().Be("STE10");
+    }
+
+    [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
+    [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.parentNotFound)]
+    public async Task Given_validRequest_DWP_Citizen_Request_With_No_ErrorCode_Should_Default_To_STE50(HttpStatusCode capiStatusCode, CheckEligibilityStatus checkStatus)
+    {
+        // Arrange
+        CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
+        citizenResponse.ResponseCode = capiStatusCode;
+        citizenResponse.Guid = string.Empty;
+        citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+        citizenResponse.ErrorCode = null;
+
+        var item = _fixture.Create<EligibilityCheck>();
+        item.IsDeleted = false;
+        item.Status = CheckEligibilityStatus.queuedForProcessing;
+        item.EligibilityCheckID = Guid.NewGuid().ToString();
+
+        var fsm = _fixture.Create<CheckEligibilityRequestData>();
+        fsm.DateOfBirth = "1990-01-01";
+        fsm.Type = CheckEligibilityType.FreeSchoolMeals;
+
+        var dataItem = GetCheckProcessData(fsm);
+        item.Type = fsm.Type;
+        item.CheckData = JsonConvert.SerializeObject(dataItem);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
+
+        _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
+            .ReturnsAsync(citizenResponse);
+
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        // Act
+        var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        // Assert
+        status.Should().Be(checkStatus);
+
+        var updatedCheck = _fakeInMemoryDb.CheckEligibilities
+            .First(x => x.EligibilityCheckID == item.EligibilityCheckID);
+
+        var checkData =
+            JsonConvert.DeserializeObject<CheckProcessData>(updatedCheck.CheckData);
+
+        checkData.Should().NotBeNull();
+        checkData!.ErrorCode.Should().Be("STE50");
     }
 
     [Test]
