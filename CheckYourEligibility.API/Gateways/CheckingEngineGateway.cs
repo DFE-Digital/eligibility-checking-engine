@@ -452,7 +452,7 @@ public class CheckingEngineGateway : ICheckingEngine
                               capiClaimResponse.ResponseCode,
                               capiClaimResponse.CAPIResponseCode);
 
-                        await _db.CAPIAudits.AddAsync(capiAudit);
+                        await context.CAPIAudits.AddAsync(capiAudit);
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                     }
