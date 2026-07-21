@@ -10,7 +10,6 @@ using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -77,9 +76,11 @@ public class DwpAdapter : IDwpAdapter
 
     public async Task<CAPIClaimResponseBase> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correlationId, EligibilityPolicy eligibilityPolicy)
-    {
-        var uri =
-            $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
+    {  
+        
+        string  uri =
+           $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
+
 
         string reason = string.Empty;
         try
@@ -87,7 +88,7 @@ public class DwpAdapter : IDwpAdapter
             string token = await GetToken();
 
             _logger.LogInformation("Dwp claim before token");
-
+         
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
             requestMessage.Headers.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
@@ -161,7 +162,7 @@ public class DwpAdapter : IDwpAdapter
             {
                 CAPIEndpoint = uri,
                 ResponseCode = HttpStatusCode.InternalServerError,
-                ResponseBody = ex.Message              
+                ResponseBody = ex.Message
             });
         }
     }
@@ -375,6 +376,7 @@ public class DwpAdapter : IDwpAdapter
         {
             string errorMessage = $"Exception occurred while calling CAPI citizen match endpoint. URI: {uri}";
             _logger.LogError(ex, errorMessage);
+            citizenResponse.CAPIEndpoint = uri;
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
             citizenResponse.ResponseCode = HttpStatusCode.InternalServerError;
             citizenResponse.ResponseBody = ex.Message;
@@ -398,8 +400,7 @@ public class DwpAdapter : IDwpAdapter
 
         var formData = new FormUrlEncodedContent(parameters);
 
-        var response = await _httpClient.PostAsync(uri, formData);
-        Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+        var response = await _httpClient.PostAsync(uri, formData);  
 
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);

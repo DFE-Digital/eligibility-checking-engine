@@ -18,7 +18,7 @@ namespace CheckYourEligibility.API.Domain
         public Guid DWPCorrelationId { get; set; }
         public Guid EligibilityCheckId { get; set; }
         public DateTime TimeStamp { get; set; }
-        [Column(TypeName = "nvarchar(210)")]
+        [Column(TypeName = "nvarchar(250)")]
         public string Endpoint { get; set; } = string.Empty;
         public string RequestBody { get; set; } = string.Empty;
         public string ResponseBody { get; set; } = string.Empty;
