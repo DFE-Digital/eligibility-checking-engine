@@ -1,12 +1,9 @@
-﻿// Ignore Spelling: Fsm
-
-using Azure.Storage.Queues;
+﻿using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;

@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using AutoMapper;
+﻿using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
@@ -58,8 +56,18 @@ public class CheckEligibilityGateway : ICheckEligibility
 
             if (queuedBulkItems.Any())
             {
-                string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
 
+                var type = queuedBulkItems.First().Type;
+                string bulkQueueName = _configuration[$"Queue:Bulk:{type}"];
+
+                if (type == CheckEligibilityType.FreeSchoolMeals) {
+
+                    bulkQueueName += meta.Source == "free-school-meals-admin" ?
+                         _configuration[$"Queue:Bulk:{type}:Frontend"] :
+                         _configuration[$"Queue:Bulk:{type}:Api"];
+
+                }
+                
                 foreach (var item in queuedBulkItems)
                 {
                     await _storageQueueGateway.SendMessage(item, bulkQueueName);
