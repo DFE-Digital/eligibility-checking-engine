@@ -3,38 +3,38 @@ using CheckYourEligibility.API.Domain;
 
 public static class WorkingFamiliesEventHelper
 {
-    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterCarer data)
-    {
+    // public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterCarer data)
+    // {
 
-        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
-        {
+    //     WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
+    //     {
 
-            WorkingFamiliesEventID = Guid.NewGuid().ToString(),
-            EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
-            ValidityStartDate = data.FosterChild.ValidityStartDate,
-            ValidityEndDate = data.FosterChild.ValidityEndDate,
+    //         WorkingFamiliesEventID = Guid.NewGuid().ToString(),
+    //         EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
+    //         ValidityStartDate = data.FosterChild.ValidityStartDate,
+    //         ValidityEndDate = data.FosterChild.ValidityEndDate,
 
-            ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
-            ParentFirstName = data.FirstName,
-            ParentLastName = data.LastName,
-            ParentDateOfBirth = data.DateOfBirth,
-            PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber ?? string.Empty,
-            PartnerFirstName = data.PartnerFirstName ?? string.Empty,
-            PartnerLastName = data.PartnerLastName ?? string.Empty,
-            PartnerDateOfBirth = data.PartnerDateOfBirth ?? DateTime.MinValue,
+    //         ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
+    //         ParentFirstName = data.FirstName,
+    //         ParentLastName = data.LastName,
+    //         ParentDateOfBirth = data.DateOfBirth,
+    //         PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber ?? string.Empty,
+    //         PartnerFirstName = data.PartnerFirstName ?? string.Empty,
+    //         PartnerLastName = data.PartnerLastName ?? string.Empty,
+    //         PartnerDateOfBirth = data.PartnerDateOfBirth ?? DateTime.MinValue,
 
-            ChildFirstName = data.FosterChild.FirstName,
-            ChildLastName = data.FosterChild.LastName,
-            ChildPostCode = data.FosterChild.PostCode,
-            ChildDateOfBirth = data.FosterChild.DateOfBirth,
-            SubmissionDate = data.FosterChild.SubmissionDate,
+    //         ChildFirstName = data.FosterChild.FirstName,
+    //         ChildLastName = data.FosterChild.LastName,
+    //         ChildPostCode = data.FosterChild.PostCode,
+    //         ChildDateOfBirth = data.FosterChild.DateOfBirth,
+    //         SubmissionDate = data.FosterChild.SubmissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChild.ValidityStartDate, data.FosterChild.SubmissionDate),
-            GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChild.ValidityEndDate)
-        };
+    //         DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChild.ValidityStartDate, data.FosterChild.SubmissionDate),
+    //         GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChild.ValidityEndDate)
+    //     };
 
-        return wfEvent;
-    }
+    //     return wfEvent;
+    // }
 
     public static WorkingFamiliesEvent ParseWorkingFamiliesEvent(List<string> eventProps, List<string> columnHeaders)
     {

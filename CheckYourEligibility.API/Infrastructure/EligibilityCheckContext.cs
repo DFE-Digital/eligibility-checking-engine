@@ -56,35 +56,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        StampAuditFields();
         return base.SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Automatically sets audit fields for any entity implementing IAuditable.
-    /// - When an entity is Added: sets Created and Updated to the current UTC timestamp.
-    /// - When an entity is Modified: sets Updated to the current UTC timestamp.
-    /// - No timestamps are changed if the entity has no tracked modifications.
-    /// </summary>
-    private void StampAuditFields()
-    {
-        var now = DateTime.UtcNow;
-
-        foreach (var entry in ChangeTracker.Entries<IAuditable>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    entry.Entity.Created = now;
-                    entry.Entity.Updated = now;
-                    break;
-
-                case EntityState.Modified:
-                    // Only entities with actual property diffs get here
-                    entry.Entity.Updated = now;
-                    break;
-            }
-        }
     }
 
     public void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data)
@@ -348,13 +320,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                 .HasConversion<string>()
                 .HasMaxLength(50);
         });
-
-        modelBuilder.Entity<FosterChild>()
-            .HasOne(fc => fc.FosterCarer)
-            .WithOne(c => c.FosterChild)
-            .HasForeignKey<FosterChild>(fc => fc.FosterCarerId)
-            .IsRequired();
-
 
         modelBuilder.Entity<FosterChild>()
             .HasIndex(fc => fc.EligibilityCode);

@@ -1,24 +1,42 @@
 public interface IFosterFamily
 {
-    /// <summary>
-    /// Creates a new foster family application
-    /// </summary>
-    /// <param name="data">Foster family request data</param>
-    /// <returns>Foster family application response</returns>
-    Task<FosterFamilyResponse> PostFosterFamily(FosterFamilyRequestData data, CancellationToken cancellationToken = default);
+    //FosterCarer
 
-    /// <summary>
-    /// Gets an foster family by GUID
-    /// </summary>
-    /// <param name="guid">Foster family GUID</param>
-    /// <returns>Foster family response or null if not found</returns>
-    Task<FosterFamilyResponse?> GetFosterFamily(string guid);
+    // Task<FosterCarerResponse?> GetFosterCarerAsync(
+    //     Guid fosterCarerId,
+    //     bool includeChildren = false);
 
-    /// <summary>
-    /// Updates an Foster Family
-    /// </summary>
-    /// <param name="guid">Foster Carer GUID</param>
-    /// <param name="data">Update data</param>
-    /// <returns>Update response</returns>
-    Task<FosterFamilyResponse> UpdateFosterFamily(string guid, FosterFamilyUpdateRequest data, CancellationToken cancellationToken = default);
+    // Task<FosterCarerResponse> CreateFosterCarerAsync(
+    //     CreateFosterCarerRequest request);
+
+    // Task<FosterCarerResponse> UpdateFosterCarerAsync(
+    //     Guid fosterCarerId,
+    //     UpdateFosterCarerRequest request);
+
+    // Task DeleteFosterCarerAsync(
+    //     Guid fosterCarerId);
+
+    // Task<PaginatedResult<FosterCarerResponse>> SearchFosterCarersAsync(
+    //     FosterCarerSearchRequest request);
+
+
+    // // FosterChild
+
+    // Task<FosterChildResponse?> GetFosterChildAsync(
+    //     Guid fosterChildId,
+    //     bool includeFosterCarer = false);
+
+    // Task<FosterChildResponse> CreateFosterChildAsync(
+    //     CreateFosterChildRequest request);
+
+    // Task<FosterChildResponse> UpdateFosterChildAsync(
+    //     Guid fosterChildId,
+    //     UpdateFosterChildRequest request);
+
+    // Task DeleteFosterChildAsync(
+    //     Guid fosterChildId);
+
+    // Task<PaginatedResult<FosterChildResponse>> SearchFosterChildrenAsync(
+    //     FosterChildSearchRequest request,
+    //     bool includeFosterCarer = false);
 }
