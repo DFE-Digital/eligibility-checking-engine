@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.Spreadsheet;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -51,14 +54,24 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         _mapper = config.CreateMapper();
         var configForSmsApi = new Dictionary<string, string>
         {
-            { "BulkEligibilityCheckLimit", "250" },
-            { "QueueFsmCheckStandard", "notSet" },
-            { "QueueFsmCheckBulk", "notSet" },
-            { "HashCheckDays", "7" },
-            { "Dwp:UseEcsforChecksWF", "false"}
+            ["BulkEligibilityCheckLimit"] = "250",
+            ["QueueFsmCheckStandard"] = "notSet",
+            ["QueueFsmCheckBulk"] = "notSet",
+            ["HashCheckDays"] = "7",
+            ["Dwp:UseEcsforChecksWF"] = "false"
         };
+
+        var queueConfig = new Dictionary<string, string>
+        {
+            ["Queue:Bulk:FreeSchoolMeals:Frontend"] = "process-bulk-fsm-frontend-eligibility-queue",
+            ["Queue:Bulk:FreeSchoolMeals:Api"] = "process-bulk-fsm-api-eligibility-queue",
+            ["Queue:Bulk:WorkingFamilies"] = "process-bulk-wf-eligibility-queue",
+            ["Queue:Bulk:TwoYearOffer"] = "process-bulk-eligibility-queue"
+        };
+
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
+            .AddInMemoryCollection(queueConfig)
             .Build();
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
@@ -552,6 +565,25 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
         // Assert
         act.Should().ThrowExactlyAsync<ValidationException>();
+    }
+
+    [TestCase(CheckEligibilityType.FreeSchoolMeals,"api-user", "process-bulk-fsm-api-eligibility-queue")]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals,"free-school-meals-admin", "process-bulk-fsm-frontend-eligibility-queue")]
+    [TestCase(CheckEligibilityType.TwoYearOffer, "childcare-admin", "process-bulk-eligibility-queue")]
+    [TestCase(CheckEligibilityType.WorkingFamilies, "childcare-admin", "process-bulk-wf-eligibility-queue")]
+    public void GetBulkQueueName_Should_Return_Correct_QueueName(CheckEligibilityType type, string source, string queueName)
+    {
+
+        // Arrange
+          var method = _sut.GetType().GetMethod("GetBulkQueueName",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Act
+        var result = method!.Invoke(_sut,new object[] { type, source });
+
+        // Assert
+        Assert.That(result, Is.EqualTo(queueName));
+
     }
 
     #region Private Helper Methods

@@ -57,17 +57,9 @@ public class CheckEligibilityGateway : ICheckEligibility
             if (queuedBulkItems.Any())
             {
 
-                var type = queuedBulkItems.First().Type;
-                string bulkQueueName = _configuration[$"Queue:Bulk:{type}"];
+                string bulkQueueName = GetBulkQueueName(queuedBulkItems.First().Type, meta.Source);
 
-                if (type == CheckEligibilityType.FreeSchoolMeals) {
 
-                    bulkQueueName += meta.Source == "free-school-meals-admin" ?
-                         _configuration[$"Queue:Bulk:{type}:Frontend"] :
-                         _configuration[$"Queue:Bulk:{type}:Api"];
-
-                }
-                
                 foreach (var item in queuedBulkItems)
                 {
                     await _storageQueueGateway.SendMessage(item, bulkQueueName);
@@ -437,6 +429,24 @@ public class CheckEligibilityGateway : ICheckEligibility
     }
 
     #region Private
+
+    private string GetBulkQueueName(
+    CheckEligibilityType type,
+    string source)
+    {
+        return type switch
+        {
+            CheckEligibilityType.FreeSchoolMeals
+                when source == "free-school-meals-admin"
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Frontend"],
+
+            CheckEligibilityType.FreeSchoolMeals
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Api"],
+
+            _ => _configuration[$"Queue:Bulk:{type}"]
+        };
+    }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
     {
         //TODO: This should probably live with the usecase
