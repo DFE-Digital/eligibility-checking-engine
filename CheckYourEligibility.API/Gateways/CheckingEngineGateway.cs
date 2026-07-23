@@ -452,7 +452,16 @@ public class CheckingEngineGateway : ICheckingEngine
                               capiClaimResponse.ResponseCode,
                               capiClaimResponse.CAPIResponseCode);
 
-                        await context.CAPIAudits.AddAsync(capiAudit);
+                        try
+                        {
+                            await context.CAPIAudits.AddAsync(capiAudit);
+                            await context.SaveChangesAsync();
+                        }
+                        catch (Exception ex) {
+
+                            _logger.LogError(ex," Check:{checkId} Action:AddToCAPIAudits Status:Failed", result.EligibilityCheckID);
+                        } 
+
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                     }
