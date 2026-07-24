@@ -311,7 +311,7 @@ public class CheckingEngineGateway : ICheckingEngine
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
-                checkData.NationalInsuranceNumber, checkData.LastName);
+                checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
 
             if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
 
