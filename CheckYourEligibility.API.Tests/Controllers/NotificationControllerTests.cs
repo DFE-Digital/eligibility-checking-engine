@@ -15,7 +15,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class NotificationControllerTests : TestBase
 {
-    private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
     private ILogger<NotificationController> _mockLogger;
     private Mock<ISendNotificationUseCase> _mockSendNotificationUseCase;
@@ -32,8 +31,6 @@ public class NotificationControllerTests : TestBase
             _mockLogger,
             _mockSendNotificationUseCase.Object,
             _mockAuditGateway.Object);
-
-        _fixture = new Fixture();
     }
 
     [TearDown]

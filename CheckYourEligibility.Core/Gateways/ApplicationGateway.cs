@@ -86,7 +86,7 @@ public class ApplicationGateway : IApplication
 
 
             await _db.Applications.AddAsync(item);
-            await AddStatusHistory(item, ApplicationStatus.Entitled);
+            await AddStatusHistory(item, ApplicationStatus.Entitled, item.Tier);
 
             await _db.SaveChangesAsync();
 
@@ -200,10 +200,12 @@ public class ApplicationGateway : IApplication
                 result.EstablishmentId = establishment.EstablishmentID;
             }
 
+            var statusChanged = data.Status.HasValue;
+            var tierChanged = data.Tier.HasValue;
+
             if (data.Status.HasValue)
             {
                 result.Status = data.Status;
-                await AddStatusHistory(result, result.Status.Value);
 
                 // If status is updated to Entitled/ReviewedEntitled, calculate and set EligibilityEndDate
                 if (data.Status == ApplicationStatus.Entitled || data.Status == ApplicationStatus.ReviewedEntitled)
@@ -215,6 +217,13 @@ public class ApplicationGateway : IApplication
             if (data.Tier.HasValue)
             {
                 result.Tier = data.Tier;
+            }
+
+            // Record a single history entry capturing the resulting Status and Tier whenever
+            // either one changes, so tier-only decision changes are tracked too.
+            if ((statusChanged || tierChanged) && result.Status.HasValue)
+            {
+                await AddStatusHistory(result, result.Status.Value, result.Tier);
             }
 
             result.Updated = DateTime.UtcNow;
@@ -249,10 +258,22 @@ public class ApplicationGateway : IApplication
                 result.EstablishmentId = establishment.EstablishmentID;
             }
 
+            var statusChanged = data.Status.HasValue;
+            var tierChanged = data.Tier.HasValue;
+
             if (data.Status.HasValue)
             {
                 result.Status = data.Status;
-                await AddStatusHistory(result, result.Status.Value);
+            }
+
+            if (data.Tier.HasValue)
+            {
+                result.Tier = data.Tier;
+            }
+
+            if ((statusChanged || tierChanged) && result.Status.HasValue)
+            {
+                await AddStatusHistory(result, result.Status.Value, result.Tier);
             }
 
             result.Updated = DateTime.UtcNow;
@@ -395,8 +416,19 @@ public class ApplicationGateway : IApplication
 
             _logger.LogInformation($"Starting bulk import of {applicationsList.Count} applications");
 
+            // Record the initial status (and tier) of each imported application in the status history,
+            // matching what happens when an application is created individually (AddStatusHistory).
+            var statusHistory = applicationsList.Select(application => new Domain.ApplicationStatus
+            {
+                ApplicationStatusID = Guid.NewGuid().ToString(),
+                ApplicationID = application.ApplicationID,
+                Type = application.Status ?? ApplicationStatus.Receiving,
+                Tier = application.Tier,
+                TimeStamp = application.Created
+            }).ToList();
+
             // Use the bulk insert method from the context
-            _db.BulkInsert_Applications(applicationsList);
+            _db.BulkInsert_Applications(applicationsList, statusHistory);
 
             _logger.LogInformation($"Successfully imported {applicationsList.Count} applications");
 
@@ -538,11 +570,14 @@ public class ApplicationGateway : IApplication
             .OrderByDescending(x => x.TimeStamp)
             .FirstOrDefaultAsync();
 
+        if (lastStatus == null)
+            throw new BadRequest("No previous non-archived status found for this application, unable to restore");
 
         application.Status = lastStatus.Type;
+        application.Tier = lastStatus.Tier;
         application.Updated = DateTime.UtcNow;
 
-        await AddStatusHistory(application, application.Status.Value);
+        await AddStatusHistory(application, application.Status.Value, application.Tier);
         await _db.SaveChangesAsync();
 
         return new ApplicationStatusRestoreResponse
@@ -550,6 +585,7 @@ public class ApplicationGateway : IApplication
             Data = new ApplicationStatusRestoreResponseData
             {
                 Status = application.Status.Value.ToString(),
+                Tier = application.Tier?.ToString(),
                 Updated = application.Updated
             }
         };
@@ -605,10 +641,10 @@ public class ApplicationGateway : IApplication
                 query = query.Where(
                     x =>
                         x.Reference.Contains(keyword) ||
-                        x.ChildFirstName.Contains(keyword) ||
-                        x.ChildLastName.Contains(keyword) ||
-                        x.ParentFirstName.Contains(keyword) ||
-                        x.ParentLastName.Contains(keyword) ||
+                        EF.Functions.Collate(x.ChildFirstName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ChildLastName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ParentFirstName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
+                        EF.Functions.Collate(x.ParentLastName, "SQL_Latin1_General_CP1_CI_AI").Contains(keyword) ||
                         x.ParentNationalInsuranceNumber.Contains(keyword) ||
                         x.ParentNationalAsylumSeekerServiceNumber.Contains(keyword) ||
                         x.ParentEmail.Contains(keyword) ||
@@ -663,13 +699,14 @@ public class ApplicationGateway : IApplication
         return _db.EligibilityCheckHashes.FirstOrDefault(x => x.Hash == hash && x.TimeStamp >= age);
     }
 
-    private async Task AddStatusHistory(Application application, ApplicationStatus applicationStatus)
+    private async Task AddStatusHistory(Application application, ApplicationStatus applicationStatus, EligibilityTier? tier = null)
     {
         var status = new Core.Domain.ApplicationStatus
         {
             ApplicationStatusID = Guid.NewGuid().ToString(),
             ApplicationID = application.ApplicationID,
             Type = applicationStatus,
+            Tier = tier,
             TimeStamp = DateTime.UtcNow
         };
         await _db.ApplicationStatuses.AddAsync(status);

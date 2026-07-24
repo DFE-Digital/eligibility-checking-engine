@@ -194,7 +194,6 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
                 x.BulkCheckID == bulkCheckId &&
                 x.Status == CheckEligibilityStatus.queuedForProcessing);
 
-
         // If there are no queued checks, update the bulk check status to completed
         // as all checks have been processed
         if (countPending == 0)
@@ -205,8 +204,26 @@ public class ProcessEligibilityBulkCheckUseCase : IProcessEligibilityBulkCheckUs
             if (bulkCheck != null)
             {
                 _logger.LogInformation($"Updating bulk check status to Completed for ID: {bulkCheckId}");
+
                 bulkCheck.Status = BulkCheckStatus.Completed;
+                bulkCheck.CompletedDate = DateTime.UtcNow;
+
                 await _db.SaveChangesAsync();
+
+                var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                var logEvent = JsonConvert.SerializeObject(new
+                {
+                    BulkCheckId = bulkCheck.BulkCheckID,
+                    Status = bulkCheck.Status.ToString(),
+                    SubmittedDate = bulkCheck.SubmittedDate,
+                    CompletedDate = bulkCheck.CompletedDate,
+                    ElapsedMilliseconds = elapsedTime.TotalMilliseconds,
+                    NumberOfRecords = bulkCheck.NumberOfRecords,
+                    OrganisationID = bulkCheck.OrganisationID
+                });
+
+                _logger.LogInformation("{BulkCheckEvent}", logEvent);
             }
         }
         else

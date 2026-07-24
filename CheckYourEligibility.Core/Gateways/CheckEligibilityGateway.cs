@@ -57,7 +57,9 @@ public class CheckEligibilityGateway : ICheckEligibility
 
             if (queuedBulkItems.Any())
             {
-                string bulkQueueName = _configuration[$"Queue:Bulk:{queuedBulkItems.First().Type}"];
+
+                string bulkQueueName = GetBulkQueueName(queuedBulkItems.First().Type, meta.Source);
+
 
                 foreach (var item in queuedBulkItems)
                 {
@@ -66,9 +68,31 @@ public class CheckEligibilityGateway : ICheckEligibility
             }
             else
             {
-                var bulkCheck = _db.BulkChecks.Where(x => x.BulkCheckID == groupId).FirstOrDefault();
-                bulkCheck.Status = BulkCheckStatus.Completed;
-                await _db.SaveChangesAsync();
+                var bulkCheck = await _db.BulkChecks
+                    .FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+
+                if (bulkCheck != null)
+                {
+                    bulkCheck.Status = BulkCheckStatus.Completed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
+                    await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    var logEvent = JsonConvert.SerializeObject(new
+                    {
+                        BulkCheckId = bulkCheck.BulkCheckID,
+                        Status = bulkCheck.Status.ToString(),
+                        SubmittedDate = bulkCheck.SubmittedDate,
+                        CompletedDate = bulkCheck.CompletedDate,
+                        ElapsedMilliseconds = elapsedTime.TotalMilliseconds,
+                        NumberOfRecords = bulkCheck.NumberOfRecords,
+                        OrganisationID = bulkCheck.OrganisationID
+                    });
+
+                    _logger.LogInformation("{BulkCheckEvent}", logEvent);
+                }
             }
         }
         catch (Exception e)
@@ -87,7 +111,24 @@ public class CheckEligibilityGateway : ICheckEligibility
                 if (bulkCheck != null)
                 {
                     bulkCheck.Status = BulkCheckStatus.Failed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
                     await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    var logEvent = JsonConvert.SerializeObject(new
+                    {
+                        BulkCheckId = bulkCheck.BulkCheckID,
+                        Status = bulkCheck.Status.ToString(),
+                        SubmittedDate = bulkCheck.SubmittedDate,
+                        CompletedDate = bulkCheck.CompletedDate,
+                        ElapsedMilliseconds = elapsedTime.TotalMilliseconds,
+                        NumberOfRecords = bulkCheck.NumberOfRecords,
+                        OrganisationID = bulkCheck.OrganisationID
+                    });
+
+                    _logger.LogInformation("{BulkCheckEvent}", logEvent);
                 }
             }
             catch (Exception statusUpdateEx)
@@ -240,14 +281,25 @@ public class CheckEligibilityGateway : ICheckEligibility
         }
     }
 
-    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> GetStatusAsync(string guid, CheckEligibilityType type)
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?, string?)> GetStatusAsync(
+        string guid,
+        CheckEligibilityType type)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-                                                                           (type == CheckEligibilityType.None ||
-                                                                            type == x.Type) &&
-                                                                           x.IsDeleted == false);
-        if (result != null) return (result.Status, result.Tier);
-        return (null, null);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x =>
+            x.EligibilityCheckID == guid &&
+            (type == CheckEligibilityType.None || type == x.Type) &&
+            x.IsDeleted == false);
+
+        if (result != null)
+        {
+            var checkData = string.IsNullOrWhiteSpace(result.CheckData)
+                ? null
+                : JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+
+            return (result.Status, result.Tier, checkData?.ErrorCode);
+        }
+
+        return (null, null, null);
     }
 
     public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)
@@ -389,6 +441,24 @@ public class CheckEligibilityGateway : ICheckEligibility
     }
 
     #region Private
+
+    private string GetBulkQueueName(
+    CheckEligibilityType type,
+    string source)
+    {
+        return type switch
+        {
+            CheckEligibilityType.FreeSchoolMeals
+                when source == "free-school-meals-admin"
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Frontend"],
+
+            CheckEligibilityType.FreeSchoolMeals
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Api"],
+
+            _ => _configuration[$"Queue:Bulk:{type}"]
+        };
+    }
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
     {
         //TODO: This should probably live with the usecase

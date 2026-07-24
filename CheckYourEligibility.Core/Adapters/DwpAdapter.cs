@@ -77,15 +77,19 @@ public class DwpAdapter : IDwpAdapter
 
     public async Task<CAPIClaimResponseBase> GetCitizenClaims(string guid, string effectiveFromDate, string effectiveToDate,
         CheckEligibilityType type, string correlationId, EligibilityPolicy eligibilityPolicy)
-    {
-        var uri =
-            $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
-        string token = await GetToken();
+    {  
+        
+        string  uri =
+           $"{_DWP_ApiHost}/v2/citizens/{guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based";
+
+
         string reason = string.Empty;
         try
         {
-            _logger.LogInformation("Dwp claim before token");
+            string token = await GetToken();
 
+            _logger.LogInformation("Dwp claim before token");
+         
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
             requestMessage.Headers.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
@@ -96,68 +100,76 @@ public class DwpAdapter : IDwpAdapter
 
             _logger.LogInformation("Dwp claim before request");
             var response = await _httpClient.SendAsync(requestMessage);
+            var responseBody = await response.Content.ReadAsStringAsync();
             _logger.LogInformation("Dwp claim after request");
             _logger.LogInformation("Dwp " + response.StatusCode.ToString());
-            _logger.LogInformation("Dwp " + response.Content.ReadAsStringAsync().Result);
+            _logger.LogInformation("Dwp " + responseBody);
 
+
+            var capiClaimResponse = new CAPIClaimResponseBase {
+                ResponseCode = response.StatusCode,
+                CAPIEndpoint = uri,
+                RequestBody = string.Empty,
+                ResponseBody = responseBody
+            };
+          
+            // if claims found for citizen
             if (response.IsSuccessStatusCode)
-            {
-                var jsonString = await response.Content.ReadAsStringAsync();
-                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(jsonString);
-                var (isEntitled, eligbilityTier) = CheckBenefitEntitlement(guid, claims, type, eligibilityPolicy);
+            {               
+                var claims = JsonConvert.DeserializeObject<DwpClaimsResponse>(responseBody);
+                var (isEntitled, eligibilityTier) = CheckBenefitEntitlement(guid, claims, type, eligibilityPolicy);
 
+                // if citizien is entitled
                 if (isEntitled)
                 {
-                    return (new CAPIClaimResponseBase
-                    {
-                        CAPIResponseCode = HttpStatusCode.OK,
-                        EligibilityTier = eligbilityTier,
-                        Reason = "CAPI confirms citizen has found benefit",
-                        CAPIEndpoint = uri
+                    capiClaimResponse.ResponseCode = HttpStatusCode.OK;
+                    capiClaimResponse.EligibilityTier = eligibilityTier;
 
-                    });
+                    return capiClaimResponse;
                 }
-                return (new CAPIClaimResponseBase
-                {
-                    CAPIResponseCode = HttpStatusCode.NotFound,
-                    EligibilityTier = eligbilityTier,
-                    Reason = "CAPI returned status 200, but no benefits found after using business logic",
-                    CAPIEndpoint = uri
 
-                });
+                // if citizen is not entitled
+                // return status to notFound for claims
+                // NotFound claim results get resolved to notEligible in the gateway
+                capiClaimResponse.ResponseCode = HttpStatusCode.NotFound;
+                capiClaimResponse.EligibilityTier = eligibilityTier;
+              
+                return capiClaimResponse;
+  
             }
 
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return (new CAPIClaimResponseBase
-                {
-                    CAPIResponseCode = HttpStatusCode.NotFound,
-                    Reason = "CAPI did not find any data for this citizen",
-                    CAPIEndpoint = uri
-                });
-            }         
+            // CAPI returns a non-successful code
+            _logger.LogWarning(
+                "Get CAPI citizen claim failed. uri:-{Uri} Response:- {StatusCode}",
+                _httpClient.BaseAddress + uri,
+                response.StatusCode);
 
-                string errorMessage = $"Get CAPI citizen claim failed. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
-            _logger.LogInformation(errorMessage);
+            var capiResponseCode =
+                CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
 
-            return (new CAPIClaimResponseBase
+            return new CAPIClaimResponseBase
             {
-                CAPIResponseCode = response.StatusCode,             
-                Reason = errorMessage,
-                CAPIEndpoint = uri
-            });
+                CAPIResponseCode = capiResponseCode,
+                ResponseCode = response.StatusCode,
+                CAPIEndpoint = uri,
+                ResponseBody = responseBody,
+                ErrorCode = "STE20"
+            };
         }
         catch (Exception ex)
         {
-            string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+            string errorMessage =
+                $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+
             _logger.LogError(ex, errorMessage);
-          
-            return (new CAPIClaimResponseBase
+
+            return new CAPIClaimResponseBase
             {
-                CAPIResponseCode = HttpStatusCode.InternalServerError,             
-                Reason = errorMessage,
-                CAPIEndpoint = uri
-            });
+                CAPIEndpoint = uri,
+                ResponseCode = HttpStatusCode.InternalServerError,
+                ResponseBody = ex.Message,
+                ErrorCode = "STE21"
+            };
         }
     }
 
@@ -290,78 +302,92 @@ public class DwpAdapter : IDwpAdapter
         return false;
     }
 
+    /// <summary>
+    /// Attempts to match a citizen against DWP records using the provided citizen details.
+    /// Calls the CAPI /v2/citizens/match endpoint to retrieve a citizen GUID for successful matches.
+    /// </summary>
+    /// <param name="requestBody">The citizen match request containing identification details</param>
+    /// <param name="type">The type of eligibility check (e.g., Free School Meals, Early Year Pupil Premium)</param>
+    /// <param name="correlationId">Unique identifier for tracking this request across systems</param>
+    /// <returns>A CAPICitizenResponse containing the match result and citizen GUID if successful</returns>
     public async Task<CAPICitizenResponse> GetCitizen(CitizenMatchRequest requestBody, CheckEligibilityType type, string correlationId)
     {
-        var uri = $"{_DWP_ApiHost}/v2/citizens/match";
-        // ECS_Conflict helper logic to better track conflicts
-        CAPICitizenResponse citizenResponse = new();
-        citizenResponse.CAPIEndpoint = string.Empty;
-        citizenResponse.Guid = string.Empty;
-        citizenResponse.CAPIEndpoint = "/v2/citizens/match";
-        string token = await GetToken();
+        const string endpoint = "/v2/citizens/match";
+        var uri = $"{_DWP_ApiHost}{endpoint}";
+
+        // Initialize response object with endpoint information
+        var citizenResponse = new CAPICitizenResponse { CAPIEndpoint = endpoint };
 
         try
         {
+
+            // Retrieve bearer token for CAPI authentication
+            string token = await GetToken();
+            // Build HTTP request with serialized citizen details
             var requestMessage = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                Content =
-                    new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"),
+                Content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"),
                 RequestUri = new Uri(uri)
             };
 
+            // Add required CAPI headers for tracking and context
             requestMessage.Headers.Add("instigating-user-id", _DWP_ApiInstigatingUserId);
             requestMessage.Headers.Add("policy-id", _DWP_ApiPolicyId);
             requestMessage.Headers.Add("correlation-id", correlationId);
             requestMessage.Headers.Add("context", GetContext(type));
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            _logger.LogInformation($"Dwp before citizen request");
+            _logger.LogInformation("Sending citizen match request to CAPI");
             var response = await _httpClient.SendAsync(requestMessage);
-            _logger.LogInformation($"Dwp after citizen request");
-            _logger.LogInformation("Dwp " + response.StatusCode.ToString());
-            _logger.LogInformation($"Dwp response " + response.Content.ReadAsStringAsync().Result);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Received response from CAPI: {response.StatusCode}");
 
-            // ECS_Conflict helper logic to better track conflicts
-            citizenResponse.CAPIResponseCode = response.StatusCode;
-
+            // Store response metadata for audit purposes
+            citizenResponse.ResponseCode = response.StatusCode;
+            citizenResponse.RequestBody = await  requestMessage.Content.ReadAsStringAsync();
+            citizenResponse.ResponseBody = responseBody;
+            // Handle successful match - extract citizen GUID from response
             if (response.IsSuccessStatusCode)
             {
-                var responseData =
-                    JsonConvert.DeserializeObject<DwpMatchResponse>(response.Content.ReadAsStringAsync().Result);
+                var responseData = JsonConvert.DeserializeObject<DwpMatchResponse>(citizenResponse.ResponseBody);
                 citizenResponse.Guid = responseData.Data.Id;
                 return citizenResponse;
             }
-            else if (response.StatusCode == HttpStatusCode.NotFound)
-            {
 
+            citizenResponse.CAPIResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+            // Handle no match found
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.parentNotFound;
-                citizenResponse.Reason = "No citizen found";
                 return citizenResponse;
             }
-            else if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+
+            // Handle duplicate/conflicting matches
+            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
-                _logger.LogInformation("DWP Duplicate matches found");
+                _logger.LogInformation("Multiple citizen matches found - conflict detected");
                 citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-                citizenResponse.Reason = "Unprocessable Entity - Possible conflict";
-                citizenResponse.CAPIResponseCode = HttpStatusCode.UnprocessableEntity;
                 return citizenResponse;
             }
-            else
-            {
-                string errorMessage = $"CAPI failed getting citizen. uri:-{_httpClient.BaseAddress}{uri} Response:- {response.StatusCode}";
-                _logger.LogInformation(errorMessage);
-                citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-                citizenResponse.Reason = errorMessage;
-                return citizenResponse;
-            }
+
+            // Handle unexpected error responses
+            string errorMessage = $"CAPI failed to match citizen. URI: {uri} | Response: {response.StatusCode}";
+            _logger.LogWarning(errorMessage);
+            citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.ErrorCode = "STE10";
+            citizenResponse.Reason = errorMessage;
+            return citizenResponse;
         }
         catch (Exception ex)
         {
-            string errorMessage = $"ECE failed making a requet to GET citizen. uri:-{_httpClient.BaseAddress}{uri}";
+            string errorMessage = $"Exception occurred while calling CAPI citizen match endpoint. URI: {uri}";
             _logger.LogError(ex, errorMessage);
+            citizenResponse.CAPIEndpoint = uri;
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
-            citizenResponse.Reason = errorMessage;
+            citizenResponse.ErrorCode = "STE11";
+            citizenResponse.ResponseCode = HttpStatusCode.InternalServerError;
+            citizenResponse.ResponseBody = ex.Message;
             return citizenResponse;
         }
     }
@@ -382,8 +408,7 @@ public class DwpAdapter : IDwpAdapter
 
         var formData = new FormUrlEncodedContent(parameters);
 
-        var response = await _httpClient.PostAsync(uri, formData);
-        Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+        var response = await _httpClient.PostAsync(uri, formData);  
 
         var responseData =
             JsonConvert.DeserializeObject<JwtBearer>(response.Content.ReadAsStringAsync().Result);

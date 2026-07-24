@@ -315,21 +315,5 @@ public class EngineControllerTests : TestBase
         objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
         objectResult.Value.Should().Be(statusResponse);
     }
-
-    [Test]
-    public async Task Process_returns_bad_request_when_ProcessCheckException_is_thrown()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-
-        _mockProcessEligibilityCheckUseCase.Setup(u => u.Execute(guid,null)).ThrowsAsync(new ProcessCheckException());
-
-        // Act
-        var response = await _sut.Process(guid);
-
-        // Assert
-        response.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)response;
-        ((ErrorResponse)badRequestResult.Value).Errors.First().Title.Should().Be(guid);
-    }
+    
 }

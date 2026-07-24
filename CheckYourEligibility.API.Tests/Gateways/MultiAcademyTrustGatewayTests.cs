@@ -2,6 +2,7 @@
 using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -9,6 +10,8 @@ namespace CheckYourEligibility.API.Tests;
 
 public class MultiAcademyTrustGatewayTests : TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private IEligibilityCheckContext _fakeInMemoryDb;
     private MultiAcademyTrustGateway _sut;
     private Mock<ILogger<MultiAcademyTrustGateway>> _mockLogger = null!;
@@ -16,22 +19,26 @@ public class MultiAcademyTrustGatewayTests : TestBase
     [SetUp]
     public async Task Setup()
     {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .UseInMemoryDatabase(
+                nameof(MultiAcademyTrustGatewayTests),
+                InMemoryDatabaseRoot)
+            .ConfigureWarnings(x => x.Ignore(
+                Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId
+                    .TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
         _mockLogger = new Mock<ILogger<MultiAcademyTrustGateway>>();
 
-        _sut = new MultiAcademyTrustGateway(_fakeInMemoryDb, _mockLogger.Object);
+        _sut = new MultiAcademyTrustGateway(
+            _fakeInMemoryDb,
+            _mockLogger.Object);
     }
 
     [TearDown]

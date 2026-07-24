@@ -19,7 +19,6 @@ public class ImportWfHMRCDataUseCaseTests : TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ImportWfHMRCDataUseCase>> _mockLogger;
     private ImportWfHMRCDataUseCase _sut;
-    private Fixture _fixture;
 
     [SetUp]
     public void Setup()
@@ -28,7 +27,6 @@ public class ImportWfHMRCDataUseCaseTests : TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportWfHMRCDataUseCase>>(MockBehavior.Loose);
         _sut = new ImportWfHMRCDataUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]

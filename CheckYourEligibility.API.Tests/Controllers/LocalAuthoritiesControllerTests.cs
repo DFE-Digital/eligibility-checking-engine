@@ -17,7 +17,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class LocalAuthoritiesControllerTests : TestBase
 {
-    private Fixture _fixture;
     private Mock<ILocalAuthority> _mockLocalAuthority;
 
     private Mock<ILocalAuthoritiesUseCase> _localAuthoritiesUseCase;
@@ -28,7 +27,6 @@ public class LocalAuthoritiesControllerTests : TestBase
     [SetUp]
     public void Setup()
     {
-        _fixture = new Fixture();
         _mockLocalAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
         _localAuthoritiesUseCase = new Mock<ILocalAuthoritiesUseCase>(MockBehavior.Strict);
         _getEstablismentsByLocalAuthorityId = new Mock<IGetEstablishmentsByLocalAuthorityIdUseCase>(MockBehavior.Strict);

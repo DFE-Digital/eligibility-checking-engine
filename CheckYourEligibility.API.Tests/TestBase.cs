@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Idioms;
+using CheckYourEligibility.API.Domain;
 using Moq;
 
 namespace CheckYourEligibility;
@@ -23,6 +24,9 @@ public abstract class TestBase
         _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
             .ForEach(b => _fixture.Behaviors.Remove(b));
         _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+
+        // Ensure IsDelete field for EligibilityCheck is always set to false when fixtures are created, to avoid issues with tests that expect non-deleted entities
+        _fixture.Customize<EligibilityCheck>(c => c.With(x => x.IsDeleted, false));
 
         _stopwatch = Stopwatch.StartNew();
     }

@@ -6,6 +6,7 @@ namespace CheckYourEligibility.Core.Database;
 
 public interface IEligibilityCheckContext
 {
+    DbSet<CAPIAudit> CAPIAudits { get; set; }
     DbSet<ECSConflict> ECSConflicts { get; set; }
     DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
 	DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
@@ -35,7 +36,7 @@ public interface IEligibilityCheckContext
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     int SaveChanges();
     void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
-    void BulkInsert_Applications(IEnumerable<Application> data);
+    void BulkInsert_Applications(IEnumerable<Application> data, IEnumerable<ApplicationStatus> statusHistory);
     void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data);
     void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData);
     void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data);

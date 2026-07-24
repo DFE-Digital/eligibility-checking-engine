@@ -57,7 +57,7 @@ public class RateLimiterServiceTests : TestBase
     }
 
     [Test]
-    public void Given_Existing_Event_Update_Return_Pass()
+    public async Task Given_Existing_Event_Update_Return_Pass()
     {
         // Arrange
         var guid = _fixture.Create<Guid>().ToString();
@@ -65,11 +65,10 @@ public class RateLimiterServiceTests : TestBase
         mockEvent.RateLimitEventID = guid;
         mockEvent.Accepted = true;
         _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
-        _fakeInMemoryDb.SaveChangesAsync();
+        await _fakeInMemoryDb.SaveChangesAsync();
         // Act
-        var response = _sut.UpdateStatus(guid, false);
-        // Assert
-        response.Should().Be(Task.CompletedTask);
+        await _sut.UpdateStatus(guid, false);
+        // Assert        
         _fakeInMemoryDb.RateLimitEvents.Find(guid)?.Accepted.Should().BeFalse();
     }
 

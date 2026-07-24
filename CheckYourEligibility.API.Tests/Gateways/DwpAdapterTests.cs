@@ -9,7 +9,6 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -25,10 +24,7 @@ public class DwpAdapterTests : TestBase
     [SetUp]
     public void Setup()
     {
-        httpClient = new HttpClient();
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
-            .Options;
+        httpClient = new HttpClient();        
 
         //"c": "ecs.education.gov.uk",
         //"EcsServiceVersion": "20170701",
@@ -60,6 +56,32 @@ public class DwpAdapterTests : TestBase
     [TearDown]
     public void Teardown()
     {
+    }
+
+    [Test]
+    public void Given_ResponseBody_With_DwpErrors_ProcessCapiResponseCode_Should_Return_Parsed_Code()
+    {
+        // Arrange
+        var responseBody = "{\"errors\":[{\"code\":\"12345\",\"detail\":\"example\"}]}";
+
+        // Act
+        var result = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+
+        // Assert
+        result.Should().Be(12345);
+    }
+
+    [Test]
+    public void Given_ResponseBody_Without_DwpErrors_ProcessCapiResponseCode_Should_Return_Zero()
+    {
+        // Arrange
+        var responseBody = "{\"data\":[]}";
+
+        // Act
+        var result = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+
+        // Assert
+        result.Should().Be(0);
     }
 
     [Test]

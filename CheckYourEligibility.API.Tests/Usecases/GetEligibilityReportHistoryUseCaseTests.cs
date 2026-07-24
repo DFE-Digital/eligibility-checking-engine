@@ -16,7 +16,6 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase
         _mockCheckGateway = new Mock<IEligibilityCheckReporting>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetEligibilityReportHistoryUseCase>>(MockBehavior.Loose);
         _sut = new GetEligibilityReportHistoryUseCase(_mockCheckGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
 
         _localAuth = "948";
 
@@ -56,7 +55,6 @@ public class GetEligibilityReportHistoryUseCaseTests : TestBase
     private GetEligibilityReportHistoryUseCase _sut;
     private string _localAuth = null!;
     private EligibilityCheckReportHistoryResponse _validReportHistory = null!;
-    private new Fixture _fixture = null!;
 
     [Test]
     public async Task Execute_WhenLocalAuthorityIdIsProvided_ReturnsReportHistory()

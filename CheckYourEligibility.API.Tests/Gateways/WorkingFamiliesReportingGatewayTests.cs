@@ -4,6 +4,7 @@ using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -13,7 +14,8 @@ namespace CheckYourEligibility.API.Tests;
 
 public class WorkingFamiliesReportingGatewayTests() : TestBase
 {
-    private new Fixture _fixture = null!;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private Mock<ILogger<WorkingFamiliesReportingGateway>> _mockLogger = null!;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -27,19 +29,18 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase
     {
         _mockLogger = new Mock<ILogger<WorkingFamiliesReportingGateway>>();
 
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
+            .UseInMemoryDatabase(
+                nameof(WorkingFamiliesReportingGatewayTests),
+                InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
-
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
@@ -57,7 +58,6 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _fixture = new Fixture();
         _mockLogger = new Mock<ILogger<WorkingFamiliesReportingGateway>>();
 
 

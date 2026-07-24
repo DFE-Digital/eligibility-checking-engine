@@ -13,7 +13,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class EstablishmentControllerTests : TestBase
 {
-    private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<IApplication> _mockApplicationGateway;
     private ILogger<EstablishmentController> _mockLogger;
@@ -32,7 +31,6 @@ public class EstablishmentControllerTests : TestBase
             _mockSearchUseCase.Object,
             _mockAuditGateway.Object,
             _mockApplicationGateway.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]

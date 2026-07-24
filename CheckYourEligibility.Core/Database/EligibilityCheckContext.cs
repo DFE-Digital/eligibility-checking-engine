@@ -24,6 +24,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         base.OnConfiguring(optionsBuilder);
     }
 
+    public virtual DbSet<CAPIAudit> CAPIAudits { get; set; }
     public virtual DbSet<ECSConflict> ECSConflicts { get; set; }
     public virtual DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
     public virtual DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
@@ -124,7 +125,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         }
     }
 
-
     public void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data)
     {
         using var transaction = base.Database.BeginTransaction();
@@ -150,9 +150,20 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         transaction.Commit();
     }
 
-    public void BulkInsert_Applications(IEnumerable<Application> data)
+    public void BulkInsert_Applications(IEnumerable<Application> data, IEnumerable<ApplicationStatus> statusHistory)
     {
-        this.BulkInsert(data);
+        using var transaction = base.Database.BeginTransaction();
+        try
+        {
+            this.BulkInsert(data);
+            this.BulkInsert(statusHistory);
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 
     public void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data)
@@ -231,6 +242,12 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
 
+        modelBuilder.Entity<CAPIAudit>().HasIndex(x => x.DWPCorrelationId);
+
+        modelBuilder.Entity<CAPIAudit>().HasIndex(x => x.EligibilityCheckId);
+
+        modelBuilder.Entity<CAPIAudit>().HasIndex(x => x.TimeStamp);
+
         modelBuilder.Entity<EligibilityCheck>().ToTable("EligibilityCheck");
         modelBuilder.Entity<EligibilityCheck>()
             .Property(p => p.Status)
@@ -290,6 +307,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasForeignKey(s => s.MultiAcademyTrustID)
             .HasPrincipalKey(t => t.MultiAcademyTrustID)
             .IsRequired(true);
+       
 
         modelBuilder.Entity<Application>()
             .HasIndex(b => b.Reference, "idx_Reference")

@@ -20,7 +20,6 @@ namespace CheckYourEligibility.API.Tests.Controllers;
 public class ApplicationControllerTests : TestBase
 {
     private IConfigurationRoot _configuration = null!;
-    private new Fixture _fixture = null!; // Added 'new' keyword
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<ICreateApplicationUseCase> _mockCreateApplicationUseCase = null!;
     private Mock<IGetApplicationUseCase> _mockGetApplicationUseCase = null!;
@@ -44,7 +43,6 @@ public class ApplicationControllerTests : TestBase
         _mockRestoreArchiveApplicationUseCase = new Mock<IRestoreArchivedApplicationStatusUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<ApplicationController>>();
-        _fixture = new Fixture(); // Ensure _fixture is initialized
 
         // config data for Jwt:Scopes:local_authority
         var configData = new Dictionary<string, string?> // Changed to string? for value

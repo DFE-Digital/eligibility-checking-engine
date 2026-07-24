@@ -19,7 +19,6 @@ public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<UpdateEstablishmentsPrivateBetaUseCase>>(MockBehavior.Loose);
         _sut = new UpdateEstablishmentsPrivateBetaUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -33,8 +32,6 @@ public class UpdateEstablishmentsPrivateBetaUseCaseTests : TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<UpdateEstablishmentsPrivateBetaUseCase>> _mockLogger;
     private UpdateEstablishmentsPrivateBetaUseCase _sut;
-    private Fixture _fixture;
-
     private const string ValidCsvContent = "School URN,In Private Beta\n100718,Yes\n142364,No";
 
     [Test]

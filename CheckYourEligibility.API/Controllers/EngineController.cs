@@ -1,9 +1,7 @@
-using Azure;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
-using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
@@ -140,10 +138,6 @@ public class EngineController : BaseController
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
-        }
-        catch (ProcessCheckException)
-        {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = guid }] });
-        }
+        }        
     }
 }

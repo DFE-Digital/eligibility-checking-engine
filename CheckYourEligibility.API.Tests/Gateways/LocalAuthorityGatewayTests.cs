@@ -2,6 +2,7 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework.Internal;
@@ -10,6 +11,8 @@ namespace CheckYourEligibility.API.Tests;
 
 public class LocalAuthorityGatewayTests : TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private IEligibilityCheckContext _fakeInMemoryDb;
     private LocalAuthorityGateway _sut;
     private Mock<ILogger<LocalAuthorityGateway>> _mockLogger = null!;
@@ -17,22 +20,26 @@ public class LocalAuthorityGatewayTests : TestBase
     [SetUp]
     public async Task Setup()
     {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .UseInMemoryDatabase(
+                nameof(LocalAuthorityGatewayTests),
+                InMemoryDatabaseRoot)
+            .ConfigureWarnings(x => x.Ignore(
+                Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId
+                    .TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
         _mockLogger = new Mock<ILogger<LocalAuthorityGateway>>();
 
-        _sut = new LocalAuthorityGateway(_fakeInMemoryDb, _mockLogger.Object);
+        _sut = new LocalAuthorityGateway(
+            _fakeInMemoryDb,
+            _mockLogger.Object);
     }
 
     [TearDown]

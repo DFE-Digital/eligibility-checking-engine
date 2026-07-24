@@ -24,7 +24,6 @@ public class ImportFsmHomeOfficeDataUseCaseTests : TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportFsmHomeOfficeDataUseCase>>(MockBehavior.Loose);
         _sut = new ImportFsmHomeOfficeDataUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -38,7 +37,6 @@ public class ImportFsmHomeOfficeDataUseCaseTests : TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ImportFsmHomeOfficeDataUseCase>> _mockLogger;
     private ImportFsmHomeOfficeDataUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     public void Execute_Should_Throw_InvalidDataException_When_File_Is_Null()

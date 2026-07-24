@@ -7,6 +7,7 @@ using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -26,6 +27,7 @@ public class ApplicationServiceTests : TestBase
     private ApplicationGateway _sut;
     private Establishment Establishment;
     private MultiAcademyTrust MultiAcademyTrust;
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
     private User User;
 
@@ -33,10 +35,13 @@ public class ApplicationServiceTests : TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(nameof(ApplicationServiceTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();

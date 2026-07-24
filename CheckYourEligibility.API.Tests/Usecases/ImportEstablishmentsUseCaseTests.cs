@@ -20,7 +20,6 @@ public class ImportEstablishmentsUseCaseTests : TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportEstablishmentsUseCase>>(MockBehavior.Loose);
         _sut = new ImportEstablishmentsUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -34,7 +33,6 @@ public class ImportEstablishmentsUseCaseTests : TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ImportEstablishmentsUseCase>> _mockLogger;
     private ImportEstablishmentsUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     public async Task Execute_Should_ImportEstablishments_When_File_Is_Valid()

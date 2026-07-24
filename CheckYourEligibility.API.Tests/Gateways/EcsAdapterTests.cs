@@ -6,7 +6,6 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -25,11 +24,7 @@ public class EcsAdapterTests : TestBase
     [SetUp]
     public void Setup()
     {
-        httpClient = new HttpClient();
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
-            .Options;
-
+        httpClient = new HttpClient();   
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var configForSmsApi = new Dictionary<string, string>

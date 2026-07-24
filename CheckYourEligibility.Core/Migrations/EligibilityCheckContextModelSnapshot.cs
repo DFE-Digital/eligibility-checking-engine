@@ -149,6 +149,9 @@ namespace CheckYourEligibility.Core.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Tier")
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime2");
 
@@ -213,6 +216,9 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Property<string>("BulkCheckID")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("EligibilityType")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
@@ -253,6 +259,52 @@ namespace CheckYourEligibility.Core.Migrations
                     b.HasIndex("LocalAuthorityID");
 
                     b.ToTable("BulkChecks");
+                });
+
+            modelBuilder.Entity("CheckYourEligibility.Core.Domain.CAPIAudit", b =>
+                {
+                    b.Property<int>("AuditId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditId"));
+
+                    b.Property<long>("CAPIResponseCode")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("DWPCorrelationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EligibilityCheckId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequestBody")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResponseBody")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResponseCode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("AuditId");
+
+                    b.HasIndex("DWPCorrelationId");
+
+                    b.HasIndex("EligibilityCheckId");
+
+                    b.HasIndex("TimeStamp");
+
+                    b.ToTable("CAPIAudits");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.Core.Domain.ECSConflict", b =>
@@ -548,9 +600,15 @@ namespace CheckYourEligibility.Core.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LaName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("SchoolCanReviewEvidence")
                         .HasColumnType("bit");

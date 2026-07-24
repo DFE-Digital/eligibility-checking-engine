@@ -7,6 +7,7 @@ using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,6 +18,8 @@ namespace CheckYourEligibility.API.Tests.UseCases;
 [TestFixture]
 public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private Mock<IStorageQueue> _mockGateway;
     private Mock<ILogger<ProcessEligibilityBulkCheckUseCase>> _mockLogger;
     private Mock<IConfiguration> _mockConf;
@@ -39,8 +42,16 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
 
         _dbOptions = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(
+                nameof(ProcessEligibilityBulkCheckUseCaseBulkTests),
+                InMemoryDatabaseRoot)
             .Options;
+
+        using (var db = new EligibilityCheckContext(_dbOptions))
+        {
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+        }
 
         _mockDbContextFactory
             .Setup(x => x.CreateDbContext())
@@ -100,6 +111,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
         var bulk = db.BulkChecks.First(x => x.BulkCheckID == bulkId);
 
         bulk.Status.Should().Be(BulkCheckStatus.InProgress);
+        bulk.CompletedDate.Should().BeNull();
     }
 
     [Test]
@@ -132,6 +144,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
         var bulk = db.BulkChecks.First(x => x.BulkCheckID == bulkId);
 
         bulk.Status.Should().Be(BulkCheckStatus.InProgress);
+        bulk.CompletedDate.Should().BeNull();
     }
 
     [Test]
@@ -165,6 +178,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase
         var bulk = db.BulkChecks.First(x => x.BulkCheckID == bulkId);
 
         bulk.Status.Should().Be(BulkCheckStatus.Completed);
+        bulk.CompletedDate.Should().NotBeNull();
     }
 
     #region Helpers

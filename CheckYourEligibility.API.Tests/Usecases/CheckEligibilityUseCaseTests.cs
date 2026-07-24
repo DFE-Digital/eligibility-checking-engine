@@ -26,7 +26,6 @@ public class CheckEligibilityUseCaseTests : TestBase
         _mockLogger = new Mock<ILogger<CheckEligibilityUseCase>>(MockBehavior.Loose);
         _sut = new CheckEligibilityUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
             _mockValidator.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -41,7 +40,6 @@ public class CheckEligibilityUseCaseTests : TestBase
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<ILogger<CheckEligibilityUseCase>> _mockLogger = null!;
     private CheckEligibilityUseCase _sut = null!;
-    private new Fixture _fixture = null!;
 
     [Test]
     public async Task Execute_returns_failure_when_model_is_null()

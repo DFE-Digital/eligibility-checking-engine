@@ -4,6 +4,7 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -13,6 +14,8 @@ namespace CheckYourEligibility.API.Tests.Gateways;
 
 public class UserGatewayTests : TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -22,25 +25,35 @@ public class UserGatewayTests : TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(
+                nameof(UserGatewayTests),
+                InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
+
         var configForSmsApi = new Dictionary<string, string>
         {
             { "QueueFsmCheckStandard", "notSet" },
             { "HashCheckDays", "7" }
         };
+
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
+
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _sut = new UsersGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper);
+        _sut = new UsersGateway(
+            new NullLoggerFactory(),
+            _fakeInMemoryDb,
+            _mapper);
     }
 
     [TearDown]

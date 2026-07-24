@@ -9,6 +9,7 @@ using CheckYourEligibility.Core.Gateways;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -17,6 +18,8 @@ namespace CheckYourEligibility.API.Tests;
 
 public class HashGatewayTests : TestBase
 {
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     private readonly int _hashCheckDays = 7;
     private readonly int _hashCheckDaysWF = 1;
     private IConfiguration _configuration;
@@ -28,10 +31,12 @@ public class HashGatewayTests : TestBase
     public void Setup()
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase("FakeInMemoryDb")
+            .UseInMemoryDatabase(nameof(HashGatewayTests), InMemoryDatabaseRoot)
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var configForSmsApi = new Dictionary<string, string>
@@ -40,12 +45,17 @@ public class HashGatewayTests : TestBase
             { "HashCheckDays", _hashCheckDays.ToString() },
             { "HashCheckDaysWF", _hashCheckDaysWF.ToString() },
         };
+
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
-        
+
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
+        _sut = new HashGateway(
+            new NullLoggerFactory(),
+            _fakeInMemoryDb,
+            _configuration,
+            _moqAudit.Object);
     }
 
     [TearDown]
@@ -63,7 +73,12 @@ public class HashGatewayTests : TestBase
         var dataItem = GetCheckProcessData(fsm);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
+        var id = await _sut.Create(
+            dataItem,
+            CheckEligibilityStatus.parentNotFound,
+            null,
+            ProcessEligibilityCheckSource.HMRC);
+
         await _fakeInMemoryDb.SaveChangesAsync();
 
         var response = await _sut.Exists(dataItem);
@@ -83,7 +98,12 @@ public class HashGatewayTests : TestBase
         var dataItem = GetCheckProcessData(wf);
 
         // Act
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
+        var id = await _sut.Create(
+            dataItem,
+            CheckEligibilityStatus.parentNotFound,
+            null,
+            ProcessEligibilityCheckSource.HMRC);
+
         await _fakeInMemoryDb.SaveChangesAsync();
 
         var response = await _sut.Exists(dataItem);
@@ -101,11 +121,19 @@ public class HashGatewayTests : TestBase
         fsm.DateOfBirth = "1990-01-01";
         var dataItem = GetCheckProcessData(fsm);
 
+        var id = await _sut.Create(
+            dataItem,
+            CheckEligibilityStatus.parentNotFound,
+            null,
+            ProcessEligibilityCheckSource.HMRC);
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
-        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
+
+        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes
+            .First(x => x.EligibilityCheckHashID.Equals(id));
+
         hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDays + 1));
+
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
@@ -125,11 +153,19 @@ public class HashGatewayTests : TestBase
         wf.Type = CheckEligibilityType.WorkingFamilies;
         var dataItem = GetCheckProcessData(wf);
 
+        var id = await _sut.Create(
+            dataItem,
+            CheckEligibilityStatus.parentNotFound,
+            null,
+            ProcessEligibilityCheckSource.HMRC);
 
-        var id = await _sut.Create(dataItem, CheckEligibilityStatus.parentNotFound,null, ProcessEligibilityCheckSource.HMRC);
         await _fakeInMemoryDb.SaveChangesAsync();
-        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes.First(x => x.EligibilityCheckHashID.Equals(id));
+
+        var hashItem = _fakeInMemoryDb.EligibilityCheckHashes
+            .First(x => x.EligibilityCheckHashID.Equals(id));
+
         hashItem.TimeStamp = hashItem.TimeStamp.AddDays(-(_hashCheckDaysWF + 1));
+
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act

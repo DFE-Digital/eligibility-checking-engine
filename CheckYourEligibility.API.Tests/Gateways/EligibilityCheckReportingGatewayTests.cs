@@ -3,6 +3,7 @@ using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
@@ -18,12 +19,13 @@ public class EligibilityCheckReportingGatewayTests : TestBase
 
     private EligibilityCheckReportingGateway _sut;
 
+    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
+
     [SetUp]
     public async Task SetUpAsync()
-    {
-        var databaseName = $"FakeInMemoryDb_{Guid.NewGuid()}";
+    {        
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(databaseName)
+            .UseInMemoryDatabase(nameof(EligibilityCheckReportingGatewayTests), InMemoryDatabaseRoot)
             .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
@@ -33,7 +35,6 @@ public class EligibilityCheckReportingGatewayTests : TestBase
 
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureCreatedAsync();
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 

@@ -1,5 +1,3 @@
-using AutoFixture;
-using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using Moq;
@@ -15,7 +13,6 @@ public class CleanUpRateLimitEventsChecksUseCaseTests : TestBase
         _mockGateway = new Mock<IRateLimit>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new CleanUpRateLimitEventsUseCase(_mockGateway.Object, _mockAuditGateway.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -28,7 +25,6 @@ public class CleanUpRateLimitEventsChecksUseCaseTests : TestBase
     private Mock<IRateLimit> _mockGateway;
     private Mock<IAudit> _mockAuditGateway;
     private CleanUpRateLimitEventsUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     public async Task Execute_Should_Call_CleanUpRateLimitEvents_On_gateway()
