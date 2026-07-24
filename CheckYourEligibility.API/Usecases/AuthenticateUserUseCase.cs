@@ -9,6 +9,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.IdentityModel.Tokens;
+using CheckYourEligibility.API.Helpers;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -31,6 +32,7 @@ public interface IAuthenticateUserUseCase
 public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 {
     private readonly IAudit _auditGateway;
+    private readonly IUsers _usersGateway;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthenticateUserUseCase> _logger;
 
@@ -40,10 +42,11 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <param name="auditGateway">Audit gateway for logging authentication attempts</param>
     /// <param name="logger">Logger service</param>
     /// <param name="jwtSettings">JWT settings configuration</param>
-    public AuthenticateUserUseCase(IAudit auditGateway, ILogger<AuthenticateUserUseCase> logger,
+    public AuthenticateUserUseCase(IAudit auditGateway, ILogger<AuthenticateUserUseCase> logger, IUsers usersGateway,
         JwtSettings jwtSettings)
     {
         _auditGateway = auditGateway;
+        _usersGateway = usersGateway;
         _logger = logger;
         _jwtSettings = jwtSettings;
     }
@@ -100,24 +103,192 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     /// <summary>
     ///     Execute the authentication process.
     /// </summary>
-    private async Task<JwtAuthResponse> ExecuteAuthentication(SystemUser credentials, JwtConfig jwtConfig)
+    private async Task<JwtAuthResponse> ExecuteAuthentication(
+    SystemUser credentials,
+    JwtConfig jwtConfig)
     {
-        // NOTE : This will remain for now until we implement a bettet way to audit passed scopes
-        await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
+        // NOTE : This will remain for now until we implement a better way to audit passed scopes
+        await _auditGateway.CreateAuditEntry(
+            AuditType.Client,
+            credentials.client_id);
 
-        if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret)) throw new InvalidClientException();
+        if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret))
+        {
+            throw new InvalidClientException();
+        }
 
-        if (!ValidateScopes(credentials.scope, jwtConfig.AllowedScopes)) throw new InvalidScopeException();
+        if (!ValidateScopes(credentials.scope, jwtConfig.AllowedScopes))
+        {
+            throw new InvalidScopeException();
+        }
 
-        var tokenString = GenerateJSONWebToken(credentials.client_id, credentials.scope, jwtConfig, out var expires);
+        var tokenString = GenerateJSONWebToken(
+            credentials.client_id,
+            credentials.scope,
+            jwtConfig,
+            out var expires);
+
+        if (string.IsNullOrEmpty(tokenString))
+        {
+            throw new ServerErrorException();
+        }
+
         var expiresInSeconds = (int)(expires - DateTime.UtcNow).TotalSeconds;
 
-        if (string.IsNullOrEmpty(tokenString)) throw new ServerErrorException();
+        try
+        {
+            var userDetails = GetUserDetailsFromClientId(credentials.client_id);
+            var organisationDetails = GetOrganisationDetails(credentials.scope);
 
+            await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
+            {
+                Data = new()
+                {
+                    Email = userDetails.Email, 
+                    Reference = Guid.NewGuid().ToString() // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
+                },
+
+                MetaData = new()
+                {
+                    Source = userDetails.UserType.ToString(),
+                    UserName = userDetails.UserName,
+                    OrganisationID = organisationDetails.OrganisationId,
+                    OrganisationType = organisationDetails.OrganisationType
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            var safeClientId = (credentials.client_id ?? string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty);
+
+            _logger.LogWarning(
+                ex,
+                "Failed to create or update user for client {ClientId}",
+                safeClientId);
+
+            // Do not fail authentication.
+            // JWT generation and validation have already succeeded.
+        }
 
         return new JwtAuthResponse
-            { expires_in = expiresInSeconds, access_token = tokenString, token_type = "Bearer" };
+        {
+            expires_in = expiresInSeconds,
+            access_token = tokenString,
+            token_type = "Bearer"
+        };
     }
+
+
+    private (int OrganisationId, string? OrganisationType) GetOrganisationDetails(string scope)
+    {
+        if (string.IsNullOrWhiteSpace(scope))
+        {
+            return (0, null);
+        }
+
+        var laId = GetSingleScopeId(scope, "local_authority");
+        var matId = GetSingleScopeId(scope, "multi_academy_trust");
+        var estId = GetSingleScopeId(scope, "establishment");
+
+        var hasLaScope = scope.Contains("local_authority");
+        var hasMatScope = scope.Contains("multi_academy_trust");
+        var hasEstScope = scope.Contains("establishment");
+
+        // Multiple IDs for same scope, or generic + specific scope
+        if ((laId == null && hasLaScope) ||
+            (matId == null && hasMatScope) ||
+            (estId == null && hasEstScope))
+        {
+            return (0, null);
+        }
+
+        // Different org types with IDs
+        if ((laId > 0 && matId > 0) ||
+            (laId > 0 && estId > 0) ||
+            (matId > 0 && estId > 0))
+        {
+            return (0, null);
+        }
+
+        if (laId >= 0)
+        {
+            return (laId.Value, "local_authority");
+        }
+
+        if (matId >= 0)
+        {
+            return (matId.Value, "multi_academy_trust");
+        }
+
+        if (estId >= 0)
+        {
+            return (estId.Value, "establishment");
+        }
+
+        return (0, null);
+    }
+
+    private int? GetSingleScopeId(string scope, string scopeName)
+    {
+        var scopes = scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var hasGeneralScope = scopes.Contains(scopeName);
+        var specificIds = new List<int>();
+
+        foreach (var item in scopes)
+        {
+            if (item.StartsWith($"{scopeName}:"))
+            {
+                var idPart = item.Substring($"{scopeName}:".Length);
+
+                if (int.TryParse(idPart, out var id))
+                {
+                    specificIds.Add(id);
+                }
+            }
+        }
+
+        if (hasGeneralScope && specificIds.Count > 0)
+        {
+            return null;
+        }
+
+        if (hasGeneralScope)
+        {
+            return 0;
+        }
+
+        if (specificIds.Count == 1)
+        {
+            return specificIds[0];
+        }
+
+        return null;
+    }
+
+    private (UserType UserType, string? UserName, string? Email) GetUserDetailsFromClientId(string clientId)
+    {
+        if (!clientId.Contains(':'))
+        {
+            // API user
+            return (
+                Source: UserType.API,
+                UserName: clientId, // so production-something
+                Email: clientId); // api user no email but will have production-something
+        }
+
+        // Portal user
+        var parts = clientId.Split(':', 2);
+
+        return (
+            Source: Enum.Parse<UserType>(parts[0]),  // so free-school-meals-admin etc..
+            UserName: parts[1], // will be same as email
+            Email: parts[1]);
+    }
+
+
 
     private static bool ValidateSecret(string secret, string expectedSecret)
     {
@@ -130,13 +301,13 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (string.IsNullOrEmpty(allowedScopes)) return false;
 
         // Normalize user input - treat null/empty/default as empty scope request
-        var normalizedRequestedScopes = string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default" 
-            ? string.Empty 
+        var normalizedRequestedScopes = string.IsNullOrEmpty(requestedScopes) || requestedScopes == "default"
+            ? string.Empty
             : requestedScopes;
 
         // Parse allowed scopes (server-controlled)
         var allowedScopesList = allowedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         // For empty scope requests, they are valid if we have server configuration
         // (The fact that allowedScopes is not null/empty means the server is properly configured)
         if (string.IsNullOrEmpty(normalizedRequestedScopes))
@@ -163,9 +334,9 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     private static bool ValidateLocalAuthorityScopeRule(string[] requestedScopesList)
     {
         // Only validate local authority scope rule if local authority scopes are present
-        var hasLocalAuthorityScopes = requestedScopesList.Any(scope => 
+        var hasLocalAuthorityScopes = requestedScopesList.Any(scope =>
             scope == "local_authority" || scope.StartsWith("local_authority:"));
-            
+
         if (!hasLocalAuthorityScopes)
             return true; // No local authority scopes present, rule doesn't apply
 
@@ -194,18 +365,18 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return new List<string>();
 
         var sanitizedScopes = new List<string>();
-        
+
         foreach (var scope in scopes)
         {
             if (string.IsNullOrWhiteSpace(scope))
                 continue;
-                
+
             var trimmedScope = scope.Trim();
-            
+
             // Validate scope format for security
             if (!IsValidScopeFormat(trimmedScope))
                 return null; // Invalid scope detected
-                
+
             sanitizedScopes.Add(trimmedScope);
         }
 

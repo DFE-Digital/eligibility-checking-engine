@@ -20,6 +20,7 @@ public class AuthenticateUserUseCaseTests
     public void Setup()
     {
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
+        _mockUsersGateway = new Mock<IUsers>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<AuthenticateUserUseCase>>();
         _jwtSettings = new JwtSettings
         {
@@ -34,7 +35,7 @@ public class AuthenticateUserUseCaseTests
                 }
             }
         };
-        _sut = new AuthenticateUserUseCase(_mockAuditGateway.Object, _mockLogger.Object, _jwtSettings);
+        _sut = new AuthenticateUserUseCase(_mockAuditGateway.Object, _mockLogger.Object, _mockUsersGateway.Object, _jwtSettings);
         _fixture = new Fixture();
     }
 
@@ -45,6 +46,7 @@ public class AuthenticateUserUseCaseTests
     }
 
     private Mock<IAudit> _mockAuditGateway;
+    private Mock<IUsers> _mockUsersGateway;
     private Mock<ILogger<AuthenticateUserUseCase>> _mockLogger;
     private JwtSettings _jwtSettings;
     private AuthenticateUserUseCase _sut;
@@ -61,8 +63,10 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
@@ -153,15 +157,17 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
 
         // Assert
         result.Should().NotBeNull();
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null), Times.Once);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null), Times.Once);
     }
 
     [Test]
@@ -175,8 +181,10 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
@@ -226,8 +234,10 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
@@ -269,8 +279,10 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
@@ -307,8 +319,10 @@ public class AuthenticateUserUseCaseTests
         };
 
         _mockAuditGateway
-            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id,null))
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Execute(login);
@@ -424,6 +438,85 @@ public class AuthenticateUserUseCaseTests
                 It.IsAny<Exception>(),
                 (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
             Times.Once);
+    }
+
+    [Test]
+    public async Task AuthenticateUser_Should_Create_User_With_Correct_Request()
+    {
+        // Arrange
+        UserCreateRequest? capturedRequest = null;
+
+        var login = new SystemUser
+        {
+            client_id = "test_client",
+            client_secret = "correct_password",
+            scope = "check free_school_meals local_authority:111"
+        };
+
+        _jwtSettings.Clients["test_client"].Scope =
+            "check free_school_meals local_authority";
+
+        _mockAuditGateway
+            .Setup(a => a.CreateAuditEntry(
+                AuditType.Client,
+                login.client_id,
+                null))
+            .ReturnsAsync(_fixture.Create<string>());
+
+        _mockUsersGateway
+            .Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>()))
+            .Callback<UserCreateRequest>(r => capturedRequest = r)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _sut.Execute(login);
+
+        // Assert
+        capturedRequest.Should().NotBeNull();
+
+        capturedRequest!.MetaData.OrganisationID.Should().Be(111);
+        capturedRequest.MetaData.OrganisationType.Should().Be("local_authority");
+
+        _mockUsersGateway.Verify(
+            u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>()),
+            Times.Once);
+    }
+
+    [TestCase("local_authority:111", "local_authority", 111, "local_authority")]
+    [TestCase("multi_academy_trust:222", "multi_academy_trust", 222, "multi_academy_trust")]
+    [TestCase("establishment:333", "establishment", 333, "establishment")]
+    public async Task AuthenticateUser_Should_Map_Organisation_Correctly(
+    string requestedScope,
+    string allowedScope,
+    int expectedId,
+    string expectedType)
+    {
+        UserCreateRequest? capturedRequest = null;
+
+        var login = new SystemUser
+        {
+            client_id = "test_client",
+            client_secret = "correct_password",
+            scope = $"check {requestedScope}"
+        };
+
+        _jwtSettings.Clients["test_client"].Scope =
+            $"check {allowedScope}";
+
+        _mockAuditGateway
+            .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
+            .ReturnsAsync("audit");
+
+        _mockUsersGateway
+            .Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>()))
+            .Callback<UserCreateRequest>(r => capturedRequest = r)
+            .Returns(Task.CompletedTask);
+
+        await _sut.Execute(login);
+
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.MetaData.OrganisationID.Should().Be(expectedId);
+        capturedRequest.MetaData.OrganisationType.Should().Be(expectedType);
     }
 
     [Test]

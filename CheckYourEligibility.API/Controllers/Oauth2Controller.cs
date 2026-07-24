@@ -94,7 +94,7 @@ public class Oauth2Controller : Controller
                     new Error
                     {
                         Title = "server_error",
-                        Detail = "The authorization server encountered an unexpected error"
+                        Detail = $"The authorization server encountered an unexpected error: {ex}"
                     }
                 ]
             });

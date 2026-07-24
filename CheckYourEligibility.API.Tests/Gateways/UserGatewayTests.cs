@@ -5,6 +5,7 @@ using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -63,29 +64,174 @@ public class UserGatewayTests : TestBase.TestBase
     [TearDown]
     public void Teardown()
     {
+        _fakeInMemoryDb.Users.RemoveRange(_fakeInMemoryDb.Users);
+        _fakeInMemoryDb.SaveChanges();
     }
 
-    [Test]
-    public void Given_ExistingUser_User_Should_Return_Guid()
+    [TestCase(UserType.FreeSchoolMealsAdmin)]
+    [TestCase(UserType.FreeSchoolMealsParent)]
+    [TestCase(UserType.ChildcareAdmin)]
+    public async Task Given_Existing_Portal_User_Should_Update_LastLogin(UserType userType)
     {
         // Arrange
-        var request = _fixture.Create<UserData>();
-        var response = _sut.Create(request);
+        var existingUser = new User
+        {
+            UserID = Guid.NewGuid().ToString(),
+            Email = "test@test.com",
+            Reference = "",
+            UserName = "test@test.com",
+            UserType = userType,
+            OrganisationType = Domain.Enums.OrganisationType.local_authority,
+            OrganisationId = 123,
+            LastLogin = DateTime.UtcNow.AddDays(-1)
+        };
+
+        _fakeInMemoryDb.Users.Add(existingUser);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var originalLastLogin = existingUser.LastLogin;
+
+        var request = new UserCreateRequest
+        {
+            Data = new()
+            {
+                Email = "test@test.com",
+                Reference = ""
+            },
+            MetaData = new()
+            {
+                Source = userType.ToString(),
+                UserName = "test@test.com",
+                OrganisationType = "local_authority",
+                OrganisationID = 123
+            }
+        };
+
         // Act
-        response = _sut.Create(request);
+        await _sut.CreateOrUpdateUser(request);
+
+        // Assert
+        _fakeInMemoryDb.Users.Should().HaveCount(1);
+
+        var updatedUser = _fakeInMemoryDb.Users.Single();
+
+        updatedUser.UserID.Should().Be(existingUser.UserID);
+        updatedUser.LastLogin.Should().BeAfter(originalLastLogin!.Value);
+    }
+
+
+    [Test]
+    public async Task Given_New_Api_User_Should_Create_User()
+    {
+        // Arrange
+        var request = new UserCreateRequest
+        {
+            Data = new() { Email = "", Reference = "" },
+            MetaData = new()
+            {
+                Source = UserType.API.ToString(),
+                UserName = "production-something",
+                OrganisationType = "local_authority",
+                OrganisationID = 123
+            }
+        };
+
+        // Act
+        await _sut.CreateOrUpdateUser(request);
+
+        // Assert
+        var user = _fakeInMemoryDb.Users.First();
+
+        user.UserName.Should().Be("production-something");
+        user.UserType.Should().Be(UserType.API);
+        user.OrganisationId.Should().Be(123);
+    }
+
+
+    [TestCase(Domain.Enums.OrganisationType.local_authority)]
+    [TestCase(Domain.Enums.OrganisationType.multi_academy_trust)]
+    [TestCase(Domain.Enums.OrganisationType.establishment)]
+    [Test]
+    public async Task Given_Existing_Api_User_Should_Update_LastLogin(Domain.Enums.OrganisationType organisationType)
+    {
+        // Arrange
+        var existingUser = new User
+        {
+            Email = string.Empty,
+            Reference = string.Empty,
+            UserID = Guid.NewGuid().ToString(),
+            UserName = "production-something",
+            UserType = UserType.API,
+            OrganisationType = organisationType,
+            OrganisationId = 123,
+            LastLogin = DateTime.UtcNow.AddDays(-1)
+        };
+
+        _fakeInMemoryDb.Users.Add(existingUser);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var originalLastLogin = existingUser.LastLogin;
+
+        var request = new UserCreateRequest
+        {
+            Data = new(),
+            MetaData = new()
+            {
+                Source = UserType.API.ToString(),
+                UserName = "production-something",
+                OrganisationType = organisationType.ToString(),
+                OrganisationID = 123
+            }
+        };
+
+        // Act
+        await _sut.CreateOrUpdateUser(request);
+
+        // Assert
+        var updatedUser = _fakeInMemoryDb.Users.Single();
+
+        updatedUser.LastLogin.Should().NotBe(originalLastLogin);
+        updatedUser.LastLogin.Should().BeAfter(originalLastLogin!.Value);
+
+        _fakeInMemoryDb.Users.Should().HaveCount(1);
+    }
+
+
+    [Test]
+    public void Given_Existing_FSMParent_User_Should_Return_Guid()
+    {
+        // Arrange
+        var request = _fixture.Build<UserCreateRequest>()
+        .With(x => x.MetaData, new CheckMetaData
+        {
+            OrganisationType = "local_authority",
+            OrganisationID = 123,
+            UserName = "testuser"
+        })
+        .Create();
+
+        // Act
+        var response = _sut.CreateOrUpdateFSMParentUser(request);
 
         // Assert
         response.Result.Should().BeOfType<String>();
     }
 
     [Test]
-    public void Given_validRequest_User_Should_Return_New_Guid()
+    public void Given_validRequest_FSMParent_User_Should_Return_New_Guid()
     {
         // Arrange
-        var request = _fixture.Create<UserData>();
+        var request = _fixture.Build<UserCreateRequest>()
+        .With(x => x.MetaData, new CheckMetaData
+        {
+            OrganisationType = "local_authority",
+            OrganisationID = 123,
+            UserName = "testuser"
+        })
+        .Create();
 
         // Act
-        var response = _sut.Create(request);
+        var response = _sut.CreateOrUpdateFSMParentUser(request);
 
         // Assert
         response.Result.Should().BeOfType<String>();
@@ -98,10 +244,10 @@ public class UserGatewayTests : TestBase.TestBase
         var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
         var svc = new UsersGateway(new NullLoggerFactory(), db.Object, _mapper);
         db.Setup(x => x.Users.Add(It.IsAny<User>())).Throws(new Exception());
-        var request = _fixture.Create<UserData>();
+        var request = _fixture.Create<UserCreateRequest>();
 
         // Act 
-        Func<Task> act = async () => await svc.Create(request);
+        Func<Task> act = async () => await svc.CreateOrUpdateFSMParentUser(request);
 
         // Assert
         act.Should().ThrowExactlyAsync<Exception>();
@@ -120,10 +266,25 @@ public class UserGatewayTests : TestBase.TestBase
         db.Setup(x => x.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>())).ThrowsAsync(ex);
         var existingUser = _fixture.Create<User>();
 
-        var request = new UserData { Email = existingUser.Email, Reference = existingUser.Reference,  };
+        var request = new UserCreateRequest
+        {
+            Data = new()
+            {
+                Email = existingUser.Email,
+                Reference = existingUser.Reference
+            },
+
+            MetaData = new()
+            {
+                Source = existingUser.UserType.ToString(),
+                UserName = existingUser.UserName,
+                OrganisationID = existingUser.OrganisationId,
+                OrganisationType = existingUser.OrganisationType.ToString()
+            }
+        };
 
         // Act
-        Func<Task> act = async () => await svc.Create(request);
+        Func<Task> act = async () => await svc.CreateOrUpdateFSMParentUser(request);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();
