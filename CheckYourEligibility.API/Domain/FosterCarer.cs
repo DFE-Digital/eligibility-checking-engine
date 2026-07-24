@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CheckYourEligibility.API.Domain;
 
-public class FosterCarer : IAuditable
+public class FosterCarer
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -13,10 +13,14 @@ public class FosterCarer : IAuditable
     [Column(TypeName = "varchar(50)")] public string NationalInsuranceNumber { get; set; }
     public bool HasPartner { get; set; } = false;
 
+    //
+
     [Column(TypeName = "varchar(100)")] public string? PartnerFirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string? PartnerLastName { get; set; }
     public DateTime? PartnerDateOfBirth { get; set; }
     [Column(TypeName = "varchar(50)")] public string? PartnerNationalInsuranceNumber { get; set; }
+
+    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";
 
 
     /// <summary>
@@ -32,6 +36,6 @@ public class FosterCarer : IAuditable
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
-    public FosterChild? FosterChild { get; set; }
+    public ICollection<FosterChild> FosterChildren { get; set; } = new List<FosterChild>();
 
 }

@@ -3,7 +3,7 @@ using CheckYourEligibility.API.Domain;
 
 public static class WorkingFamiliesEventHelper
 {
-    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterCarer data)
+    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data)
     {
 
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
@@ -11,26 +11,26 @@ public static class WorkingFamiliesEventHelper
 
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
-            ValidityStartDate = data.FosterChild.ValidityStartDate,
-            ValidityEndDate = data.FosterChild.ValidityEndDate,
+            ValidityStartDate = data.SubmissionDate,
+            ValidityEndDate = data.SubmissionDate.AddMonths(3),
 
-            ParentNationalInsuranceNumber = data.NationalInsuranceNumber,
-            ParentFirstName = data.FirstName,
-            ParentLastName = data.LastName,
-            ParentDateOfBirth = data.DateOfBirth,
-            PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber ?? string.Empty,
-            PartnerFirstName = data.PartnerFirstName ?? string.Empty,
-            PartnerLastName = data.PartnerLastName ?? string.Empty,
-            PartnerDateOfBirth = data.PartnerDateOfBirth ?? DateTime.MinValue,
+            ParentNationalInsuranceNumber = data.FosterCarer.CarerNationalInsuranceNumber,
+            ParentFirstName = data.FosterCarer.CarerFirstName,
+            ParentLastName = data.FosterCarer.CarerLastName,
+            ParentDateOfBirth = data.FosterCarer.CarerDateOfBirth,
+            PartnerNationalInsuranceNumber = data.Partner.PartnerNationalInsuranceNumber ?? string.Empty,
+            PartnerFirstName = data.Partner.PartnerFirstName ?? string.Empty,
+            PartnerLastName = data.Partner.PartnerLastName ?? string.Empty,
+            PartnerDateOfBirth = data.Partner.PartnerDateOfBirth,
 
-            ChildFirstName = data.FosterChild.FirstName,
-            ChildLastName = data.FosterChild.LastName,
-            ChildPostCode = data.FosterChild.PostCode,
-            ChildDateOfBirth = data.FosterChild.DateOfBirth,
-            SubmissionDate = data.FosterChild.SubmissionDate,
+            ChildFirstName = data.FosterChild.ChildFirstName,
+            ChildLastName = data.FosterChild.ChildLastName,
+            ChildPostCode = data.FosterChild.ChildPostCode,
+            ChildDateOfBirth = data.FosterChild.ChildDateOfBirth,
+            SubmissionDate = data.SubmissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.FosterChild.ValidityStartDate, data.FosterChild.SubmissionDate),
-            GracePeriodEndDate = GetGracePeriodEndDate(data.FosterChild.ValidityEndDate)
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.SubmissionDate, data.SubmissionDate), // validity start date and submmission
+            GracePeriodEndDate = GetGracePeriodEndDate(data.SubmissionDate.AddMonths(3))
         };
 
         return wfEvent;
