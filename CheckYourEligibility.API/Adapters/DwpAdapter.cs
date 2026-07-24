@@ -138,32 +138,37 @@ public class DwpAdapter : IDwpAdapter
             }
 
             // CAPI returns a non-successful code
-            _logger.LogWarning("Get CAPI citizen claim failed. uri:-{Uri} Response:- {StatusCode}",
+            _logger.LogWarning(
+                "Get CAPI citizen claim failed. uri:-{Uri} Response:- {StatusCode}",
                 _httpClient.BaseAddress + uri,
                 response.StatusCode);
 
-            var capiResponseCode = CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
+            var capiResponseCode =
+                CAPIClaimResponseBase.ProcessCapiResponseCode(responseBody);
 
             return new CAPIClaimResponseBase
             {
                 CAPIResponseCode = capiResponseCode,
                 ResponseCode = response.StatusCode,
                 CAPIEndpoint = uri,
-                ResponseBody = responseBody
+                ResponseBody = responseBody,
+                ErrorCode = "STE20"
             };
         }
         catch (Exception ex)
         {
-                   
-            string errorMessage = $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+            string errorMessage =
+                $"ECE failed to POST to CAPI. uri:-{_httpClient.BaseAddress}{uri}";
+
             _logger.LogError(ex, errorMessage);
 
-            return (new CAPIClaimResponseBase
+            return new CAPIClaimResponseBase
             {
                 CAPIEndpoint = uri,
                 ResponseCode = HttpStatusCode.InternalServerError,
-                ResponseBody = ex.Message
-            });
+                ResponseBody = ex.Message,
+                ErrorCode = "STE21"
+            };
         }
     }
 
@@ -369,6 +374,7 @@ public class DwpAdapter : IDwpAdapter
             string errorMessage = $"CAPI failed to match citizen. URI: {uri} | Response: {response.StatusCode}";
             _logger.LogWarning(errorMessage);
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.ErrorCode = "STE10";
             citizenResponse.Reason = errorMessage;
             return citizenResponse;
         }
@@ -378,6 +384,7 @@ public class DwpAdapter : IDwpAdapter
             _logger.LogError(ex, errorMessage);
             citizenResponse.CAPIEndpoint = uri;
             citizenResponse.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            citizenResponse.ErrorCode = "STE11";
             citizenResponse.ResponseCode = HttpStatusCode.InternalServerError;
             citizenResponse.ResponseBody = ex.Message;
             return citizenResponse;
