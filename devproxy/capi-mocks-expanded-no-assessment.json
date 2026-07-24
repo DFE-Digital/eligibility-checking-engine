@@ -1,0 +1,62 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dotnet/dev-proxy/main/schemas/v0.24.0/mockresponseplugin.schema.json",
+    "mocks": [
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/MoqDWP/token",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 200,
+                "body": {
+                    "access_token": "mock-token",
+                    "expires_in": 3600,
+                    "token_type": "Bearer"
+                }
+            }
+        },
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/v2/citizens/match",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 200,
+                "body": {
+                    "jsonapi": { "version": "2.0" },
+                    "data": {
+                        "id": "test-citizen-guid",
+                        "type": "Match",
+                        "attributes": { "matchingScenario": "ScenarioA" }
+                    }
+                }
+            }
+        },
+        {
+            "_scenario": "NO LIVE AWARDS — UC claim exists but awards list is empty (first assessment not yet happened). JIRA spec says this should return eligible/expanded for expanded policy. This scenario tests the missing branch identified during review.",
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/v2/citizens/test-citizen-guid/claims*",
+                "method": "GET"
+            },
+            "response": {
+                "statusCode": 200,
+                "body": {
+                    "jsonapi": { "version": "2.0" },
+                    "data": [
+                        {
+                            "id": "test-citizen-guid",
+                            "type": "Claim",
+                            "attributes": {
+                                "benefitType": "universal_credit",
+                                "startDate": "2024-01-01",
+                                "endDate": null,
+                                "awards": []
+                            }
+                        }
+                    ],
+                    "links": { "self": "/v2/citizens/test-citizen-guid/claims" }
+                }
+            }
+        }
+    ]
+}

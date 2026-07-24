@@ -90,10 +90,14 @@ public static class ProgramExtensions
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
         }).ConfigurePrimaryHttpMessageHandler(() => {
 
-            var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
-            var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
             var handler = new HttpClientHandler();
-            handler.ClientCertificates.Add(cert);
+            var apiCertificate = configuration["Dwp:ApiCertificate"];
+            if (!string.IsNullOrEmpty(apiCertificate))
+            {
+                var privateKeyBytes = Convert.FromBase64String(apiCertificate);
+                var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
+                handler.ClientCertificates.Add(cert);
+            }
             handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
             return handler;
         })
