@@ -290,11 +290,11 @@ public class ApplicationGatewayTests : TestBase
         // Arrange - application was 'expanded' at the time it was archived (per CreateTestApplication default),
         // but the last non-archived history entry recorded 'targeted' - restore should bring back 'targeted'.
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         app.Tier = EligibilityTier.expanded;
         await _dbContext.Applications.AddAsync(app);
         var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
-        previousStatus.Type = Domain.Enums.ApplicationStatus.Entitled;
+        previousStatus.Type = Core.Domain.Enums.ApplicationStatus.Entitled;
         previousStatus.Tier = EligibilityTier.targeted;
         await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
         await _dbContext.SaveChangesAsync();
@@ -350,7 +350,7 @@ public class ApplicationGatewayTests : TestBase
         // Arrange - simulates a legacy bulk-imported application with no status history at all
         // (or one whose only history entry is Archived itself)
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Archived;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
@@ -371,9 +371,9 @@ public class ApplicationGatewayTests : TestBase
     {
         // Arrange
         var app1 = CreateTestApplication();
-        app1.Status = Domain.Enums.ApplicationStatus.Receiving;
+        app1.Status = Core.Domain.Enums.ApplicationStatus.Receiving;
         var app2 = CreateTestApplication();
-        app2.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app2.Status = Core.Domain.Enums.ApplicationStatus.Entitled;
         var applications = new List<Application> { app1, app2 };
 
         var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
@@ -401,9 +401,9 @@ public class ApplicationGatewayTests : TestBase
         capturedApplications.Should().HaveCount(2);
         capturedStatusHistory.Should().HaveCount(2);
         capturedStatusHistory.Should()
-            .ContainSingle(s => s.ApplicationID == app1.ApplicationID && s.Type == Domain.Enums.ApplicationStatus.Receiving);
+            .ContainSingle(s => s.ApplicationID == app1.ApplicationID && s.Type == Core.Domain.Enums.ApplicationStatus.Receiving);
         capturedStatusHistory.Should()
-            .ContainSingle(s => s.ApplicationID == app2.ApplicationID && s.Type == Domain.Enums.ApplicationStatus.Entitled);
+            .ContainSingle(s => s.ApplicationID == app2.ApplicationID && s.Type == Core.Domain.Enums.ApplicationStatus.Entitled);
         capturedStatusHistory.Should().OnlyContain(s => !string.IsNullOrEmpty(s.ApplicationStatusID));
         capturedStatusHistory.Should().OnlyContain(s => s.Tier == EligibilityTier.expanded);
     }
@@ -440,12 +440,12 @@ public class ApplicationGatewayTests : TestBase
     {
         // Arrange - Tier changes without a Status change should still be tracked in history
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.Entitled;
+        app.Status = Core.Domain.Enums.ApplicationStatus.Entitled;
         app.Tier = EligibilityTier.targeted;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
-        var updateData = new Boundary.Requests.ApplicationUpdateData { Tier = EligibilityTier.expanded };
+        var updateData = new Core.Boundary.Requests.ApplicationUpdateData { Tier = EligibilityTier.expanded };
 
         // Act
         await _sut.UpdateApplication(app.ApplicationID, updateData);
@@ -458,7 +458,7 @@ public class ApplicationGatewayTests : TestBase
             .Where(s => s.ApplicationID == app.ApplicationID)
             .ToListAsync();
         historyEntries.Should().ContainSingle();
-        historyEntries[0].Type.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+        historyEntries[0].Type.Should().Be(Core.Domain.Enums.ApplicationStatus.Entitled);
         historyEntries[0].Tier.Should().Be(EligibilityTier.expanded);
     }
 
@@ -467,14 +467,14 @@ public class ApplicationGatewayTests : TestBase
     {
         // Arrange
         var app = CreateTestApplication();
-        app.Status = Domain.Enums.ApplicationStatus.SentForReview;
+        app.Status = Core.Domain.Enums.ApplicationStatus.SentForReview;
         app.Tier = null;
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
-        var updateData = new Boundary.Requests.ApplicationUpdateData
+        var updateData = new Core.Boundary.Requests.ApplicationUpdateData
         {
-            Status = Domain.Enums.ApplicationStatus.Entitled,
+            Status = Core.Domain.Enums.ApplicationStatus.Entitled,
             Tier = EligibilityTier.expanded
         };
 
@@ -486,7 +486,7 @@ public class ApplicationGatewayTests : TestBase
             .Where(s => s.ApplicationID == app.ApplicationID)
             .ToListAsync();
         historyEntries.Should().ContainSingle();
-        historyEntries[0].Type.Should().Be(Domain.Enums.ApplicationStatus.Entitled);
+        historyEntries[0].Type.Should().Be(Core.Domain.Enums.ApplicationStatus.Entitled);
         historyEntries[0].Tier.Should().Be(EligibilityTier.expanded);
     }
 
@@ -495,7 +495,7 @@ public class ApplicationGatewayTests : TestBase
     {
         // Arrange - e.g. only the establishment is being changed
         var app = CreateTestApplication();
-        var establishment = new Domain.Establishment
+        var establishment = new Core.Domain.Establishment
         {
             EstablishmentID = _fixture.Create<int>(),
             EstablishmentName = "Another School",
@@ -512,7 +512,7 @@ public class ApplicationGatewayTests : TestBase
         await _dbContext.Applications.AddAsync(app);
         await _dbContext.SaveChangesAsync();
 
-        var updateData = new Boundary.Requests.ApplicationUpdateData { EstablishmentUrn = establishment.EstablishmentID };
+        var updateData = new Core.Boundary.Requests.ApplicationUpdateData { EstablishmentUrn = establishment.EstablishmentID };
 
         // Act
         await _sut.UpdateApplication(app.ApplicationID, updateData);

@@ -13,7 +13,7 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class RateLimitUseCaseTests : TestBase.TestBase
+public class RateLimitUseCaseTests : TestBase
 {
     private Mock<IRateLimit> _mockRateLimitGateway = null!;
     private Mock<IHttpContextAccessor> _mockHttpContextAccessor = null!;
