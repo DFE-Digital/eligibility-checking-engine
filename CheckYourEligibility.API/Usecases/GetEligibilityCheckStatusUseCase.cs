@@ -39,7 +39,7 @@ public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCas
     {
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var (status,tier) = await _checkGateway.GetStatusAsync(guid, type);
+        var (status, tier, errorCode) = await _checkGateway.GetStatusAsync(guid, type);
         if (status == null)
         {
             _logger.LogWarning(
@@ -55,7 +55,8 @@ public class GetEligibilityCheckStatusUseCase : IGetEligibilityCheckStatusUseCas
             Data = new StatusValue
             {
                 Status = status.Value.ToString(),
-                Tier = tier?.ToString()
+                Tier = tier?.ToString(),
+                ErrorCode = errorCode
             }
         };
     }

@@ -18,7 +18,6 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
 {
     private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
-    private new Fixture _fixture = null!;
     private Mock<ILogger<WorkingFamiliesReportingGateway>> _mockLogger = null!;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -61,7 +60,6 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase.TestBase
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _fixture = new Fixture();
         _mockLogger = new Mock<ILogger<WorkingFamiliesReportingGateway>>();
 
 

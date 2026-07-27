@@ -1,7 +1,6 @@
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -22,7 +21,6 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
         _mockLogger = new Mock<ILogger<UpdateEligibilityCheckStatusUseCase>>(MockBehavior.Loose);
         _sut = new UpdateEligibilityCheckStatusUseCase(_mockCheckGateway.Object, _mockAuditGateway.Object,
             _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -36,7 +34,6 @@ public class UpdateEligibilityCheckStatusUseCaseTests : TestBase.TestBase
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<UpdateEligibilityCheckStatusUseCase>> _mockLogger;
     private UpdateEligibilityCheckStatusUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     [TestCase(null)]

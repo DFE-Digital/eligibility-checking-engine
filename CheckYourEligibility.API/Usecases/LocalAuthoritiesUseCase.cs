@@ -30,25 +30,24 @@ public class LocalAuthoritiesUseCase : ILocalAuthoritiesUseCase
 
         var la = await _localAuthorityGateway.GetLocalAuthorityById(laCode, null) ?? throw new NotFoundException();
 
-
         var policyMap = new Dictionary<CheckEligibilityType, int> {
-                {CheckEligibilityType.FreeSchoolMeals, la.FreeSchoolMealsPolicyID },
-                {CheckEligibilityType.EarlyYearPupilPremium, la.EarlyYearsPupilPremiumPolicyID},
-                {CheckEligibilityType.TwoYearOffer, la.TwoYearPolicyID},
-
-            };
+            {CheckEligibilityType.FreeSchoolMeals, la.FreeSchoolMealsPolicyID },
+            {CheckEligibilityType.EarlyYearPupilPremium, la.EarlyYearsPupilPremiumPolicyID},
+            {CheckEligibilityType.TwoYearOffer, la.TwoYearPolicyID},
+        };
 
         List<EligibilityPolicyResponse> eligiblityPolicies = new();
         foreach (var (checkType, policyId) in policyMap)
-        {      
+        {
             eligiblityPolicies.Add(await BuildPolicyResponse(checkType, policyId));
         }
 
         return new LocalAuthoritySettingsResponse
         {
+            Region = la.Region,
+            IsDeleted = la.IsDeleted,
             SchoolCanReviewEvidence = la.SchoolCanReviewEvidence,
             EligibilityPolicies = eligiblityPolicies
-
         };
 
     }

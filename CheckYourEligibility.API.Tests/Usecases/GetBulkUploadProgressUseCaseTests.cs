@@ -19,7 +19,6 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadProgressUseCase>>(MockBehavior.Loose);
         _sut = new GetBulkUploadProgressUseCase(_mockBulkCheckGateway.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]
@@ -31,7 +30,6 @@ public class GetBulkUploadProgressUseCaseTests : TestBase.TestBase
     private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<ILogger<GetBulkUploadProgressUseCase>> _mockLogger;
     private GetBulkUploadProgressUseCase _sut;
-    private Fixture _fixture;
 
     [Test]
     [TestCase(null)]

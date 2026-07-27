@@ -15,7 +15,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class UserControllerTests : TestBase.TestBase
 {
-    private Fixture _fixture;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICreateOrUpdateFSMParentUserUseCase> _mockCreateOrUpdateUserUseCase;
     private ILogger<UserController> _mockLogger;
@@ -28,7 +27,6 @@ public class UserControllerTests : TestBase.TestBase
         _mockLogger = Mock.Of<ILogger<UserController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new UserController(_mockLogger, _mockCreateOrUpdateUserUseCase.Object, _mockAuditGateway.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260715160924_Add_LocalAuthority_RegionAndIsDeleted")]
+    partial class Add_LocalAuthority_RegionAndIsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -215,9 +218,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<string>("BulkCheckID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("CompletedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("EligibilityType")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
@@ -258,52 +258,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasIndex("LocalAuthorityID");
 
                     b.ToTable("BulkChecks");
-                });
-
-            modelBuilder.Entity("CheckYourEligibility.API.Domain.CAPIAudit", b =>
-                {
-                    b.Property<int>("AuditId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditId"));
-
-                    b.Property<long>("CAPIResponseCode")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("DWPCorrelationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("EligibilityCheckId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Endpoint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RequestBody")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResponseBody")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ResponseCode")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("AuditId");
-
-                    b.HasIndex("DWPCorrelationId");
-
-                    b.HasIndex("EligibilityCheckId");
-
-                    b.HasIndex("TimeStamp");
-
-                    b.ToTable("CAPIAudits");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.ECSConflict", b =>
@@ -735,13 +689,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("Email", "Reference", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserType] IS NOT NULL");
-
-                    b.HasIndex("UserName", "OrganisationType", "OrganisationId", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserName] IS NOT NULL AND [OrganisationType] IS NOT NULL AND [OrganisationId] IS NOT NULL AND [UserType] IS NOT NULL");
+                    b.HasIndex("Email", "Reference")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
