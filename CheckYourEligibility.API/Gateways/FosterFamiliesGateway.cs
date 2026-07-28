@@ -190,6 +190,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             .Include(x => x.FosterChildren)
             .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId);
 
+
         if (fosterCarer is null)
         {
             throw new NotFoundException(
@@ -440,6 +441,55 @@ public class FosterFamiliesGateway : IFosterFamilies
             ReconfirmBetween = "This still need doing",
             GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
         };
+    }
+
+    public async Task<FosterChildResponse> UpdateFosterChildAsync(
+    Guid fosterChildId,
+    UpdateFosterChildRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var fosterChild = await _db.FosterChildren
+            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+
+        if (fosterChild is null)
+        {
+            throw new NotFoundException(
+                $"Foster child {fosterChildId} not found");
+        }
+
+        // Working Family Event?? 
+
+        fosterChild.FirstName = request.FosterChildRequest.ChildFirstName;
+        fosterChild.LastName = request.FosterChildRequest.ChildLastName;
+        fosterChild.DateOfBirth = request.FosterChildRequest.ChildDateOfBirth;
+        fosterChild.PostCode = request.FosterChildRequest.ChildPostCode;
+
+        fosterChild.Updated = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return await GetFosterChild(fosterChildId);
+    }
+
+    public async Task DeleteFosterChild(Guid fosterChildId)
+    {
+        var fosterChild = await _db.FosterChildren
+            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+
+        if (fosterChild is null)
+        {
+            _logger.LogWarning(
+                "Foster child with ID {FosterChildId} not found",
+                fosterChildId);
+
+            throw new NotFoundException(
+                $"Foster child {fosterChildId} not found");
+        }
+
+        _db.FosterChildren.Remove(fosterChild);
+
+        await _db.SaveChangesAsync();
     }
 
     #region helpers

@@ -18,10 +18,10 @@ public static class WorkingFamiliesEventHelper
             ParentFirstName = data.FosterCarer.CarerFirstName,
             ParentLastName = data.FosterCarer.CarerLastName,
             ParentDateOfBirth = data.FosterCarer.CarerDateOfBirth,
-            PartnerNationalInsuranceNumber = data.Partner.PartnerNationalInsuranceNumber ?? string.Empty,
-            PartnerFirstName = data.Partner.PartnerFirstName ?? string.Empty,
-            PartnerLastName = data.Partner.PartnerLastName ?? string.Empty,
-            PartnerDateOfBirth = data.Partner.PartnerDateOfBirth,
+            PartnerNationalInsuranceNumber = data.Partner?.PartnerNationalInsuranceNumber ?? string.Empty,
+            PartnerFirstName = data.Partner?.PartnerFirstName ?? string.Empty,
+            PartnerLastName = data.Partner?.PartnerLastName ?? string.Empty,
+            PartnerDateOfBirth = data.Partner?.PartnerDateOfBirth,
 
             ChildFirstName = data.FosterChild.ChildFirstName,
             ChildLastName = data.FosterChild.ChildLastName,
@@ -43,7 +43,7 @@ public static class WorkingFamiliesEventHelper
         var validityEndDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity End Date")]));
         var submissionDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Submission Date")]));
         DateTime? partnerDateOfBirth = !string.IsNullOrEmpty(eventProps[columnHeaders.IndexOf("Partner DOB")]) ? DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Partner DOB")])) : null;
-		WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eventProps[columnHeaders.IndexOf("Eligibility Code")],
@@ -94,7 +94,7 @@ public static class WorkingFamiliesEventHelper
         var firstTermStart = new DateTime(validityStartDate.Year, 9, 1);
         var secondTermStart = new DateTime(validityStartDate.Year, 1, 1);
         var thirdTermStart = new DateTime(validityStartDate.Year, 4, 1);
-        var termDates = new List<DateTime>([firstTermStart, secondTermStart, thirdTermStart]);
+        var termDates = new List<DateTime> { firstTermStart, secondTermStart, thirdTermStart };
 
         foreach (DateTime termStart in termDates)
         {

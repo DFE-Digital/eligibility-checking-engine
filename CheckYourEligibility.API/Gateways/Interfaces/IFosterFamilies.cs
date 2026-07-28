@@ -30,11 +30,11 @@ public interface IFosterFamilies
     Task<FosterChildCreatedResponse> CreateFosterChild(
         FosterChildRequest request, Guid fosterCarerId, DateTime submissionDate);
 
-    // Task<FosterChildResponse> UpdateFosterChildAsync(
-    //     Guid fosterChildId,
-    //     UpdateFosterChildRequest request);
+    Task<FosterChildResponse> UpdateFosterChildAsync(
+        Guid fosterChildId,
+        UpdateFosterChildRequest request);
 
-    // Task DeleteFosterChildAsync(
+    // Task DeleteFosterChild(
     //     Guid fosterChildId);
 
 }
