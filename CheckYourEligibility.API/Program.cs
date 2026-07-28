@@ -199,6 +199,17 @@ builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
 builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEventsUseCase>();
 
+builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
+builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
+builder.Services.AddScoped<IUpdateFosterCarerUseCase, UpdateFosterCarerUseCase>();
+builder.Services.AddScoped<IDeleteFosterCarerUseCase, DeleteFosterCarerUseCase>();
+builder.Services.AddScoped<IDeleteFosterPartnerUseCase, DeleteFosterPartnerUseCase>();
+builder.Services.AddScoped<ISearchFosterFamiliesUseCase, SearchFosterFamiliesUseCase>();
+builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
+builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
+builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
+builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
+
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
 builder.Services.AddTransient<INotificationClient>(x =>
