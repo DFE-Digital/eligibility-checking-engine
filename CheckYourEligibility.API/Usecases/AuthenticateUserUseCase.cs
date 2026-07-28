@@ -185,7 +185,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     {
         if (string.IsNullOrWhiteSpace(scope))
         {
-            return (0, null);
+            return (0, "none");
         }
 
         var laId = GetSingleScopeId(scope, "local_authority");
@@ -201,7 +201,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             (matId == null && hasMatScope) ||
             (estId == null && hasEstScope))
         {
-            return (0, null);
+            return (0, "none");
         }
 
         // Different org types with IDs
@@ -209,7 +209,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             (laId > 0 && estId > 0) ||
             (matId > 0 && estId > 0))
         {
-            return (0, null);
+            return (0, "none");
         }
 
         if (laId >= 0)
@@ -227,7 +227,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             return (estId.Value, "establishment");
         }
 
-        return (0, null);
+        return (0, "none");
     }
 
     private int? GetSingleScopeId(string scope, string scopeName)
