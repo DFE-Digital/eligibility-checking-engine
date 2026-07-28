@@ -234,9 +234,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                 config.UpdateByProperties = new List<string>
                 {
                     nameof(MultiAcademyTrust.MultiAcademyTrustID),
-                    nameof(MultiAcademyTrust.Name),
-                    nameof(MultiAcademyTrust.Imported),
-                    nameof(MultiAcademyTrust.IsDeleted)
+                    nameof(MultiAcademyTrust.Name)
                 };
 
                 config.PropertiesToExcludeOnUpdate = new List<string>
