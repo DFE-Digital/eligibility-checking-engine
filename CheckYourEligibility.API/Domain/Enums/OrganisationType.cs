@@ -5,6 +5,7 @@ namespace CheckYourEligibility.API.Domain.Enums;
     {
         local_authority,
         multi_academy_trust,
-        establishment
+        establishment,
+        none
     }
 
