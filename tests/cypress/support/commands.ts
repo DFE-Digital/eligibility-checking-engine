@@ -9,6 +9,8 @@ declare namespace Cypress {
     waitForBulkCompletion(statusUrl: string, token: string): Chainable<any>;
     verifyBulkResults(results: any[], requestData: any[]): Chainable<void>;
 
+    pollCheckStatus(statusUrl: string, token: string, maxRetries: number): Chainable<any>;
+
     verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
@@ -19,7 +21,7 @@ declare namespace Cypress {
     verifyApiResponseCode(response: any, expectedStatus: number): Chainable<void>;
     verifyGetEligibilityCheckStatusResponse(response: any): Chainable<void>;
     createEligibilityBulkCheckAndGetResults(loginUrl: string, loginRequestBody: any, eligibilityBulkCheckUrl: string, eligibilityCheckBulkRequestBody: any): Chainable<any>;
-    createEligibilityCheckAndGetStatus(loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any): Chainable<any>;
+    createEligibilityCheckAndGetStatus(loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any, pollForResult: boolean): Chainable<any>;
     updateLastName(requestBody: any): Chainable<any>;
     verifyPostApplicationResponse(response: any, requestData: any): Chainable<void>;
     verifyGetApplicationResponse(response: any, requestData: any): Chainable<void>;
@@ -361,10 +363,10 @@ Cypress.Commands.add('verifyGetEligibilityCheckStatusResponse', (response) => {
   expect(response.body).to.have.property('data');
   const responseData = response.body.data;
   expect(responseData.status).to.be.oneOf(['Error', 'eligible', 'parentNotFound', 'queuedForProcessing']);
-})
+});
 
 
-Cypress.Commands.add('createEligibilityCheckAndGetStatus', (loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any) => {
+Cypress.Commands.add('createEligibilityCheckAndGetStatus', (loginUrl: string, loginRequestBody: any, eligibilityCheckUrl: string, eligibilityCheckRequestBody: any, pollForResult: boolean = true) => {
   return cy.apiRequest('POST', loginUrl, loginRequestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {
     cy.verifyApiResponseCode(response, 200);
     const token = response.body.access_token;
@@ -372,9 +374,8 @@ Cypress.Commands.add('createEligibilityCheckAndGetStatus', (loginUrl: string, lo
     return cy.apiRequest('POST', eligibilityCheckUrl, eligibilityCheckRequestBody, token).then((response) => {
       cy.verifyApiResponseCode(response, 202);
       cy.extractGuid(response);
-      cy.wait(40000);
       return cy.get('@Guid').then((eligibilityCheckId) => {
-        return cy.apiRequest('GET', `check/${eligibilityCheckId}/status`, {}, token).then((newResponse) => {
+        return cy.pollCheckStatus(`${eligibilityCheckId}`, token, pollForResult ? 5 : 0).then((newResponse) => {
           cy.verifyApiResponseCode(newResponse, 200);
           const status = newResponse.body.data.status;
           cy.wrap(status).as('status');
@@ -404,10 +405,29 @@ Cypress.Commands.add('createEligibilityBulkCheckAndGetResults', (loginUrl: strin
   });
 });
 
+Cypress.Commands.add('pollCheckStatus', (eligibilityCheckId: string, token: string, maxRetries: number = 5) => {
+  const poll = (retry = 0) => {
+    return cy
+      .apiRequest('GET', `check/${eligibilityCheckId}/status`, {}, token)
+      .then((response) => {
+        expect(response.status).to.eq(200);
+        if (response.body.data.status !== 'queuedForProcessing' || maxRetries <= 0) { return cy.wrap(response); }
+        if (retry >= maxRetries) {
+          throw new Error(`Status remained queuedForProcessing after ${maxRetries} retries`);
+        }
+        cy.wait((retry + 1) * 3000);
+        return poll(retry + 1);
+      });
+  };
+  return poll();
+});
+
 
 Cypress.Commands.add('updateLastName', (requestBody) => {
-  const randomLetters = Math.random().toString(36).substring(2, 7);
-  requestBody.data.lastName = randomLetters;
+  var length = 7;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  requestBody.data.lastName = Array.from({ length }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+  cy.log(`Updated lastName to: ${requestBody.data.lastName}`);
   cy.wrap(requestBody).as('updatedRequestBody');
   return cy.wrap(requestBody)
 })
