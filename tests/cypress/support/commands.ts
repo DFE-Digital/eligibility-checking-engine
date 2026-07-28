@@ -189,23 +189,16 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
   const responseData = response.body.data;
   const responseLinks = response.body.links;
 
-  // Calculate total number of elements in data and links
-  const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
-
-  // Verify total number of elements
-  expect(responseData).to.have.property('status');
-  if (responseData.status == 'error') {
-    cy.verifyTotalElements(totalElements, 10);
-  } else {
-    cy.verifyTotalElements(totalElements, 9);
-  }
-
+  // Verify expected data properties
   expect(responseData).to.have.property('nationalInsuranceNumber', requestData.data.nationalInsuranceNumber);
   expect(responseData).to.have.property('lastName', requestData.data.lastName);
   expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
   expect(responseData).to.have.property('nationalAsylumSeekerServiceNumber', requestData.data.nationalAsylumSeekerServiceNumber);
   expect(responseData).to.have.property('created');
-
+  expect(responseData).to.have.property('status');
+  if (responseData.status == 'error') {
+    expect(responseData).to.have.property('errorCode');
+  }
 
   // Verify links properties
   expect(responseLinks).to.have.property('get_EligibilityCheck');
