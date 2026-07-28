@@ -110,7 +110,7 @@ public class AdministrationGateway : IAdministration
 
         // Mark any existing non-deleted MATs that were inserted prior to this import as deleted
         await _db.MultiAcademyTrusts
-            .Where(mat => mat.Imported < importDate && !mat.IsDeleted)
+            .Where(mat => (mat.Imported == null || mat.Imported < importDate) && !mat.IsDeleted)
             .ExecuteUpdateAsync(setters => setters.SetProperty(mat => mat.IsDeleted, true));
     }
 

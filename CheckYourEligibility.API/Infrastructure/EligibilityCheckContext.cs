@@ -242,8 +242,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
                     nameof(MultiAcademyTrust.AcademyCanReviewEvidence),
                 };
             });
-            // this.MultiAcademyTrusts.ExecuteDelete();
-            // this.BulkInsert(trustData);
             this.BulkInsert(schoolData);
             transaction.Commit();
         }
