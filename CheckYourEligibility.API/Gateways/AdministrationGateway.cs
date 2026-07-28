@@ -56,27 +56,27 @@ public class AdministrationGateway : IAdministration
             //remove records where la is 0
             data = data.Where(x => x.LaCode != 0).ToList();
 
-        var localAuthorities = data
-            .Select(m => new { m.LaCode, m.LaName, m.LaRegion })
-            .Distinct()
-            .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName, Region = x.LaRegion, IsDeleted = false });
+            var localAuthorities = data
+                .Select(m => new { m.LaCode, m.LaName, m.LaRegion })
+                .Distinct()
+                .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName, Region = x.LaRegion, IsDeleted = false });
 
-        _db.BulkInsertOrUpdate_LocalAuthority(localAuthorities);
+            _db.BulkInsertOrUpdate_LocalAuthority(localAuthorities);
 
-        var Establishments = data.Select(x => new Establishment
-        {
-            EstablishmentID = x.Urn,
-            EstablishmentName = x.EstablishmentName,
-            LocalAuthorityID = x.LaCode,
-            Locality = x.Locality,
-            Postcode = x.Postcode,
-            StatusOpen = x.Status == "Open",
-            Street = x.Street,
-            Town = x.Town,
-            County = x.County,
-            Type = x.Type
-        });
-     
+            var Establishments = data.Select(x => new Establishment
+            {
+                EstablishmentID = x.Urn,
+                EstablishmentName = x.EstablishmentName,
+                LocalAuthorityID = x.LaCode,
+                Locality = x.Locality,
+                Postcode = x.Postcode,
+                StatusOpen = x.Status == "Open",
+                Street = x.Street,
+                Town = x.Town,
+                County = x.County,
+                Type = x.Type
+            });
+
             var establishmentList = Establishments.ToList();
             int total = establishmentList.Count();
             const int batchSize = 3000;
@@ -85,8 +85,8 @@ public class AdministrationGateway : IAdministration
             {
                 var batch = establishmentList.Skip(offset).Take(batchSize);
                 _db.BulkInsertOrUpdate_Establishment(batch);
-                batchNo++;           
-            }       
+                batchNo++;
+            }
         }
         catch (Exception) { }
     }
@@ -94,15 +94,24 @@ public class AdministrationGateway : IAdministration
     //TODO: This should live in its own MAT gateway
     public async Task ImportMats(IEnumerable<MatRow> data)
     {
+        var importDate = DateTime.UtcNow;
+
+        // Generate unique list of MATs for import
         var multiAcademyTrusts = data
             .Select(m => new { m.GroupUID, m.GroupName })
             .Distinct()
-            .Select(x => new MultiAcademyTrust { MultiAcademyTrustID = x.GroupUID, Name = x.GroupName });
+            .Select(x => new MultiAcademyTrust { MultiAcademyTrustID = x.GroupUID, Name = x.GroupName, Imported = importDate, IsDeleted = false });
 
         var multiAcademyTrustEstablishments = data
             .Select(x => new MultiAcademyTrustEstablishment { MultiAcademyTrustID = x.GroupUID, EstablishmentID = x.AcademyURN });
 
+        // Insert the MATs and their associated establishments into the database using a bulk insert operation
         _db.BulkInsert_MultiAcademyTrusts(multiAcademyTrusts, multiAcademyTrustEstablishments);
+
+        // Mark any existing non-deleted MATs that were inserted prior to this import as deleted
+        await _db.MultiAcademyTrusts
+            .Where(mat => mat.Imported < importDate && !mat.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(mat => mat.IsDeleted, true));
     }
 
 
