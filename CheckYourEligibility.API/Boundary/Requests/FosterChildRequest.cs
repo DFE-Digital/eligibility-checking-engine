@@ -4,5 +4,4 @@ public class FosterChildRequest
     public string ChildLastName { get; set; }
     public DateTime ChildDateOfBirth { get; set; }
     public string ChildPostCode { get; set; }
-
 }

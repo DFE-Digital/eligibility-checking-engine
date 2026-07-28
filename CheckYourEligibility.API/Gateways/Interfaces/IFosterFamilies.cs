@@ -27,8 +27,8 @@ public interface IFosterFamilies
         Guid fosterChildId,
         bool includeFosterCarer = false);
 
-    // Task<FosterChildResponse> CreateFosterChildAsync(
-    //     CreateFosterChildRequest request);
+    Task<FosterChildCreatedResponse> CreateFosterChild(
+        FosterChildRequest request, Guid fosterCarerId, DateTime submissionDate);
 
     // Task<FosterChildResponse> UpdateFosterChildAsync(
     //     Guid fosterChildId,

@@ -21,18 +21,18 @@ public class FosterChildResponse
 
     public Guid FosterChildId { get; set; }
 
-    public string ChildFullName { get; set; } = string.Empty;
+    public string ChildFullName { get; set; } 
 
     public DateTime ChildDateOfBirth { get; set; }
 
-    public string PostCode { get; set; } = string.Empty;
+    public string PostCode { get; set; } 
 
 
     // Foster Family
 
-    public Guid FosterCarerId { get; set; }
+    public Guid? FosterCarerId { get; set; }
 
-    public string CarerName { get; set; } = string.Empty;
+    public string? CarerName { get; set; } 
 
     public string? PartnerName { get; set; }
 }

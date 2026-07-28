@@ -36,6 +36,7 @@ public static class WorkingFamiliesEventHelper
         return wfEvent;
     }
 
+
     public static WorkingFamiliesEvent ParseWorkingFamiliesEvent(List<string> eventProps, List<string> columnHeaders)
     {
         var validityStartDate = DateTime.FromOADate(int.Parse(eventProps[columnHeaders.IndexOf("Validity Start Date")]));

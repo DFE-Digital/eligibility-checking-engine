@@ -526,6 +526,28 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #region Get Foster Child 
 
     [Test]
+    public async Task GetFosterChild_Should_Return_FosterCarer_Details_When_Requested()
+    {
+        // Arrange
+        var request = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterChildId = await _fakeInMemoryDb.FosterChildren
+            .Select(x => x.FosterChildId)
+            .SingleAsync();
+
+        // Act
+        var result = await _sut.GetFosterChild(
+            fosterChildId,
+            includeFosterCarer: true);
+
+        // Assert
+        result.CarerName.Should().Be("John Smith");
+        result.PartnerName.Should().Be("Jane Smith");
+    }
+
+    [Test]
     public async Task GetFosterChild_Should_Return_FosterChild_Response()
     {
         // Arrange
@@ -617,6 +639,165 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     #endregion
+
+
+    #region Create Foster Child
+
+    [Test]
+    public async Task CreateFosterChild_Should_Create_FosterChild()
+    {
+        // Arrange
+        var familyRequest = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(familyRequest);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        // Act
+        await _sut.CreateFosterChild(
+            request,
+            fosterCarerId,
+            DateTime.UtcNow);
+
+        // Assert
+        _fakeInMemoryDb.FosterChildren.Should().HaveCount(2);
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Should_Link_Child_To_FosterCarer()
+    {
+        // Arrange
+        var familyRequest = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(familyRequest);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        // Act
+        await _sut.CreateFosterChild(
+            request,
+            fosterCarerId,
+            DateTime.UtcNow);
+
+        // Assert
+        var child = await _fakeInMemoryDb.FosterChildren
+            .OrderByDescending(x => x.Created)
+            .FirstAsync();
+
+        child.FosterCarerId.Should().Be(fosterCarerId);
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Should_Create_WorkingFamilies_Event()
+    {
+        // Arrange
+        var familyRequest = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(familyRequest);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        var existingEvents = await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync();
+
+        // Act
+        await _sut.CreateFosterChild(
+            request,
+            fosterCarerId,
+            DateTime.UtcNow);
+
+        // Assert
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync())
+            .Should()
+            .Be(existingEvents + 1);
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Should_Return_Created_Response()
+    {
+        // Arrange
+        var familyRequest = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(familyRequest);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            request,
+            fosterCarerId,
+            DateTime.UtcNow);
+
+        // Assert
+        result.ChildName.Should().Be("Sam Jones");
+        result.EligiblityCode.Should().NotBeNullOrWhiteSpace();
+        result.Status.Should().Be("Active");
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Should_Throw_NotFoundException_When_FosterCarer_Does_Not_Exist()
+    {
+        // Arrange
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        // Act
+        Func<Task> act = () =>
+            _sut.CreateFosterChild(
+                request,
+                Guid.NewGuid(),
+                DateTime.UtcNow);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    #endregion
+
 
     #region helpers
 
