@@ -34,7 +34,7 @@ public interface IFosterFamilies
         Guid fosterChildId,
         UpdateFosterChildRequest request);
 
-    // Task DeleteFosterChild(
-    //     Guid fosterChildId);
+    Task DeleteFosterChild(
+        Guid fosterChildId);
 
 }
