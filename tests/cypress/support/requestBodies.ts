@@ -19,7 +19,8 @@ export function validHMRCRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "NN123456C",
-      lastName: Cypress.env("lastName"),
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
       dateOfBirth: "2001-01-01",
       nationalAsylumSeekerServiceNumber: "",
     },
@@ -30,7 +31,8 @@ export function invalidHMRCRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "PPG123456C",
-      lastName: Cypress.env("lastName"),
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
       dateOfBirth: "2000-01-01",
       nationalAsylumSeekerServiceNumber: "",
     },
@@ -41,7 +43,8 @@ export function validHomeOfficeRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "",
-      lastName: Cypress.env("lastName"),
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
       dateOfBirth: "1990-01-01",
       nationalAsylumSeekerServiceNumber: "111111111",
     },
@@ -106,8 +109,8 @@ export function validApplicationSupportRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "NE668767B",
-      lastName: Cypress.env("lastName"),
-      // lastName: "TESTER",
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
       dateOfBirth: "1967-03-07",
       nationalAsylumSeekerServiceNumber: "",
     },
@@ -129,8 +132,8 @@ export function validApplicationRequestBody() {
       type: "FreeSchoolMeals",
       Establishment: 123456,
       ParentFirstName: "Lebb",
-      ParentLastName: Cypress.env("lastName"),
-      // ParentLastName: "TESTER",
+      //ParentLastName: Cypress.env("lastName"),
+      ParentLastName: "TESTER",
       ParentNationalInsuranceNumber: "NE668767B",
       ParentNationalAsylumSeekerServiceNumber: null,
       ParentDateOfBirth: "1967-03-07",
@@ -237,7 +240,8 @@ export function invalidNinoRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "QQ123456A",
-      lastName: Cypress.env("lastName"),
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
       dateOfBirth: "2000-01-01",
       nationalAsylumSeekerServiceNumber: "",
     },
