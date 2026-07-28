@@ -55,9 +55,9 @@ describe('Verify Eligibility Check Statuses', () => {
     })
   })
 
-  xit('Verify queuedForProcessing status is returned', () => {
+  it('Verify queuedForProcessing status is returned', () => {
     cy.updateLastName(notEligibleRequestBody).then((updatedRequestBody) => {
-      cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', updatedRequestBody)
+      cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', updatedRequestBody, false)
       cy.get('@status').then((status: any) => {
         expect(status).to.equal('queuedForProcessing')
       })
