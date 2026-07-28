@@ -8,7 +8,7 @@ declare namespace Cypress {
 
     waitForBulkCompletion(statusUrl: string, token: string): Chainable<any>;
     verifyBulkResults(results: any[], requestData: any[]): Chainable<void>;
-    
+
     verifyPostEligibilityBulkCheckResponse(response: any): Chainable<any>;
     extractGuid(response: any): Chainable<string>;
     verifyGetEligibilityCheckResponseData(response: any, requestData: any): Chainable<void>;
@@ -53,7 +53,7 @@ Cypress.Commands.add('apiRequest', (method: string, url: string, requestBody: an
   if (bearerToken) {
     options.headers['Authorization'] = `Bearer ${bearerToken}`;
   }
-  
+
   options.headers['Content-Type'] = contentType ? contentType : 'application/vnd.api+json;version=1.0';
   return cy.request(options);
 });
@@ -149,36 +149,36 @@ Cypress.Commands.add('extractGuid', (response) => {
 Cypress.Commands.add('waitForBulkCompletion', (progress: string, token: string) => {
 
   const checkBulkStatusUntilCompleted = (
-      retries = 15
-    ): Cypress.Chainable<any> => {
+    retries = 15
+  ): Cypress.Chainable<any> => {
 
-      // using js closure, statusUrl + token come from outer function. no need to pass in.
+    // using js closure, statusUrl + token come from outer function. no need to pass in.
 
-      return cy.apiRequest("GET", progress, null, token).then((res) => {
-        
-        const data = res.body.data;
+    return cy.apiRequest("GET", progress, null, token).then((res) => {
 
-        const total = data.total;
-        const complete = data.complete;
+      const data = res.body.data;
 
-        //  Done when all records processed
-        if (complete === total) {
-          return;
-        }
+      const total = data.total;
+      const complete = data.complete;
 
-        //  Prevent infinite loop
-        if (retries <= 0) {
-          throw new Error("Timed out waiting for bulk check completion");
-        }
+      //  Done when all records processed
+      if (complete === total) {
+        return;
+      }
 
-        return cy
-          .wait(2000)
-          .then(() => checkBulkStatusUntilCompleted(retries - 1));
-      });
-    };
+      //  Prevent infinite loop
+      if (retries <= 0) {
+        throw new Error("Timed out waiting for bulk check completion");
+      }
 
-    return checkBulkStatusUntilCompleted();
-  },
+      return cy
+        .wait(2000)
+        .then(() => checkBulkStatusUntilCompleted(retries - 1));
+    });
+  };
+
+  return checkBulkStatusUntilCompleted();
+},
 
 );
 
@@ -191,16 +191,21 @@ Cypress.Commands.add('verifyGetEligibilityCheckResponseData', (response, request
 
   // Calculate total number of elements in data and links
   const totalElements = Object.keys(responseData).length + Object.keys(responseLinks).length;
+
   // Verify total number of elements
-  cy.verifyTotalElements(totalElements, 9);
+  expect(responseData).to.have.property('status');
+  if (responseData.status == 'error') {
+    cy.verifyTotalElements(totalElements, 10);
+  } else {
+    cy.verifyTotalElements(totalElements, 9);
+  }
 
   expect(responseData).to.have.property('nationalInsuranceNumber', requestData.data.nationalInsuranceNumber);
   expect(responseData).to.have.property('lastName', requestData.data.lastName);
   expect(responseData).to.have.property('dateOfBirth', requestData.data.dateOfBirth);
   expect(responseData).to.have.property('nationalAsylumSeekerServiceNumber', requestData.data.nationalAsylumSeekerServiceNumber);
-  expect(responseData).to.have.property('status');
   expect(responseData).to.have.property('created');
-  
+
 
   // Verify links properties
   expect(responseLinks).to.have.property('get_EligibilityCheck');
@@ -299,7 +304,7 @@ Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataNotFound', (respons
   expect(responseData).to.have.property('eligibilityCode', requestData.data.eligibilityCode);
   expect(responseData).to.have.property('status', 'notFound');
   expect(responseData).to.have.property('created');
-  
+
 
   // Verify links properties
   expect(responseLinks).to.have.property('get_EligibilityCheck');
@@ -328,7 +333,7 @@ Cypress.Commands.add('verifyGetEligibilityWFCheckResponseDataFound', (response, 
   expect(responseData).to.have.property('gracePeriodEndDate');
   expect(responseData).to.have.property('status');
   expect(responseData).to.have.property('created');
-  
+
 
   // Verify links properties
   expect(responseLinks).to.have.property('get_EligibilityCheck');
