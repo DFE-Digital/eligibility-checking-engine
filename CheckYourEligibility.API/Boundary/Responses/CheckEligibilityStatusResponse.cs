@@ -12,4 +12,6 @@ public class StatusValue
     public string Status { get; set; }
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? Tier { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? ErrorCode { get; set; }
 }

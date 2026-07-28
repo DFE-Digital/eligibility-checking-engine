@@ -16,7 +16,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class MultiAcademyTrustsControllerTests : TestBase.TestBase
 {
-    private Fixture _fixture;
     private Mock<IMultiAcademyTrust> _mockMultiAcademyTrust;
     private Mock<IGetEstablishmentsByMultiAcademyTrustIdUseCase> _getEstablismentsByMultiAcademyTrustId;
     private Mock<IAudit> _mockAudit;
@@ -26,7 +25,6 @@ public class MultiAcademyTrustsControllerTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _fixture = new Fixture();
         _mockMultiAcademyTrust = new Mock<IMultiAcademyTrust>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
         _getEstablismentsByMultiAcademyTrustId = new Mock<IGetEstablishmentsByMultiAcademyTrustIdUseCase>(MockBehavior.Strict);

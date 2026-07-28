@@ -1,4 +1,3 @@
-using AutoFixture;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
@@ -12,7 +11,6 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
      private Mock<IFosterFamily> _mockFosterFamilyGateway = null!;
     private Mock<IAudit> _mockAuditGateway = null!;
     private CreateFosterFamilyUseCase _sut = null!;
-    private Fixture _fixture = null!;
     private List<int> _allowedLocalAuthorityIds = null!;
     private FosterFamilyRequest _validFosterFamilyRequest = null!;
 
@@ -22,7 +20,6 @@ public class CreateFosterFamilyUseCaseTests : TestBase.TestBase
         _mockFosterFamilyGateway = new Mock<IFosterFamily>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _sut = new CreateFosterFamilyUseCase(_mockFosterFamilyGateway.Object, _mockAuditGateway.Object);
-        _fixture = new Fixture();
 
         _allowedLocalAuthorityIds = new List<int> { 0, 1, 2, 3 };
 

@@ -57,9 +57,9 @@ public class AdministrationGateway : IAdministration
             data = data.Where(x => x.LaCode != 0).ToList();
 
         var localAuthorities = data
-            .Select(m => new { m.LaCode, m.LaName })
+            .Select(m => new { m.LaCode, m.LaName, m.LaRegion })
             .Distinct()
-            .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName });
+            .Select(x => new LocalAuthority { LocalAuthorityID = x.LaCode, LaName = x.LaName, Region = x.LaRegion, IsDeleted = false });
 
         _db.BulkInsertOrUpdate_LocalAuthority(localAuthorities);
 

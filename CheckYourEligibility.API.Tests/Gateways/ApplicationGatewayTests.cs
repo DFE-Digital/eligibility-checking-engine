@@ -19,7 +19,6 @@ namespace CheckYourEligibility.API.Tests.Gateways;
 [TestFixture]
 public class ApplicationGatewayTests : TestBase.TestBase
 {
-    private new Fixture _fixture = null!;
     private Mock<ILogger<ApplicationGateway>> _mockLogger = null!;
     private IConfiguration _configuration = null!;
     private EligibilityCheckContext _dbContext = null!;
@@ -29,7 +28,6 @@ public class ApplicationGatewayTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        _fixture = new Fixture();
         _mockLogger = new Mock<ILogger<ApplicationGateway>>();
 
         // Setup in-memory database

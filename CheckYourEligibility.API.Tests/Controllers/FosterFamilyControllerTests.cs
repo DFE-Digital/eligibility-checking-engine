@@ -17,7 +17,6 @@ namespace CheckYourEligibility.API.Tests;
 public class FosterFamilyControllerTests : TestBase.TestBase
 {
     private IConfigurationRoot _configuration = null!;
-    //private new Fixture _fixture = null!; // Added 'new' keyword
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamilyUseCase = null!;
     private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamilyUseCase = null!;
@@ -36,7 +35,6 @@ public class FosterFamilyControllerTests : TestBase.TestBase
         _mockUpdateFosterFamilyUseCase = new Mock<IUpdateFosterFamilyUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<FosterFamilyController>>();
-        //_fixture = new Fixture(); // Ensure _fixture is initialized
         fosterFamilyRequest = new FosterFamilyRequest
         {
             Data = new FosterFamilyRequestData

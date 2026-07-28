@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using DocumentFormat.OpenXml.Spreadsheet;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -44,24 +47,31 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
-
-        // Ensure database is created and clean
-        var context = (EligibilityCheckContext)_fakeInMemoryDb;
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.EnsureCreatedAsync();
+        await _fakeInMemoryDb.Database.EnsureDeletedAsync();
+        await _fakeInMemoryDb.Database.EnsureCreatedAsync();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
         var configForSmsApi = new Dictionary<string, string>
         {
-            { "BulkEligibilityCheckLimit", "250" },
-            { "QueueFsmCheckStandard", "notSet" },
-            { "QueueFsmCheckBulk", "notSet" },
-            { "HashCheckDays", "7" },
-            { "Dwp:UseEcsforChecksWF", "false"}
+            ["BulkEligibilityCheckLimit"] = "250",
+            ["QueueFsmCheckStandard"] = "notSet",
+            ["QueueFsmCheckBulk"] = "notSet",
+            ["HashCheckDays"] = "7",
+            ["Dwp:UseEcsforChecksWF"] = "false"
         };
+
+        var queueConfig = new Dictionary<string, string>
+        {
+            ["Queue:Bulk:FreeSchoolMeals:Frontend"] = "process-bulk-fsm-frontend-eligibility-queue",
+            ["Queue:Bulk:FreeSchoolMeals:Api"] = "process-bulk-fsm-api-eligibility-queue",
+            ["Queue:Bulk:WorkingFamilies"] = "process-bulk-wf-eligibility-queue",
+            ["Queue:Bulk:TwoYearOffer"] = "process-bulk-eligibility-queue"
+        };
+
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
+            .AddInMemoryCollection(queueConfig)
             .Build();
         var webJobsConnection =
             "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
@@ -101,7 +111,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .ThrowsAsync(new Exception());
 
         // Act
-        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request,meta);
+        Func<Task> act = async () => await svc.PostCheck<CheckEligibilityRequestData>(request, meta);
 
         // Assert
         act.Should().ThrowExactlyAsync<DbUpdateException>();
@@ -112,7 +122,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     public async Task Given_PostBulk_Should_Complete()
     {
         // Arrange
-       var request = _fixture.Create<CheckEligibilityRequestData>();
+        var request = _fixture.Create<CheckEligibilityRequestData>();
         var claimResponse = _fixture.Create<CAPIClaimResponseBase>();
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var meta = _fixture.Create<CheckMetaData>();
@@ -135,11 +145,11 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             .ReturnsAsync(citizenResponse);
         var result = new StatusCodeResult(StatusCodes.Status200OK);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString(),It.IsAny<EligibilityPolicy>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<Guid>().ToString(), It.IsAny<EligibilityPolicy>()))
             .ReturnsAsync(claimResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
-        
+
         var groupId = Guid.NewGuid().ToString();
         var data = new List<CheckEligibilityRequestData> { request };
         await _sut.PostCheck(data, groupId, meta);
@@ -169,7 +179,9 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var guid = _fixture.Create<Guid>().ToString();
 
         // Act
-        var(status,tier) = await _sut.GetStatusAsync(guid, CheckEligibilityType.None);
+        var (status, tier, _) = await _sut.GetStatusAsync(
+            guid,
+            CheckEligibilityType.None);
 
         // Assert
         status.Should().BeNull();
@@ -181,13 +193,21 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
-        item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
+        item.Status = CheckEligibilityStatus.eligible;
         item.Tier = null;
+        item.IsDeleted = false;
+        item.CheckData = "{}";
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var(status,tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            CheckEligibilityType.None);
+
+        var status = result.Item1;
+        var tier = result.Item2;
 
         // Assert
         status.ToString().Should().Be(item.Status.ToString());
@@ -201,16 +221,26 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
         item.Tier = EligibilityTier.expanded;
+        item.IsDeleted = false;
+        item.CheckData = "{}";
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var (status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            CheckEligibilityType.None);
+
+        var status = result.Item1;
+        var tier = result.Item2;
+        var errorCode = result.Item3;
 
         // Assert
         status.ToString().Should().Be(item.Status.ToString());
         tier.ToString().Should().Be(EligibilityTier.expanded.ToString());
     }
+
     [Test]
     public async Task Given_ValidRequest_GetStatus_Should_Return_Eligible_Targeted()
     {
@@ -218,32 +248,80 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Status = CheckEligibilityStatus.eligible; // Ensure not deleted status
         item.Tier = EligibilityTier.targeted;
+        item.CheckData = "{}";
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var (status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, CheckEligibilityType.None);
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            CheckEligibilityType.None);
+
+        var status = result.Item1;
+        var tier = result.Item2;        
 
         // Assert
         status.ToString().Should().Be(item.Status.ToString());
         tier.ToString().Should().Be(EligibilityTier.targeted.ToString());
     }
+
     [Test]
     public async Task Given_ValidRequest_DiffType_GetStatus_Should_Return_null()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.CheckData = "{}";
+
         var type = CheckEligibilityType.EarlyYearPupilPremium;
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var(status, tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, type);
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            type);
+
+        var status = result.Item1;
+        var tier = result.Item2;
 
         // Assert
         status.Should().BeNull();
         tier.Should().BeNull();
+    }
+
+    [Test]
+    public async Task Given_CheckDataContainsErrorCode_GetStatus_Should_Return_ErrorCode()
+    {
+        // Arrange
+        var item = _fixture.Create<EligibilityCheck>();
+        item.Type = CheckEligibilityType.FreeSchoolMeals;
+        item.Status = CheckEligibilityStatus.eligible;
+        item.Tier = null;
+        item.IsDeleted = false;
+        item.CheckData = JsonConvert.SerializeObject(new CheckProcessData
+        {
+            ErrorCode = "STE10"
+        });
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            CheckEligibilityType.FreeSchoolMeals);
+
+        var status = result.Item1;
+        var tier = result.Item2;
+        var errorCode = result.Item3;
+
+        // Assert
+        status.Should().Be(item.Status);
+        tier.Should().BeNull();
+        errorCode.Should().Be("STE10");
     }
 
     [Test]
@@ -252,13 +330,21 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
-        var type = CheckEligibilityType.FreeSchoolMeals;
         item.Tier = null;
+        item.CheckData = "{}";
+
+        var type = CheckEligibilityType.FreeSchoolMeals;
+
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var(status,tier) = await _sut.GetStatusAsync(item.EligibilityCheckID, type);
+        var result = await _sut.GetStatusAsync(
+            item.EligibilityCheckID,
+            type);
+
+        var status = result.Item1;
+        var tier = result.Item2;
 
         // Assert
         status.ToString().Should().Be(item.Status.ToString());
@@ -305,6 +391,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var item = _fixture.Create<EligibilityCheck>();
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.Status = CheckEligibilityStatus.eligible;
+        item.IsDeleted = false;
         var check = _fixture.Create<CheckEligibilityRequestData>();
         check.DateOfBirth = "1990-01-01";
         check.Type = CheckEligibilityType.FreeSchoolMeals;
@@ -314,7 +401,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         check.ChildDateOfBirth = "2016-04-12";
         check.ChildSchoolURN = "123456";
         string eligibilityEndDate = (new DateTime(DateTime.UtcNow.Year, 07, 31)).ToString("yyyy-MM-dd");
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check,eligibilityEndDate));
+        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check, eligibilityEndDate));
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
@@ -457,6 +544,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             item.EligibilityCheckID = Guid.NewGuid().ToString();
             item.BulkCheckID = groupId;
             item.Status = CheckEligibilityStatus.eligible; // Ensure not already deleted
+            item.IsDeleted = false;
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
             item.EligibilityCheckHashID = null;
@@ -553,6 +641,25 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         act.Should().ThrowExactlyAsync<ValidationException>();
     }
 
+    [TestCase(CheckEligibilityType.FreeSchoolMeals,"api-user", "process-bulk-fsm-api-eligibility-queue")]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals,"free-school-meals-admin", "process-bulk-fsm-frontend-eligibility-queue")]
+    [TestCase(CheckEligibilityType.TwoYearOffer, "childcare-admin", "process-bulk-eligibility-queue")]
+    [TestCase(CheckEligibilityType.WorkingFamilies, "childcare-admin", "process-bulk-wf-eligibility-queue")]
+    public void GetBulkQueueName_Should_Return_Correct_QueueName(CheckEligibilityType type, string source, string queueName)
+    {
+
+        // Arrange
+          var method = _sut.GetType().GetMethod("GetBulkQueueName",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Act
+        var result = method!.Invoke(_sut,new object[] { type, source });
+
+        // Assert
+        Assert.That(result, Is.EqualTo(queueName));
+
+    }
+
     #region Private Helper Methods
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request, string? eligiblityEndDate = null)
@@ -603,7 +710,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
 
         return bulkCheck;
     }
-    
+
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)
     {
         return new CheckProcessData

@@ -12,13 +12,12 @@ using Moq;
 namespace CheckYourEligibility.API.Tests.UseCases;
 
 [TestFixture]
-public class RateLimitUseCaseTests
+public class RateLimitUseCaseTests : TestBase.TestBase
 {
     private Mock<IRateLimit> _mockRateLimitGateway = null!;
     private Mock<IHttpContextAccessor> _mockHttpContextAccessor = null!;
     private Mock<ILogger<CreateRateLimitEventUseCase>> _mockLogger = null!;
     private CreateRateLimitEventUseCase _sut = null!;
-    private Fixture _fixture = null!;
 
 
     [SetUp]
@@ -28,7 +27,6 @@ public class RateLimitUseCaseTests
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<CreateRateLimitEventUseCase>>(MockBehavior.Loose);
         _sut = new CreateRateLimitEventUseCase(_mockRateLimitGateway.Object, _mockHttpContextAccessor.Object, _mockLogger.Object);
-        _fixture = new Fixture();
     }
 
     [TearDown]

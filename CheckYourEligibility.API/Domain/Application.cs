@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using CheckYourEligibility.API.Domain.Enums;
 

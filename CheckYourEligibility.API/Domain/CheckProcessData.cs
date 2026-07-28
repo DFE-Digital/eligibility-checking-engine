@@ -20,6 +20,7 @@ public class CheckProcessData
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
     public string? EligibilityEndDate { get; set; }
+    public string? ErrorCode { get; set; }
     public string SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
