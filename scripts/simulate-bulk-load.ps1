@@ -9,6 +9,7 @@
 #   .\simulate-bulk-load.ps1
 #   .\simulate-bulk-load.ps1 -NumberOfBatches 10 -RecordsPerBatch 200
 #   .\simulate-bulk-load.ps1 -CheckType early-year-pupil-premium -NumberOfBatches 3
+#   .\simulate-bulk-load.ps1 -ApiBase "https://dev.eligibility-checking-engine.education.gov.uk" -ClientId "<id>" -ClientSecret "<secret>" -NumberOfBatches 10 -RecordsPerBatch 2500 -CreateOnly
 
 param(
     # API base URL
@@ -19,13 +20,20 @@ param(
     [string]$CheckType = "free-school-meals",
 
     # How many bulk check batches to submit concurrently
+    [ValidateRange(1, 200)]
     [int]$NumberOfBatches = 5,
 
     # Records per batch. Max is BulkEligibilityCheckLimit in appsettings (250 locally, 5000 dev)
+    [ValidateRange(1, 5000)]
     [int]$RecordsPerBatch = 100,
 
     # Milliseconds between each batch submission (0 = fire all simultaneously)
+    [ValidateRange(0, 60000)]
     [int]$SubmissionStaggerMs = 0,
+
+    # Optional cap for parallel submissions. 0 means use NumberOfBatches.
+    [ValidateRange(0, 200)]
+    [int]$SubmissionConcurrency = 0,
 
     # API client credentials (must have bulk_check + local_authority scope)
     [string]$ClientId = $env:CYE_CLIENT_ID,
@@ -38,11 +46,24 @@ param(
     # and will cause a 400 for any batch containing it.
     [string[]]$NinoPrefixes = @("NE", "NN", "PN", "RA"),
 
+    # Last name mode for generated records.
+    # Tester = fixed TESTER value for TestData-based outcomes.
+    # Random = random surname chosen per generated record.
+    [ValidateSet("Tester", "Random")]
+    [string]$LastNameMode = "Tester",
+
     # How often to poll /bulk-check/{guid}/progress
     [int]$PollIntervalSeconds = 5,
 
     # Stop polling after this many minutes even if not all batches are done
-    [int]$PollTimeoutMinutes = 10
+    [ValidateRange(1, 240)]
+    [int]$PollTimeoutMinutes = 10,
+
+    # Submit batches and exit without polling progress.
+    [switch]$CreateOnly,
+
+    # Optional output file for submission results (BatchNumber, Guid, StatusCode, Error, SubmittedAt).
+    [string]$OutputPath
 )
 
 # -----------------------------------------------------------------------
@@ -56,6 +77,12 @@ if ([string]::IsNullOrWhiteSpace($ApiBase) -or
 
 $apiEndpoint = "$ApiBase/bulk-check/$CheckType"
 $totalRecords = $NumberOfBatches * $RecordsPerBatch
+$effectiveThrottleLimit = if ($SubmissionConcurrency -gt 0) { [Math]::Min($SubmissionConcurrency, $NumberOfBatches) } else { $NumberOfBatches }
+
+$randomLastNames = @(
+    "Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Patel", "Roberts",
+    "Thomas", "Evans", "Walker", "Wright", "Thompson", "White", "Edwards", "Hughes", "Green", "Hall"
+)
 
 # Offset NINO indices by a run-unique number so each run generates NINOs
 # that haven't been submitted before and won't hit the 7-day hash cache.
@@ -71,8 +98,13 @@ Write-Host "  Check type:       $CheckType"
 Write-Host "  Batches:          $NumberOfBatches"
 Write-Host "  Records/batch:    $RecordsPerBatch"
 Write-Host "  Total records:    $totalRecords"
+Write-Host "  Concurrency:      $effectiveThrottleLimit"
 Write-Host "  Stagger:          ${SubmissionStaggerMs}ms between submissions"
-  Write-Host "  NINO prefixes:    $($NinoPrefixes -join ', ') — randomised per record (lastName=TESTER)"
+Write-Host "  Last name mode:   $LastNameMode"
+Write-Host "  NINO prefixes:    $($NinoPrefixes -join ', ') — randomised per record"
+if ($CreateOnly) {
+        Write-Host "  Mode:             create-only (no progress polling)"
+}
 Write-Host ""
 
 # -----------------------------------------------------------------------
@@ -114,9 +146,10 @@ for ($b = 1; $b -le $NumberOfBatches; $b++) {
         $year  = 1970 + ($recordIndex % 25)
         $month = (($recordIndex % 12) + 1).ToString("D2")
         $day   = (($recordIndex % 28) + 1).ToString("D2")
+        $lastName = if ($LastNameMode -eq "Random") { $randomLastNames | Get-Random } else { "TESTER" }
 
         $records += @{
-            lastName                    = "TESTER"
+            lastName                    = $lastName
             dateOfBirth                 = "$year-$month-$day"
             nationalInsuranceNumber     = $nino
             clientIdentifier            = "batch${b}-record${r}"
@@ -147,7 +180,6 @@ $submitStart = Get-Date
 
 $submissionResults = $batchPayloads | ForEach-Object -Parallel {
     $batch       = $_
-    $api         = $using:ApiBase
     $endpoint    = $using:apiEndpoint
     $bearerToken = $using:token
     $staggerMs   = $using:SubmissionStaggerMs
@@ -186,7 +218,7 @@ $submissionResults = $batchPayloads | ForEach-Object -Parallel {
 
     return $result
 
-} -ThrottleLimit $NumberOfBatches
+} -ThrottleLimit $effectiveThrottleLimit
 
 $submitEnd   = Get-Date
 $submitMs    = [int]($submitEnd - $submitStart).TotalMilliseconds
@@ -201,11 +233,31 @@ $submissionResults | ForEach-Object {
     }
 }
 
+if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
+    $outputDirectory = Split-Path -Path $OutputPath -Parent
+    if (-not [string]::IsNullOrWhiteSpace($outputDirectory) -and -not (Test-Path -Path $outputDirectory)) {
+        New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+    }
+
+    $submissionResults |
+        Select-Object BatchNumber, Guid, StatusCode, Error, SubmittedAt |
+        Export-Csv -Path $OutputPath -NoTypeInformation
+
+    Write-Host "Submission output saved to: $OutputPath" -ForegroundColor Cyan
+}
+
 # Filter to batches that were successfully submitted
 $activeBatches = $submissionResults | Where-Object { -not $_.Error -and $_.Guid }
 if ($activeBatches.Count -eq 0) {
     Write-Host "No batches were submitted successfully. Exiting." -ForegroundColor Red
     exit 1
+}
+
+if ($CreateOnly) {
+    Write-Host ""
+    Write-Host "Create-only mode complete. Submitted $($activeBatches.Count) batch(es)." -ForegroundColor Green
+    Write-Host ""
+    exit 0
 }
 
 # -----------------------------------------------------------------------
