@@ -3,8 +3,6 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
@@ -76,7 +74,7 @@ public class FosterFamilyController : BaseController
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
             }
 
             var result = await _getFosterFamily.Execute(fosterCarerId, localAuthorityIds, localAuthorityId, includeChildren);
@@ -84,12 +82,16 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = fosterCarerId.ToString() } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = fosterCarerId.ToString() }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting foster family");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -105,7 +107,7 @@ public class FosterFamilyController : BaseController
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
             }
 
             var response = await _createFosterFamily.Execute(model, localAuthorityIds, localAuthorityId);
@@ -113,16 +115,20 @@ public class FosterFamilyController : BaseController
         }
         catch (ArgumentNullException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster family");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -130,27 +136,35 @@ public class FosterFamilyController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [HttpPatch("/foster-family/{fosterCarerId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> UpdateFosterCarer(Guid fosterCarerId, [FromBody] UpdateFosterCarerRequest model)
+    public async Task<ActionResult> UpdateFosterCarer(Guid fosterCarerId, int localAuthorityId, [FromBody] UpdateFosterCarerRequest model)
     {
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
             }
 
-            await _updateFosterCarer.Execute(fosterCarerId, model);
+            await _updateFosterCarer.Execute(fosterCarerId, localAuthorityIds, localAuthorityId, model);
             return new StatusCodeResult(StatusCodes.Status204NoContent);
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating foster carer");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -167,12 +181,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster carer");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -189,12 +211,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster partner");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -203,27 +233,31 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family/search")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> SearchFosterFamilies([FromBody] FosterFamiliesSearchRequest model)
+    public async Task<ActionResult> SearchFosterFamilies([FromBody] FosterFamiliesSearchRequest model, int localAuthorityId)
     {
         try
         {
             var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
             if (localAuthorityIds == null || localAuthorityIds.Count == 0)
             {
-                return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
             }
 
-            var response = await _searchFosterFamilies.Execute(model);
+            var response = await _searchFosterFamilies.Execute(model, localAuthorityId, localAuthorityIds);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching foster families");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -232,21 +266,31 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/foster-family/child/{fosterChildId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> GetFosterChild(Guid fosterChildId, bool includeFosterCarer = false)
+    public async Task<ActionResult> GetFosterChild(Guid fosterChildId, int localAuthorityId, bool includeFosterCarer = false)
     {
         try
         {
-            var result = await _getFosterChild.Execute(fosterChildId, includeFosterCarer);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
+            }
+
+            var result = await _getFosterChild.Execute(fosterChildId, localAuthorityIds, localAuthorityId, includeFosterCarer);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
         catch (NotFoundException)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = fosterChildId.ToString() } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = fosterChildId.ToString() }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting foster child");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -255,25 +299,39 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family/{fosterCarerId}/child")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> CreateFosterChild(Guid fosterCarerId, [FromBody] FosterChildRequest model)
+    public async Task<ActionResult> CreateFosterChild(Guid fosterCarerId, int localAuthorityId, [FromBody] FosterChildRequest model)
     {
         try
         {
-            var response = await _createFosterChild.Execute(model, fosterCarerId, DateTime.UtcNow);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
+            }
+
+            var response = await _createFosterChild.Execute(model, localAuthorityIds, localAuthorityId, fosterCarerId, DateTime.UtcNow);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
         }
         catch (ArgumentNullException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster child");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -282,21 +340,35 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPatch("/foster-family/child/{fosterChildId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> UpdateFosterChild(Guid fosterChildId, [FromBody] UpdateFosterChildRequest model)
+    public async Task<ActionResult> UpdateFosterChild(Guid fosterChildId, int localAuthorityId, [FromBody] UpdateFosterChildRequest model)
     {
         try
         {
-            var response = await _updateFosterChild.Execute(fosterChildId, model);
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
+            if (localAuthorityIds == null || localAuthorityIds.Count == 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
+            }
+
+            var response = await _updateFosterChild.Execute(fosterChildId, localAuthorityId, localAuthorityIds, model);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating foster child");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 
@@ -304,7 +376,7 @@ public class FosterFamilyController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [HttpDelete("/foster-family/child/{fosterChildId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> DeleteFosterChild(Guid fosterChildId)
+    public async Task<ActionResult> DeleteFosterChild(Guid fosterChildId, int localAuthorityId)
     {
         try
         {
@@ -313,12 +385,16 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster child");
-            return BadRequest(new ErrorResponse { Errors = [ new Error { Title = ex.Message } ] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
 

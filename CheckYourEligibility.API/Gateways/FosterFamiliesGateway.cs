@@ -131,12 +131,13 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     public async Task UpdateFosterCarer(
     Guid fosterCarerId,
+    int localAuthorityId,
     UpdateFosterCarerRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var fosterCarer = await _db.FosterCarers
-            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId);
+            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId);
 
         if (fosterCarer is null)
         {
@@ -228,6 +229,7 @@ public class FosterFamiliesGateway : IFosterFamilies
     }
 
     public async Task<FosterFamiliesSearchResponse> SearchFosterFamilies(
+    int localAuthorityId,
     FosterFamiliesSearchRequest request)
     {
         const int defaultPageSize = 10;
@@ -257,6 +259,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         var results = await _db.FosterChildren
             .Include(x => x.FosterCarer)
+            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId)
             .OrderByDescending(x => x.SubmissionDate)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -295,6 +298,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     public async Task<FosterChildResponse> GetFosterChild(
     Guid fosterChildId,
+    int localAuthorityId,
     bool includeFosterCarer = false)
     {
         FosterChildResponse? result;
@@ -302,7 +306,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         if (includeFosterCarer)
         {
             result = await _db.FosterChildren
-                .Where(x => x.FosterChildId == fosterChildId)
+                .Where(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterChildResponse
                 {
                     FosterChildId = x.FosterChildId,
@@ -341,7 +345,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         else
         {
             result = await _db.FosterChildren
-                .Where(x => x.FosterChildId == fosterChildId)
+                .Where(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterChildResponse
                 {
                     FosterChildId = x.FosterChildId,
@@ -388,13 +392,13 @@ public class FosterFamiliesGateway : IFosterFamilies
     }
 
     public async Task<FosterChildCreatedResponse> CreateFosterChild(
-    FosterChildRequest request, Guid fosterCarerId, DateTime submissionDate)
+    FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         // Get existing carer
         var fosterCarer = await _db.FosterCarers
-            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId);
+            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId);
 
         if (fosterCarer is null)
         {
@@ -444,8 +448,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         };
     }
 
-    public async Task<FosterChildResponse> UpdateFosterChildAsync(
+    public async Task<FosterChildResponse> UpdateFosterChild(
     Guid fosterChildId,
+    int localAuthorityId,
     UpdateFosterChildRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -470,7 +475,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         await _db.SaveChangesAsync();
 
-        return await GetFosterChild(fosterChildId);
+        return await GetFosterChild(fosterChildId, fosterChild.FosterCarer.LocalAuthorityID.Value, true);
     }
 
     public async Task DeleteFosterChild(Guid fosterChildId)

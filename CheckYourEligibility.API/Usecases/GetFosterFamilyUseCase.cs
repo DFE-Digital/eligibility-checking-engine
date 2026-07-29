@@ -20,13 +20,17 @@ public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
     {
         if (fosterCarerId == Guid.Empty) throw new ValidationException("A valid fosterCarerId is required");
 
-        if(localAuthorityId == null) throw new ValidationException("Local Authority ID is required");
-        
+        if (localAuthorityId <= 0)
+        {
+            throw new ValidationException("Local Authority ID is required");
+        }
+
         if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
         {
             throw new UnauthorizedAccessException(
                 "You do not have permission to get a foster family for this Local Authority");
-        };
+        }
+        ;
 
         var result = await _gateway.GetFosterFamily(fosterCarerId, localAuthorityId, includeChildren);
         return result;

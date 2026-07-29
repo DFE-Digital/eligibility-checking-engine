@@ -30,7 +30,7 @@ public class FosterFamilyRequestValidator : AbstractValidator<FosterFamilyReques
     }
 }
 
-internal class FosterCarerRequestValidator
+public class FosterCarerRequestValidator
     : AbstractValidator<FosterCarerRequest>
 {
     public FosterCarerRequestValidator()
@@ -54,7 +54,7 @@ internal class FosterCarerRequestValidator
     }
 }
 
-internal class FosterPartnerRequestValidator
+public class FosterPartnerRequestValidator
     : AbstractValidator<FosterPartnerRequest>
 {
     public FosterPartnerRequestValidator()
@@ -78,7 +78,7 @@ internal class FosterPartnerRequestValidator
     }
 }
 
-internal class FosterChildRequestValidator
+public class FosterChildRequestValidator
     : AbstractValidator<FosterChildRequest>
 {
     public FosterChildRequestValidator()

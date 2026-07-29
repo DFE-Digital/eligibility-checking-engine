@@ -52,9 +52,10 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         var fosterCarer = new FosterCarer
         {
             FosterCarerId = fosterCarerId,
+            LocalAuthorityID = 0,
             FirstName = "John",
             LastName = "Smith",
-            NationalInsuranceNumber = "NN123456C"
+            NationalInsuranceNumber = "NN123456C",
         };
 
         fosterCarer.FosterChildren.Add(new FosterChild
@@ -72,7 +73,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var result = await _sut.GetFosterFamily(fosterCarerId, true);
+        var result = await _sut.GetFosterFamily(fosterCarerId, 0, true);
 
         // Assert
         result.Should().NotBeNull();
@@ -96,7 +97,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             FosterCarerId = fosterCarerId,
             FirstName = "John",
             LastName = "Smith",
-            NationalInsuranceNumber = "NN123456C"
+            NationalInsuranceNumber = "NN123456C",
+            LocalAuthorityID = 0
         };
 
         _fakeInMemoryDb.FosterCarers.Add(fosterCarer);
@@ -104,7 +106,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var result = await _sut.GetFosterFamily(fosterCarerId, false);
+        var result = await _sut.GetFosterFamily(fosterCarerId, 0, false);
 
         // Assert
         result.FosterChildren.Should().BeEmpty();
@@ -114,7 +116,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterFamily_Should_Return_Not_Found_Exception()
     {
         // Act
-        Func<Task> act = async () => await _sut.GetFosterFamily(Guid.NewGuid());
+        Func<Task> act = async () => await _sut.GetFosterFamily(Guid.NewGuid(), 0, true);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -226,6 +228,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             FosterCarerId = fosterCarerId,
             FirstName = "John",
             LastName = "Smith",
+            LocalAuthorityID = 0,
             DateOfBirth = new DateTime(1980, 1, 1),
             NationalInsuranceNumber = "AA123456A"
         });
@@ -244,7 +247,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        await _sut.UpdateFosterCarer(fosterCarerId, request);
+        await _sut.UpdateFosterCarer(fosterCarerId, 0, request);
 
         // Assert
         var updated = await _fakeInMemoryDb.FosterCarers
@@ -267,6 +270,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             FosterCarerId = fosterCarerId,
             FirstName = "John",
             LastName = "Smith",
+            LocalAuthorityID = 0,
             NationalInsuranceNumber = "BB123456B"
         });
 
@@ -284,7 +288,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        await _sut.UpdateFosterCarer(fosterCarerId, request);
+        await _sut.UpdateFosterCarer(fosterCarerId, 0, request);
 
         // Assert
         var updated = await _fakeInMemoryDb.FosterCarers
@@ -307,6 +311,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             FosterCarerId = fosterCarerId,
             FirstName = "John",
             LastName = "Smith",
+            LocalAuthorityID = 0,
             NationalInsuranceNumber = "BB123456B"
         });
 
@@ -331,7 +336,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        await _sut.UpdateFosterCarer(fosterCarerId, request);
+        await _sut.UpdateFosterCarer(fosterCarerId, 0, request);
 
         // Assert
         var updated = await _fakeInMemoryDb.FosterCarers
@@ -358,7 +363,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         Func<Task> act = () =>
-            _sut.UpdateFosterCarer(Guid.NewGuid(), request);
+            _sut.UpdateFosterCarer(Guid.NewGuid(), 0, request);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -426,7 +431,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            new FosterFamiliesSearchRequest
+            0, new FosterFamiliesSearchRequest
             {
                 PageNumber = 1,
                 PageSize = 10
@@ -451,7 +456,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            new FosterFamiliesSearchRequest
+            0, new FosterFamiliesSearchRequest
             {
                 PageNumber = 1,
                 PageSize = 10
@@ -466,7 +471,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Act
         var result = await _sut.SearchFosterFamilies(
-            new FosterFamiliesSearchRequest
+            0, new FosterFamiliesSearchRequest
             {
                 PageNumber = 1,
                 PageSize = 10
@@ -487,7 +492,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            new FosterFamiliesSearchRequest
+            0, new FosterFamiliesSearchRequest
             {
                 PageNumber = 1,
                 PageSize = 10
@@ -510,7 +515,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            new FosterFamiliesSearchRequest
+            0, new FosterFamiliesSearchRequest
             {
                 PageNumber = 2,
                 PageSize = 10
@@ -540,6 +545,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         var result = await _sut.GetFosterChild(
             fosterChildId,
+            0,
             includeFosterCarer: true);
 
         // Assert
@@ -560,7 +566,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        var result = await _sut.GetFosterChild(fosterChildId);
+        var result = await _sut.GetFosterChild(fosterChildId, 0, false);
 
         // Assert
         result.Should().NotBeNull();
@@ -580,7 +586,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        var result = await _sut.GetFosterChild(fosterChildId);
+        var result = await _sut.GetFosterChild(fosterChildId, 0, true);
 
         // Assert
         result.EligibilityCode.Should().NotBeNullOrWhiteSpace();
@@ -600,7 +606,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        var result = await _sut.GetFosterChild(fosterChildId);
+        var result = await _sut.GetFosterChild(fosterChildId, 0, true);
 
         // Assert
         result.ChildFullName.Should().Be("Tom Smith");
@@ -621,7 +627,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        var result = await _sut.GetFosterChild(fosterChildId);
+        var result = await _sut.GetFosterChild(fosterChildId, 0, true);
 
         // Assert
         result.GracePeriodEnds.Should().NotBe(default);
@@ -632,7 +638,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Act
         Func<Task> act = () =>
-            _sut.GetFosterChild(Guid.NewGuid());
+            _sut.GetFosterChild(Guid.NewGuid(), 0, false);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -665,6 +671,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         await _sut.CreateFosterChild(
             request,
+            0,
             fosterCarerId,
             DateTime.UtcNow);
 
@@ -695,6 +702,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         await _sut.CreateFosterChild(
             request,
+            0,
             fosterCarerId,
             DateTime.UtcNow);
 
@@ -731,6 +739,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         await _sut.CreateFosterChild(
             request,
+            0,
             fosterCarerId,
             DateTime.UtcNow);
 
@@ -763,6 +772,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         var result = await _sut.CreateFosterChild(
             request,
+            0,
             fosterCarerId,
             DateTime.UtcNow);
 
@@ -788,6 +798,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         Func<Task> act = () =>
             _sut.CreateFosterChild(
                 request,
+                0,
                 Guid.NewGuid(),
                 DateTime.UtcNow);
 
@@ -823,8 +834,9 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        await _sut.UpdateFosterChildAsync(
+        await _sut.UpdateFosterChild(
             fosterChildId,
+            0,
             updateRequest);
 
         // Assert
@@ -861,8 +873,9 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        await _sut.UpdateFosterChildAsync(
+        await _sut.UpdateFosterChild(
             child.FosterChildId,
+            0,
             updateRequest);
 
         // Assert
@@ -895,8 +908,9 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         };
 
         // Act
-        var result = await _sut.UpdateFosterChildAsync(
+        var result = await _sut.UpdateFosterChild(
             fosterChildId,
+            0,
             updateRequest);
 
         // Assert
@@ -920,7 +934,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Act
         Func<Task> act = () =>
-            _sut.UpdateFosterChildAsync(Guid.NewGuid(), updateRequest);
+            _sut.UpdateFosterChild(Guid.NewGuid(), 0, updateRequest);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -995,7 +1009,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
                 CarerFirstName = "John",
                 CarerLastName = "Smith",
                 CarerDateOfBirth = new DateTime(1980, 1, 1),
-                CarerNationalInsuranceNumber = "NN123456C"
+                CarerNationalInsuranceNumber = "NN123456C",
+                LocalAuthorityID = 0
             },
 
             Partner = new FosterPartnerRequest

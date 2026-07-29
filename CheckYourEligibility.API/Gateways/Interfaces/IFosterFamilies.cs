@@ -12,13 +12,15 @@ public interface IFosterFamilies
 
     Task UpdateFosterCarer(
         Guid fosterCarerId,
+        int localAuthorityId,
         UpdateFosterCarerRequest request);
 
     Task DeleteFosterCarer(Guid fosterCarerId);
 
     Task DeleteFosterPartner(Guid fosterCarerId);
 
-     Task<FosterFamiliesSearchResponse> SearchFosterFamilies(
+     Task<FosterFamiliesSearchResponse> SearchFosterFamilies( 
+        int localAuthorityId,
          FosterFamiliesSearchRequest request);
 
 
@@ -26,13 +28,15 @@ public interface IFosterFamilies
 
     Task<FosterChildResponse?> GetFosterChild(
         Guid fosterChildId,
+        int localAuthorityId,
         bool includeFosterCarer = false);
 
     Task<FosterChildCreatedResponse> CreateFosterChild(
-        FosterChildRequest request, Guid fosterCarerId, DateTime submissionDate);
+        FosterChildRequest request, int localAutorityId, Guid fosterCarerId, DateTime submissionDate);
 
-    Task<FosterChildResponse> UpdateFosterChildAsync(
+    Task<FosterChildResponse> UpdateFosterChild(
         Guid fosterChildId,
+        int localAuthorityId,
         UpdateFosterChildRequest request);
 
     Task DeleteFosterChild(
