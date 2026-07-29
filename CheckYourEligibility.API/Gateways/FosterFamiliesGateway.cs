@@ -13,6 +13,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     public async Task<FosterFamilyResponse> GetFosterFamily(
     Guid fosterCarerId,
+    int localAuthorityId,
     bool includeChildren = false)
     {
         FosterFamilyResponse? result;
@@ -20,7 +21,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         if (includeChildren)
         {
             result = await _db.FosterCarers
-                .Where(x => x.FosterCarerId == fosterCarerId)
+                .Where(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterFamilyResponse
                 {
                     FosterCarerId = x.FosterCarerId,
@@ -52,7 +53,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         else
         {
             result = await _db.FosterCarers
-                .Where(x => x.FosterCarerId == fosterCarerId)
+                .Where(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterFamilyResponse
                 {
                     FosterCarerId = x.FosterCarerId,
@@ -507,6 +508,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             LastName = request.CarerLastName,
             DateOfBirth = request.CarerDateOfBirth,
             NationalInsuranceNumber = request.CarerNationalInsuranceNumber,
+            LocalAuthorityID = request.LocalAuthorityID,
 
             HasPartner = hasPartner,
 

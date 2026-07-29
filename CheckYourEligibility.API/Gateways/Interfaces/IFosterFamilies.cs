@@ -4,6 +4,7 @@ public interface IFosterFamilies
 
     Task<FosterFamilyResponse> GetFosterFamily(
         Guid fosterCarerId,
+        int localAuthorityId,
         bool includeChildren = false);
 
     Task<FosterFamilyCreatedResponse> CreateFosterFamily(

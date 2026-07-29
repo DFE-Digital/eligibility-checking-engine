@@ -1,13 +1,10 @@
-using System;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface IGetFosterFamilyUseCase
 {
-    Task<FosterFamilyResponse> Execute(Guid fosterCarerId, bool includeChildren = false);
+    Task<FosterFamilyResponse> Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, bool includeChildren = false);
 }
 
 public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
@@ -19,11 +16,19 @@ public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterFamilyResponse> Execute(Guid fosterCarerId, bool includeChildren = false)
+    public async Task<FosterFamilyResponse> Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, bool includeChildren = false)
     {
         if (fosterCarerId == Guid.Empty) throw new ValidationException("A valid fosterCarerId is required");
 
-        var result = await _gateway.GetFosterFamily(fosterCarerId, includeChildren);
+        if(localAuthorityId == null) throw new ValidationException("Local Authority ID is required");
+        
+        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to get a foster family for this Local Authority");
+        };
+
+        var result = await _gateway.GetFosterFamily(fosterCarerId, localAuthorityId, includeChildren);
         return result;
     }
 }

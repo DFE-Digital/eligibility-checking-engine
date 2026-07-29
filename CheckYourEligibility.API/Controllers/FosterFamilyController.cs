@@ -69,7 +69,7 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/foster-family/{fosterCarerId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> GetFosterFamily(Guid fosterCarerId, bool includeChildren = false)
+    public async Task<ActionResult> GetFosterFamily(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false)
     {
         try
         {
@@ -79,7 +79,7 @@ public class FosterFamilyController : BaseController
                 return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
             }
 
-            var result = await _getFosterFamily.Execute(fosterCarerId, includeChildren);
+            var result = await _getFosterFamily.Execute(fosterCarerId, localAuthorityIds, localAuthorityId, includeChildren);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
         catch (NotFoundException)
@@ -98,7 +98,7 @@ public class FosterFamilyController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> CreateFosterFamily([FromBody] FosterFamilyRequest model)
+    public async Task<ActionResult> CreateFosterFamily([FromBody] FosterFamilyRequest model, int localAuthorityId)
     {
         try
         {
@@ -108,7 +108,7 @@ public class FosterFamilyController : BaseController
                 return BadRequest(new ErrorResponse { Errors = [ new Error { Title = "No local authority scope found" } ] });
             }
 
-            var response = await _createFosterFamily.Execute(model);
+            var response = await _createFosterFamily.Execute(model, localAuthorityIds, localAuthorityId);
             return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
         }
         catch (ArgumentNullException ex)
