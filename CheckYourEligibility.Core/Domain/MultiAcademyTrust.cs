@@ -18,4 +18,9 @@ public class MultiAcademyTrust
     /// </summary>
     public bool AcademyCanReviewEvidence { get; set; }
     public virtual Collection<MultiAcademyTrustEstablishment> MultiAcademyTrustEstablishments { get; set; }
+
+    public DateTime? Imported { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
+
 }

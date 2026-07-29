@@ -4,6 +4,7 @@ using CheckYourEligibility.Core.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.Core.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260728082857_Add_MultiAcademyTrust_ImportedIsDeleted")]
+    partial class Add_MultiAcademyTrust_ImportedIsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace CheckYourEligibility.Core.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Application", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.Property<string>("ApplicationID")
                         .HasColumnType("nvarchar(450)");
@@ -109,7 +112,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("Applications");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ApplicationEvidence", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationEvidence", b =>
                 {
                     b.Property<int>("ApplicationEvidenceID")
                         .ValueGeneratedOnAdd()
@@ -140,7 +143,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("ApplicationEvidence");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ApplicationStatus", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationStatus", b =>
                 {
                     b.Property<string>("ApplicationStatusID")
                         .HasColumnType("nvarchar(450)");
@@ -166,7 +169,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("ApplicationStatuses");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Audit", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Audit", b =>
                 {
                     b.Property<string>("AuditID")
                         .HasColumnType("nvarchar(450)");
@@ -211,7 +214,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("Audits");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.BulkCheck", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
                     b.Property<string>("BulkCheckID")
                         .HasColumnType("nvarchar(450)");
@@ -261,7 +264,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("BulkChecks");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.CAPIAudit", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.CAPIAudit", b =>
                 {
                     b.Property<int>("AuditId")
                         .ValueGeneratedOnAdd()
@@ -307,7 +310,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("CAPIAudits");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ECSConflict", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ECSConflict", b =>
                 {
                     b.Property<int>("ECSConflictID")
                         .ValueGeneratedOnAdd()
@@ -368,7 +371,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("ECSConflicts");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.EligibilityCheck", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
                 {
                     b.Property<string>("EligibilityCheckID")
                         .HasColumnType("nvarchar(450)");
@@ -424,7 +427,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("EligibilityCheck", (string)null);
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.EligibilityCheckHash", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheckHash", b =>
                 {
                     b.Property<string>("EligibilityCheckHashID")
                         .HasColumnType("nvarchar(450)");
@@ -458,7 +461,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("EligibilityCheckHashes");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.EligibilityPolicy", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityPolicy", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
@@ -489,7 +492,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("EligibilityPolicies");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Establishment", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Establishment", b =>
                 {
                     b.Property<int>("EstablishmentID")
                         .HasColumnType("int");
@@ -541,7 +544,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("Establishments");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.FreeSchoolMealsHMRC", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.FreeSchoolMealsHMRC", b =>
                 {
                     b.Property<string>("FreeSchoolMealsHMRCID")
                         .HasColumnType("varchar(50)");
@@ -561,7 +564,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("FreeSchoolMealsHMRC");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.FreeSchoolMealsHO", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.FreeSchoolMealsHO", b =>
                 {
                     b.Property<string>("FreeSchoolMealsHOID")
                         .HasColumnType("varchar(100)");
@@ -582,7 +585,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("FreeSchoolMealsHO");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.LocalAuthority", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.LocalAuthority", b =>
                 {
                     b.Property<int>("LocalAuthorityID")
                         .ValueGeneratedOnAdd()
@@ -623,7 +626,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("LocalAuthorities");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.MultiAcademyTrust", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
                 {
                     b.Property<int>("MultiAcademyTrustID")
                         .HasColumnType("int");
@@ -646,7 +649,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("MultiAcademyTrusts");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.MultiAcademyTrustEstablishment", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustEstablishment", b =>
                 {
                     b.Property<int>("MultiAcademyTrustEstablishmentID")
                         .ValueGeneratedOnAdd()
@@ -669,7 +672,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("MultiAcademyTrustEstablishments");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.RateLimitEvent", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.RateLimitEvent", b =>
                 {
                     b.Property<string>("RateLimitEventID")
                         .HasColumnType("nvarchar(450)");
@@ -696,7 +699,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("RateLimitEvents");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.User", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
                 {
                     b.Property<string>("UserID")
                         .HasColumnType("nvarchar(450)");
@@ -742,18 +745,13 @@ namespace CheckYourEligibility.Core.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("Email", "Reference", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserType] IS NOT NULL");
-
-                    b.HasIndex("UserName", "OrganisationType", "OrganisationId", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserName] IS NOT NULL AND [OrganisationType] IS NOT NULL AND [OrganisationId] IS NOT NULL AND [UserType] IS NOT NULL");
+                    b.HasIndex("Email", "Reference")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.WorkingFamiliesEvent", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.WorkingFamiliesEvent", b =>
                 {
                     b.Property<string>("WorkingFamiliesEventID")
                         .HasColumnType("nvarchar(450)");
@@ -841,7 +839,7 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("WorkingFamiliesEvents");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.WorkingFamiliesEventSummary", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", b =>
                 {
                     b.Property<string>("WorkingFamiliesEventSummaryID")
                         .HasColumnType("nvarchar(450)");
@@ -1096,19 +1094,19 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("FosterChildren");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Application", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.EligibilityCheckHash", "EligibilityCheckHash")
+                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID");
 
-                    b.HasOne("CheckYourEligibility.Core.Domain.Establishment", "Establishment")
+                    b.HasOne("CheckYourEligibility.API.Domain.Establishment", "Establishment")
                         .WithMany()
                         .HasForeignKey("EstablishmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CheckYourEligibility.Core.Domain.User", "User")
+                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
@@ -1119,9 +1117,9 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ApplicationEvidence", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationEvidence", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.Application", "Application")
+                    b.HasOne("CheckYourEligibility.API.Domain.Application", "Application")
                         .WithMany("Evidence")
                         .HasForeignKey("ApplicationID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1130,9 +1128,9 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("Application");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ApplicationStatus", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ApplicationStatus", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.Application", "Application")
+                    b.HasOne("CheckYourEligibility.API.Domain.Application", "Application")
                         .WithMany("Statuses")
                         .HasForeignKey("ApplicationID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1141,18 +1139,18 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("Application");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.BulkCheck", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.LocalAuthority", "LocalAuthority")
+                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID");
 
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.ECSConflict", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.ECSConflict", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.EligibilityCheckHash", "EligibilityCheckHash")
+                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1161,13 +1159,13 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("EligibilityCheckHash");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.EligibilityCheck", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.EligibilityCheck", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.BulkCheck", "BulkCheck")
+                    b.HasOne("CheckYourEligibility.API.Domain.BulkCheck", "BulkCheck")
                         .WithMany("EligibilityChecks")
                         .HasForeignKey("BulkCheckID");
 
-                    b.HasOne("CheckYourEligibility.Core.Domain.EligibilityCheckHash", "EligibilityCheckHash")
+                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckHashID");
 
@@ -1176,9 +1174,9 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("EligibilityCheckHash");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Establishment", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Establishment", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.LocalAuthority", "LocalAuthority")
+                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1187,15 +1185,15 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("LocalAuthority");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.MultiAcademyTrustEstablishment", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrustEstablishment", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.Establishment", "Establishment")
+                    b.HasOne("CheckYourEligibility.API.Domain.Establishment", "Establishment")
                         .WithMany()
                         .HasForeignKey("EstablishmentID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CheckYourEligibility.Core.Domain.MultiAcademyTrust", "MultiAcademyTrust")
+                    b.HasOne("CheckYourEligibility.API.Domain.MultiAcademyTrust", "MultiAcademyTrust")
                         .WithMany("MultiAcademyTrustEstablishments")
                         .HasForeignKey("MultiAcademyTrustID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1208,11 +1206,11 @@ namespace CheckYourEligibility.Core.Migrations
 
             modelBuilder.Entity("EligibilityCheckReport", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.LocalAuthority", "LocalAuthority")
+                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID");
 
-                    b.HasOne("CheckYourEligibility.Core.Domain.User", "User")
+                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
                         .WithMany("EligibilityCheckReports")
                         .HasForeignKey("UserID");
 
@@ -1223,7 +1221,7 @@ namespace CheckYourEligibility.Core.Migrations
 
             modelBuilder.Entity("EligibilityCheckReportItem", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.EligibilityCheck", "EligibilityCheck")
+                    b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheck", "EligibilityCheck")
                         .WithMany()
                         .HasForeignKey("EligibilityCheckID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1242,7 +1240,7 @@ namespace CheckYourEligibility.Core.Migrations
 
             modelBuilder.Entity("FosterCarer", b =>
                 {
-                    b.HasOne("CheckYourEligibility.Core.Domain.LocalAuthority", "LocalAuthority")
+                    b.HasOne("CheckYourEligibility.API.Domain.LocalAuthority", "LocalAuthority")
                         .WithMany()
                         .HasForeignKey("LocalAuthorityID");
 
@@ -1260,24 +1258,24 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("FosterCarer");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Application", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.Navigation("Evidence");
 
                     b.Navigation("Statuses");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.BulkCheck", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.BulkCheck", b =>
                 {
                     b.Navigation("EligibilityChecks");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.MultiAcademyTrust", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.MultiAcademyTrust", b =>
                 {
                     b.Navigation("MultiAcademyTrustEstablishments");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.User", b =>
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
                 {
                     b.Navigation("EligibilityCheckReports");
                 });

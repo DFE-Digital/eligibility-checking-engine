@@ -15,10 +15,10 @@ namespace CheckYourEligibility.API.Controllers;
 [Authorize]
 public class UserController : BaseController
 {
-    private readonly ICreateOrUpdateUserUseCase _createOrUpdateUserUseCase;
+    private readonly ICreateOrUpdateFSMParentUserUseCase _createOrUpdateUserUseCase;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(ILogger<UserController> logger, ICreateOrUpdateUserUseCase createOrUpdateUserUseCase,
+    public UserController(ILogger<UserController> logger, ICreateOrUpdateFSMParentUserUseCase createOrUpdateUserUseCase,
         IAudit audit)
         : base(audit)
     {
@@ -27,7 +27,7 @@ public class UserController : BaseController
     }
 
     /// <summary>
-    ///     creates or returns existing user Id
+    ///     creates or returns existing user Id for fsm parent portal
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
@@ -36,13 +36,29 @@ public class UserController : BaseController
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/user")]
     [Authorize(Policy = PolicyNames.RequireUserScope)]
-    public async Task<ActionResult> User([FromBody] UserCreateRequest model)
+    public async Task<ActionResult> FsmParentUserPost([FromBody] UserCreateRequest model)
     {
         if (model == null || model.Data == null)
-            return BadRequest(new ErrorResponse
-                { Errors = [new Error { Title = "Invalid request, data is required." }] });
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Errors =
+                    [
+                        new Error
+                {
+                    Title = "Invalid request, data is required."
+                }
+                    ]
+                });
+            }
 
-        var response = await _createOrUpdateUserUseCase.Execute(model);
-        return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
+            model.MetaData = HttpContext.User.CalculateMetaData();
+
+            var response = await _createOrUpdateUserUseCase.Execute(model);
+
+            return new ObjectResult(response)
+            {
+                StatusCode = StatusCodes.Status201Created
+            };
     }
 }

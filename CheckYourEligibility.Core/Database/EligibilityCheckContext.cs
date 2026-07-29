@@ -224,16 +224,26 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             transaction.Rollback();
             throw;
         }
-
-
     }
+
     public void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData)
     {
         using (var transaction = base.Database.BeginTransaction())
         {
             this.Truncate<MultiAcademyTrustEstablishment>();
-            this.MultiAcademyTrusts.ExecuteDelete();
-            this.BulkInsert(trustData);
+            this.BulkInsertOrUpdate(trustData, config =>
+            {
+                config.UpdateByProperties = new List<string>
+                {
+                    nameof(MultiAcademyTrust.MultiAcademyTrustID),
+                    nameof(MultiAcademyTrust.Name)
+                };
+
+                config.PropertiesToExcludeOnUpdate = new List<string>
+                {
+                    nameof(MultiAcademyTrust.AcademyCanReviewEvidence),
+                };
+            });
             this.BulkInsert(schoolData);
             transaction.Commit();
         }
@@ -335,7 +345,15 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasIndex(b => b.Hash, "idx_EligibilityCheckHash");
 
         modelBuilder.Entity<User>()
-            .HasIndex(p => new { p.Email, p.Reference }).IsUnique();
+            .HasIndex(p => new { p.Email, p.Reference, p.UserType }).IsUnique();
+        
+        modelBuilder.Entity<User>().HasIndex(x  => new {
+            x.UserName,
+            x.OrganisationType,
+            x.OrganisationId,
+            x.UserType
+        }).IsUnique();
+
 
         modelBuilder.Entity<User>(u => 
         {
