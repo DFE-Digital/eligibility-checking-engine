@@ -391,6 +391,92 @@ export function invalidNinoWorkingFamiliesBulkRequestBody() {
   };
 }
 
+
+export function validFosterFamilyRequestBody() {
+  return {
+    fosterCarer: {
+      localAuthorityID: 201,
+      carerFirstName: 'John',
+      carerLastName: 'Smith Test',
+      carerDateOfBirth: '1980-01-01',
+      carerNationalInsuranceNumber: 'NN123456C'
+    },
+    hasPartner: true,
+    partner: {
+      partnerFirstName: 'Jane',
+      partnerLastName: 'Smith Test',
+      partnerDateOfBirth: '1981-01-01',
+      partnerNationalInsuranceNumber: 'NN123456C'
+    },
+    fosterChild: {
+      childFirstName: 'Tom',
+      childLastName: 'Smith Test',
+      childDateOfBirth: '2022-01-01',
+      childPostCode: 'NNU 1AE'
+    },
+    submissionDate: new Date().toISOString()
+  };
+}
+
+export function validFosterChildRequestBody() {
+  return {
+    childFirstName: "Sam",
+    childLastName: "Jones",
+    childDateOfBirth: "2023-01-01",
+    childPostCode: "AB1 2CD",
+  };
+}
+
+export function invalidFosterChildRequestBody() {
+  return {
+    childFirstName: "",
+    childLastName: "",
+    childDateOfBirth: null,
+    childPostCode: "",
+  };
+}
+
+export function updateFosterChildRequestBody() {
+  return {
+    fosterChildRequest: {
+      childFirstName: "Updated Tom",
+      childLastName: "Updated Smith",
+      childDateOfBirth: "2022-01-01",
+      childPostCode: "AB1 2CD",
+    },
+  };
+}
+
+export function invalidUpdateFosterChildRequestBody() {
+  return {
+    fosterChildRequest: {
+      childFirstName: "",
+      childLastName: "",
+      childDateOfBirth: "",
+      childPostCode: "",
+    },
+  };
+}
+
+export function updateFosterCarerRequestBody() {
+  return {
+    fosterCarerRequest: {
+      carerFirstName: 'Updated John',
+      carerLastName: 'Updated Smith',
+      carerDateOfBirth: '1980-01-01',
+      carerNationalInsuranceNumber: 'NN123456C'
+    },
+    partnerRequest: {
+      partnerFirstName: 'Updated Jane',
+      partnerLastName: 'Updated Smith',
+      partnerDateOfBirth: '1981-01-01',
+      partnerNationalInsuranceNumber: 'AB123456C'
+    }
+  };
+}
+``
+
+
 // ── ECE Eligibility Events (PUT/DELETE) 
 
 export function validEligibilityEventRequestBody() {

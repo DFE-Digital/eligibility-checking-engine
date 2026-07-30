@@ -111,6 +111,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
             return new FosterFamilyCreatedResponse()
             {
+                FosterCarerId = fosterCarer.FosterCarerId,
                 ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
                 EligiblityCode = workingEvent.EligibilityCode,
                 Status = fosterChild.Status,
@@ -456,6 +457,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         ArgumentNullException.ThrowIfNull(request);
 
         var fosterChild = await _db.FosterChildren
+            .Include(x => x.FosterCarer)
             .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
 
         if (fosterChild is null)

@@ -230,10 +230,11 @@ public class FosterFamilyController : BaseController
 
     [ProducesResponseType(typeof(FosterFamiliesSearchResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/foster-family/search")]
+    [HttpGet("/foster-family/search")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> SearchFosterFamilies([FromBody] FosterFamiliesSearchRequest model, int localAuthorityId)
+    public async Task<ActionResult> SearchFosterFamilies(
+    int localAuthorityId,
+    int pageNumber)
     {
         try
         {
@@ -243,8 +244,18 @@ public class FosterFamilyController : BaseController
                 return BadRequest(new ErrorResponse { Errors = [new Error { Title = "No local authority scope found" }] });
             }
 
-            var response = await _searchFosterFamilies.Execute(model, localAuthorityId, localAuthorityIds);
-            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+            var request = new FosterFamiliesSearchRequest
+            {
+                PageNumber = pageNumber,
+                PageSize = 10
+            };
+
+            var response = await _searchFosterFamilies.Execute(
+                request,
+                localAuthorityId,
+                localAuthorityIds);
+
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {
@@ -252,11 +263,12 @@ public class FosterFamilyController : BaseController
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching foster families");
+
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
         }
     }
@@ -376,7 +388,7 @@ public class FosterFamilyController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [HttpDelete("/foster-family/child/{fosterChildId}")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
-    public async Task<ActionResult> DeleteFosterChild(Guid fosterChildId, int localAuthorityId)
+    public async Task<ActionResult> DeleteFosterChild(Guid fosterChildId)
     {
         try
         {

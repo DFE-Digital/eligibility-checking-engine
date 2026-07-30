@@ -726,12 +726,6 @@ public class FosterFamilyControllerTests
         // Arrange
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        var request = new FosterFamiliesSearchRequest
-        {
-            PageNumber = 1,
-            PageSize = 10
-        };
-
         var response = new FosterFamiliesSearchResponse
         {
             PageNumber = 1,
@@ -762,29 +756,27 @@ public class FosterFamilyControllerTests
 
         _mockSearchFosterFamilies
             .Setup(x => x.Execute(
-                request,
+                It.Is<FosterFamiliesSearchRequest>(r =>
+                    r.PageNumber == 1 &&
+                    r.PageSize == 10),
                 201,
                 It.IsAny<List<int>>()))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            request,
-            201);
+            201,
+            1);
 
         // Assert
-        result.Should().BeOfType<ObjectResult>();
+        result.Should().BeOfType<OkObjectResult>();
 
-        var objectResult = (ObjectResult)result;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        var okResult = (OkObjectResult)result;
 
         var returnedResponse =
-            (FosterFamiliesSearchResponse)objectResult.Value!;
+            (FosterFamiliesSearchResponse)okResult.Value!;
 
         returnedResponse.TotalNumberOfRecords.Should().Be(3);
-
-        returnedResponse.Data.Should().HaveCount(3);
 
         returnedResponse.Data.Should().HaveCount(3);
 
@@ -802,8 +794,6 @@ public class FosterFamilyControllerTests
         // Arrange
         SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
 
-        var request = new FosterFamiliesSearchRequest();
-
         var response = new FosterFamiliesSearchResponse
         {
             PageNumber = 1,
@@ -814,19 +804,23 @@ public class FosterFamilyControllerTests
 
         _mockSearchFosterFamilies
             .Setup(x => x.Execute(
-                request,
+                It.Is<FosterFamiliesSearchRequest>(r =>
+                    r.PageNumber == 1 &&
+                    r.PageSize == 10),
                 201,
                 It.IsAny<List<int>>()))
             .ReturnsAsync(response);
 
         // Act
-        var result = await _sut.SearchFosterFamilies(request, 201);
+        var result = await _sut.SearchFosterFamilies(
+            201,
+            1);
 
         // Assert
-        var objectResult = (ObjectResult)result;
+        var okResult = (OkObjectResult)result;
 
         var returned =
-            (FosterFamiliesSearchResponse)objectResult.Value!;
+            (FosterFamiliesSearchResponse)okResult.Value!;
 
         returned.TotalNumberOfRecords.Should().Be(0);
         returned.Data.Should().BeEmpty();
@@ -838,11 +832,11 @@ public class FosterFamilyControllerTests
         // Arrange
         SetupControllerWithLocalAuthorityIds(new List<int> { 201, 202 });
 
-        var request = new FosterFamiliesSearchRequest();
-
         _mockSearchFosterFamilies
             .Setup(x => x.Execute(
-                request,
+                It.Is<FosterFamiliesSearchRequest>(r =>
+                    r.PageNumber == 1 &&
+                    r.PageSize == 10),
                 201,
                 It.Is<List<int>>(ids =>
                     ids.Contains(201) &&
@@ -850,9 +844,12 @@ public class FosterFamilyControllerTests
             .ReturnsAsync(new FosterFamiliesSearchResponse());
 
         // Act
-        await _sut.SearchFosterFamilies(request, 201);
+        await _sut.SearchFosterFamilies(
+            201,
+            1);
 
         // Assert
         _mockSearchFosterFamilies.VerifyAll();
     }
+
 }

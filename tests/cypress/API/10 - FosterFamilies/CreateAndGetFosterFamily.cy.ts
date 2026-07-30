@@ -1,0 +1,96 @@
+import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
+import {
+  validFosterFamilyRequestBody,
+  validLoginRequestBody,
+} from "@/cypress/support/requestBodies";
+
+describe("GET & POST Foster Family - Happy path", () => {
+  it("Should return 200 and foster family details", () => {
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      (token) => {
+        // Create the family
+        const request = validFosterFamilyRequestBody();
+        cy.apiRequest(
+          "POST",
+          "/foster-family?localAuthorityId=201",
+          request,
+          token,
+        ).then((createResponse) => {
+          // Verify the created family
+          cy.verifyApiResponseCode(createResponse, 201);
+
+          cy.wait(3000); // wait to save
+
+          const fosterCarerId = createResponse.body.fosterCarerId;
+
+          cy.apiRequest(
+            "GET",
+            `/foster-family/${fosterCarerId}?localAuthorityId=201`,
+            null,
+            token,
+          ).then((response) => {
+            console.log(response);
+            cy.verifyApiResponseCode(response, 200);
+            cy.verifyFosterFamilyCreatedAndReturned(response, request);
+          });
+        });
+      },
+    );
+  });
+});
+
+describe("GET & POST Foster Family - Unhappy path", () => {
+  it("GET - Should return 404 when foster carer does not exist", () => {
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      (token) => {
+        cy.apiRequest(
+          "GET",
+          `/foster-family/${crypto.randomUUID()}?localAuthorityId=201`,
+          null,
+          token,
+          false,
+        ).then((response) => {
+          expect(response.status).to.eq(404);
+        });
+      },
+    );
+  });
+
+  it("GET - Should return 400 for invalid foster carer id", () => {
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      (token) => {
+        cy.apiRequest(
+          "GET",
+          "/foster-family/not-a-guid?localAuthorityId=201",
+          null,
+          token,
+          false,
+        ).then((response) => {
+          expect(response.status).to.eq(400);
+        });
+      },
+    );
+  });
+
+  it("POST - Should return 400 when request is invalid", () => {
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      (token) => {
+        const request = validFosterFamilyRequestBody();
+
+        request.fosterCarer.carerFirstName = "";
+
+        cy.apiRequest(
+          "POST",
+          "/foster-family?localAuthorityId=201",
+          request,
+          token,
+          false,
+        ).then((response) => {
+          expect(response.status).to.eq(400);
+
+          expect(response.body.errors).to.have.length.greaterThan(0);
+        });
+      },
+    );
+  });
+});
