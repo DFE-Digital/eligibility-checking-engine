@@ -252,4 +252,6 @@ public static class ClaimsPrincipalExtensions
         // Return null for other invalid scenarios (no scope or multiple IDs)
         return null;
     }
+
+    
 }

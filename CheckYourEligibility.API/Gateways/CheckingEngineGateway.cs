@@ -1,12 +1,9 @@
-﻿// Ignore Spelling: Fsm
-
-using Azure.Storage.Queues;
+﻿using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
@@ -314,7 +311,7 @@ public class CheckingEngineGateway : ICheckingEngine
         else
         {
             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
-                checkData.NationalInsuranceNumber, checkData.LastName);
+                checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
 
             if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
 
@@ -441,6 +438,8 @@ public class CheckingEngineGateway : ICheckingEngine
 
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
                         checkTierResult = capiClaimResponse.EligibilityTier;
+                        checkData.ErrorCode = capiClaimResponse.ErrorCode;                        
+
                         source = ProcessEligibilityCheckSource.DWP;
 
                         var capiAudit = new CAPIAudit(
@@ -452,7 +451,16 @@ public class CheckingEngineGateway : ICheckingEngine
                               capiClaimResponse.ResponseCode,
                               capiClaimResponse.CAPIResponseCode);
 
-                        await _db.CAPIAudits.AddAsync(capiAudit);
+                        try
+                        {
+                            await context.CAPIAudits.AddAsync(capiAudit);
+                            await context.SaveChangesAsync();
+                        }
+                        catch (Exception ex) {
+
+                            _logger.LogError(ex," Check:{checkId} Action:AddToCAPIAudits Status:Failed", result.EligibilityCheckID);
+                        } 
+
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
 
                     }
@@ -490,13 +498,20 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult == CheckEligibilityStatus.eligible)
         {
-            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
-            result.CheckData = JsonConvert.SerializeObject(checkData);
+            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");            
         }
 
         result.Status = checkStatusResult;
         result.Tier = checkTierResult;
         result.Updated = DateTime.UtcNow;
+
+        if (checkStatusResult == CheckEligibilityStatus.error &&
+            string.IsNullOrWhiteSpace(checkData.ErrorCode))
+        {
+            checkData.ErrorCode = "STE50";
+        }
+
+        result.CheckData = JsonConvert.SerializeObject(checkData);
 
         if (checkStatusResult == CheckEligibilityStatus.error)
         {

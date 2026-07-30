@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260728082857_Add_MultiAcademyTrust_ImportedIsDeleted")]
+    partial class Add_MultiAcademyTrust_ImportedIsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -741,13 +744,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("Email", "Reference", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserType] IS NOT NULL");
-
-                    b.HasIndex("UserName", "OrganisationType", "OrganisationId", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserName] IS NOT NULL AND [OrganisationType] IS NOT NULL AND [OrganisationId] IS NOT NULL AND [UserType] IS NOT NULL");
+                    b.HasIndex("Email", "Reference")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

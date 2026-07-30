@@ -12,7 +12,8 @@ namespace CheckYourEligibility.API.Helpers
         /// <param name="organisationType"></param>
         /// <param name="organisationId"></param>
         /// <returns></returns>
-        public static string GetOrganisationIdOFTypeLocalAuthority(string? organisationType, int? organisationId ) {
+        public static string GetOrganisationIdOFTypeLocalAuthority(string? organisationType, int? organisationId)
+        {
 
 
             if (organisationType != OrganisationType.local_authority || organisationId is null || organisationId == 0)
@@ -49,6 +50,7 @@ namespace CheckYourEligibility.API.Helpers
             }
             return laId;
         }
+
 
         /// <summary>
         ///  Calculate EligibilityEndDate for FSM

@@ -17,7 +17,7 @@ public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
     {
         _mockUserGateway = new Mock<IUsers>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new CreateOrUpdateUserUseCase(_mockUserGateway.Object, _mockAuditGateway.Object);
+        _sut = new CreateOrUpdateFSMParentUserUseCase(_mockUserGateway.Object, _mockAuditGateway.Object);
     }
 
     [TearDown]
@@ -29,7 +29,7 @@ public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
 
     private Mock<IUsers> _mockUserGateway;
     private Mock<IAudit> _mockAuditGateway;
-    private CreateOrUpdateUserUseCase _sut;
+    private CreateOrUpdateFSMParentUserUseCase _sut;
 
     [Test]
     public async Task Execute_Should_Return_UserSaveItemResponse_When_Successful()
@@ -38,7 +38,7 @@ public class CreateOrUpdateUserUseCaseTests : TestBase.TestBase
         var request = _fixture.Create<UserCreateRequest>();
         var responseId = _fixture.Create<string>();
 
-        _mockUserGateway.Setup(us => us.Create(request.Data)).ReturnsAsync(responseId);
+        _mockUserGateway.Setup(us =>  us.CreateOrUpdateFSMParentUser(request)).ReturnsAsync(responseId);
 
         var expectedResponse = new UserSaveItemResponse { Data = responseId };
 
