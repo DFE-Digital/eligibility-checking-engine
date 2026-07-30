@@ -20,7 +20,7 @@ param(
     [string]$CheckType = "free-school-meals",
 
     # How many bulk check batches to submit concurrently
-    [ValidateRange(1, 200)]
+    [ValidateRange(1, 1000)]
     [int]$NumberOfBatches = 5,
 
     # Records per batch. Max is BulkEligibilityCheckLimit in appsettings (250 locally, 5000 dev)
@@ -32,8 +32,12 @@ param(
     [int]$SubmissionStaggerMs = 0,
 
     # Optional cap for parallel submissions. 0 means use NumberOfBatches.
-    [ValidateRange(0, 200)]
+    [ValidateRange(0, 1000)]
     [int]$SubmissionConcurrency = 0,
+
+    # Number of batches to prepare and submit per chunk.
+    [ValidateRange(1, 1000)]
+    [int]$BatchChunkSize = 25,
 
     # API client credentials (must have bulk_check + local_authority scope)
     [string]$ClientId = $env:CYE_CLIENT_ID,
@@ -99,6 +103,7 @@ Write-Host "  Batches:          $NumberOfBatches"
 Write-Host "  Records/batch:    $RecordsPerBatch"
 Write-Host "  Total records:    $totalRecords"
 Write-Host "  Concurrency:      $effectiveThrottleLimit"
+Write-Host "  Chunk size:       $BatchChunkSize"
 Write-Host "  Stagger:          ${SubmissionStaggerMs}ms between submissions"
 Write-Host "  Last name mode:   $LastNameMode"
 Write-Host "  NINO prefixes:    $($NinoPrefixes -join ', ') — randomised per record"
@@ -131,94 +136,151 @@ Write-Host "  Token obtained." -ForegroundColor Green
 # -----------------------------------------------------------------------
 # Step 2 — Build batch payloads
 # -----------------------------------------------------------------------
-Write-Host "Generating $NumberOfBatches batches of $RecordsPerBatch records..." -ForegroundColor Yellow
+Write-Host "Generating and submitting $NumberOfBatches batches of $RecordsPerBatch records in chunks of $BatchChunkSize..." -ForegroundColor Yellow
 
-# Pre-build all batch payloads as JSON strings so the parallel block has no dependencies
-$batchPayloads = @()
-for ($b = 1; $b -le $NumberOfBatches; $b++) {
+function New-BulkBatchPayload {
+    param(
+        [int]$BatchNumber,
+        [int]$StartRecordIndex
+    )
+
     $records = @()
     for ($r = 1; $r -le $RecordsPerBatch; $r++) {
-        $recordIndex = $runIndexOffset + (($b - 1) * $RecordsPerBatch) + $r
-        # Generate a unique NINO: random prefix + 6 zero-padded digits + C  (e.g. NT000001C)
+        $recordIndex = $StartRecordIndex + $r
         $prefix = $NinoPrefixes | Get-Random
         $nino = "$prefix{0:D6}C" -f $recordIndex
-        # Vary DOBs so records look realistic
         $year  = 1970 + ($recordIndex % 25)
         $month = (($recordIndex % 12) + 1).ToString("D2")
         $day   = (($recordIndex % 28) + 1).ToString("D2")
         $lastName = if ($LastNameMode -eq "Random") { $randomLastNames | Get-Random } else { "TESTER" }
 
         $records += @{
-            lastName                    = $lastName
-            dateOfBirth                 = "$year-$month-$day"
-            nationalInsuranceNumber     = $nino
-            clientIdentifier            = "batch${b}-record${r}"
+            lastName                = $lastName
+            dateOfBirth             = "$year-$month-$day"
+            nationalInsuranceNumber = $nino
+            clientIdentifier        = "batch${BatchNumber}-record${r}"
         }
     }
 
-    $payload = @{
-        data = $records
-        meta = @{
-            filename    = "simulate-batch-$b.csv"
-            submittedBy = "load-simulator"
-        }
-    }
-
-    $batchPayloads += [PSCustomObject]@{
-        BatchNumber = $b
-        Json        = ($payload | ConvertTo-Json -Depth 5 -Compress)
+    return [PSCustomObject]@{
+        BatchNumber = $BatchNumber
+        Json        = (@{
+            data = $records
+            meta = @{
+                filename    = "simulate-batch-$BatchNumber.csv"
+                submittedBy = "load-simulator"
+            }
+        } | ConvertTo-Json -Depth 5 -Compress)
     }
 }
-Write-Host "  Payloads ready." -ForegroundColor Green
+
+function Submit-BulkBatchChunk {
+    param(
+        [int]$ChunkStartBatch,
+        [int]$ChunkEndBatch
+    )
+
+    $batchPayloads = @()
+    for ($b = $ChunkStartBatch; $b -le $ChunkEndBatch; $b++) {
+        $startRecordIndex = $runIndexOffset + (($b - 1) * $RecordsPerBatch)
+        $batchPayloads += New-BulkBatchPayload -BatchNumber $b -StartRecordIndex $startRecordIndex
+    }
+
+    Write-Host "  Prepared batches $ChunkStartBatch-$ChunkEndBatch." -ForegroundColor Green
+    Write-Host "  Submitting batches $ChunkStartBatch-$ChunkEndBatch..." -ForegroundColor Yellow
+
+    if ($effectiveThrottleLimit -le 1) {
+        $headers = @{ Authorization = "Bearer $token" }
+        $results = @()
+
+        foreach ($batch in $batchPayloads) {
+            if ($SubmissionStaggerMs -gt 0 -and $results.Count -gt 0) {
+                Start-Sleep -Milliseconds $SubmissionStaggerMs
+            }
+
+            $result = [PSCustomObject]@{
+                BatchNumber = $batch.BatchNumber
+                Guid        = $null
+                StatusCode  = $null
+                Error       = $null
+                SubmittedAt = Get-Date
+            }
+
+            try {
+                $response = Invoke-RestMethod -Uri $apiEndpoint `
+                    -Method Post -Headers $headers `
+                    -Body $batch.Json -ContentType "application/json" `
+                    -SkipCertificateCheck
+
+                $progressLink = $response.links.get_Progress_Check
+                if ($progressLink -match '/bulk-check/([^/]+)/progress') {
+                    $result.Guid = $Matches[1]
+                }
+                $result.StatusCode = 202
+            }
+            catch {
+                $result.StatusCode = $_.Exception.Response.StatusCode.value__
+                $result.Error      = $_.Exception.Message
+            }
+
+            $results += $result
+        }
+
+        return $results
+    }
+
+    return $batchPayloads | ForEach-Object -Parallel {
+        $batch       = $_
+        $endpoint    = $using:apiEndpoint
+        $bearerToken = $using:token
+        $staggerMs   = $using:SubmissionStaggerMs
+
+        if ($staggerMs -gt 0) {
+            Start-Sleep -Milliseconds ($batch.BatchNumber * $staggerMs)
+        }
+
+        $headers = @{ Authorization = "Bearer $bearerToken" }
+        $result  = [PSCustomObject]@{
+            BatchNumber = $batch.BatchNumber
+            Guid        = $null
+            StatusCode  = $null
+            Error       = $null
+            SubmittedAt = Get-Date
+        }
+
+        try {
+            $response = Invoke-RestMethod -Uri $endpoint `
+                -Method Post -Headers $headers `
+                -Body $batch.Json -ContentType "application/json" `
+                -SkipCertificateCheck
+
+            $progressLink = $response.links.get_Progress_Check
+            if ($progressLink -match '/bulk-check/([^/]+)/progress') {
+                $result.Guid = $Matches[1]
+            }
+            $result.StatusCode = 202
+        }
+        catch {
+            $result.StatusCode = $_.Exception.Response.StatusCode.value__
+            $result.Error      = $_.Exception.Message
+        }
+
+        return $result
+
+    } -ThrottleLimit $using:effectiveThrottleLimit
+}
 
 # -----------------------------------------------------------------------
-# Step 3 — Submit all batches concurrently
+# Step 3 — Submit all batches in chunks
 # -----------------------------------------------------------------------
 Write-Host ""
-Write-Host "Submitting $NumberOfBatches batches concurrently..." -ForegroundColor Yellow
 $submitStart = Get-Date
+$submissionResults = @()
 
-$submissionResults = $batchPayloads | ForEach-Object -Parallel {
-    $batch       = $_
-    $endpoint    = $using:apiEndpoint
-    $bearerToken = $using:token
-    $staggerMs   = $using:SubmissionStaggerMs
-
-    # Optional stagger — delay each batch slightly to mimic real-world scheduler behaviour
-    if ($staggerMs -gt 0) {
-        Start-Sleep -Milliseconds ($batch.BatchNumber * $staggerMs)
-    }
-
-    $headers = @{ Authorization = "Bearer $bearerToken" }
-    $result  = [PSCustomObject]@{
-        BatchNumber = $batch.BatchNumber
-        Guid        = $null
-        StatusCode  = $null
-        Error       = $null
-        SubmittedAt = Get-Date
-    }
-
-    try {
-        $response = Invoke-RestMethod -Uri $endpoint `
-            -Method Post -Headers $headers `
-            -Body $batch.Json -ContentType "application/json" `
-            -SkipCertificateCheck
-
-        # Response: { data: { status: "processing" }, links: { get_Progress_Check: "/bulk-check/{guid}/progress" } }
-        $progressLink = $response.links.get_Progress_Check
-        if ($progressLink -match '/bulk-check/([^/]+)/progress') {
-            $result.Guid = $Matches[1]
-        }
-        $result.StatusCode = 202
-    }
-    catch {
-        $result.StatusCode = $_.Exception.Response.StatusCode.value__
-        $result.Error      = $_.Exception.Message
-    }
-
-    return $result
-
-} -ThrottleLimit $effectiveThrottleLimit
+for ($chunkStart = 1; $chunkStart -le $NumberOfBatches; $chunkStart += $BatchChunkSize) {
+    $chunkEnd = [Math]::Min($chunkStart + $BatchChunkSize - 1, $NumberOfBatches)
+    $submissionResults += Submit-BulkBatchChunk -ChunkStartBatch $chunkStart -ChunkEndBatch $chunkEnd
+}
 
 $submitEnd   = Get-Date
 $submitMs    = [int]($submitEnd - $submitStart).TotalMilliseconds
