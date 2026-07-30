@@ -143,7 +143,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             {
                 Data = new()
                 {
-                    Email = userDetails.Email, 
+                    Email = userDetails.Email,
                     Reference = Guid.NewGuid().ToString() // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
                 },
 
@@ -269,25 +269,27 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
     private (UserType UserType, string? UserName, string? Email) GetUserDetailsFromClientId(string clientId)
     {
-        if (!clientId.Contains(':'))
+        UserType userType = UserType.API; // Default to API user type
+        string userName = clientId; // Default to clientId as username
+        string email = clientId; // Default to clientId as email
+
+        // If client Id contains : separated values then this is a portal user and we can extract the user type from the client Id
+        if (clientId.Contains(':'))
         {
-            // API user
-            return (
-                Source: UserType.API,
-                UserName: clientId, // so production-something
-                Email: clientId); // api user no email but will have production-something
+            var parts = clientId.Split(':', 2);
+            // Extract the user type from the client ID and parse it into the UserType enum
+            Enum.TryParse<UserType>(parts[0].Replace("-", ""), true, out userType);
+
+            // Use the second part of clientId as the username and email
+            userName = parts[1]; 
+            email = parts[1];
         }
 
-        // Portal user
-        var parts = clientId.Split(':', 2);
-
         return (
-            Source: Enum.Parse<UserType>(parts[0]),  // so free-school-meals-admin etc..
-            UserName: parts[1], // will be same as email
-            Email: parts[1]);
+            UserType: userType,
+            UserName: userName,
+            Email: email);
     }
-
-
 
     private static bool ValidateSecret(string secret, string expectedSecret)
     {
