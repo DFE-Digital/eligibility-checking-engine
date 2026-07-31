@@ -4,6 +4,7 @@ namespace CheckYourEligibility.API.Domain.Constants;
 
 public static class CheckLinks
 {
+    public const string InternalGetLink = "/internal/check/";
     public const string GetLink = "/check/";
     public const string ProcessLink = "/engine/process/";
     public const string Status = "/status/";

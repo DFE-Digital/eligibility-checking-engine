@@ -1,0 +1,150 @@
+﻿using CheckYourEligibility.API.Boundary.Responses.Internal;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+
+namespace CheckYourEligibility.API.Helpers
+{
+    /// <summary>
+    /// Helper classes to help calcualte the following for a working family check
+    /// 1. Is Discretionary validity start date applied
+    /// 2. Calculation of term validity
+    /// 3. Calcuation of Reconfirmation properties
+    /// 4. Set eligibility code type - Temporary,Permanent, Foster
+    /// </summary>
+    public class WorkingFamiliesCheckHelper
+    {
+
+        public class Term
+        {
+           public TermName Name { get; set; }
+            public DateTime StartDate { get; set; }
+            public Term(TermName name, DateTime startDate) {
+                 Name = name;
+                 StartDate = startDate;
+       
+            }
+        }
+        /// <summary>
+        /// if VSD == DVSD it means that DVSD logic has not been applied during the event import for this code
+        /// </summary>
+        /// <param name="validityStartDate"></param>
+        /// <param name="discretionaryValidityStartDate"></param>
+        /// <returns></returns>
+        public static bool IsDiscretionaryValidityStartDateApplied(DateTime validityStartDate, DateTime discretionaryValidityStartDate) {
+
+            if (validityStartDate == discretionaryValidityStartDate) return false;
+
+            return true;
+        }
+        /// <summary>
+        /// Calculates the terms for which a code is valid.
+        /// Returns:
+        /// - [] when the child is too old or the code has expired.
+        /// - [NextTerm] when the child is too young or the VSD falls  within the current term.
+        /// - [CurrentTerm, NextTerm] when the GPED  extends beyond the start of the next term.
+        /// - [CurrentTerm] when GPED does not extend beyond the start of the next term,
+        /// VSD is before the start of the current term,assuming child is correct age 
+        /// </summary>
+        public static TermValidity SetTermValidity(DateTime checkDate, DateTime gracePeriodEndDAte, DateTime validityStartDate, DateTime dateOfBirth)
+        {
+            (Term current, Term next) = GetTerms(checkDate);
+            if (ChildIsTooYoung(dateOfBirth, checkDate) || 
+                ChildIsTooOld(dateOfBirth, checkDate) || 
+                checkDate > gracePeriodEndDAte)  return new TermValidity(TermName.None, TermName.None);
+
+            if (validityStartDate >= current.StartDate) { return new TermValidity(TermName.None, next.Name); }
+
+            if (gracePeriodEndDAte > next.StartDate) { return new TermValidity(current.Name, next.Name); }
+
+            return new TermValidity(TermName.None,current.Name);          
+
+        }
+
+        public static ReconfirmationProperties SetReconfirmationProperties(DateTime validityEndDate,DateTime GracePeriodEndDate, DateTime checkDate, EligibilityCodeType codeType, DateTime childDOB)
+        {
+           
+            if (codeType == EligibilityCodeType.Temporary)
+            {
+                return new ReconfirmationProperties();
+            }
+            else if (ChildIsTooOld(childDOB,checkDate)) //child too old - Child has reached compulsory school age
+
+            return new ReconfirmationProperties()
+            {
+                Status = ReconfirmationStatus.ChildTooOld
+            };
+
+            DateTime startReconfirmDate = validityEndDate.AddDays(-28);
+            ReconfirmationProperties reconfirmationProperties = new ReconfirmationProperties();
+
+            if (checkDate > validityEndDate) {
+
+                reconfirmationProperties.Status = ReconfirmationStatus.Overdue;
+            }
+
+            else if  (checkDate < startReconfirmDate)
+            {
+                reconfirmationProperties.Status = ReconfirmationStatus.NotDueYet;
+            }
+             else { reconfirmationProperties.Status = ReconfirmationStatus.Due; }
+
+            reconfirmationProperties.StartDate = startReconfirmDate;
+            reconfirmationProperties.EndDate = validityEndDate;
+
+            return reconfirmationProperties;
+        }
+#region Private
+
+        private static (Term Current, Term Next) GetTerms(DateTime date)
+        {
+            int year = date.Year;
+
+            if (date >= new DateTime(year, 9, 1))
+            {
+                return (
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1)),
+                    new Term(TermName.Spring, new DateTime(year + 1, 1, 1))
+                );
+            }
+
+            if (date >= new DateTime(year, 4, 1))
+            {
+                return (
+                    new Term(TermName.Summer, new DateTime(year, 4, 1)),
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1))
+                );
+            }
+
+            return (
+                new Term(TermName.Spring, new DateTime(year, 1, 1)),
+                new Term(TermName.Summer, new DateTime(year, 4, 1))
+            );
+        }
+        /// <summary>
+        ///  Caclculates if child turns 9 months after the start of the current turm => child is too young
+        /// </summary>
+        /// <param name="dateOfBirth"></param>
+        /// <param name="checkDate"></param>
+        /// <returns></returns>
+        private static bool ChildIsTooYoung(DateTime dateOfBirth, DateTime checkDate) {
+
+            DateTime nineMonthsOld = dateOfBirth.AddMonths(9);
+            var (currentTerm, _) = GetTerms(checkDate);          
+            return nineMonthsOld > currentTerm.StartDate;       
+        
+        }
+
+        /// <summary>
+        /// Calculates if checkDate is on/after the start of this term => child is too old
+        /// </summary>
+        /// <param name="dateOfBirth"></param>
+        /// <param name="checkDate"></param>
+        /// <returns></returns>
+        private static bool ChildIsTooOld(DateTime dateOfBirth, DateTime checkDate)
+        {
+            DateTime fifthBirthday = dateOfBirth.AddYears(5);
+            var (_, termAfterBirthday) = GetTerms(fifthBirthday);
+            return checkDate >= termAfterBirthday.StartDate;
+        }
+        #endregion
+    }
+}

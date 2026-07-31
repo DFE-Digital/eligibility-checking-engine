@@ -1,4 +1,3 @@
-using System.Net;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
@@ -9,6 +8,7 @@ using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
+using System.Net;
 using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
@@ -143,7 +143,7 @@ public class CheckController : BaseController
     }
 
     /// <summary>
-    /// Posts a WF Eligibility Check to the processing queue
+    /// Posts a WF Eligibility Check to the processing queue from the unduser API
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>
@@ -257,6 +257,40 @@ public class CheckController : BaseController
     [HttpGet("/check/{guid}")]
     [Authorize(Policy = PolicyNames.RequireCheckScope)]
     public async Task<ActionResult> EligibilityCheck(string guid)
+    {
+        try
+        {
+            var result = await _getEligibilityCheckItemUseCase.Execute(guid, CheckEligibilityType.None);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
+    ///    Check done from Intenral systems - Gets an Eligibility check using the supplied GUID
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/internal/check/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireChildCareAdminSource)]
+    public async Task<ActionResult> InternalEligibilityCheck(string guid)
     {
         try
         {

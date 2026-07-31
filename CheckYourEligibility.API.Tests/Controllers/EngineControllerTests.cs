@@ -6,6 +6,7 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.API.Usecases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

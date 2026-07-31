@@ -9,6 +9,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.API.Usecases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
