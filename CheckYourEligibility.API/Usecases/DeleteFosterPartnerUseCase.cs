@@ -1,6 +1,7 @@
 using System;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -20,7 +21,7 @@ public class DeleteFosterPartnerUseCase : IDeleteFosterPartnerUseCase
 
     public async Task Execute(Guid fosterCarerId)
     {
-        if (fosterCarerId == Guid.Empty) throw new ValidationException("A valid fosterCarerId is required");
+        if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
 
         await _gateway.DeleteFosterPartner(fosterCarerId);
     }

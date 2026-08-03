@@ -1,4 +1,5 @@
 using FluentValidation;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -18,15 +19,15 @@ public class UpdateFosterChildUseCase : IUpdateFosterChildUseCase
 
     public async Task<FosterChildResponse> Execute(Guid fosterChildId, int localAuthorityId, List<int> localAuthorityIds, UpdateFosterChildRequest request)
     {
-        if (fosterChildId == Guid.Empty) throw new ValidationException("A valid fosterChildId is required");
+        if (fosterChildId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterChildId);
         ArgumentNullException.ThrowIfNull(request);
 
-        if (localAuthorityId == null) throw new ValidationException("Local Authority ID is required");
+        if (localAuthorityId == null) throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
 
         if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
         {
             throw new UnauthorizedAccessException(
-                "You do not have permission to create a foster family for this Local Authority");
+                            FosterFamilyValidationMessages.UpdateFosterChildPermission);
         }
 
 

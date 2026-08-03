@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -20,12 +21,12 @@ public class SearchFosterFamiliesUseCase : ISearchFosterFamiliesUseCase
     {
         ArgumentNullException.ThrowIfNull(request);
 
-         if(localAuthorityId == null) throw new ValidationException("Local Authority ID is required");
+         if(localAuthorityId == null) throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
         
         if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
         {
             throw new UnauthorizedAccessException(
-                "You do not have permission to search foster families for this Local Authority");
+                            FosterFamilyValidationMessages.SearchFosterFamiliesPermission);
         };
 
         var response = await _gateway.SearchFosterFamilies(localAuthorityId, request);

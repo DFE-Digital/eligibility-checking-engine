@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using FluentValidation;
 
 namespace CheckYourEligibility.API.UseCases;
@@ -19,19 +20,19 @@ public class CreateFosterChildUseCase : ICreateFosterChildUseCase
     public async Task<FosterChildCreatedResponse> Execute(FosterChildRequest request, List<int> localAuthorityIds, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
     {
 
-        if (fosterCarerId == Guid.Empty) throw new ValidationException("A valid fosterCarerId is required");
+        if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
 
         ArgumentNullException.ThrowIfNull(request);
 
         if (localAuthorityId <= 0)
         {
-            throw new ValidationException("Local Authority ID is required");
+            throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
         }
 
         if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
         {
             throw new UnauthorizedAccessException(
-                "You do not have permission to create a foster child for this Local Authority");
+                FosterFamilyValidationMessages.CreateFosterChildPermission);
         }
         ;
 

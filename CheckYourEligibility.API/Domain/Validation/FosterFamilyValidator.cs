@@ -45,8 +45,9 @@ public class FosterCarerRequestValidator
 
         RuleFor(x => x.CarerDateOfBirth)
             .NotEmpty()
+            .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.DOB);
-
+ 
         RuleFor(x => x.CarerNationalInsuranceNumber)
             .NotEmpty()
             .Must(DataValidation.BeAValidNi)
@@ -69,8 +70,9 @@ public class FosterPartnerRequestValidator
 
         RuleFor(x => x.PartnerDateOfBirth)
             .NotEmpty()
+            .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.DOB);
-
+ 
         RuleFor(x => x.PartnerNationalInsuranceNumber)
             .NotEmpty()
             .Must(DataValidation.BeAValidNi)
@@ -93,8 +95,9 @@ public class FosterChildRequestValidator
 
         RuleFor(x => x.ChildDateOfBirth)
             .NotEmpty()
+            .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.ChildDOB);
-
+ 
         RuleFor(x => x.ChildPostCode)
             .NotEmpty()
             .WithMessage("Child PostCode is required");

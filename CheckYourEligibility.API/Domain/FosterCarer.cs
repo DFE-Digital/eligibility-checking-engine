@@ -12,9 +12,6 @@ public class FosterCarer
     public DateTime DateOfBirth { get; set; }
     [Column(TypeName = "varchar(50)")] public string NationalInsuranceNumber { get; set; }
     public bool HasPartner { get; set; } = false;
-
-    //
-
     [Column(TypeName = "varchar(100)")] public string? PartnerFirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string? PartnerLastName { get; set; }
     public DateTime? PartnerDateOfBirth { get; set; }

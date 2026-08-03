@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -23,13 +24,13 @@ public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
 
         if (localAuthorityId <= 0)
         {
-            throw new ValidationException("Local Authority ID is required");
+            throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
         }
 
         if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
         {
             throw new UnauthorizedAccessException(
-                "You do not have permission to create a foster family for this Local Authority");
+                            FosterFamilyValidationMessages.CreateFosterFamilyPermission);
         }
         ;
 
