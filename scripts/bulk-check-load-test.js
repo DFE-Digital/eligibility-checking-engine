@@ -10,11 +10,15 @@
  *   - Node.js 14+          (no npm install needed – uses built-in modules)
  *
  * Usage:
- *   node bulk-check-load-test.js [options]
+ *   node bulk-check-load-test.js --clientId <id> --clientSecret <secret> [options]
+ *
+ * Required (both modes) — credentials are NEVER stored in this file:
+ *   --clientId     <id>      Client ID from appsettings.local.json Jwt:Clients
+ *   --clientSecret <secret>  Matching client secret
  *
  * Options (submit mode):
- *   --count  <n>      Number of records to send  (default: 200)
- *   --type   <slug>   Check type slug            (default: free-school-meals)
+ *   --count  <n>      Number of records to send  (default: 4500)
+ *   --type   <slug>   Check type slug            (default: working-families)
  *                       free-school-meals | two-year-offer
  *                       early-year-pupil-premium | working-families
  *   --no-poll         Skip progress polling after submission
@@ -27,12 +31,12 @@
  *   --nth    <n>      Display only the nth result (1-based)
  *
  * Examples:
- *   node bulk-check-load-test.js
- *   node bulk-check-load-test.js --count 1000
- *   node bulk-check-load-test.js --count 5000 --type free-school-meals
- *   node bulk-check-load-test.js --id abc-123 --progress
- *   node bulk-check-load-test.js --id abc-123 --results --take 20
- *   node bulk-check-load-test.js --id abc-123 --results --nth 42
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret>
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --count 1000
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --count 5000 --type free-school-meals
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --id abc-123 --progress
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --id abc-123 --results --take 20
+ *   node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --id abc-123 --results --nth 42
  * ───────────────────────────────────────────────────────────────────────────
  */
 
@@ -43,12 +47,12 @@ const http = require('http');
 const crypto = require('crypto');
 
 // ─── Configuration ────────────────────────────────────────────────────────────
-// Credentials and local authority ID come from appsettings.Development.json.
-// controller happy without needing to pass an LA ID via meta if you prefer.
 const CONFIG = {
   baseUrl: 'https://localhost:7117',  // Change to e.g. 'https://dev.eligibility-checking-engine.education.gov.uk' to query dev
-  clientId: '',
-  clientSecret: '',
+  // clientId/clientSecret are NOT stored here - pass them via --clientId/--clientSecret
+  // so credentials never end up committed to the repo.
+  clientId: null,
+  clientSecret: null,
   // Scope string sent in the token request — GenerateJSONWebToken only adds a
   // scope claim when this is present. 'local_authority' (no ID) satisfies
   // HasSingleScope; 'bulk_check' satisfies RequireBulkCheckScope.
@@ -62,8 +66,8 @@ const CONFIG = {
   //   node bulk-check-load-test.js --count 5000
   // NOTE: BulkEligibilityCheckLimit in appsettings.Development.json must be >= --count
   //       or the API returns 400 before it even touches the DB/queue.
-  defaultRecordCount: 200,
-  defaultType: 'free-school-meals',
+  defaultRecordCount: 4500,
+  defaultType: 'working-families',
   pollIntervalMs: 3000,
   pollTimeoutMs: 300_000,       // 5 min
 };
@@ -91,6 +95,14 @@ for (let i = 0; i < argv.length; i++) {
   else if (argv[i] === '--requeue')  doRequeue    = true;
   else if (argv[i] === '--take'  && argv[i + 1]) takN       = parseInt(argv[++i], 10);
   else if (argv[i] === '--nth'   && argv[i + 1]) nthResult  = parseInt(argv[++i], 10);
+  else if (argv[i] === '--clientId'     && argv[i + 1]) CONFIG.clientId     = argv[++i];
+  else if (argv[i] === '--clientSecret' && argv[i + 1]) CONFIG.clientSecret = argv[++i];
+}
+
+if (!CONFIG.clientId || !CONFIG.clientSecret) {
+  console.error('Error: --clientId and --clientSecret are required (credentials are not stored in this file).');
+  console.error('Example: node bulk-check-load-test.js --clientId Omni --clientSecret <secret> --count 4500 --type working-families');
+  process.exit(1);
 }
 
 // ─── Data generation ──────────────────────────────────────────────────────────
@@ -147,13 +159,32 @@ function generateDob() {
   return `${year}-${month}-${day}`;
 }
 
+// WorkingFamilies-only: generates an 11-digit EligibilityCode that resolves entirely via the
+// local in-memory test-data path (CheckingEngineGateway.Generate_Test_Working_Families_EventRecord),
+// so no real ECS call is needed. Format (see appsettings.Development.json TestData section):
+//   digits [0:3]  outcome prefix - "900" = Eligible
+//   digits [3:5]  ValidityStartDate offset (days before today)
+//   digits [5:7]  ValidityEndDate offset (days after start)
+//   digits [7:9]  GracePeriodEndDate offset (days after end)
+//   digits [9:11] unused padding (code must be exactly 11 digits)
+// Offsets below keep today comfortably inside the eligible window.
+function generateEligibilityCode() {
+  return '90001303000';
+}
+
 function generateRecords(count, useTesting = false) {
-  return Array.from({ length: count }, (_, i) => ({
-    nationalInsuranceNumber: generateNino(useTesting),
-    lastName: useTesting ? 'TESTER' : LAST_NAMES[rnd(0, LAST_NAMES.length - 1)],
-    dateOfBirth: generateDob(),
-    clientIdentifier: `LOAD-TEST-${String(i + 1).padStart(6, '0')}`,
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const record = {
+      nationalInsuranceNumber: generateNino(useTesting),
+      lastName: useTesting ? 'TESTER' : LAST_NAMES[rnd(0, LAST_NAMES.length - 1)],
+      dateOfBirth: generateDob(),
+      clientIdentifier: `LOAD-TEST-${String(i + 1).padStart(6, '0')}`,
+    };
+    if (checkType === 'working-families') {
+      record.eligibilityCode = generateEligibilityCode();
+    }
+    return record;
+  });
 }
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
