@@ -1,16 +1,16 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
-  validLoginRequestBody,
   validFosterFamilyRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("Delete Foster Child - happy paths", () => {
   it("DELETE - Should delete the foster child", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           validFosterFamilyRequestBody(),
           token,
         ).then((createFamilyResponse) => {
@@ -18,7 +18,7 @@ describe("Delete Foster Child - happy paths", () => {
 
           cy.apiRequest(
             "GET",
-            `/foster-family/${fosterCarerId}?localAuthorityId=201&includeChildren=true`,
+            `/foster-family/${fosterCarerId}?includeChildren=true`,
             null,
             token,
           ).then((familyResponse) => {
@@ -35,7 +35,7 @@ describe("Delete Foster Child - happy paths", () => {
 
               cy.apiRequest(
                 "GET",
-                `/foster-family/child/${fosterChildId}?localAuthorityId=201`,
+                `/foster-family/child/${fosterChildId}`,
                 null,
                 token,
                 false,
@@ -52,7 +52,7 @@ describe("Delete Foster Child - happy paths", () => {
 
 describe("Delete Foster Child - unhappy paths", () => {
   it("DELETE - Should return 404 when foster child does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "DELETE",
@@ -68,7 +68,7 @@ describe("Delete Foster Child - unhappy paths", () => {
   });
 
   it("DELETE - Should return 400 when foster child id is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "DELETE",

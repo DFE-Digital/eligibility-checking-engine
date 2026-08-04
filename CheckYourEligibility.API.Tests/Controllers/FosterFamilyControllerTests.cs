@@ -134,7 +134,6 @@ public class FosterFamilyControllerTests
         _mockGetFosterFamily
             .Setup(x => x.Execute(
                 id,
-                It.IsAny<List<int>>(),
                 201,
                 true))
             .ReturnsAsync(response);
@@ -142,8 +141,7 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.GetFosterFamily(
             id,
-            201,
-            true);
+            true);  
 
         // Assert
         result.Should().BeOfType<ObjectResult>();
@@ -163,7 +161,7 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.GetFosterFamily(
             Guid.NewGuid(),
-            201);
+            false);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -186,8 +184,7 @@ public class FosterFamilyControllerTests
 
         _mockGetFosterFamily
             .Setup(x => x.Execute(
-                id,
-                It.IsAny<List<int>>(),
+                id, 
                 201,
                 false))
             .ThrowsAsync(new NotFoundException());
@@ -195,7 +192,7 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.GetFosterFamily(
             id,
-            201);
+            false);
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
@@ -221,14 +218,12 @@ public class FosterFamilyControllerTests
         _mockCreateFosterFamily
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.CreateFosterFamily(
-            request,
-            201);
+            request);
 
         // Assert
         result.Should().BeOfType<ObjectResult>();
@@ -248,15 +243,13 @@ public class FosterFamilyControllerTests
         _mockCreateFosterFamily
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201))
             .ThrowsAsync(
                 new FluentValidation.ValidationException(
                     "Validation failed"));
 
         var result = await _sut.CreateFosterFamily(
-            request,
-            201);
+            request);
 
         result.Should().BeOfType<BadRequestObjectResult>();
     }
@@ -318,7 +311,6 @@ public class FosterFamilyControllerTests
         _mockGetFosterChild
             .Setup(x => x.Execute(
                 id,
-                It.IsAny<List<int>>(),
                 201,
                 true))
             .ReturnsAsync(response);
@@ -326,7 +318,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.GetFosterChild(
             id,
-            201,
             true);
 
         // Assert
@@ -346,8 +337,7 @@ public class FosterFamilyControllerTests
 
         // Act
         var result = await _sut.GetFosterChild(
-            Guid.NewGuid(),
-            201);
+            Guid.NewGuid());
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -373,7 +363,6 @@ public class FosterFamilyControllerTests
         _mockGetFosterChild
             .Setup(x => x.Execute(
                 id,
-                It.IsAny<List<int>>(),
                 201,
                 false))
             .ThrowsAsync(
@@ -383,8 +372,7 @@ public class FosterFamilyControllerTests
 
         // Act
         var result = await _sut.GetFosterChild(
-            id,
-            201);
+            id);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -425,7 +413,6 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201,
                 fosterCarerId,
                 It.IsAny<DateTime>()))
@@ -434,7 +421,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             fosterCarerId,
-            201,
             request);
 
         // Assert
@@ -457,7 +443,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             Guid.NewGuid(),
-            201,
             request);
 
         // Assert
@@ -484,7 +469,6 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201,
                 fosterCarerId,
                 It.IsAny<DateTime>()))
@@ -495,7 +479,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             fosterCarerId,
-            201,
             request);
 
         // Assert
@@ -520,7 +503,6 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild
             .Setup(x => x.Execute(
                 It.IsAny<FosterChildRequest>(),
-                It.IsAny<List<int>>(),
                 201,
                 fosterCarerId,
                 It.IsAny<DateTime>()))
@@ -529,7 +511,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             fosterCarerId,
-            201,
             null!);
 
         // Assert
@@ -549,7 +530,6 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201,
                 fosterCarerId,
                 It.IsAny<DateTime>()))
@@ -560,7 +540,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             fosterCarerId,
-            201,
             request);
 
         // Assert
@@ -587,7 +566,6 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild
             .Setup(x => x.Execute(
                 request,
-                It.IsAny<List<int>>(),
                 201,
                 fosterCarerId,
                 It.IsAny<DateTime>()))
@@ -596,7 +574,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.CreateFosterChild(
             fosterCarerId,
-            201,
             request);
 
         // Assert
@@ -639,14 +616,12 @@ public class FosterFamilyControllerTests
             .Setup(x => x.Execute(
                 fosterChildId,
                 201,
-                It.IsAny<List<int>>(),
                 request))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.UpdateFosterChild(
             fosterChildId,
-            201,
             request);
 
         // Assert
@@ -669,7 +644,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.UpdateFosterChild(
             Guid.NewGuid(),
-            201,
             request);
 
         // Assert
@@ -697,7 +671,6 @@ public class FosterFamilyControllerTests
             .Setup(x => x.Execute(
                 fosterChildId,
                 201,
-                It.IsAny<List<int>>(),
                 request))
             .ThrowsAsync(
                 new NotFoundException(
@@ -706,7 +679,6 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.UpdateFosterChild(
             fosterChildId,
-            201,
             request);
 
         // Assert
@@ -759,14 +731,13 @@ public class FosterFamilyControllerTests
                 It.Is<FosterFamiliesSearchRequest>(r =>
                     r.PageNumber == 1 &&
                     r.PageSize == 10),
-                201,
-                It.IsAny<List<int>>()))
+                201))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            201,
-            1);
+            1,
+            10);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -807,14 +778,13 @@ public class FosterFamilyControllerTests
                 It.Is<FosterFamiliesSearchRequest>(r =>
                     r.PageNumber == 1 &&
                     r.PageSize == 10),
-                201,
-                It.IsAny<List<int>>()))
+                201))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchFosterFamilies(
-            201,
-            1);
+            1,
+            10);
 
         // Assert
         var okResult = (OkObjectResult)result;
@@ -824,32 +794,6 @@ public class FosterFamilyControllerTests
 
         returned.TotalNumberOfRecords.Should().Be(0);
         returned.Data.Should().BeEmpty();
-    }
-
-    [Test]
-    public async Task SearchFosterFamilies_Passes_LocalAuthorityScopes_To_UseCase()
-    {
-        // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201, 202 });
-
-        _mockSearchFosterFamilies
-            .Setup(x => x.Execute(
-                It.Is<FosterFamiliesSearchRequest>(r =>
-                    r.PageNumber == 1 &&
-                    r.PageSize == 10),
-                201,
-                It.Is<List<int>>(ids =>
-                    ids.Contains(201) &&
-                    ids.Contains(202))))
-            .ReturnsAsync(new FosterFamiliesSearchResponse());
-
-        // Act
-        await _sut.SearchFosterFamilies(
-            201,
-            1);
-
-        // Assert
-        _mockSearchFosterFamilies.VerifyAll();
     }
 
 }

@@ -10,12 +10,12 @@ public class FosterCarer
     [Column(TypeName = "varchar(100)")] public string FirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string LastName { get; set; }
     public DateTime DateOfBirth { get; set; }
-    [Column(TypeName = "varchar(50)")] public string NationalInsuranceNumber { get; set; }
+    [Column(TypeName = "varchar(9)")] public string NationalInsuranceNumber { get; set; }
     public bool HasPartner { get; set; } = false;
     [Column(TypeName = "varchar(100)")] public string? PartnerFirstName { get; set; }
     [Column(TypeName = "varchar(100)")] public string? PartnerLastName { get; set; }
     public DateTime? PartnerDateOfBirth { get; set; }
-    [Column(TypeName = "varchar(50)")] public string? PartnerNationalInsuranceNumber { get; set; }
+    [Column(TypeName = "varchar(9)")] public string? PartnerNationalInsuranceNumber { get; set; }
 
     [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";
 

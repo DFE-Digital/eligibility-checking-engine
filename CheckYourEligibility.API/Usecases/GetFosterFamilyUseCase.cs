@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IGetFosterFamilyUseCase
 {
-    Task<FosterFamilyResponse> Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, bool includeChildren = false);
+    Task<FosterFamilyResponse> Execute(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false);
 }
 
 public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
@@ -17,21 +17,9 @@ public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterFamilyResponse> Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, bool includeChildren = false)
+    public async Task<FosterFamilyResponse> Execute(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false)
     {
         if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
-
-        if (localAuthorityId <= 0)
-        {
-            throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
-        }
-
-        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
-        {
-            throw new UnauthorizedAccessException(
-                            FosterFamilyValidationMessages.GetFosterFamilyPermission);
-        }
-        ;
 
         var result = await _gateway.GetFosterFamily(fosterCarerId, localAuthorityId, includeChildren);
         return result;

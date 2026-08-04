@@ -1,6 +1,6 @@
 public class FosterFamiliesSearchRequest
 {
-    public int PageNumber { get; set; } = 1;
+    public int PageNumber { get; set; } 
 
-    public int PageSize { get; set; } = 10;
+    public int PageSize { get; set; } 
 }

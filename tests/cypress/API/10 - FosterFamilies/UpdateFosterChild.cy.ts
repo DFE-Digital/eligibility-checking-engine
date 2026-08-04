@@ -1,19 +1,19 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
-  validLoginRequestBody,
   validFosterFamilyRequestBody,
   updateFosterChildRequestBody,
   invalidUpdateFosterChildRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("Update Foster Child - happy paths", () => {
   it("PATCH - Should update a foster child", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         // Create fam
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           validFosterFamilyRequestBody(),
           token,
         ).then((createFamilyResponse) => {
@@ -22,7 +22,7 @@ describe("Update Foster Child - happy paths", () => {
           // Get fam
           cy.apiRequest(
             "GET",
-            `/foster-family/${fosterCarerId}?localAuthorityId=201&includeChildren=true`,
+            `/foster-family/${fosterCarerId}?includeChildren=true`,
             null,
             token,
           ).then((familyResponse) => {
@@ -33,7 +33,7 @@ describe("Update Foster Child - happy paths", () => {
             // Update child
             cy.apiRequest(
               "PATCH",
-              `/foster-family/child/${fosterChildId}?localAuthorityId=201`,
+              `/foster-family/child/${fosterChildId}`,
               updateRequest,
               token,
             ).then((response) => {
@@ -58,11 +58,11 @@ describe("Update Foster Child - happy paths", () => {
 
 describe("Update Foster Child - unhappy paths", () => {
   it("PATCH - Should return 404 when foster child does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "PATCH",
-          `/foster-family/child/${crypto.randomUUID()}?localAuthorityId=201`,
+          `/foster-family/child/${crypto.randomUUID()}`,
           updateFosterChildRequestBody(),
           token,
           false,
@@ -74,11 +74,11 @@ describe("Update Foster Child - unhappy paths", () => {
   });
 
   it("PATCH - Should return 400 when request is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "PATCH",
-          `/foster-family/child/${crypto.randomUUID()}?localAuthorityId=201`,
+          `/foster-family/child/${crypto.randomUUID()}`,
           invalidUpdateFosterChildRequestBody(),
           token,
           false,

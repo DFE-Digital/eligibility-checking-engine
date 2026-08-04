@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface ISearchFosterFamiliesUseCase
 {
-    Task<FosterFamiliesSearchResponse> Execute(FosterFamiliesSearchRequest request, int localAuthorityId, List<int> localAuthorityIds);
+    Task<FosterFamiliesSearchResponse> Execute(FosterFamiliesSearchRequest request, int localAuthorityId);
 }
 
 public class SearchFosterFamiliesUseCase : ISearchFosterFamiliesUseCase
@@ -17,17 +17,19 @@ public class SearchFosterFamiliesUseCase : ISearchFosterFamiliesUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterFamiliesSearchResponse> Execute(FosterFamiliesSearchRequest request, int localAuthorityId, List<int> localAuthorityIds)
+    public async Task<FosterFamiliesSearchResponse> Execute(FosterFamiliesSearchRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-         if(localAuthorityId == null) throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
-        
-        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
+        if(request.PageNumber <= 0)
         {
-            throw new UnauthorizedAccessException(
-                            FosterFamilyValidationMessages.SearchFosterFamiliesPermission);
-        };
+            throw new ValidationException(FosterFamilyValidationMessages.InvalidPageNumber);
+        }
+
+        if(request.PageSize <= 0 || request.PageSize > 10)
+        {
+            throw new ValidationException(FosterFamilyValidationMessages.InvalidPageSize);
+        }
 
         var response = await _gateway.SearchFosterFamilies(localAuthorityId, request);
         return response ?? new FosterFamiliesSearchResponse { Data = Enumerable.Empty<FosterFamiliesSearchItemResponse>() };

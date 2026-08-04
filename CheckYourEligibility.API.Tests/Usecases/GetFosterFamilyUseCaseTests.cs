@@ -1,5 +1,3 @@
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
@@ -27,28 +25,17 @@ public class GetFosterFamilyUseCaseTests
     }
 
     [Test]
-    public void Execute_Should_Throw_When_Id_Is_Empty()
+    public async Task Execute_Should_Throw_When_Id_Is_Empty()
     {
-        FluentActions
+        await FluentActions
             .Invoking(async () => await _sut.Execute(
                 Guid.Empty,
-                new List<int> { 1 },
-                1))
+                1,
+                false))
             .Should()
             .ThrowAsync<ValidationException>();
     }
 
-    [Test]
-    public void Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
-    {
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                Guid.NewGuid(),
-                new List<int> { 999 },
-                1))
-            .Should()
-            .ThrowAsync<UnauthorizedAccessException>();
-    }
 
     [Test]
     public async Task Execute_Should_Call_Gateway_And_Return_Response()
@@ -75,7 +62,6 @@ public class GetFosterFamilyUseCaseTests
         // Act
         var result = await _sut.Execute(
             id,
-            new List<int> { 1 },
             1,
             true);
 
@@ -106,7 +92,6 @@ public class GetFosterFamilyUseCaseTests
         // Act
         var result = await _sut.Execute(
             id,
-            new List<int> { 0 },
             123);
 
         // Assert

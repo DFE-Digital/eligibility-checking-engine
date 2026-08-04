@@ -9,6 +9,19 @@ export const validLoginRequestBody = "client_id=".concat(
   "&scope=local_authority check application admin bulk_check establishment user engine",
 );
 
+export const validLoginRequestBodyFosterFamilies = "client_id=".concat(
+  Cypress.env("JWT_USERNAME"),
+  "&client_secret=",
+  encodeURIComponent(Cypress.env("JWT_PASSWORD")),
+  "&scope=local_authority:99 check application admin bulk_check establishment user engine",
+);
+export const invalidLoginRequestBodyFosterFamilies = "client_id=".concat(
+  Cypress.env("JWT_USERNAME"),
+  "&client_secret=",
+  encodeURIComponent(Cypress.env("JWT_PASSWORD")),
+  "&scope=local_authority check application admin bulk_check establishment user engine",
+);
+
 export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
   "&client_secret=",
@@ -395,7 +408,6 @@ export function invalidNinoWorkingFamiliesBulkRequestBody() {
 export function validFosterFamilyRequestBody() {
   return {
     fosterCarer: {
-      localAuthorityID: 201,
       carerFirstName: 'John',
       carerLastName: 'Smith Test',
       carerDateOfBirth: '1980-01-01',

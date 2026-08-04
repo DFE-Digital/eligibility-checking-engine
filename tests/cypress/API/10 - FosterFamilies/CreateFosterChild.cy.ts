@@ -1,14 +1,14 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
-  validLoginRequestBody,
   validFosterFamilyRequestBody,
   validFosterChildRequestBody,
-  invalidFosterChildRequestBody
+  invalidFosterChildRequestBody,
+  validLoginRequestBodyFosterFamilies
 } from "@/cypress/support/requestBodies";
 
 describe("Create Foster Child - happy paths", () => {
   it("POST - Should create a foster child and return it in the foster family", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         // Create family
         cy.apiRequest(
@@ -22,7 +22,7 @@ describe("Create Foster Child - happy paths", () => {
           // Create second child
           cy.apiRequest(
             "POST",
-            `/foster-family/${fosterCarerId}/child?localAuthorityId=201`,
+            `/foster-family/${fosterCarerId}/child`,
             validFosterChildRequestBody(),
             token,
           ).then((createChildResponse) => {
@@ -33,7 +33,7 @@ describe("Create Foster Child - happy paths", () => {
             // Get family including children
             cy.apiRequest(
               "GET",
-              `/foster-family/${fosterCarerId}?localAuthorityId=201&includeChildren=true`,
+              `/foster-family/${fosterCarerId}?includeChildren=true`,
               null,
               token,
             ).then((familyResponse) => {
@@ -59,11 +59,11 @@ describe("Create Foster Child - happy paths", () => {
 
 describe("Create Foster Child - unhappy paths", () => {
   it("POST - Should return 404 when foster carer does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "POST",
-          `/foster-family/${crypto.randomUUID()}/child?localAuthorityId=201`,
+          `/foster-family/${crypto.randomUUID()}/child`,
           validFosterChildRequestBody(),
           token,
           false,
@@ -75,11 +75,11 @@ describe("Create Foster Child - unhappy paths", () => {
   });
 
   it("POST - Should return 400 when request is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "POST",
-          `/foster-family/${crypto.randomUUID()}/child?localAuthorityId=201`,
+          `/foster-family/${crypto.randomUUID()}/child`,
           invalidFosterChildRequestBody(),
           token,
           false,

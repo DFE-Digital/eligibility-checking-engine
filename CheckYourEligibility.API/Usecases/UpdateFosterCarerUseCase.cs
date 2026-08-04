@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IUpdateFosterCarerUseCase
 {
-    Task Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, UpdateFosterCarerRequest request);
+    Task Execute(Guid fosterCarerId, int localAuthorityId, UpdateFosterCarerRequest request);
 }
 
 public class UpdateFosterCarerUseCase : IUpdateFosterCarerUseCase
@@ -16,19 +16,12 @@ public class UpdateFosterCarerUseCase : IUpdateFosterCarerUseCase
         _gateway = gateway;
     }
 
-    public async Task Execute(Guid fosterCarerId, List<int> localAuthorityIds, int localAuthorityId, UpdateFosterCarerRequest request)
+    public async Task Execute(Guid fosterCarerId, int localAuthorityId, UpdateFosterCarerRequest request)
     {
         if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
 
         ArgumentNullException.ThrowIfNull(request);
 
-        if (localAuthorityId == null) throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
-
-        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
-        {
-            throw new UnauthorizedAccessException(
-                            FosterFamilyValidationMessages.UpdateFosterCarerPermission);
-        }
 
         if (request.FosterCarerRequest is not null)
         {

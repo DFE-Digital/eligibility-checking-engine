@@ -2,17 +2,17 @@ import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
   updateFosterCarerRequestBody,
   validFosterFamilyRequestBody,
-  validLoginRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("Update Foster Carer - happy paths", () => {
   it("PATCH - Should return 204 when foster carer is updated - happy path", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         // create family
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           validFosterFamilyRequestBody(),
           token,
         ).then((createResponse) => {
@@ -23,7 +23,7 @@ describe("Update Foster Carer - happy paths", () => {
           // update carer
           cy.apiRequest(
             "PATCH",
-            `/foster-family/${fosterCarerId}?localAuthorityId=201`,
+            `/foster-family/${fosterCarerId}`,
             updateFosterCarerRequestBody(),
             token,
           ).then((response) => {
@@ -37,11 +37,11 @@ describe("Update Foster Carer - happy paths", () => {
 
 describe("Update Foster Carer - Unhappy paths", () => {
   it("PATCH - Should return 404 when foster carer does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "PATCH",
-          `/foster-family/${crypto.randomUUID()}?localAuthorityId=201`,
+          `/foster-family/${crypto.randomUUID()}`,
           updateFosterCarerRequestBody(),
           token,
           false,
@@ -53,7 +53,7 @@ describe("Update Foster Carer - Unhappy paths", () => {
     );
 
     it("PATCH - Should return 400 when request body is invalid", () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
         (token) => {
           const request = updateFosterCarerRequestBody();
 
@@ -62,7 +62,7 @@ describe("Update Foster Carer - Unhappy paths", () => {
 
           cy.apiRequest(
             "PATCH",
-            `/foster-family/${crypto.randomUUID()}?localAuthorityId=201`,
+            `/foster-family/${crypto.randomUUID()}`,
             request,
             token,
             false,
@@ -75,11 +75,11 @@ describe("Update Foster Carer - Unhappy paths", () => {
     });
 
     it("PATCH - Should return 400 when foster carer id is not a valid guid", () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
         (token) => {
           cy.apiRequest(
             "PATCH",
-            "/foster-family/not-a-guid?localAuthorityId=201",
+            "/foster-family/not-a-guid",
             updateFosterCarerRequestBody(),
             token,
             false,

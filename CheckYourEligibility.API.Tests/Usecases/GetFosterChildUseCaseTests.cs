@@ -1,5 +1,3 @@
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
@@ -32,7 +30,6 @@ public class GetFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 Guid.Empty,
-                new List<int> { 1 },
                 1))
             .Should()
             .ThrowAsync<ValidationException>();
@@ -44,7 +41,6 @@ public class GetFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 Guid.NewGuid(),
-                new List<int> { 999 },
                 1))
             .Should()
             .ThrowAsync<UnauthorizedAccessException>();
@@ -73,7 +69,6 @@ public class GetFosterChildUseCaseTests
         // Act
         var result = await _sut.Execute(
             id,
-            new List<int> { 1 },
             1,
             true);
 
@@ -102,7 +97,6 @@ public class GetFosterChildUseCaseTests
         // Act
         var result = await _sut.Execute(
             id,
-            new List<int> { 0 },
             123);
 
         // Assert
@@ -124,7 +118,6 @@ public class GetFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 id,
-                new List<int> { 1 },
                 1))
             .Should()
             .ThrowAsync<KeyNotFoundException>();

@@ -30,7 +30,6 @@ public class CreateFosterFamilyUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 null!,
-                new List<int> { 1 },
                 1))
             .Should()
             .ThrowAsync<ArgumentNullException>();
@@ -44,7 +43,6 @@ public class CreateFosterFamilyUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 request,
-                new List<int> { 999 },
                 1))
             .Should()
             .ThrowAsync<UnauthorizedAccessException>();
@@ -62,7 +60,6 @@ public class CreateFosterFamilyUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 request,
-                new List<int> { 1 },
                 1))
             .Should()
             .ThrowAsync<FluentValidation.ValidationException>();
@@ -90,7 +87,6 @@ public class CreateFosterFamilyUseCaseTests
         // Act
         var result = await _sut.Execute(
             request,
-            new List<int> { 1 },
             1);
 
         // Assert
@@ -119,7 +115,6 @@ public class CreateFosterFamilyUseCaseTests
         // Act
         var result = await _sut.Execute(
             request,
-            new List<int> { 0 },
             999);
 
         // Assert

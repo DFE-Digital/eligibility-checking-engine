@@ -1,18 +1,18 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
   validFosterFamilyRequestBody,
-  validLoginRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("GET & POST Foster Family - Happy path", () => {
   it("Should return 200 and foster family details", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         // Create the family
         const request = validFosterFamilyRequestBody();
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           request,
           token,
         ).then((createResponse) => {
@@ -25,7 +25,7 @@ describe("GET & POST Foster Family - Happy path", () => {
 
           cy.apiRequest(
             "GET",
-            `/foster-family/${fosterCarerId}?localAuthorityId=201`,
+            `/foster-family/${fosterCarerId}`,
             null,
             token,
           ).then((response) => {
@@ -41,11 +41,11 @@ describe("GET & POST Foster Family - Happy path", () => {
 
 describe("GET & POST Foster Family - Unhappy path", () => {
   it("GET - Should return 404 when foster carer does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "GET",
-          `/foster-family/${crypto.randomUUID()}?localAuthorityId=201`,
+          `/foster-family/${crypto.randomUUID()}`,
           null,
           token,
           false,
@@ -57,11 +57,11 @@ describe("GET & POST Foster Family - Unhappy path", () => {
   });
 
   it("GET - Should return 400 for invalid foster carer id", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "GET",
-          "/foster-family/not-a-guid?localAuthorityId=201",
+          "/foster-family/not-a-guid",
           null,
           token,
           false,
@@ -73,7 +73,7 @@ describe("GET & POST Foster Family - Unhappy path", () => {
   });
 
   it("POST - Should return 400 when request is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         const request = validFosterFamilyRequestBody();
 
@@ -81,7 +81,7 @@ describe("GET & POST Foster Family - Unhappy path", () => {
 
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           request,
           token,
           false,

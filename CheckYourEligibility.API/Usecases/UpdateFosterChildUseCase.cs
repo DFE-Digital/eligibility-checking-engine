@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IUpdateFosterChildUseCase
 {
-    Task<FosterChildResponse> Execute(Guid fosterChildId, int localAuthorityId, List<int> localAuthorityIds, UpdateFosterChildRequest request);
+    Task<FosterChildResponse> Execute(Guid fosterChildId, int localAuthorityId, UpdateFosterChildRequest request);
 }
 
 public class UpdateFosterChildUseCase : IUpdateFosterChildUseCase
@@ -17,19 +17,10 @@ public class UpdateFosterChildUseCase : IUpdateFosterChildUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterChildResponse> Execute(Guid fosterChildId, int localAuthorityId, List<int> localAuthorityIds, UpdateFosterChildRequest request)
+    public async Task<FosterChildResponse> Execute(Guid fosterChildId, int localAuthorityId, UpdateFosterChildRequest request)
     {
         if (fosterChildId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterChildId);
         ArgumentNullException.ThrowIfNull(request);
-
-        if (localAuthorityId == null) throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
-
-        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
-        {
-            throw new UnauthorizedAccessException(
-                            FosterFamilyValidationMessages.UpdateFosterChildPermission);
-        }
-
 
         var validationResult = new FosterChildRequestValidator().Validate(request.FosterChildRequest);
         if (!validationResult.IsValid)

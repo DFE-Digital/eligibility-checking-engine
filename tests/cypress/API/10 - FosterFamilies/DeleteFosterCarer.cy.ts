@@ -1,12 +1,12 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
   validFosterFamilyRequestBody,
-  validLoginRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("Delete Foster Carer - happy paths", () => {
   it("DELETE - Should delete the foster carer", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         // create fam
         cy.apiRequest(
@@ -45,7 +45,7 @@ describe("Delete Foster Carer - happy paths", () => {
 
 describe("Delete Foster Partner - happy paths", () => {
   it("DELETE - Should return 204 when foster partner is deleted", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "POST",
@@ -71,7 +71,7 @@ describe("Delete Foster Partner - happy paths", () => {
 
 describe("Delete Foster Carer - unhappy paths", () => {
   it("DELETE - Should return 404 when foster carer does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "DELETE",
@@ -87,7 +87,7 @@ describe("Delete Foster Carer - unhappy paths", () => {
   });
 
   it("DELETE - Should return 400 when foster carer id is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "DELETE",

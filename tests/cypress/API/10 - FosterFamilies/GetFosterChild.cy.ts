@@ -1,20 +1,20 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
 import {
-  validLoginRequestBody,
   validFosterFamilyRequestBody,
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 let newfosterChildId;
 
 describe("Get Foster Child - happy paths", () => {
   it("GET - Should return foster child details", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         const request = validFosterFamilyRequestBody();
 
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           request,
           token,
         ).then((createResponse) => {
@@ -22,7 +22,7 @@ describe("Get Foster Child - happy paths", () => {
 
           cy.apiRequest(
             "GET",
-            `/foster-family/${fosterCarerId}?localAuthorityId=201&includeChildren=true`,
+            `/foster-family/${fosterCarerId}?includeChildren=true`,
             null,
             token,
           ).then((familyResponse) => {
@@ -31,7 +31,7 @@ describe("Get Foster Child - happy paths", () => {
 
             cy.apiRequest(
               "GET",
-              `/foster-family/child/${fosterChildId}?localAuthorityId=201`,
+              `/foster-family/child/${fosterChildId}`,
               null,
               token,
             ).then((response) => {
@@ -58,7 +58,7 @@ describe("Get Foster Child - happy paths", () => {
   });
 
   it("GET - Should return foster child and foster carer details", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "GET",
@@ -79,11 +79,11 @@ describe("Get Foster Child - happy paths", () => {
 
 describe("Get Foster Child - unhappy paths", () => {
   it("GET - Should return 404 when foster child does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "GET",
-          `/foster-family/child/${crypto.randomUUID()}?localAuthorityId=201`,
+          `/foster-family/child/${crypto.randomUUID()}`,
           null,
           token,
           false,
@@ -94,11 +94,11 @@ describe("Get Foster Child - unhappy paths", () => {
     );
   });
   it("GET - Should return 400 when foster child id is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
       (token) => {
         cy.apiRequest(
           "GET",
-          "/foster-family/child/not-a-guid?localAuthorityId=201",
+          "/foster-family/child/not-a-guid",
           null,
           token,
           false,

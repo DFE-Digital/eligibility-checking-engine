@@ -30,7 +30,6 @@ public class CreateFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 null!,
-                new List<int> { 1 },
                 1,
                 Guid.NewGuid(),
                 DateTime.UtcNow))
@@ -52,7 +51,6 @@ public class CreateFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 req,
-                new List<int> { 1 },
                 1,
                 Guid.Empty,
                 DateTime.UtcNow))
@@ -74,7 +72,6 @@ public class CreateFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 req,
-                new List<int> { 999 },
                 1,
                 Guid.NewGuid(),
                 DateTime.UtcNow))
@@ -95,7 +92,6 @@ public class CreateFosterChildUseCaseTests
         FluentActions
             .Invoking(async () => await _sut.Execute(
                 req,
-                new List<int> { 1 },
                 1,
                 Guid.NewGuid(),
                 DateTime.UtcNow))
@@ -137,7 +133,6 @@ public class CreateFosterChildUseCaseTests
         // Act
         var result = await _sut.Execute(
             req,
-            new List<int> { 1 },
             1,
             carerId,
             DateTime.UtcNow);
@@ -178,7 +173,6 @@ public class CreateFosterChildUseCaseTests
         // Act
         var result = await _sut.Execute(
             req,
-            new List<int> { 0 },
             123,
             carerId,
             DateTime.UtcNow);

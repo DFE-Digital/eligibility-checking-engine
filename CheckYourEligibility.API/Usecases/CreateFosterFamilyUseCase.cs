@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface ICreateFosterFamilyUseCase
 {
-    Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, List<int> localAuthorityIds, int localAuthorityId);
+    Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request,int localAuthorityId);
 }
 
 public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
@@ -18,21 +18,9 @@ public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, List<int> localAuthorityIds, int localAuthorityId)
+    public async Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
-
-        if (localAuthorityId <= 0)
-        {
-            throw new ValidationException(FosterFamilyValidationMessages.LocalAuthorityId);
-        }
-
-        if (!localAuthorityIds.Contains(0) && !localAuthorityIds.Contains(localAuthorityId))
-        {
-            throw new UnauthorizedAccessException(
-                            FosterFamilyValidationMessages.CreateFosterFamilyPermission);
-        }
-        ;
 
         var validator = new FosterFamilyRequestValidator();
         var validationResult = validator.Validate(request);
