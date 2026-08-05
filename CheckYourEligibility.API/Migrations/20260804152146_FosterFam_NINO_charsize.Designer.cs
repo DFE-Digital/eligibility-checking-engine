@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260804152146_FosterFam_NINO_charsize")]
+    partial class FosterFam_NINO_charsize
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,7 +282,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("Endpoint")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("RequestBody")
                         .IsRequired()
@@ -630,12 +633,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<bool>("AcademyCanReviewEvidence")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("Imported")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -741,13 +738,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("Email", "Reference", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserType] IS NOT NULL");
-
-                    b.HasIndex("UserName", "OrganisationType", "OrganisationId", "UserType")
-                        .IsUnique()
-                        .HasFilter("[UserName] IS NOT NULL AND [OrganisationType] IS NOT NULL AND [OrganisationId] IS NOT NULL AND [UserType] IS NOT NULL");
+                    b.HasIndex("Email", "Reference")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

@@ -1,60 +1,38 @@
 using System.ComponentModel.DataAnnotations;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface ICreateFosterFamilyUseCase
 {
-    /// <summary>
-    /// Creates a new foster family 
-    /// </summary>
-    /// <param name="model">The foster family request data</param>
-    /// <param name="allowedLocalAuthorityIds">List of allowed local authority IDs from user claims</param>
-    /// <returns>The created foster family response</returns>
-    Task<FosterFamilySaveItemResponse> Execute(FosterFamilyRequest model, List<int> allowedLocalAuthorityIds);
+    Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request,int localAuthorityId);
 }
 
-/// <summary>
-/// Implementation of the create foster family use case
-/// </summary>
 public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
 {
-    private readonly IFosterFamily _fosterFamilyGateway;
-    private readonly IAudit _auditGateway;
+    private readonly IFosterFamilies _gateway;
 
-    /// <summary>
-    /// Constructor for CreateFosterFamilyUseCase
-    /// </summary>
-    /// <param name="fosterFamilyGateway">The foster family gateway</param>
-    /// <param name="auditGateway">The audit gateway</param>
-    public CreateFosterFamilyUseCase(IFosterFamily fosterFamilyGateway, IAudit auditGateway)
+    public CreateFosterFamilyUseCase(
+        IFosterFamilies gateway)
     {
-        _fosterFamilyGateway = fosterFamilyGateway;
-        _auditGateway = auditGateway;
+        _gateway = gateway;
     }
 
-    public async Task<FosterFamilySaveItemResponse> Execute(FosterFamilyRequest model, List<int> allowedLocalAuthorityIds)
+    public async Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
     {
-        if (model == null || model.Data == null) throw new ValidationException("Invalid request, data is required");
+        ArgumentNullException.ThrowIfNull(request);
 
-        var validator  = new FosterFamilyRequestValidator();
-        var validationResults = validator.Validate(model);
+        var validator = new FosterFamilyRequestValidator();
+        var validationResult = validator.Validate(request);
 
-        if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
-        
-        var response = await _fosterFamilyGateway.PostFosterFamily(model.Data);
-
-        if (response == null)
+        if (!validationResult.IsValid)
         {
-            throw new Exception("Failed to create foster family");
+            throw new FluentValidation.ValidationException(
+                validationResult.Errors);
         }
 
-        return new FosterFamilySaveItemResponse
-        {
-            Data = response
-        };
+        request.FosterCarer.LocalAuthorityID = localAuthorityId;
 
-
+        return await _gateway.CreateFosterFamily(request);
     }
 }
