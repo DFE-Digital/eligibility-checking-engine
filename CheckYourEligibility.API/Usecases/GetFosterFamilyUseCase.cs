@@ -1,38 +1,27 @@
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using FluentValidation;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface IGetFosterFamilyUseCase
 {
-    Task<FosterFamilyResponse> Execute(string guid);
+    Task<FosterFamilyResponse> Execute(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false);
 }
 
 public class GetFosterFamilyUseCase : IGetFosterFamilyUseCase
 {
-    private readonly IFosterFamily _fosterFamilyGateway;
-    private readonly IAudit _auditGateway;
+    private readonly IFosterFamilies _gateway;
 
-    public GetFosterFamilyUseCase(IFosterFamily fosterFamilyGateway, IAudit auditGateway)
+    public GetFosterFamilyUseCase(IFosterFamilies gateway)
     {
-        _fosterFamilyGateway = fosterFamilyGateway;
-        _auditGateway = auditGateway;
+        _gateway = gateway;
     }
-    
 
-    /// <summary>
-    /// Gets an foster family by guid
-    /// </summary>
-    /// <param name="guid">The foster family guid</param>
-    /// <returns>The foster family response</returns>
-    public async Task<FosterFamilyResponse> Execute(string guid)
+    public async Task<FosterFamilyResponse> Execute(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false)
     {
-        FosterFamilyResponse? response = await _fosterFamilyGateway.GetFosterFamily(guid);
-        
-        if (response == null) return null!;
-        
+        if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
 
-        return response;
+        var result = await _gateway.GetFosterFamily(fosterCarerId, localAuthorityId, includeChildren);
+        return result;
     }
 }
-
