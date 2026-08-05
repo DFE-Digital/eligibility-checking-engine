@@ -389,6 +389,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                     item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
                     item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
                     item.DateOfBirth = CheckData.DateOfBirth;
+                    item.DiscretionaryValidityStartDateIsApplied = false;
                     break;
                 default:
                     item.DateOfBirth = CheckData.DateOfBirth;

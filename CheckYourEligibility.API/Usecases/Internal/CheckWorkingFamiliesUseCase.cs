@@ -1,15 +1,10 @@
 using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.Internal;
-using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
-using DocumentFormat.OpenXml.Presentation;
 using FluentValidation;
-using System;
-using Error = CheckYourEligibility.API.Boundary.Responses.Error;
-using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
+using CheckYourEligibility.API.Helpers;
 
 namespace CheckYourEligibility.API.Usecases.Internal;
 
@@ -53,9 +48,10 @@ public class CheckWorkingFamiliesUseCase : ICheckWorkingFamiliesUseCase
         // get item
         var result = await _getEligibilityCheckItemUseCase.Execute(guid, CheckEligibilityType.None);
         // read result
-      
+
         // apply business logic from helpers for
         // DVSD applied
+        WorkingFamiliesCheckHelper.IsDiscretionaryValidityStartDateApplied();
         // term validity
         // reconfirmation properties
 

@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.Json.Serialization;
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
@@ -9,7 +6,6 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.Usecases;
-using CheckYourEligibility.API.Usecases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
@@ -21,6 +17,9 @@ using Notify.Client;
 using Notify.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-GB");

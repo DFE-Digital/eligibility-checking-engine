@@ -34,6 +34,7 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string EligibilityCode { get; set; }
+    public bool DiscretionaryValidityStartDateIsApplied { get; set; }
 
 }
 
