@@ -1,5 +1,3 @@
-using System;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
@@ -7,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IDeleteFosterCarerUseCase
 {
-    Task Execute(Guid fosterCarerId);
+    Task Execute(Guid fosterCarerId, int localAuthorityId);
 }
 
 public class DeleteFosterCarerUseCase : IDeleteFosterCarerUseCase
@@ -19,10 +17,10 @@ public class DeleteFosterCarerUseCase : IDeleteFosterCarerUseCase
         _gateway = gateway;
     }
 
-    public async Task Execute(Guid fosterCarerId)
+    public async Task Execute(Guid fosterCarerId, int localAuthorityId)
     {
         if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);
 
-        await _gateway.DeleteFosterCarer(fosterCarerId);
+        await _gateway.DeleteFosterCarer(fosterCarerId, localAuthorityId);
     }
 }

@@ -11,7 +11,7 @@ describe("Delete Foster Carer - happy paths", () => {
         // create fam
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           validFosterFamilyRequestBody(),
           token,
         ).then((createResponse) => {
@@ -29,7 +29,7 @@ describe("Delete Foster Carer - happy paths", () => {
             // verify fam is gone.
             cy.apiRequest(
               "GET",
-              `/foster-family/${fosterCarerId}?localAuthorityId=201`,
+              `/foster-family/${fosterCarerId}`,
               null,
               token,
               false,
@@ -49,7 +49,7 @@ describe("Delete Foster Partner - happy paths", () => {
       (token) => {
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
+          "/foster-family",
           validFosterFamilyRequestBody(),
           token,
         ).then((createResponse) => {

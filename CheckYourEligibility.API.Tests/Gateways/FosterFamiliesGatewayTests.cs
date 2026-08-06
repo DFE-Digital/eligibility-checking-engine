@@ -386,7 +386,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        await _sut.DeleteFosterCarer(fosterCarerId);
+        await _sut.DeleteFosterCarer(fosterCarerId, 0);
 
         // Assert
         _fakeInMemoryDb.FosterCarers.Should().BeEmpty();
@@ -405,7 +405,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        await _sut.DeleteFosterPartner(fosterCarerId);
+        await _sut.DeleteFosterPartner(fosterCarerId, 0);
 
         // Assert
         var fosterCarer = await _fakeInMemoryDb.FosterCarers.SingleAsync();
@@ -957,7 +957,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        await _sut.DeleteFosterChild(fosterChildId);
+        await _sut.DeleteFosterChild(fosterChildId, 0);
 
         // Assert
         _fakeInMemoryDb.FosterChildren.Should().BeEmpty();
@@ -976,7 +976,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             .SingleAsync();
 
         // Act
-        await _sut.DeleteFosterChild(fosterChildId);
+        await _sut.DeleteFosterChild(fosterChildId, 0);
 
         // Assert
         _fakeInMemoryDb.FosterCarers.Should().HaveCount(1);
@@ -987,7 +987,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Act
         Func<Task> act = () =>
-            _sut.DeleteFosterChild(Guid.NewGuid());
+            _sut.DeleteFosterChild(Guid.NewGuid(), 0);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
