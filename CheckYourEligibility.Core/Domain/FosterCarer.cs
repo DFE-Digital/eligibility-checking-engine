@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using CheckYourEligibility.Core.Domain;
+
+namespace CheckYourEligibility.Core.Domain;
 
 public class FosterCarer
 {

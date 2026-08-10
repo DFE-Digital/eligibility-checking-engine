@@ -1,4 +1,7 @@
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using FluentValidation;
 using Moq;

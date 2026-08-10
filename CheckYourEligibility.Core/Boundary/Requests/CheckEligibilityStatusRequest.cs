@@ -1,7 +1,6 @@
-﻿namespace CheckYourEligibility.Core.Boundary.Requests
+﻿namespace CheckYourEligibility.Core.Boundary.Requests;
+
+public class CheckEligibilityStatusRequest
 {
-    public class CheckEligibilityStatusRequest
-    {
-        public string ClientIdentifier { get; set; } = string.Empty;
-    }
+    public string ClientIdentifier { get; set; } = string.Empty;
 }

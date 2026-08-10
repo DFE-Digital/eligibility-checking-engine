@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Gateways.Interfaces;

@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Responses;
+
 public class FosterChildSummaryResponse
 {
     public Guid FosterChildId { get; set; }

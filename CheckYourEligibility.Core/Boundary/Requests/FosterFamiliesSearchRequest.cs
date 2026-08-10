@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Requests;
+
 public class FosterFamiliesSearchRequest
 {
     public int PageNumber { get; set; } 

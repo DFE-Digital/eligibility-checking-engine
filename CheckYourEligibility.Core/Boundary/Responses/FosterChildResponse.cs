@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Responses;
+
 public class FosterChildResponse
 {
     // Eligibility Code Details

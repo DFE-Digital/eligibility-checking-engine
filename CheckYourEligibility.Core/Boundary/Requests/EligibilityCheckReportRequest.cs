@@ -1,5 +1,7 @@
 using CheckYourEligibility.Core.Domain.Enums;
 
+namespace CheckYourEligibility.Core.Boundary.Requests;
+
 public class EligibilityCheckReportRequest
 {
     public DateTime StartDate { get; set; }

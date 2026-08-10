@@ -1,7 +1,9 @@
 using FluentValidation;
-using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 
-namespace CheckYourEligibility.API.UseCases;
+namespace CheckYourEligibility.Core.UseCases;
 
 public interface IGetFosterChildUseCase
 {

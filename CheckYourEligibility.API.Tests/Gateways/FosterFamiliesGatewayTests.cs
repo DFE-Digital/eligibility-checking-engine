@@ -1,4 +1,6 @@
-using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -7,7 +9,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
-public class FosterFamiliesGatewayTests : TestBase.TestBase
+public class FosterFamiliesGatewayTests : TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
     private FosterFamiliesGateway _sut;

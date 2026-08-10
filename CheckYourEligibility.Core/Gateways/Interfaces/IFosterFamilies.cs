@@ -1,3 +1,8 @@
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+
+namespace CheckYourEligibility.Core.Gateways.Interfaces;
+
 public interface IFosterFamilies
 {
     //FosterCarer

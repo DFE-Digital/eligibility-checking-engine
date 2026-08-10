@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Requests;
+
 public class FosterPartnerRequest
 {
 

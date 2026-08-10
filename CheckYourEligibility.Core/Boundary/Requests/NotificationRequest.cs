@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using CheckYourEligibility.Core.Domain.Enums;
+﻿using CheckYourEligibility.Core.Domain.Enums;
 
 namespace CheckYourEligibility.Core.Boundary.Requests;
 

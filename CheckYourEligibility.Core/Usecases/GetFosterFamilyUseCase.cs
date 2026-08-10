@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 
 namespace CheckYourEligibility.Core.UseCases;

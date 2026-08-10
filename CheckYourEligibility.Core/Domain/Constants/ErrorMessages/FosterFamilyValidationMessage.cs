@@ -1,6 +1,4 @@
-// Ignore Spelling: FSM
-
-namespace CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+namespace CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 
 public static class FosterFamilyValidationMessages
 {

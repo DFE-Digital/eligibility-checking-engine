@@ -1,3 +1,4 @@
+using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Database;
 using CheckYourEligibility.Core.Domain;

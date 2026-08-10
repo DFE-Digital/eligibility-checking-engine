@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Responses;
+
 public class FosterFamiliesSearchItemResponse
 {
     public string ChildName { get; set; } = string.Empty;

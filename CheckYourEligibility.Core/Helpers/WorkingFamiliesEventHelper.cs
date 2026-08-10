@@ -1,3 +1,4 @@
+using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain;
 
 namespace CheckYourEligibility.Core.Helpers;

@@ -1,4 +1,7 @@
+using CheckYourEligibility.Core.Boundary.Requests;
 using FluentValidation;
+
+namespace CheckYourEligibility.Core.Domain.Validation;
 
 public class EligibilityCheckReportRequestValidator : AbstractValidator<EligibilityCheckReportRequest>
 {

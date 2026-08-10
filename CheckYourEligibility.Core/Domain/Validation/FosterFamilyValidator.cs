@@ -1,6 +1,7 @@
-using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
-using CheckYourEligibility.API.Domain.Validation;
+using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 using FluentValidation;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Validation;
 
 public class FosterFamilyRequestValidator : AbstractValidator<FosterFamilyRequest>
 {

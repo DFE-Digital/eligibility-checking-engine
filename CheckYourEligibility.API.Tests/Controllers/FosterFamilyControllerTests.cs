@@ -11,6 +11,7 @@ using Moq;
 using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Exceptions;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 

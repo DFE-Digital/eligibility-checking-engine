@@ -1,3 +1,5 @@
+namespace CheckYourEligibility.Core.Boundary.Responses;
+
 public class FosterFamiliesSearchResponse
 {
     public int PageNumber { get; set; }

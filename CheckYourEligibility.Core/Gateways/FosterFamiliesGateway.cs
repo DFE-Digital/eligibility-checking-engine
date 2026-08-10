@@ -1,5 +1,13 @@
-using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
+
+namespace CheckYourEligibility.Core.Gateways;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -80,8 +88,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         return result;
     }
 
-    public async Task<FosterFamilyCreatedResponse> CreateFosterFamily(
-    FosterFamilyRequest request)
+    public async Task<FosterFamilyCreatedResponse> CreateFosterFamily(FosterFamilyRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -92,8 +99,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         try
         {
-            var workingEvent =
-               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request);
+            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request);
 
             fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;

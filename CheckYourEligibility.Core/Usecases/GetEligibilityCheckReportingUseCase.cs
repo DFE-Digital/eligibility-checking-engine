@@ -1,5 +1,6 @@
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 

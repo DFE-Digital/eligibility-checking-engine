@@ -1,3 +1,4 @@
+using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums;
