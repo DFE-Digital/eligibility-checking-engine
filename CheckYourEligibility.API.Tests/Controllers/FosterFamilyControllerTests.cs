@@ -12,401 +12,787 @@ using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 using CheckYourEligibility.Core.Boundary.Requests;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class FosterFamilyControllerTests : TestBase
 {
+    private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamily = null!;
+    private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamily = null!;
+    private Mock<IUpdateFosterCarerUseCase> _mockUpdateFosterCarer = null!;
+    private Mock<IDeleteFosterCarerUseCase> _mockDeleteFosterCarer = null!;
+    private Mock<IDeleteFosterPartnerUseCase> _mockDeleteFosterPartner = null!;
+    private Mock<ISearchFosterFamiliesUseCase> _mockSearchFosterFamilies = null!;
+    private Mock<IGetFosterChildUseCase> _mockGetFosterChild = null!;
+    private Mock<ICreateFosterChildUseCase> _mockCreateFosterChild = null!;
+    private Mock<IUpdateFosterChildUseCase> _mockUpdateFosterChild = null!;
+    private Mock<IDeleteFosterChildUseCase> _mockDeleteFosterChild = null!;
+    private Mock<IAudit> _mockAudit = null!;
+
     private IConfigurationRoot _configuration = null!;
-    private Mock<IAudit> _mockAuditGateway = null!;
-    private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamilyUseCase = null!;
-    private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamilyUseCase = null!;
-    private Mock<IUpdateFosterFamilyUseCase> _mockUpdateFosterFamilyUseCase = null!;
-    private ILogger<FosterFamilyController> _mockLogger = null!;
     private FosterFamilyController _sut = null!;
-    private FosterFamilyRequest fosterFamilyRequest = null!;
-    private FosterFamilyUpdateRequest fosterFamilyUpdateRequest = null!;
-    private string myGuid = null!;
 
     [SetUp]
     public void Setup()
     {
-        _mockCreateFosterFamilyUseCase = new Mock<ICreateFosterFamilyUseCase>(MockBehavior.Strict);
-        _mockGetFosterFamilyUseCase = new Mock<IGetFosterFamilyUseCase>(MockBehavior.Strict);
-        _mockUpdateFosterFamilyUseCase = new Mock<IUpdateFosterFamilyUseCase>(MockBehavior.Strict);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _mockLogger = Mock.Of<ILogger<FosterFamilyController>>();
-        fosterFamilyRequest = new FosterFamilyRequest
-        {
-            Data = new FosterFamilyRequestData
-            {
-                CarerFirstName = "John",
-                CarerLastName = "Doe",
-                CarerDateOfBirth = new DateTime(1980, 5, 15),
-                CarerNationalInsuranceNumber = "AB123456C",
-                HasPartner = false,
-                PartnerFirstName = null,
-                PartnerLastName = null,
-                PartnerDateOfBirth = null,
-                PartnerNationalInsuranceNumber = null,
-                ChildFirstName = "Emily",
-                ChildLastName = "Doe",
-                ChildDateOfBirth = new DateTime(2015, 3, 10),
-                ChildPostCode = "SW1A 1AA",
-                SubmissionDate = DateTime.UtcNow
-            }
-        };
+        _mockGetFosterFamily = new Mock<IGetFosterFamilyUseCase>(MockBehavior.Strict);
+        _mockCreateFosterFamily = new Mock<ICreateFosterFamilyUseCase>(MockBehavior.Strict);
+        _mockUpdateFosterCarer = new Mock<IUpdateFosterCarerUseCase>(MockBehavior.Strict);
+        _mockDeleteFosterCarer = new Mock<IDeleteFosterCarerUseCase>(MockBehavior.Strict);
+        _mockDeleteFosterPartner = new Mock<IDeleteFosterPartnerUseCase>(MockBehavior.Strict);
+        _mockSearchFosterFamilies = new Mock<ISearchFosterFamiliesUseCase>(MockBehavior.Strict);
+        _mockGetFosterChild = new Mock<IGetFosterChildUseCase>(MockBehavior.Strict);
+        _mockCreateFosterChild = new Mock<ICreateFosterChildUseCase>(MockBehavior.Strict);
+        _mockUpdateFosterChild = new Mock<IUpdateFosterChildUseCase>(MockBehavior.Strict);
+        _mockDeleteFosterChild = new Mock<IDeleteFosterChildUseCase>(MockBehavior.Strict);
+        _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
 
-        myGuid = "ee0e0128-9887-4482-8df4-7922b8c8f53a";
-        fosterFamilyUpdateRequest =
-                new FosterFamilyUpdateRequest
-                {
-                    CarerFirstName = "Sarah",
-                    CarerLastName = "Thompson",
-                    CarerDateOfBirth = new DateTime(1985, 4, 12),
-                    CarerNationalInsuranceNumber = "AB123456C",
-
-                    HasPartner = true,
-
-                    PartnerFirstName = "David",
-                    PartnerLastName = "Thompson",
-                    PartnerDateOfBirth = new DateTime(1983, 11, 2),
-                    PartnerNationalInsuranceNumber = "ZX987654A",
-
-                    ChildFirstName = "Emily",
-                    ChildLastName = "Thompson",
-                    ChildDateOfBirth = new DateTime(2015, 6, 21),
-                    ChildPostCode = "LS12 4AB"
-                };
-
-
-        // config data for Jwt:Scopes:local_authority
-        var configData = new Dictionary<string, string?> // Changed to string? for value
+        var configData = new Dictionary<string, string?>
         {
             { "Jwt:Scopes:local_authority", "local_authority" }
         };
 
         _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData) // Now matches expected type
+            .AddInMemoryCollection(configData)
             .Build();
 
         _sut = new FosterFamilyController(
-            _mockLogger,
-            _mockCreateFosterFamilyUseCase.Object,
-            _mockGetFosterFamilyUseCase.Object,
-            _mockUpdateFosterFamilyUseCase.Object,
-            _mockAuditGateway.Object,
-            _configuration
-            );
+            Mock.Of<ILogger<FosterFamilyController>>(),
+            _configuration,
+            _mockGetFosterFamily.Object,
+            _mockCreateFosterFamily.Object,
+            _mockUpdateFosterCarer.Object,
+            _mockDeleteFosterCarer.Object,
+            _mockDeleteFosterPartner.Object,
+            _mockSearchFosterFamilies.Object,
+            _mockGetFosterChild.Object,
+            _mockCreateFosterChild.Object,
+            _mockUpdateFosterChild.Object,
+            _mockDeleteFosterChild.Object,
+            _mockAudit.Object);
     }
 
     [TearDown]
-    public void Teardown()
+    public void TearDown()
     {
-        _mockCreateFosterFamilyUseCase.VerifyAll();
-        _mockAuditGateway.VerifyAll();
+        _mockGetFosterFamily.VerifyAll();
+        _mockCreateFosterFamily.VerifyAll();
+        _mockUpdateFosterCarer.VerifyAll();
+        _mockDeleteFosterCarer.VerifyAll();
+        _mockDeleteFosterPartner.VerifyAll();
+        _mockSearchFosterFamilies.VerifyAll();
+        _mockGetFosterChild.VerifyAll();
+        _mockCreateFosterChild.VerifyAll();
+        _mockUpdateFosterChild.VerifyAll();
+        _mockDeleteFosterChild.VerifyAll();
     }
 
-    #region Post Foster Family
-
-    [Test]
-    public async Task FosterFamily_ShouldReturnCreatedResponse201_WhenUseCaseSucceeds()
+    private void SetupControllerWithLocalAuthorityIds(List<int> ids)
     {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        _mockCreateFosterFamilyUseCase
-            .Setup(uc => uc.Execute(fosterFamilyRequest, localAuthorityIds))
-            .ReturnsAsync(new FosterFamilySaveItemResponse());
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.FosterFamily(fosterFamilyRequest);
-
-        // Assert
-        actionResult.Should().BeOfType<ObjectResult>();
-        var objectResult = (ObjectResult)actionResult;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status201Created);
-        objectResult.Value.Should().BeEquivalentTo(new FosterFamilySaveItemResponse());
-    }
-
-    [Test]
-    public async Task FosterFamily_ShouldReturnBadRequest_WhenNoLocalAuthorityScopeFound()
-    {
-        // Arrange
-
-        // Setup controller without local authority scope
-        SetupControllerWithLocalAuthorityIds(new List<int>());
-
-        // Act
-        var actionResult = await _sut.FosterFamily(fosterFamilyRequest);
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)actionResult;
-
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
-        var errorResponse = (ErrorResponse)badRequestResult.Value;
-
-        errorResponse.Errors.Should().ContainSingle()
-            .Which.Title.Should().Be("No local authority scope found");
-    }
-
-    [Test]
-    public async Task FosterFamily_ShouldReturnBadRequest_WhenValidationExceptionThrown()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        _mockCreateFosterFamilyUseCase
-            .Setup(uc => uc.Execute(fosterFamilyRequest, localAuthorityIds))
-            .ThrowsAsync(new ValidationException("Validation failed"));
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-        // Act
-        var actionResult = await _sut.FosterFamily(fosterFamilyRequest);
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)actionResult;
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
-
-    }
-
-    [Test]
-    public async Task FosterFamily_ShouldReturnBadRequest_When_FosterFamilyRequestIsInvalid()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.FosterFamily(new FosterFamilyRequest()); // Empty request to trigger validation errors 
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-    }
-
-    #endregion
-
-    #region Get Foster Family
-
-    [Test]
-    public async Task FosterFamily_Get_ShouldReturnNotFound_WhenFosterFamilyDoesNotExist()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        _mockGetFosterFamilyUseCase
-            .Setup(uc => uc.Execute("1234"))
-            .ReturnsAsync((FosterFamilyResponse?)null);
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.FosterFamily("1234");
-
-        // Assert
-        actionResult.Should().BeOfType<NotFoundObjectResult>();
-    }
-
-    [Test]
-    public async Task FosterFamily_Get_ShouldReturnOk_WhenFosterFamilyExists()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-        var expectedResponse = fosterFamilyRequest.Data;
-
-        _mockGetFosterFamilyUseCase
-            .Setup(uc => uc.Execute("1234"))
-            .ReturnsAsync(new FosterFamilyResponse
-            {
-                FosterCarerId = Guid.NewGuid(),
-                CarerFirstName = expectedResponse.CarerFirstName,
-                CarerLastName = expectedResponse.CarerLastName,
-                CarerDateOfBirth = expectedResponse.CarerDateOfBirth,
-                CarerNationalInsuranceNumber = expectedResponse.CarerNationalInsuranceNumber,
-                HasPartner = expectedResponse.HasPartner,
-                PartnerFirstName = expectedResponse.PartnerFirstName,
-                PartnerLastName = expectedResponse.PartnerLastName,
-                PartnerDateOfBirth = expectedResponse.PartnerDateOfBirth,
-                PartnerNationalInsuranceNumber = expectedResponse.PartnerNationalInsuranceNumber,
-                ChildFirstName = expectedResponse.ChildFirstName,
-                ChildLastName = expectedResponse.ChildLastName,
-                ChildDateOfBirth = expectedResponse.ChildDateOfBirth,
-                ChildPostCode = expectedResponse.ChildPostCode,
-                SubmissionDate = expectedResponse.SubmissionDate
-            });
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.FosterFamily("1234");
-
-
-        // Assert type and status code
-        actionResult.Should().BeOfType<ObjectResult>();
-        var objectResult = actionResult as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status200OK);
-
-        // Assert payload
-        objectResult.Value.Should().BeEquivalentTo(expectedResponse);
-
-    }
-
-    [Test]
-    public async Task FosterFamily_Get_ShouldReturnBadRequest_WhenNoLocalAuthorityScopeFound()
-    {
-        // Arrange
-
-        // Setup controller without local authority scope
-        SetupControllerWithLocalAuthorityIds(new List<int>());
-
-        // Act
-        var actionResult = await _sut.FosterFamily("1234");
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)actionResult;
-
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
-        var errorResponse = (ErrorResponse)badRequestResult.Value;
-
-        errorResponse.Errors.Should().ContainSingle()
-            .Which.Title.Should().Be("No local authority scope found");
-    }
-
-    [Test]
-    public async Task FosterFamily_Get_ShouldReturnBadRequest_WhenExceptionThrown()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        _mockGetFosterFamilyUseCase
-            .Setup(uc => uc.Execute("1234"))
-            .ThrowsAsync(new Exception("Unexpected error"));
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.FosterFamily("1234");
-
-        // Assert type and status code
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)actionResult;
-
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
-        var errorResponse = (ErrorResponse)badRequestResult.Value;
-    }
-
-    #endregion
-
-    #region Update Foster Family
-
-    [Test]
-    public async Task FosterFamily_ShouldReturnOkResponse200_WhenUpdated()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-
-        _mockUpdateFosterFamilyUseCase
-            .Setup(uc => uc.Execute(myGuid, fosterFamilyUpdateRequest))
-            .ReturnsAsync(new FosterFamilyResponse());
-
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.UpdateFosterFamily(myGuid, fosterFamilyUpdateRequest);
-
-        // Assert
-        actionResult.Should().BeOfType<ObjectResult>();
-        var objectResult = (ObjectResult)actionResult;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        objectResult.Value.Should().BeEquivalentTo(new FosterFamilyResponse());
-    }
-
-    [Test]
-    public async Task UpdateFosterFamily_ShouldReturnBadRequest400_WhenRequestIsNull()
-    {
-        // Arrange
-        var localAuthorityIds = new List<int> { 1 };
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
-        // Act
-        var actionResult = await _sut.UpdateFosterFamily(myGuid, null!);
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var objectResult = (ObjectResult)actionResult;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    [Test]
-    public async Task UpdateFosterFamily_Get_ShouldReturnBadRequest_WhenNoLocalAuthorityScopeFound()
-    {
-        // Setup controller without local authority scope
-        SetupControllerWithLocalAuthorityIds(new List<int>());
-
-        // Act
-        var actionResult = await _sut.UpdateFosterFamily(myGuid, new FosterFamilyUpdateRequest());
-
-        // Assert
-        actionResult.Should().BeOfType<BadRequestObjectResult>();
-        var badRequestResult = (BadRequestObjectResult)actionResult;
-
-        badRequestResult.Value.Should().BeOfType<ErrorResponse>();
-        var errorResponse = (ErrorResponse)badRequestResult.Value;
-
-        errorResponse.Errors.Should().ContainSingle()
-            .Which.Title.Should().Be("No local authority scope found");
-    }
-    
-
-    #endregion
-
-    #region Helper methods
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
         var httpContext = new DefaultHttpContext();
-        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
 
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
-
-    private void SetupControllerWithLaAndMatIds(List<int> localAuthorityIds, List<int> multiAcademyTrustIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
-        claims.AddRange(SetupSpecificScopeIdClaims(multiAcademyTrustIds, "multi_academy_trust"));
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
-
-    private List<Claim> SetupSpecificScopeIdClaims(List<int> ids, string scopeName)
-
-    {
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on ids
-        if (ids.Contains(0))
+        var claims = new List<Claim>
         {
-            claims.Add(new Claim("scope", scopeName));
-        }
-        else
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                "unit-test-user")
+        };
+
+        if (ids.Any())
         {
-            var scopeValue = string.Join(" ", ids.Select(id => $"{scopeName}:{id}"));
+            var scopeValue = ids.Contains(0)
+                ? "local_authority"
+                : string.Join(" ",
+                    ids.Select(x => $"local_authority:{x}"));
+
             claims.Add(new Claim("scope", scopeValue));
         }
 
-        return claims;
+        httpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity(claims));
+
+        _sut.ControllerContext =
+            new ControllerContext
+            {
+                HttpContext = httpContext
+            };
     }
-    #endregion
+
+    [Test]
+    public async Task GetFosterFamily_Returns_Ok()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var response = new FosterFamilyResponse
+        {
+            FosterCarerId = id
+        };
+
+        _mockGetFosterFamily
+            .Setup(x => x.Execute(
+                id,
+                201,
+                true))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.GetFosterFamily(
+            id,
+            true);  
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(200);
+        objectResult.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task GetFosterFamily_Returns_BadRequest_When_No_LA_Scope()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds([]);
+
+        // Act
+        var result = await _sut.GetFosterFamily(
+            Guid.NewGuid(),
+            false);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var error = (ErrorResponse)badRequest.Value!;
+
+        error.Errors.First().Title
+            .Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task GetFosterFamily_Returns_NotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockGetFosterFamily
+            .Setup(x => x.Execute(
+                id, 
+                201,
+                false))
+            .ThrowsAsync(new NotFoundException());
+
+        // Act
+        var result = await _sut.GetFosterFamily(
+            id,
+            false);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task CreateFosterFamily_Returns_Created()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterFamilyRequest
+        {
+            FosterCarer = new FosterCarerRequest(),
+            FosterChild = new FosterChildRequest()
+        };
+
+        var response = new FosterFamilyCreatedResponse
+        {
+            ChildName = "Tom Smith"
+        };
+
+        _mockCreateFosterFamily
+            .Setup(x => x.Execute(
+                request,
+                201))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.CreateFosterFamily(
+            request);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(201);
+    }
+
+    [Test]
+    public async Task CreateFosterFamily_Returns_BadRequest_For_ValidationException()
+    {
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterFamilyRequest();
+
+        _mockCreateFosterFamily
+            .Setup(x => x.Execute(
+                request,
+                201))
+            .ThrowsAsync(
+                new FluentValidation.ValidationException(
+                    "Validation failed"));
+
+        var result = await _sut.CreateFosterFamily(
+            request);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Test]
+    public async Task DeleteFosterCarer_Returns_NoContent()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        _mockDeleteFosterCarer
+            .Setup(x => x.Execute(id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DeleteFosterCarer(id);
+
+        // Assert
+        result.Should().BeOfType<StatusCodeResult>();
+
+        ((StatusCodeResult)result)
+            .StatusCode
+            .Should()
+            .Be(StatusCodes.Status204NoContent);
+    }
+
+    [Test]
+    public async Task DeleteFosterCarer_Returns_NotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        _mockDeleteFosterCarer
+            .Setup(x => x.Execute(id))
+            .ThrowsAsync(
+                new NotFoundException("not found"));
+
+        // Act
+        var result = await _sut.DeleteFosterCarer(id);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task GetFosterChild_Returns_Ok()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var response = new FosterChildResponse
+        {
+            FosterChildId = id,
+            ChildFullName = "Tom Smith"
+        };
+
+        _mockGetFosterChild
+            .Setup(x => x.Execute(
+                id,
+                201,
+                true))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.GetFosterChild(
+            id,
+            true);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task GetFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds([]);
+
+        // Act
+        var result = await _sut.GetFosterChild(
+            Guid.NewGuid());
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = badRequest.Value as ErrorResponse;
+
+        errorResponse.Should().NotBeNull();
+
+        errorResponse!.Errors.First().Title
+            .Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task GetFosterChild_Returns_BadRequest_When_ValidationException_Thrown()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockGetFosterChild
+            .Setup(x => x.Execute(
+                id,
+                201,
+                false))
+            .ThrowsAsync(
+                new ValidationException(
+                    [new Error { Title = "Invalid foster child id" }],
+                    "Validation failed"));
+
+        // Act
+        var result = await _sut.GetFosterChild(
+            id);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = badRequest.Value as ErrorResponse;
+
+        errorResponse.Should().NotBeNull();
+
+        errorResponse!.Errors.First().Title
+            .Should().Be("Invalid foster child id");
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_Created()
+    {
+        // Arrange
+        var fosterCarerId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith",
+            ChildDateOfBirth = new DateTime(2022, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        var response = new FosterChildCreatedResponse
+        {
+            ChildName = "Tom Smith",
+            EligiblityCode = "ABC123",
+            Status = "Active"
+        };
+
+        _mockCreateFosterChild
+            .Setup(x => x.Execute(
+                request,
+                201,
+                fosterCarerId,
+                It.IsAny<DateTime>()))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            fosterCarerId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(StatusCodes.Status201Created);
+        objectResult.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds([]);
+
+        var request = new FosterChildRequest();
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            Guid.NewGuid(),
+            request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_NotFound_When_NotFoundException_Thrown()
+    {
+        // Arrange
+        var fosterCarerId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterChildRequest();
+
+        _mockCreateFosterChild
+            .Setup(x => x.Execute(
+                request,
+                201,
+                fosterCarerId,
+                It.IsAny<DateTime>()))
+            .ThrowsAsync(
+                new NotFoundException(
+                    $"Foster carer {fosterCarerId} not found"));
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            fosterCarerId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+
+        var notFound = (NotFoundObjectResult)result;
+
+        var errorResponse = (ErrorResponse)notFound.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be($"Foster carer {fosterCarerId} not found");
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_BadRequest_When_ArgumentNullException_Thrown()
+    {
+        // Arrange
+        var fosterCarerId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        _mockCreateFosterChild
+            .Setup(x => x.Execute(
+                It.IsAny<FosterChildRequest>(),
+                201,
+                fosterCarerId,
+                It.IsAny<DateTime>()))
+            .ThrowsAsync(new ArgumentNullException("request"));
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            fosterCarerId,
+            null!);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_BadRequest_When_FluentValidationException_Thrown()
+    {
+        // Arrange
+        var fosterCarerId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterChildRequest();
+
+        _mockCreateFosterChild
+            .Setup(x => x.Execute(
+                request,
+                201,
+                fosterCarerId,
+                It.IsAny<DateTime>()))
+            .ThrowsAsync(
+                new FluentValidation.ValidationException(
+                    "Validation failed"));
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            fosterCarerId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Contain("Validation failed");
+    }
+
+    [Test]
+    public async Task CreateFosterChild_Returns_BadRequest_When_Unexpected_Exception_Thrown()
+    {
+        // Arrange
+        var fosterCarerId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new FosterChildRequest();
+
+        _mockCreateFosterChild
+            .Setup(x => x.Execute(
+                request,
+                201,
+                fosterCarerId,
+                It.IsAny<DateTime>()))
+            .ThrowsAsync(new Exception("Something went wrong"));
+
+        // Act
+        var result = await _sut.CreateFosterChild(
+            fosterCarerId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be("Something went wrong");
+    }
+
+    [Test]
+    public async Task UpdateFosterChild_Returns_Ok()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new UpdateFosterChildRequest
+        {
+            FosterChildRequest = new FosterChildRequest
+            {
+                ChildFirstName = "Tom",
+                ChildLastName = "Smith",
+                ChildDateOfBirth = new DateTime(2022, 1, 1),
+                ChildPostCode = "AB1 2CD"
+            }
+        };
+
+        var response = new FosterChildResponse
+        {
+            FosterChildId = fosterChildId,
+            ChildFullName = "Tom Smith"
+        };
+
+        _mockUpdateFosterChild
+            .Setup(x => x.Execute(
+                fosterChildId,
+                201,
+                request))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.UpdateFosterChild(
+            fosterChildId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+
+        var objectResult = (ObjectResult)result;
+
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeEquivalentTo(response);
+    }
+
+    [Test]
+    public async Task UpdateFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds([]);
+
+        var request = new UpdateFosterChildRequest();
+
+        // Act
+        var result = await _sut.UpdateFosterChild(
+            Guid.NewGuid(),
+            request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+
+        var badRequest = (BadRequestObjectResult)result;
+
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task UpdateFosterChild_Returns_NotFound_When_NotFoundException_Thrown()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var request = new UpdateFosterChildRequest();
+
+        _mockUpdateFosterChild
+            .Setup(x => x.Execute(
+                fosterChildId,
+                201,
+                request))
+            .ThrowsAsync(
+                new NotFoundException(
+                    $"Foster child {fosterChildId} not found"));
+
+        // Act
+        var result = await _sut.UpdateFosterChild(
+            fosterChildId,
+            request);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+
+        var notFound = (NotFoundObjectResult)result;
+
+        var errorResponse = (ErrorResponse)notFound.Value!;
+
+        errorResponse.Errors.First().Title
+            .Should().Be($"Foster child {fosterChildId} not found");
+    }
+
+    [Test]
+    public async Task SearchFosterFamilies_Returns_Multiple_Results()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var response = new FosterFamiliesSearchResponse
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            TotalNumberOfRecords = 3,
+            Data =
+            [
+                new FosterFamiliesSearchItemResponse
+            {
+                ChildName = "Tom Smith",
+                CarerName = "John Smith",
+                EligibilityCode = "ELIG001"
+            },
+            new FosterFamiliesSearchItemResponse
+            {
+                ChildName = "Jane Jones",
+                CarerName = "Peter Jones",
+                EligibilityCode = "ELIG002"
+            },
+            new FosterFamiliesSearchItemResponse
+            {
+                ChildName = "Sam Brown",
+                CarerName = "Sarah Brown",
+                EligibilityCode = "ELIG003"
+            }
+            ]
+        };
+
+        _mockSearchFosterFamilies
+            .Setup(x => x.Execute(
+                It.Is<FosterFamiliesSearchRequest>(r =>
+                    r.PageNumber == 1 &&
+                    r.PageSize == 10),
+                201))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.SearchFosterFamilies(
+            1,
+            10);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+
+        var okResult = (OkObjectResult)result;
+
+        var returnedResponse =
+            (FosterFamiliesSearchResponse)okResult.Value!;
+
+        returnedResponse.TotalNumberOfRecords.Should().Be(3);
+
+        returnedResponse.Data.Should().HaveCount(3);
+
+        returnedResponse.Data.Select(x => x.ChildName)
+            .Should()
+            .ContainInOrder(
+                "Tom Smith",
+                "Jane Jones",
+                "Sam Brown");
+    }
+
+    [Test]
+    public async Task SearchFosterFamilies_Returns_Empty_Data()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var response = new FosterFamiliesSearchResponse
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            TotalNumberOfRecords = 0,
+            Data = []
+        };
+
+        _mockSearchFosterFamilies
+            .Setup(x => x.Execute(
+                It.Is<FosterFamiliesSearchRequest>(r =>
+                    r.PageNumber == 1 &&
+                    r.PageSize == 10),
+                201))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.SearchFosterFamilies(
+            1,
+            10);
+
+        // Assert
+        var okResult = (OkObjectResult)result;
+
+        var returned =
+            (FosterFamiliesSearchResponse)okResult.Value!;
+
+        returned.TotalNumberOfRecords.Should().Be(0);
+        returned.Data.Should().BeEmpty();
+    }
+
 }

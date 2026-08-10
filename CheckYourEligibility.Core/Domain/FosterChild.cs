@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CheckYourEligibility.Core.Domain;
 
-public class FosterChild : IAuditable
+public class FosterChild
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -15,6 +15,8 @@ public class FosterChild : IAuditable
     public DateTime ValidityStartDate { get; set; }
     public DateTime ValidityEndDate { get; set; }
     public DateTime SubmissionDate { get; set; }
+
+    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";
     
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }

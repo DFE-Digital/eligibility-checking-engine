@@ -9,75 +9,141 @@ namespace CheckYourEligibility.API.Tests.UseCases;
 [TestFixture]
 public class CreateFosterFamilyUseCaseTests : TestBase
 {
-     private Mock<IFosterFamily> _mockFosterFamilyGateway = null!;
-    private Mock<IAudit> _mockAuditGateway = null!;
+    private Mock<IFosterFamilies> _mockGateway = null!;
     private CreateFosterFamilyUseCase _sut = null!;
-    private List<int> _allowedLocalAuthorityIds = null!;
-    private FosterFamilyRequest _validFosterFamilyRequest = null!;
 
     [SetUp]
     public void Setup()
     {
-        _mockFosterFamilyGateway = new Mock<IFosterFamily>(MockBehavior.Strict);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new CreateFosterFamilyUseCase(_mockFosterFamilyGateway.Object, _mockAuditGateway.Object);
-
-        _allowedLocalAuthorityIds = new List<int> { 0, 1, 2, 3 };
-
-        _validFosterFamilyRequest = new FosterFamilyRequest
-        {
-            Data = new FosterFamilyRequestData
-            {
-                CarerFirstName = "John",
-                CarerLastName = "Doe",
-                CarerDateOfBirth = new DateTime(1980, 5, 15), 
-                CarerNationalInsuranceNumber = "AB123456C",
-                HasPartner = false,
-                PartnerFirstName = null,
-                PartnerLastName = null,
-                PartnerDateOfBirth = null,
-                PartnerNationalInsuranceNumber = null,
-                ChildFirstName = "Emily",
-                ChildLastName = "Doe",
-                ChildDateOfBirth = new DateTime(2015, 3, 10),
-                ChildPostCode = "SW1A 1AA",
-                SubmissionDate = DateTime.UtcNow.Date
-            }
-            
-        };
-        
+        _mockGateway = new Mock<IFosterFamilies>(MockBehavior.Strict);
+        _sut = new CreateFosterFamilyUseCase(_mockGateway.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
-        _mockFosterFamilyGateway.VerifyAll();
-        _mockAuditGateway.VerifyAll();
+        _mockGateway.VerifyAll();
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_Model_Is_Null()
+    public void Execute_Should_Throw_When_Request_Is_Null()
     {
-        // Act
-        Func<Task> act = async () => await _sut.Execute(null!, _allowedLocalAuthorityIds);
-
-        // Assert
-        act.Should().ThrowAsync<FluentValidation.ValidationException>();
+        FluentActions
+            .Invoking(async () => await _sut.Execute(
+                null!,
+                1))
+            .Should()
+            .ThrowAsync<ArgumentNullException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_ModelData_Is_Null()
+    public void Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
+    {
+        var request = BuildValidRequest();
+
+        FluentActions
+            .Invoking(async () => await _sut.Execute(
+                request,
+                1))
+            .Should()
+            .ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Test]
+    public void Execute_Should_Throw_ValidationException_When_Request_Is_Invalid()
+    {
+        var request = new FosterFamilyRequest
+        {
+            FosterCarer = new FosterCarerRequest(),
+            FosterChild = new FosterChildRequest()
+        };
+
+        FluentActions
+            .Invoking(async () => await _sut.Execute(
+                request,
+                1))
+            .Should()
+            .ThrowAsync<FluentValidation.ValidationException>();
+    }
+
+    [Test]
+    public async Task Execute_Should_Call_Gateway_And_Return_Response()
     {
         // Arrange
-        var model = new FosterFamilyRequest { Data = null! };
+        var request = BuildValidRequest();
+
+        var expected = new FosterFamilyCreatedResponse
+        {
+            ChildName = "Child One",
+            EligiblityCode = "X1",
+            Status = "Active",
+            EligibilityConfirmed = DateTime.UtcNow.ToString(),
+            GracePeriodEndDate = DateTime.UtcNow.ToString()
+        };
+
+        _mockGateway
+            .Setup(x => x.CreateFosterFamily(request))
+            .ReturnsAsync(expected);
 
         // Act
-        Func<Task> act = async () => await _sut.Execute(model, _allowedLocalAuthorityIds);
+        var result = await _sut.Execute(
+            request,
+            1);
 
         // Assert
-        act.Should().ThrowAsync<FluentValidation.ValidationException>();
+        result.Should().BeEquivalentTo(expected);
+
+        request.FosterCarer.LocalAuthorityID.Should().Be(1);
     }
 
-   
+    [Test]
+    public async Task Execute_Should_Allow_Global_Access_When_LA_List_Contains_Zero()
+    {
+        // Arrange
+        var request = BuildValidRequest();
 
+        var expected = new FosterFamilyCreatedResponse
+        {
+            ChildName = "Child One",
+            EligiblityCode = "X1",
+            Status = "Active"
+        };
+
+        _mockGateway
+            .Setup(x => x.CreateFosterFamily(request))
+            .ReturnsAsync(expected);
+
+        // Act
+        var result = await _sut.Execute(
+            request,
+            999);
+
+        // Assert
+        result.Should().BeEquivalentTo(expected);
+        request.FosterCarer.LocalAuthorityID.Should().Be(999);
+    }
+
+    private static FosterFamilyRequest BuildValidRequest()
+    {
+        return new FosterFamilyRequest
+        {
+            SubmissionDate = DateTime.UtcNow,
+
+            FosterCarer = new FosterCarerRequest
+            {
+                CarerFirstName = "Joe",
+                CarerLastName = "Bloggs",
+                CarerDateOfBirth = new DateTime(1980, 1, 1),
+                CarerNationalInsuranceNumber = "AB123456C"
+            },
+
+            FosterChild = new FosterChildRequest
+            {
+                ChildFirstName = "Child",
+                ChildLastName = "One",
+                ChildDateOfBirth = new DateTime(2022, 1, 1),
+                ChildPostCode = "AB1 2CD"
+            }
+        };
+    }
 }

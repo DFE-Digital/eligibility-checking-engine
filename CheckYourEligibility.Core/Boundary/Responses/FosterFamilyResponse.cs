@@ -3,10 +3,12 @@ namespace CheckYourEligibility.Core.Boundary.Responses;
 public class FosterFamilyResponse
 {
     public Guid FosterCarerId { get; set; }
-    public string CarerFirstName { get; set; }
-    public string CarerLastName { get; set; }
+
+    public string CarerFirstName { get; set; } 
+    public string CarerLastName { get; set; } 
     public DateTime CarerDateOfBirth { get; set; }
-    public string CarerNationalInsuranceNumber { get; set; }
+    public string CarerNationalInsuranceNumber { get; set; } 
+
     public bool HasPartner { get; set; }
 
     public string? PartnerFirstName { get; set; }
@@ -14,14 +16,8 @@ public class FosterFamilyResponse
     public DateTime? PartnerDateOfBirth { get; set; }
     public string? PartnerNationalInsuranceNumber { get; set; }
 
-    public string ChildFirstName { get; set; }
-    public string ChildLastName { get; set; }
-    public DateTime ChildDateOfBirth { get; set; }
-    public string ChildPostCode { get; set; }
-
-    public DateTime ValidityStartDate { get; set; }
-    public DateTime ValidityEndDate { get; set; }
-
     public DateTime SubmissionDate { get; set; }
 
+    // Populated when includeChildren = true
+    public List<FosterChildSummaryResponse> FosterChildren { get; set; } = [];
 }
