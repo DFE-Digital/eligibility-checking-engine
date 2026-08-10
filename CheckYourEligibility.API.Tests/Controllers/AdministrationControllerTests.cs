@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class AdministrationControllerTests : TestBase
 {
@@ -29,8 +29,6 @@ public class AdministrationControllerTests : TestBase
 	private Mock<IImportMatsUseCase> _mockImportMatsUseCase;
 
 	private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
-
-	private ILogger<AdministrationController> _mockLogger;
 
 	private Mock<IUpdateEstablishmentsPrivateBetaUseCase> _mockUpdateEstablishmentsPrivateBetaUseCase;
 
@@ -333,7 +331,6 @@ public class AdministrationControllerTests : TestBase
 		_mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
 		_mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
 		_mockUpdateEstablishmentsPrivateBetaUseCase = new Mock<IUpdateEstablishmentsPrivateBetaUseCase>(MockBehavior.Strict);
-		_mockLogger = Mock.Of<ILogger<AdministrationController>>();
 		_mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
 		_sut = new AdministrationController(
 			_mockCleanUpEligibilityChecksUseCase.Object,

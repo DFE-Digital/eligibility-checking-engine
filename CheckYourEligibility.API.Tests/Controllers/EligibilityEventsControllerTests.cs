@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Net;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 [TestFixture]
 public class EligibilityEventsControllerTests : TestBase

@@ -40,14 +40,22 @@ Postman collection below automates this.
 
 ## How to run tests
 
-We have two test-suites - one .NET NUnit for unit tests and one Cypress for integration and e2e tests. Cypress needs a
+There are two types of tests in this repository - .NET NUnit for unit tests and Cypress for integration and e2e tests. Cypress needs a
 running application responding to http calls.
 
 ### .NET
+
+Core library tests are in the `CheckYourEligibility.Core.Tests` project, and API tests are in the `CheckYourEligibility.API.Tests` project.
+
+`
+cd CheckYourEligibility.Core.Tests
+dotnet test
+`
 `
 cd CheckYourEligibility.API.Tests
 dotnet test
 `
+
 
 ### Cypress
 Assuming you have NPM installed.

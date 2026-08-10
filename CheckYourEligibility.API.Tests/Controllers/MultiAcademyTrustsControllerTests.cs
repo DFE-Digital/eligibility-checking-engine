@@ -12,7 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using System.Security.Claims;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class MultiAcademyTrustsControllerTests : TestBase
 {

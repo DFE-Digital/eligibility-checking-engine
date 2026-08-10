@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
-using ValidationException = FluentValidation.ValidationException;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain.Exceptions;
 
@@ -366,7 +365,7 @@ public class FosterFamilyControllerTests : TestBase
                 201,
                 false))
             .ThrowsAsync(
-                new ValidationException(
+                new Core.Domain.Exceptions.ValidationException(
                     [new Error { Title = "Invalid foster child id" }],
                     "Validation failed"));
 

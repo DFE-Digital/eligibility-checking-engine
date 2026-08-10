@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ValidationException = FluentValidation.ValidationException;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class BulkCheckControllerTests : TestBase
 {

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FreeSchoolMealsHMRC xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://www.govtalk.gov.uk/Education/FreeSchoolMeals-200705"
+                     xmlns="http://www.govtalk.gov.uk/Education/FreeSchoolMeals-200705">
+    <Header>
+        <OriginatingSystemID>FS</OriginatingSystemID>
+        <ReceivingSystemID>DE</ReceivingSystemID>
+        <CreationDate>20240221</CreationDate> <!-- yyyymmdd -->
+        <CreationTime>032041</CreationTime> <!-- hhmmss (I think)-->
+        <RecordCount>2</RecordCount>
+        <FileSequenceNumber>1</FileSequenceNumber>
+    </Header>
+    <EligiblePersons>
+    </EligiblePersons>
+</FreeSchoolMealsHMRC>

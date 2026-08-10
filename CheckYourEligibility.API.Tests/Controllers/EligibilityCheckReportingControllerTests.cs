@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework.Constraints;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers;

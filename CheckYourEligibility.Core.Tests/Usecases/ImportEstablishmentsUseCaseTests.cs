@@ -1,0 +1,136 @@
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
+using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Moq;
+using CheckYourEligibility.Core.Domain.CsvImport;
+
+namespace CheckYourEligibility.Core.Tests.UseCases;
+
+[TestFixture]
+public class ImportEstablishmentsUseCaseTests : TestBase
+{
+    [SetUp]
+    public void Setup()
+    {
+        _mockGateway = new Mock<IAdministration>(MockBehavior.Strict);
+        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
+        _mockLogger = new Mock<ILogger<ImportEstablishmentsUseCase>>(MockBehavior.Loose);
+        _sut = new ImportEstablishmentsUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+    }
+
+    [TearDown]
+    public void Teardown()
+    {
+        _mockGateway.VerifyAll();
+        _mockAuditGateway.VerifyAll();
+    }
+
+    private Mock<IAdministration> _mockGateway;
+    private Mock<IAudit> _mockAuditGateway;
+    private Mock<ILogger<ImportEstablishmentsUseCase>> _mockLogger;
+    private ImportEstablishmentsUseCase _sut;
+
+    [Test]
+    public async Task Execute_Should_ImportEstablishments_When_File_Is_Valid()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        var content = Properties.Resources.small_gis;
+        var fileName = "test.csv";
+        var ms = new MemoryStream();
+        var writer = new StreamWriter(ms);
+        writer.Write(content);
+        writer.Flush();
+        ms.Position = 0;
+        fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
+        fileMock.Setup(f => f.FileName).Returns(fileName);
+        fileMock.Setup(f => f.Length).Returns(ms.Length);
+        fileMock.Setup(f => f.ContentType).Returns("text/csv");
+
+        _mockGateway.Setup(s => s.ImportEstablishments(It.IsAny<List<EstablishmentRow>>())).Returns(Task.CompletedTask);
+
+
+        // Act
+        await _sut.Execute(fileMock.Object);
+
+        // Assert
+        _mockGateway.Verify(s => s.ImportEstablishments(It.IsAny<List<EstablishmentRow>>()), Times.Once);
+    }
+
+    [Test]
+    public void Execute_Should_Throw_InvalidDataException_When_File_Is_Null()
+    {
+        // Act
+        var act = async () => await _sut.Execute(null);
+
+        // Assert
+        act.Should().ThrowAsync<InvalidDataException>().WithMessage("CSV file required.");
+    }
+
+    [Test]
+    public void Execute_Should_Throw_InvalidDataException_When_File_Is_Not_CSV()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.ContentType).Returns("application/json");
+
+        // Act
+        var act = async () => await _sut.Execute(fileMock.Object);
+
+        // Assert
+        act.Should().ThrowAsync<InvalidDataException>().WithMessage("CSV file required.");
+    }
+
+    [Test]
+    public void Execute_Should_Throw_InvalidDataException_When_File_Content_Is_Invalid()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        var content = "InvalidContent";
+        var fileName = "test.csv";
+        var ms = new MemoryStream();
+        var writer = new StreamWriter(ms);
+        writer.Write(content);
+        writer.Flush();
+        ms.Position = 0;
+        fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
+        fileMock.Setup(f => f.FileName).Returns(fileName);
+        fileMock.Setup(f => f.Length).Returns(ms.Length);
+        fileMock.Setup(f => f.ContentType).Returns("text/csv");
+
+        // Act
+        var act = async () => await _sut.Execute(fileMock.Object);
+
+        // Assert
+        act.Should().ThrowAsync<InvalidDataException>().WithMessage("Invalid file content.");
+    }
+
+    [Test]
+    public void Execute_Should_LogError_And_Throw_InvalidDataException_On_Exception()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        var content = Properties.Resources.small_gis;
+        var fileName = "test.csv";
+        var ms = new MemoryStream();
+        var writer = new StreamWriter(ms);
+        writer.Write(content);
+        writer.Flush();
+        ms.Position = 0;
+        fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
+        fileMock.Setup(f => f.FileName).Returns(fileName);
+        fileMock.Setup(f => f.Length).Returns(ms.Length);
+        fileMock.Setup(f => f.ContentType).Returns("text/csv");
+
+        _mockGateway.Setup(s => s.ImportEstablishments(It.IsAny<List<EstablishmentRow>>()))
+            .Throws(new Exception("Test exception"));
+
+        // Act
+        var act = async () => await _sut.Execute(fileMock.Object);
+
+        // Assert
+        act.Should().ThrowAsync<InvalidDataException>().WithMessage($"{fileName} - {{}} :- Test exception, ");
+    }
+}
