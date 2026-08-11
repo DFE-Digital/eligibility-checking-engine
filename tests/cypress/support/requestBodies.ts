@@ -544,9 +544,7 @@ export function missingDernEligibilityEventRequestBody() {
 
 
 export function generateValidNi(): string {
-    const digits = randomInt(0, 1_000_000)
-        .toString()
-        .padStart(6, "0");
+    const digits = Math.floor(Math.random() * 1_000_000)
 
     return `AA${digits}A`;
 };
