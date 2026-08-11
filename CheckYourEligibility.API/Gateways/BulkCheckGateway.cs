@@ -2,6 +2,7 @@
 
 using Azure.Storage.Queues;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -44,33 +45,25 @@ public class BulkCheckGateway : IBulkCheck
         }
     }
 
-    public async Task<T> GetBulkCheckResults<T>(string guid) where T : IList<CheckEligibilityItem>
+    public async Task<IList<EligibilityCheck>> GetBulkCheckResults(string bulkCheckId)
     {
-        IList<CheckEligibilityItem> items = new List<CheckEligibilityItem>();
-        var resultList = _db.CheckEligibilities
-            .Where(x => x.BulkCheckID == guid && x.IsDeleted == false).ToList();
-        if (resultList != null && resultList.Any())
+        try
         {
-            var type = typeof(T);
-            if (type == typeof(IList<CheckEligibilityItem>))
-            {
-                var sequence = 1;
-                foreach (var result in resultList)
-                {
-                    var item = await _checkEligibility.GetItem<CheckEligibilityItem>(result.EligibilityCheckID, result.Type,
-                        isBatchRecord: true);
-                    items.Add(item);
+            var results = await _db.CheckEligibilities
+                .Where(x => x.BulkCheckID == bulkCheckId && !x.IsDeleted)
+                .ToListAsync();
 
-                    sequence++;
-                }
-
-                return (T)items;
-            }
-
-            throw new Exception($"unable to cast to type {type}");
+            return results;
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to retrieve bulk check results for BulkCheckId {BulkCheckId}",
+                bulkCheckId);
 
-        return default;
+            throw;
+        }
     }
 
     public async Task<BulkStatus?> GetBulkStatus(string guid)

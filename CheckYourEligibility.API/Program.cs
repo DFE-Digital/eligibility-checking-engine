@@ -4,8 +4,10 @@ using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
+using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.API.Usecases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
@@ -209,6 +211,9 @@ builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
 builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
 builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
+builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
+
+builder.Services.AddScoped<IGetEligibilityCheckItemService, GetEligibilityCheckItemService>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 

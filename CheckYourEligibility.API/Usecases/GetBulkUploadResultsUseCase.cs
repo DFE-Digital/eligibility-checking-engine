@@ -2,6 +2,8 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Services;
+using System.ComponentModel;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -23,16 +25,19 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly IBulkCheck _bulkCheckGateway;
+    private readonly IGetEligibilityCheckItemService _getEligibilityCheckItemService;
     private readonly ILogger<GetBulkUploadResultsUseCase> _logger;
 
     public GetBulkUploadResultsUseCase(
         IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
+        IGetEligibilityCheckItemService getEligibilityCheckItemService,
         ILogger<GetBulkUploadResultsUseCase> logger)
     {
         _bulkCheckGateway = bulkCheckGateway;
         _auditGateway = auditGateway;
         _logger = logger;
+        _getEligibilityCheckItemService = getEligibilityCheckItemService;
     }
 
     /// <summary>
@@ -43,39 +48,66 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
     /// <returns>Bulk upload results</returns>
     public async Task<CheckEligibilityBulkResponse> Execute(string guid, IList<int> allowedLocalAuthorityIds)
     {
-        if (string.IsNullOrEmpty(guid)) throw new ValidationException(new List<Error>(), "Invalid Request, group ID is required.");
-
-        // First, verify the bulk check exists and user has permission to access it
-        var bulkCheck = await _bulkCheckGateway.GetBulkCheck(guid);
-        if (bulkCheck == null)
+        try
         {
-            _logger.LogWarning(
-                $"Bulk upload with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
-            throw new NotFoundException(guid);
+
+            if (string.IsNullOrEmpty(guid)) throw new ValidationException(new List<Error>(), "Invalid Request, group ID is required.");
+
+            // First, verify the bulk check exists and user has permission to access it
+            var bulkCheck = await _bulkCheckGateway.GetBulkCheck(guid);
+            if (bulkCheck == null)
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+                throw new NotFoundException(guid);
+            }
+
+            // Validate local authority access
+            if (!allowedLocalAuthorityIds.Contains(0) && (bulkCheck.LocalAuthorityID == null || !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value)))
+            {
+                _logger.LogWarning(
+                    $"User attempted to access bulk upload {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} belonging to local authority {bulkCheck.LocalAuthorityID} without permission");
+                throw new UnauthorizedAccessException($"You do not have permission to access bulk check {guid}");
+            }
+
+            var bulkItems = await _bulkCheckGateway.GetBulkCheckResults(guid);
+
+            if (bulkItems == null)
+            {
+                _logger.LogWarning(
+                    $"Bulk upload results with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+                throw new NotFoundException(guid);
+            }
+
+            _logger.LogInformation(
+                $"Retrieved bulk upload results for group ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
+
+            IList<CheckEligibilityItemBase> items = new List<CheckEligibilityItemBase>();
+
+            if (bulkItems.Any())
+            {
+                var sequence = 1;
+                foreach (var item in bulkItems)
+                {
+
+                    items.Add(_getEligibilityCheckItemService.MapCheckDataToResponse(item));
+
+                    sequence++;
+                }
+
+            }
+
+            return new CheckEligibilityBulkResponse
+            {
+                Data = items as List<CheckEligibilityItemBase> ?? new List<CheckEligibilityItemBase>()
+            };
+        }
+        catch (Exception ex)
+        {
+
+            _logger.LogError(ex, "Action: Getting items for Bulk {guid}", guid);
+            throw;
         }
 
-        // Validate local authority access
-        if (!allowedLocalAuthorityIds.Contains(0) && (bulkCheck.LocalAuthorityID == null || !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value)))
-        {
-            _logger.LogWarning(
-                $"User attempted to access bulk upload {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} belonging to local authority {bulkCheck.LocalAuthorityID} without permission");
-            throw new UnauthorizedAccessException($"You do not have permission to access bulk check {guid}");
-        }
-
-        var response = await _bulkCheckGateway.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid);
-        if (response == null)
-        {
-            _logger.LogWarning(
-                $"Bulk upload results with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
-            throw new NotFoundException(guid);
-        }
-
-        _logger.LogInformation(
-            $"Retrieved bulk upload results for group ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
-
-        return new CheckEligibilityBulkResponse
-        {
-            Data = response as List<CheckEligibilityItem> ?? new List<CheckEligibilityItem>()
-        };
     }
 }

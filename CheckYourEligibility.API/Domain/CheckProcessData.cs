@@ -1,9 +1,11 @@
 ﻿using CheckYourEligibility.API.Domain.Enums;
+using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckProcessData
 {
     public string? NationalInsuranceNumber { get; set; }
@@ -16,6 +18,7 @@ public class CheckProcessData
     public string? EmailAddress { get; set; }
     public string EligibilityCode { get; set; }
     public string ValidityStartDate { get; set; }
+    public string DiscretionaryValidityStartDate { get; set; }
     public string ValidityEndDate { get; set; }
     public string GracePeriodEndDate { get; set; }
     public string DateOfBirth { get; set; }
