@@ -415,14 +415,14 @@ export function validFosterFamilyRequestBody() {
       carerFirstName: 'John',
       carerLastName: 'Smith Test',
       carerDateOfBirth: '1980-01-01',
-      carerNationalInsuranceNumber: 'NN123456C'
+      carerNationalInsuranceNumber: generateValidNi()
     },
     hasPartner: true,
     partner: {
       partnerFirstName: 'Jane',
       partnerLastName: 'Smith Test',
       partnerDateOfBirth: '1981-01-01',
-      partnerNationalInsuranceNumber: 'NN123456C'
+      partnerNationalInsuranceNumber: generateValidNi()
     },
     fosterChild: {
       childFirstName: 'Tom',
@@ -482,7 +482,7 @@ export function updateFosterCarerRequestBody() {
       carerDateOfBirth: '1980-01-01',
       carerNationalInsuranceNumber: 'NN123456C'
     },
-    partnerRequest: {
+    fosterPartnerRequest: {
       partnerFirstName: 'Updated Jane',
       partnerLastName: 'Updated Smith',
       partnerDateOfBirth: '1981-01-01',
@@ -539,3 +539,13 @@ export function missingDernEligibilityEventRequestBody() {
   delete body.eligibilityEvent.dern;
   return body;
 }
+
+
+
+export function generateValidNi(): string {
+    const digits = Math.floor(Math.random() * 1_000_000)
+        .toString()
+        .padStart(6, "0");
+
+    return `AA${digits}A`;
+};

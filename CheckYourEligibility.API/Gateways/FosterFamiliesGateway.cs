@@ -85,6 +85,17 @@ public class FosterFamiliesGateway : IFosterFamilies
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        bool existingFosterFamily = await _db.FosterCarers
+        .AnyAsync(x => x.NationalInsuranceNumber == request.FosterCarer.CarerNationalInsuranceNumber);
+
+        if (existingFosterFamily)
+        {
+            throw new ValidationException(
+                null,
+                $"A foster family with National Insurance number '{request.FosterCarer.CarerNationalInsuranceNumber}' already exists."
+            );
+        }
+
         var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
         var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
@@ -245,6 +256,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         var query = _db.FosterChildren
             .Include(x => x.FosterCarer)
+            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId)
             .AsQueryable();
 
         var totalRecords = await query.CountAsync();
@@ -266,6 +278,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             .Take(pageSize)
             .Select(x => new FosterFamiliesSearchItemResponse
             {
+                CarerId = x.FosterCarerId,
                 ChildName = $"{x.FirstName} {x.LastName}",
                 ChildDateOfBirth = x.DateOfBirth,
                 EligibilityCode = x.EligibilityCode,
@@ -275,14 +288,14 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                 EligibilityConfirmedOn = x.SubmissionDate,
 
-                ReconfirmBetween = "to do",
+                ReconfirmBetween = "",
 
                 GracePeriodEnds = _db.WorkingFamiliesEvents
                     .Where(w => w.EligibilityCode == x.EligibilityCode)
                     .Select(w => w.GracePeriodEndDate)
                     .SingleOrDefault(),
 
-                ReconfirmationStatus = "to do"
+                ReconfirmationStatus = ""
             })
             .AsNoTracking()
             .ToListAsync();
@@ -314,8 +327,8 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "to do",
-                    CodeStatus = "to do",
+                    ReconfirmationStatus = "",
+                    CodeStatus = "",
 
                     EligibilityConfirmedOn = x.SubmissionDate,
 
@@ -353,8 +366,8 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "to do",
-                    CodeStatus = "to do",
+                    ReconfirmationStatus = "",
+                    CodeStatus = "",
 
                     EligibilityConfirmedOn = x.SubmissionDate,
 
@@ -442,9 +455,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
             EligiblityCode = workingEvent.EligibilityCode,
-            Status = fosterChild.Status,
+            Status = "",
             EligibilityConfirmed = submissionDate.ToString(),
-            ReconfirmBetween = "This still need doing",
+            ReconfirmBetween = "",
             GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
         };
     }
