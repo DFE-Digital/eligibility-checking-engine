@@ -1,6 +1,7 @@
 // TODO: have only client details in the request body
 
 import { data } from "cypress/types/jquery";
+import { randomInt } from "crypto";
 
 export const validLoginRequestBody = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
@@ -543,7 +544,7 @@ export function missingDernEligibilityEventRequestBody() {
 
 
 export function generateValidNi(): string {
-    const digits = Math.floor(Math.random() * 1_000_000)
+    const digits = randomInt(0, 1_000_000)
         .toString()
         .padStart(6, "0");
 
