@@ -2,6 +2,7 @@
 
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using Microsoft.AspNetCore.Authorization;
@@ -206,6 +207,7 @@ public class AdministrationController : BaseController
     /// <returns></returns>
     [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("multipart/form-data")]
     [HttpPost("/admin/update-establishments-private-beta")]
     [Authorize(Policy = PolicyNames.RequireAdminScope)]
@@ -221,6 +223,20 @@ public class AdministrationController : BaseController
         catch (InvalidDataException ex)
         {
             return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse
+            {
+                Errors =
+                [
+                    new Error
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Title = ex.Message
+                    }
+                ]
+            });
         }
     }
 }
