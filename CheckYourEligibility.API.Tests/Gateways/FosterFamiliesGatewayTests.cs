@@ -1190,7 +1190,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
                 CarerFirstName = "John",
                 CarerLastName = "Smith",
                 CarerDateOfBirth = new DateTime(1980, 1, 1),
-                CarerNationalInsuranceNumber = "NN123456C",
+                CarerNationalInsuranceNumber = GenerateValidNi(),
                 LocalAuthorityID = 0
             },
 
@@ -1199,7 +1199,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
                 PartnerFirstName = "Jane",
                 PartnerLastName = "Smith",
                 PartnerDateOfBirth = new DateTime(1980, 1, 1),
-                PartnerNationalInsuranceNumber = "AB123456C"
+                PartnerNationalInsuranceNumber = GenerateValidNi()
             },
 
             FosterChild = new FosterChildRequest
@@ -1210,6 +1210,12 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
                 ChildPostCode = "NNU 1AE"
             }
         };
+
+    }
+
+    private static string GenerateValidNi()
+    {
+        return $"AA{Random.Shared.Next(1_000_000):D6}A";
     }
 
     #endregion
