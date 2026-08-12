@@ -1,6 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
-using DocumentFormat.OpenXml.InkML;
 
 namespace CheckYourEligibility.API.Helpers
 {
@@ -76,23 +75,36 @@ namespace CheckYourEligibility.API.Helpers
             if (eligibilityCode.StartsWith("4")) return EligibilityCodeType.Foster;
             return EligibilityCodeType.Standard;
         }
+        /// <summary>
+        /// Calculates reconfirmation window and reconfirmation status
+        /// </summary>
+        /// <param name="validityEndDate"></param>
+        /// <param name="gracePeriodEndDate"></param>
+        /// <param name="checkDate"></param>
+        /// <param name="codeType"></param>
+        /// <param name="childDOB"></param>
+        /// <returns></returns>
         public static ReconfirmationProperties SetReconfirmationProperties(string validityEndDate,string gracePeriodEndDate, DateTime checkDate, EligibilityCodeType? codeType, string childDOB)
         {
             if (DateTime.TryParse(gracePeriodEndDate, out var gpd) && DateTime.TryParse(validityEndDate, out var ved) && DateTime.TryParse(childDOB, out var dob)) {
 
                 
-
-                    if (codeType == EligibilityCodeType.Temporary)
-                    {
-                        return new ReconfirmationProperties();
-                    }
-                    else if (ChildIsTooOld(dob, checkDate)) //child too old - Child has reached compulsory school age
+                    
+                    if (ChildIsTooOld(dob, checkDate))
+                    { //child too old - Child has reached compulsory school age
 
                         return new ReconfirmationProperties()
                         {
                             Status = ReconfirmationStatus.ChildTooOld
                         };
-
+                    }
+                    if (codeType == EligibilityCodeType.Temporary)
+                    {
+                        return new ReconfirmationProperties()
+                        {
+                            Status = ReconfirmationStatus.NotApplicable
+                        };
+                    }
                     DateTime startReconfirmDate = ved.AddDays(-28);
                     ReconfirmationProperties reconfirmationProperties = new ReconfirmationProperties();
 
@@ -108,13 +120,16 @@ namespace CheckYourEligibility.API.Helpers
                     }
                     else { reconfirmationProperties.Status = ReconfirmationStatus.Due; }
 
-                    reconfirmationProperties.StartDate = startReconfirmDate;
-                    reconfirmationProperties.EndDate = ved;
+                    reconfirmationProperties.StartDate =  startReconfirmDate.ToString("yyyy-MM-dd");
+                    reconfirmationProperties.EndDate = ved.ToString("yyyy-MM-dd");
 
                     return reconfirmationProperties;
                 }
 
-            return new ReconfirmationProperties();
+            return new ReconfirmationProperties()
+            {
+                Status = ReconfirmationStatus.NotApplicable
+            }; 
           
         }
 #region Private

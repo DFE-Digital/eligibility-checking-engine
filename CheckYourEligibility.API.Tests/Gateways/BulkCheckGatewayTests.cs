@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Net;
 using AutoFixture;
 using AutoMapper;
+using Azure.Messaging.EventGrid.SystemEvents;
 using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Boundary.Requests;
@@ -379,7 +380,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetBulkCheckResults<IList<CheckEligibilityItem>>(request);
+        var response = _sut.GetBulkCheckResults(request);
 
         // Assert
         response.Result.Should().BeNull();
@@ -398,6 +399,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         item.Type = CheckEligibilityType.FreeSchoolMeals;
         item.CheckData =
             """{"nationalInsuranceNumber": "AB123456C", "lastName": "Something", "dateOfBirth": "2000-01-01", "nationalAsylumSeekerServiceNumber": null}""";
+
         // Set navigation properties to null to avoid creating additional entities
         item.EligibilityCheckHash = null;
         item.EligibilityCheckHashID = null;
@@ -412,25 +414,13 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         var savedItems = _fakeInMemoryDb.CheckEligibilities.Where(x => x.BulkCheckID == groupId).ToList();
         savedItems.Count.Should().Be(1);
 
-        var items = new CheckEligibilityItem()
-        {
-            NationalInsuranceNumber = "AB123456C",
-            DateOfBirth = "2000-01-01",
-            LastName = "SOMETHING"
-        };
-
-        _moqCheckEligibility.Setup(x =>
-            x.GetItem<CheckEligibilityItem>(It.IsAny<string>(), It.IsAny<CheckEligibilityType>(), It.IsAny<bool>())).ReturnsAsync(items);
-
         // Act
-        var response = await _sut.GetBulkCheckResults<IList<CheckEligibilityItem>>(groupId);
+        var response = await _sut.GetBulkCheckResults(groupId);
 
         // Assert
         response.Should().NotBeNull();
-        response.Should().BeOfType<List<CheckEligibilityItem>>();
-        response.First().DateOfBirth.Should().Contain("2000-01-01");
-        response.First().NationalInsuranceNumber.Should().Contain("AB123456C");
-        response.First().LastName.Should().Contain("SOMETHING");
-        response.First().NationalAsylumSeekerServiceNumber.Should().BeNull();
+        response.Should().BeOfType<IList<EligibilityCheck>>();
+        response.First().EligibilityCheckID.Should().Be(eligibilityCheckId);
+        response.First().CheckData.Should().Be("""{"nationalInsuranceNumber": "AB123456C", "lastName": "Something", "dateOfBirth": "2000-01-01", "nationalAsylumSeekerServiceNumber": null}""");
     }
 }

@@ -25,19 +25,36 @@ public interface IGetEligibilityCheckItemUseCase
 public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
 {
     private readonly IGetEligibilityCheckItemService _getEligibilityCheckItemService;
+    private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
+    private readonly ICheckEligibility _checkGateway;
 
     public GetEligibilityCheckItemUseCase(
-        IGetEligibilityCheckItemService getEligibilityCheckItemService)
+        IGetEligibilityCheckItemService getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
+
         _getEligibilityCheckItemService = getEligibilityCheckItemService;
+        _logger = logger;
+        _checkGateway = checkGateway;
 
     }
 
     public async Task<CheckEligibilityItemResponse<CheckEligibilityItemBase>> Execute(string guid, CheckEligibilityType type)
     {
-        // get item
-        var result = await _getEligibilityCheckItemService.GetEligibilityCheckItemAsync(guid);
-        var response =_getEligibilityCheckItemService.MapCheckDataToResponse(result);
+      
+        if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
+
+        var result = await _checkGateway.GetItem(guid);
+        if (result == null)
+        {
+            _logger.LogWarning(
+              "Eligibility check with ID {Guid} not found", guid);
+            throw new NotFoundException(guid);
+        }
+
+        _logger.LogInformation(
+            "Retrieved eligibility check details for ID: {Guid}", guid);
+
+        var response = _getEligibilityCheckItemService.MapCheckDataToResponse(result);
 
         string typeUrl = "";
         if (type != CheckEligibilityType.None)

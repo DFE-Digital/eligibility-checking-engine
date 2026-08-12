@@ -36,9 +36,9 @@ namespace CheckYourEligibility.API.Boundary.Responses.Internal
 
     public class ReconfirmationProperties {
 
-        public DateTime StartDate { get; set; }
+        public string? StartDate { get; set; }
 
-        public DateTime EndDate { get; set; }
+        public string? EndDate { get; set; }
 
         public ReconfirmationStatus Status {get;set;}
       

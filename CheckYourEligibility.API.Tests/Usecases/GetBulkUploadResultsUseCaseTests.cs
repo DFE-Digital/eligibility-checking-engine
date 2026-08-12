@@ -1,8 +1,10 @@
 using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -20,7 +22,8 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadResultsUseCase>>(MockBehavior.Loose);
-        _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _getEligibilityCheckItemService = new Mock<IGetEligibilityCheckItemService>(MockBehavior.Strict);
+        _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _getEligibilityCheckItemService.Object, _mockLogger.Object);
     }
 
     [TearDown]
@@ -32,6 +35,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
 
     private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
+    private Mock<IGetEligibilityCheckItemService> _getEligibilityCheckItemService;
     private Mock<ILogger<GetBulkUploadResultsUseCase>> _mockLogger;
     private GetBulkUploadResultsUseCase _sut;
 
@@ -61,8 +65,8 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
-            .ReturnsAsync((IList<CheckEligibilityItem>)null!);
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
+            .ReturnsAsync((IList<EligibilityCheck>)null!);
 
         // Act
         Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
@@ -80,11 +84,11 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 201;
         
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
+        var resultItems = _fixture.CreateMany<EligibilityCheck>().ToList();
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
             .ReturnsAsync(resultItems);
 
         // Act
@@ -103,17 +107,17 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 201;
         
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
+        var resultItems = _fixture.CreateMany<EligibilityCheck>().ToList();
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
             .ReturnsAsync(resultItems);
         // Act
         await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
-        _mockBulkCheckGateway.Verify(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid), Times.Once);
+        _mockBulkCheckGateway.Verify(s => s.GetBulkCheckResults(guid), Times.Once);
     }
 
     [Test]
@@ -145,11 +149,11 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 305; // Any local authority
         
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
+        var resultItems = _fixture.CreateMany<EligibilityCheck>().ToList();
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
             .ReturnsAsync(resultItems);
       
         // Act

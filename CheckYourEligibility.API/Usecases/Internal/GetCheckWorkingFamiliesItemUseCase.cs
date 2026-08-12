@@ -1,8 +1,11 @@
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Services;
+using CheckYourEligibility.API.UseCases;
 
 namespace CheckYourEligibility.API.Usecases.Internal;
 
@@ -23,17 +26,33 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
 {
 
     private readonly IGetEligibilityCheckItemService _getEligibilityCheckItemService;
+    private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
+    private readonly ICheckEligibility _checkGateway;
 
     public GetCheckWorkingFamiliesItemUseCase(
-        IGetEligibilityCheckItemService getEligibilityCheckItemService)
+        IGetEligibilityCheckItemService getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
         _getEligibilityCheckItemService = getEligibilityCheckItemService;
+        _logger = logger;
+        _checkGateway = checkGateway;
     }
 
     public async Task<CheckEligibilityItemResponse<CheckEligibilityWorkingFamiliesItem>> Execute(string guid, DateTime checkDate)
     {
         // get item and map check data for response
-        var result = await _getEligibilityCheckItemService.GetEligibilityCheckItemAsync(guid);
+
+        if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
+
+        var result = await _checkGateway.GetItem(guid);
+        if (result == null)
+        {
+            _logger.LogWarning(
+              "Eligibility check with ID {Guid} not found", guid);
+            throw new NotFoundException(guid);
+        }
+
+        _logger.LogInformation(
+            "Retrieved eligibility check details for ID: {Guid}", guid);
 
         var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result);
 

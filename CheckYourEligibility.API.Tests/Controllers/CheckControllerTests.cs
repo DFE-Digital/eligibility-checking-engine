@@ -3,6 +3,7 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -38,6 +39,7 @@ public class CheckControllerTests : TestBase.TestBase
     private Mock<IUpdateEligibilityCheckStatusUseCase> _mockUpdateEligibilityCheckStatusUseCase;
     private Mock<IDeleteBulkCheckUseCase> _mockDeleteBulkCheckUseCase;
     private Mock<IGetAllBulkChecksUseCase> _mockGetAllBulkChecksUseCase;
+    private Mock<IGetCheckWorkingFamiliesUseCase> _getCheckWorkingFamiliesUseCase;
 
     private CheckController _sut;
 
@@ -58,6 +60,7 @@ public class CheckControllerTests : TestBase.TestBase
         _mockGetAllBulkChecksUseCase = new Mock<IGetAllBulkChecksUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<CheckController>>();
+        _getCheckWorkingFamiliesUseCase = new Mock<IGetCheckWorkingFamiliesUseCase>(MockBehavior.Strict);
 
         var configForBulkUpload = new Dictionary<string, string>
         {
@@ -72,7 +75,8 @@ public class CheckControllerTests : TestBase.TestBase
             _mockAuditGateway.Object,
             _mockCheckEligibilityUseCase.Object,
             _mockGetEligibilityCheckStatusUseCase.Object,
-            _mockGetEligibilityCheckItemUseCase.Object
+            _mockGetEligibilityCheckItemUseCase.Object,
+            _getCheckWorkingFamiliesUseCase.Object
         );
 
         // Setup default HttpContext with a Mock HttpRequest
@@ -343,7 +347,7 @@ public class CheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var executionResult = new CheckEligibilityItemResponse();
+        var executionResult = new CheckEligibilityItemResponse<CheckEligibilityItem>();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
             .ThrowsAsync(new NotFoundException());
@@ -363,7 +367,7 @@ public class CheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var type = _fixture.Create<CheckEligibilityType>();
-        var executionResult = new CheckEligibilityItemResponse();
+        var executionResult = new CheckEligibilityItemResponse<CheckEligibilityItem>();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type)).ThrowsAsync(new NotFoundException());
 
@@ -381,7 +385,7 @@ public class CheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var executionResult = new CheckEligibilityItemResponse();
+        var executionResult = new CheckEligibilityItemResponse<CheckEligibilityItem>();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
             .ThrowsAsync(new ValidationException("Validation error"));
@@ -401,7 +405,7 @@ public class CheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var type = _fixture.Create<CheckEligibilityType>();
-        var executionResult = new CheckEligibilityItemResponse();
+        var executionResult = new CheckEligibilityItemResponse<CheckEligibilityItem>();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type))
             .ThrowsAsync(new ValidationException("Validation error"));
@@ -420,11 +424,10 @@ public class CheckControllerTests : TestBase.TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
-        var executionResult = itemResponse;
+        var itemResponse = _fixture.Create<CheckEligibilityItemResponse<CheckEligibilityItemBase>>();
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, CheckEligibilityType.None))
-            .ReturnsAsync(executionResult);
+            .ReturnsAsync(itemResponse);
 
         // Act
         var response = await _sut.EligibilityCheck(guid);
@@ -442,7 +445,7 @@ public class CheckControllerTests : TestBase.TestBase
         // Arrange
         var guid = _fixture.Create<string>();
         var type = _fixture.Create<CheckEligibilityType>();
-        var itemResponse = _fixture.Create<CheckEligibilityItemResponse>();
+        var itemResponse = _fixture.Create<CheckEligibilityItemResponse<CheckEligibilityItemBase>>();
         var executionResult = itemResponse;
 
         _mockGetEligibilityCheckItemUseCase.Setup(u => u.Execute(guid, type)).ReturnsAsync(executionResult);
