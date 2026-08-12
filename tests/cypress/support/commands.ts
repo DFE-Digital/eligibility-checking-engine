@@ -28,6 +28,10 @@ declare namespace Cypress {
     verifyTotalElements(totalElements: number, expectedTotalElements: number): Chainable<void>;
     verifySchoolSearchResponse(response: any, expectedData: any): Chainable<void>;
     verifyApplicationSearchResponse(response: any, expectedDataArray: any[]): Chainable<void>;
+
+    verifyFosterFamilyCreatedAndReturned(response: any, expected: any): Chainable<void>;
+
+
     form_request(method: string, url: string, formData: FormData, token: string, done: (response: XMLHttpRequest) => void): Chainable<void>;
   }
 }
@@ -589,6 +593,44 @@ Cypress.Commands.add('verifyApplicationSearchResponse', (response, expectedDataA
   expect(expectedData).to.have.property('user', expectedData.user);
 
 });
+
+
+Cypress.Commands.add(
+  'verifyFosterFamilyCreatedAndReturned',
+  (response, request) => {
+
+    expect(response.status).to.eq(200);
+
+    expect(response.body).to.have.property('fosterCarerId');
+
+    expect(response.body.carerFirstName)
+      .to.eq(request.fosterCarer.carerFirstName);
+
+    expect(response.body.carerLastName)
+      .to.eq(request.fosterCarer.carerLastName);
+
+    expect(response.body.carerNationalInsuranceNumber)
+      .to.eq(
+        request.fosterCarer.carerNationalInsuranceNumber
+      );
+
+    expect(response.body.hasPartner)
+      .to.eq(request.hasPartner);
+
+    if (request.hasPartner) {
+      expect(response.body.partnerFirstName)
+        .to.eq(request.partner.partnerFirstName);
+
+      expect(response.body.partnerLastName)
+        .to.eq(request.partner.partnerLastName);
+
+      expect(response.body.partnerNationalInsuranceNumber)
+        .to.eq(
+          request.partner.partnerNationalInsuranceNumber
+        );
+    }
+  }
+);
 
 Cypress.Commands.add('form_request', (method: string, url: string, formData: FormData, token: string, done: (response: XMLHttpRequest) => void) => {
   const xhr = new XMLHttpRequest();

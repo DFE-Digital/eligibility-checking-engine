@@ -170,9 +170,6 @@ builder.Services.AddScoped<IDeleteWorkingFamiliesEventUseCase, DeleteWorkingFami
 builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
 builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
 builder.Services.AddScoped<ICreateApplicationsFromBulkCheckUseCase, CreateApplicationsFromBulkCheckUseCase>();
-builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
-builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
-builder.Services.AddScoped<IUpdateFosterFamilyUseCase, UpdateFosterFamilyUseCase>();
 builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
 builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
 builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>();
@@ -205,6 +202,17 @@ builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
 builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEventsUseCase>();
+
+builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
+builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
+builder.Services.AddScoped<IUpdateFosterCarerUseCase, UpdateFosterCarerUseCase>();
+builder.Services.AddScoped<IDeleteFosterCarerUseCase, DeleteFosterCarerUseCase>();
+builder.Services.AddScoped<IDeleteFosterPartnerUseCase, DeleteFosterPartnerUseCase>();
+builder.Services.AddScoped<ISearchFosterFamiliesUseCase, SearchFosterFamiliesUseCase>();
+builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
+builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
+builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
+builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 
