@@ -7,6 +7,7 @@ using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.API.Telemetry;
+using CheckYourEligibility.Core.Extensions;
 using CheckYourEligibility.Core.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;

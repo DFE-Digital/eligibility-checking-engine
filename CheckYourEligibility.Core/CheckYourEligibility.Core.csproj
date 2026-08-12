@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
 
     <PackageId>CheckYourEligibility.Core</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.1.4</Version>
     <Authors>Various</Authors>
     <Company>Department for Education</Company>
   </PropertyGroup>
