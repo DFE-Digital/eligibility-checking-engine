@@ -86,7 +86,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         ArgumentNullException.ThrowIfNull(request);
 
         bool existingFosterFamily = await _db.FosterCarers
-        .AnyAsync(x => x.NationalInsuranceNumber == request.FosterCarer.CarerNationalInsuranceNumber);
+        .AnyAsync(x =>
+        x.NationalInsuranceNumber == request.FosterCarer.CarerNationalInsuranceNumber &&
+        x.LocalAuthorityID == request.FosterCarer.LocalAuthorityID);
 
         if (existingFosterFamily)
         {

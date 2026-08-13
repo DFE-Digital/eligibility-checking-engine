@@ -11,8 +11,6 @@ describe("Update Foster Carer - happy paths", () => {
       "/oauth2/token",
       validLoginRequestBodyFosterFamilies,
     ).then((token) => {
-
-      console.log(validLoginRequestBodyFosterFamilies);
       // create family
       cy.apiRequest(
         "POST",
@@ -32,6 +30,21 @@ describe("Update Foster Carer - happy paths", () => {
           token,
         ).then((response) => {
           expect(response.status).to.eq(204);
+        });
+
+        // Verify updated
+        cy.apiRequest(
+          "GET",
+          `/foster-family/${fosterCarerId}`,
+          null,
+          token,
+        ).then((response) => {
+
+          cy.verifyApiResponseCode(response, 200);
+          cy.verifyFosterCarerOrPartnerUpdated(
+            response,
+            updateFosterCarerRequestBody(),
+          );
         });
       });
     });

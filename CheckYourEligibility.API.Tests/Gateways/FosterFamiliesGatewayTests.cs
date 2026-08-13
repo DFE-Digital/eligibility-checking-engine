@@ -143,6 +143,29 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task CreateFosterFamily_Should_Return_Created_Response_But_Different_LA_same_NINO()
+    {
+        // Arrange
+        // LA is 0 
+        var request1 = BuildValidRequest();
+        string request1NINO = request1.FosterCarer.CarerNationalInsuranceNumber;
+        await _sut.CreateFosterFamily(request1);
+
+        // Act
+        // LA is now 123 but NINO is same
+        var request2 = BuildValidRequest();
+        request2.FosterCarer.LocalAuthorityID = 123;
+        request2.FosterCarer.CarerNationalInsuranceNumber = request1NINO;
+        var result = await _sut.CreateFosterFamily(request2);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ChildName.Should().Be("Tom Smith");
+        result.Status.Should().Be("Active");
+        result.EligiblityCode.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Test]
     public async Task CreateFosterFamily_Should_Link_Child_To_FosterCarer()
     {
         // Arrange
@@ -217,6 +240,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterFamily_Should_Throw_ValidationException_When_Carer_Already_Exists()
     {
         // Arrange
+        // When the LA already contains a family with SAME nino
         var request = BuildValidRequest();
 
         await _sut.CreateFosterFamily(request);
@@ -386,6 +410,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
+    [Test]    
     public async Task UpdateFosterCarer_Should_Throw_NotFoundException_When_LA_Does_Not_Match()
     {
         // Arrange
@@ -453,6 +478,31 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task DeleteFosterCarer_Should_Throw_NotFound_When_LA_Does_Not_Match()
+    {
+        // Arrange
+        var request = BuildValidRequest();
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        // Act
+        Func<Task> act = () =>
+            _sut.DeleteFosterCarer(
+            fosterCarerId, 
+            123); // wrong LA 
+
+
+        // Assert
+        await act.Should()
+             .ThrowAsync<NotFoundException>()
+             .WithMessage($"Foster carer {fosterCarerId} not found");
+    }
+
+    [Test]
     public async Task DeleteFosterPartner_Should_Remove_Partner_Details()
     {
         // Arrange
@@ -478,7 +528,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task DeleteFosterCarerOrPartner_Should_Throw_NotFound_When_LA_Does_Not_Match()
+    public async Task DeleteFosterPartner_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
         var request = BuildValidRequest();
