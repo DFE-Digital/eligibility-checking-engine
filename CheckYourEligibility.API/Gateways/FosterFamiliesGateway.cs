@@ -85,6 +85,19 @@ public class FosterFamiliesGateway : IFosterFamilies
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        bool existingFosterFamily = await _db.FosterCarers
+        .AnyAsync(x =>
+        x.NationalInsuranceNumber == request.FosterCarer.CarerNationalInsuranceNumber &&
+        x.LocalAuthorityID == request.FosterCarer.LocalAuthorityID);
+
+        if (existingFosterFamily)
+        {
+            throw new ValidationException(
+                null,
+                $"A foster family with National Insurance number '{request.FosterCarer.CarerNationalInsuranceNumber}' already exists."
+            );
+        }
+
         var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
         var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
@@ -187,11 +200,11 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.SaveChangesAsync();
     }
 
-    public async Task DeleteFosterCarer(Guid fosterCarerId)
+    public async Task DeleteFosterCarer(Guid fosterCarerId, int localAuthorityId)
     {
         var fosterCarer = await _db.FosterCarers
             .Include(x => x.FosterChildren)
-            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId);
+            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId);
 
 
         if (fosterCarer is null)
@@ -206,10 +219,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.SaveChangesAsync();
     }
 
-    public async Task DeleteFosterPartner(Guid fosterCarerId)
+    public async Task DeleteFosterPartner(Guid fosterCarerId, int localAuthorityId)
     {
         var fosterCarer = await _db.FosterCarers
-            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId);
+            .SingleOrDefaultAsync(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId);
 
         if (fosterCarer is null)
         {
@@ -245,6 +258,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         var query = _db.FosterChildren
             .Include(x => x.FosterCarer)
+            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId)
             .AsQueryable();
 
         var totalRecords = await query.CountAsync();
@@ -266,6 +280,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             .Take(pageSize)
             .Select(x => new FosterFamiliesSearchItemResponse
             {
+                CarerId = x.FosterCarerId,
                 ChildName = $"{x.FirstName} {x.LastName}",
                 ChildDateOfBirth = x.DateOfBirth,
                 EligibilityCode = x.EligibilityCode,
@@ -275,14 +290,14 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                 EligibilityConfirmedOn = x.SubmissionDate,
 
-                ReconfirmBetween = "this still needs sorting",
+                ReconfirmBetween = "",
 
                 GracePeriodEnds = _db.WorkingFamiliesEvents
                     .Where(w => w.EligibilityCode == x.EligibilityCode)
                     .Select(w => w.GracePeriodEndDate)
                     .SingleOrDefault(),
 
-                ReconfirmationStatus = "this still needs sorting"
+                ReconfirmationStatus = ""
             })
             .AsNoTracking()
             .ToListAsync();
@@ -314,8 +329,8 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "work in progress",
-                    CodeStatus = "work in progress",
+                    ReconfirmationStatus = "",
+                    CodeStatus = "",
 
                     EligibilityConfirmedOn = x.SubmissionDate,
 
@@ -353,8 +368,8 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "work in progress",
-                    CodeStatus = "work in progress",
+                    ReconfirmationStatus = "",
+                    CodeStatus = "",
 
                     EligibilityConfirmedOn = x.SubmissionDate,
 
@@ -442,9 +457,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
             EligiblityCode = workingEvent.EligibilityCode,
-            Status = fosterChild.Status,
+            Status = "",
             EligibilityConfirmed = submissionDate.ToString(),
-            ReconfirmBetween = "This still need doing",
+            ReconfirmBetween = "",
             GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
         };
     }
@@ -458,7 +473,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         var fosterChild = await _db.FosterChildren
             .Include(x => x.FosterCarer)
-            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId);
 
         if (fosterChild is null)
         {
@@ -480,10 +495,11 @@ public class FosterFamiliesGateway : IFosterFamilies
         return await GetFosterChild(fosterChildId, fosterChild.FosterCarer.LocalAuthorityID.Value, true);
     }
 
-    public async Task DeleteFosterChild(Guid fosterChildId)
+    public async Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId)
     {
         var fosterChild = await _db.FosterChildren
-            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+            .Include(x => x.FosterCarer)
+            .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId);
 
         if (fosterChild is null)
         {

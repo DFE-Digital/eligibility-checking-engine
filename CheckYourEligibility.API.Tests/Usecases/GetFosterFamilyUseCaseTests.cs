@@ -27,11 +27,17 @@ public class GetFosterFamilyUseCaseTests
     [Test]
     public async Task Execute_Should_Throw_When_Id_Is_Empty()
     {
+        // Arrange
+        
+        // Act
+        var act = () => _sut.Execute(
+            Guid.Empty,
+            1,
+            false);
+
+        // Assert
         await FluentActions
-            .Invoking(async () => await _sut.Execute(
-                Guid.Empty,
-                1,
-                false))
+            .Invoking(act)
             .Should()
             .ThrowAsync<ValidationException>();
     }

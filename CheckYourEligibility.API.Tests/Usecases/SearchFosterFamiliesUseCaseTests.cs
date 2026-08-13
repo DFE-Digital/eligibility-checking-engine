@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.UseCases;
+using FluentAssertions;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.UseCases;
@@ -19,17 +20,24 @@ public class SearchFosterFamiliesUseCaseTests
     }
 
     [Test]
-    public void Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
+    public async Task Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
     {
-        // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await _sut.Execute(null!, 1));
+        // Arrange
+        
+        // Act
+        var act = () => _sut.Execute(null!, 1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
+            .Should()
+            .ThrowAsync<ArgumentNullException>();
     }
 
     [TestCase(0)]
     [TestCase(-1)]
     [TestCase(-10)]
-    public void Execute_ShouldThrowValidationException_WhenPageNumberIsInvalid(
+    public async Task Execute_ShouldThrowValidationException_WhenPageNumberIsInvalid(
         int pageNumber)
     {
         // Arrange
@@ -39,20 +47,23 @@ public class SearchFosterFamiliesUseCaseTests
             PageSize = 10
         };
 
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<ValidationException>(
-            async () => await _sut.Execute(request, 1));
+        // Act
+        var act = () => _sut.Execute(request, 1);
 
-        Assert.That(
-            ex!.Message,
-            Is.EqualTo(FosterFamilyValidationMessages.InvalidPageNumber));
+        // Assert
+        var ex = await FluentActions
+            .Invoking(act)
+            .Should()
+            .ThrowAsync<ValidationException>();
+
+        ex.And.Message.Should().Be(FosterFamilyValidationMessages.InvalidPageNumber);
     }
 
     [TestCase(0)]
     [TestCase(-1)]
     [TestCase(11)]
     [TestCase(20)]
-    public void Execute_ShouldThrowValidationException_WhenPageSizeIsInvalid(
+    public async Task Execute_ShouldThrowValidationException_WhenPageSizeIsInvalid(
         int pageSize)
     {
         // Arrange
@@ -62,13 +73,16 @@ public class SearchFosterFamiliesUseCaseTests
             PageSize = pageSize
         };
 
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<ValidationException>(
-            async () => await _sut.Execute(request, 1));
+        // Act
+        var act = () => _sut.Execute(request, 1);
 
-        Assert.That(
-            ex!.Message,
-            Is.EqualTo(FosterFamilyValidationMessages.InvalidPageSize));
+        // Assert
+        var ex = await FluentActions
+            .Invoking(act)
+            .Should()
+            .ThrowAsync<ValidationException>();
+
+        ex.And.Message.Should().Be(FosterFamilyValidationMessages.InvalidPageSize);
     }
 
     [Test]
@@ -122,7 +136,7 @@ public class SearchFosterFamiliesUseCaseTests
         var result = await _sut.Execute(request, 1);
 
         // Assert
-        Assert.That(result, Is.SameAs(expectedResponse));
+        result.Should().BeSameAs(expectedResponse);
     }
 
     [Test]
@@ -143,8 +157,8 @@ public class SearchFosterFamiliesUseCaseTests
         var result = await _sut.Execute(request, 1);
 
         // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data, Is.Empty);
+        result.Should().NotBeNull();
+        result.Data.Should().NotBeNull();
+        result.Data.Should().BeEmpty();
     }
 }
