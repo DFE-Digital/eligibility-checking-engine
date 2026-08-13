@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace CheckYourEligibility.API.Migrations
+namespace CheckYourEligibility.Core.Migrations
 {
     /// <inheritdoc />
     public partial class FosterFamilies_new_Status_field_and_OnetoManyChildren_rs : Migration
