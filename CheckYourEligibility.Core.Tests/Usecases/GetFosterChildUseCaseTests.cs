@@ -27,23 +27,43 @@ public class GetFosterChildUseCaseTests
     }
 
     [Test]
-    public void Execute_Should_Throw_When_Id_Is_Empty()
+    public async Task Execute_Should_Throw_When_Id_Is_Empty()
     {
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                Guid.Empty,
-                1))
+        // Arrange
+        
+        // Act
+        var act = () => _sut.Execute(
+            Guid.Empty,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<ValidationException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_When_User_Has_No_Access_To_LocalAuthority()
+    public async Task Execute_Should_Throw_When_User_Has_No_Access_To_LocalAuthority()
     {
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                Guid.NewGuid(),
-                1))
+        // Arrange
+        var id = Guid.NewGuid();
+
+        _mockGateway
+            .Setup(x => x.GetFosterChild(
+                id,
+                1,
+                false))
+            .ThrowsAsync(new UnauthorizedAccessException("User does not have access to this local authority"));
+
+        // Act
+        var act = () => _sut.Execute(
+            id,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<UnauthorizedAccessException>();
     }
@@ -106,8 +126,9 @@ public class GetFosterChildUseCaseTests
     }
 
     [Test]
-    public void Execute_Should_Throw_When_Gateway_Returns_Null()
+    public async Task Execute_Should_Throw_When_Gateway_Returns_Null()
     {
+        // Arrange
         var id = Guid.NewGuid();
 
         _mockGateway
@@ -117,10 +138,14 @@ public class GetFosterChildUseCaseTests
                 false))
             .ReturnsAsync((FosterChildResponse?)null);
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                id,
-                1))
+        // Act
+        var act = () => _sut.Execute(
+            id,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<KeyNotFoundException>();
     }

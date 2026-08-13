@@ -3,6 +3,7 @@ using AutoMapper;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.CsvImport;
 using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -243,5 +244,65 @@ public class AdministrationGatewayTests : TestBase
 
         // Assert
         Assert.Pass();
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_When_EstablishmentDoesNotExist_Should_Throw_WithoutUpdating()
+    {
+        // Arrange
+        const int existingUrn = 100718;
+        const int missingUrn = 2147483647;
+
+        var localAuthority = new LocalAuthority
+        {
+            LocalAuthorityID = 213,
+            LaName = "Westminster"
+        };
+
+        var establishment = new Establishment
+        {
+            EstablishmentID = existingUrn,
+            EstablishmentName = "Existing school",
+            LocalAuthorityID = localAuthority.LocalAuthorityID,
+            LocalAuthority = localAuthority,
+            County = "London",
+            Postcode = "SW1A 1AA",
+            Locality = "Westminster",
+            Street = "Test Street",
+            Town = "London",
+            StatusOpen = true,
+            Type = "Community school",
+            InPrivateBeta = false
+        };
+
+        _fakeInMemoryDb.Establishments.Add(establishment);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var updates = new List<EstablishmentPrivateBetaRow>
+        {
+            new()
+            {
+                EstablishmentId = existingUrn,
+                InPrivateBeta = true
+            },
+            new()
+            {
+                EstablishmentId = missingUrn,
+                InPrivateBeta = true
+            }
+        };
+
+        // Act
+        var act = () => _sut.UpdateEstablishmentsPrivateBeta(updates);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage($"Establishment with URN {missingUrn} not found");
+
+        var unchangedEstablishment = await _fakeInMemoryDb.Establishments
+            .SingleAsync(x => x.EstablishmentID == existingUrn);
+
+        unchangedEstablishment.InPrivateBeta.Should().BeFalse();
     }
 }

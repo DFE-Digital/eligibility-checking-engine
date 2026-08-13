@@ -31,6 +31,36 @@ describe('Update Establishments Private Beta API', function () {
         });
     });
 
+    it('Returns 404 when the establishment does not exist', function () {
+        // Declarations
+        const method = 'POST';
+        const url = buildUrl('admin/update-establishments-private-beta');
+        const fileType = 'text/csv';
+        const missingUrn = 2147483647;
+        const csvContent = `School URN,In Private Beta\n${missingUrn},Yes`;
+
+        // Create CSV blob
+        const blob = new Blob([csvContent], { type: fileType });
+
+        // Build up the form
+        const formData = new FormData();
+        formData.set('file', blob, 'NonExistentEstablishment.csv');
+
+        // Get Bearer token
+        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token: string) => {
+            // Perform the request
+            cy.form_request(method, url, formData, token, (response: XMLHttpRequest) => {
+                expect(response.status).to.eq(404);
+
+                const responseBody = JSON.parse(response.response);
+                expect(responseBody.errors).to.have.length(1);
+                expect(responseBody.errors[0].status).to.eq(404);
+                expect(responseBody.errors[0].title)
+                    .to.eq(`Establishment with URN ${missingUrn} not found`);
+            });
+        });
+    });
+
     it('Returns 401 when no bearer token is provided', function () {
         // Declarations
         const fileName = 'EstablishmentPrivateBeta.csv';

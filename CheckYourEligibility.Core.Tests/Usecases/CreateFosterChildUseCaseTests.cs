@@ -28,21 +28,28 @@ public class CreateFosterChildUseCaseTests
     }
 
     [Test]
-    public void Execute_Should_Throw_When_Request_Is_Null()
+    public async Task Execute_Should_Throw_When_Request_Is_Null()
     {
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                null!,
-                1,
-                Guid.NewGuid(),
-                DateTime.UtcNow))
+        // Arrange
+        
+        // Act
+        var act = () => _sut.Execute(
+            null!,
+            1,
+            Guid.NewGuid(),
+            DateTime.UtcNow);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<ArgumentNullException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_CarerId_Is_Empty()
+    public async Task Execute_Should_Throw_ValidationException_When_CarerId_Is_Empty()
     {
+        // Arrange
         var req = new FosterChildRequest
         {
             ChildFirstName = "Child",
@@ -51,19 +58,24 @@ public class CreateFosterChildUseCaseTests
             ChildPostCode = "AB1 2CD"
         };
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                req,
-                1,
-                Guid.Empty,
-                DateTime.UtcNow))
+        // Act
+        var act = () => _sut.Execute(
+            req,
+            1,
+            Guid.Empty,
+            DateTime.UtcNow);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<ValidationException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
     {
+        // Arrange
         var req = new FosterChildRequest
         {
             ChildFirstName = "Child",
@@ -72,19 +84,32 @@ public class CreateFosterChildUseCaseTests
             ChildPostCode = "AB1 2CD"
         };
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                req,
+        _mockGateway
+            .Setup(x => x.CreateFosterChild(
+                It.IsAny<FosterChildRequest>(),
                 1,
-                Guid.NewGuid(),
-                DateTime.UtcNow))
+                It.IsAny<Guid>(),
+                It.IsAny<DateTime>()))
+            .ThrowsAsync(new UnauthorizedAccessException());
+
+        // Act
+        var act = () => _sut.Execute(
+            req,
+            1,
+            Guid.NewGuid(),
+            DateTime.UtcNow);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<UnauthorizedAccessException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_Request_Is_Invalid()
+    public async Task Execute_Should_Throw_ValidationException_When_Request_Is_Invalid()
     {
+        // Arrange
         var req = new FosterChildRequest
         {
             ChildFirstName = "",
@@ -92,12 +117,16 @@ public class CreateFosterChildUseCaseTests
             ChildPostCode = ""
         };
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                req,
-                1,
-                Guid.NewGuid(),
-                DateTime.UtcNow))
+        // Act
+        var act = () => _sut.Execute(
+            req,
+            1,
+            Guid.NewGuid(),
+            DateTime.UtcNow);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<ValidationException>();
     }

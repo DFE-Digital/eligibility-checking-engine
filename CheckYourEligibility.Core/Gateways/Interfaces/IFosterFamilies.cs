@@ -20,9 +20,9 @@ public interface IFosterFamilies
         int localAuthorityId,
         UpdateFosterCarerRequest request);
 
-    Task DeleteFosterCarer(Guid fosterCarerId);
+    Task DeleteFosterCarer(Guid fosterCarerId, int localAuthorityId);
 
-    Task DeleteFosterPartner(Guid fosterCarerId);
+    Task DeleteFosterPartner(Guid fosterCarerId, int localAuthorityId);
 
      Task<FosterFamiliesSearchResponse> SearchFosterFamilies( 
         int localAuthorityId,
@@ -45,6 +45,7 @@ public interface IFosterFamilies
         UpdateFosterChildRequest request);
 
     Task DeleteFosterChild(
-        Guid fosterChildId);
+        Guid fosterChildId,
+        int localAuthorityId);
 
 }

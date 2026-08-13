@@ -27,42 +27,62 @@ public class CreateFosterFamilyUseCaseTests : TestBase
     }
 
     [Test]
-    public void Execute_Should_Throw_When_Request_Is_Null()
+    public async Task Execute_Should_Throw_When_Request_Is_Null()
     {
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                null!,
-                1))
+        // Arrange
+        
+        // Act
+        var act = () => _sut.Execute(
+            null!,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<ArgumentNullException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_User_Does_Not_Have_LA_Access()
     {
+        // Arrange
         var request = BuildValidRequest();
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                request,
-                1))
+        _mockGateway
+            .Setup(x => x.CreateFosterFamily(request))
+            .ThrowsAsync(new UnauthorizedAccessException("User does not have access to this local authority"));
+
+        // Act
+        var act = () => _sut.Execute(
+            request,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<UnauthorizedAccessException>();
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_Request_Is_Invalid()
+    public async Task Execute_Should_Throw_ValidationException_When_Request_Is_Invalid()
     {
+        // Arrange
         var request = new FosterFamilyRequest
         {
             FosterCarer = new FosterCarerRequest(),
             FosterChild = new FosterChildRequest()
         };
 
-        FluentActions
-            .Invoking(async () => await _sut.Execute(
-                request,
-                1))
+        // Act
+        var act = () => _sut.Execute(
+            request,
+            1);
+
+        // Assert
+        await FluentActions
+            .Invoking(act)
             .Should()
             .ThrowAsync<FluentValidation.ValidationException>();
     }

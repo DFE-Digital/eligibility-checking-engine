@@ -7,7 +7,6 @@ using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CheckYourEligibility.API.Tests.Controllers;

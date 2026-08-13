@@ -8,17 +8,16 @@
     "typescript": "^5.4.5"
   },
   "overrides": {
-  "jsonwebtoken": {
-    "jws": "3.2.3"
-  },
-  "jws": "4.0.1"
+    "jsonwebtoken": {
+      "jws": "3.2.3"
+    },
+    "jws": "4.0.1",
+    "qs": "6.15.2",
+    "systeminformation": "5.31.17"
   },
   "scripts": {
     "e2e:electron": "cypress run --browser electron",
     "combine:reports": "jrm results/combined-report.xml \"results/*.xml\""
-  },
-  "overrides": {
-  "qs": "6.15.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.2.0",

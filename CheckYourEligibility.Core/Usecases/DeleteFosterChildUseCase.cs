@@ -6,7 +6,7 @@ namespace CheckYourEligibility.Core.UseCases;
 
 public interface IDeleteFosterChildUseCase
 {
-    Task Execute(Guid fosterChildId);
+    Task Execute(Guid fosterChildId, int localAuthorityId);
 }
 
 public class DeleteFosterChildUseCase : IDeleteFosterChildUseCase
@@ -18,10 +18,10 @@ public class DeleteFosterChildUseCase : IDeleteFosterChildUseCase
         _gateway = gateway;
     }
 
-    public async Task Execute(Guid fosterChildId)
+    public async Task Execute(Guid fosterChildId, int localAuthorityId)
     {
         if (fosterChildId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterChildId);
 
-        await _gateway.DeleteFosterChild(fosterChildId);
+        await _gateway.DeleteFosterChild(fosterChildId, localAuthorityId);
     }
 }

@@ -259,8 +259,10 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
         _mockDeleteFosterCarer
-            .Setup(x => x.Execute(id))
+            .Setup(x => x.Execute(id, 201))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -281,8 +283,10 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
         _mockDeleteFosterCarer
-            .Setup(x => x.Execute(id))
+            .Setup(x => x.Execute(id, 201))
             .ThrowsAsync(
                 new NotFoundException("not found"));
 
@@ -472,8 +476,7 @@ public class FosterFamilyControllerTests : TestBase
                 fosterCarerId,
                 It.IsAny<DateTime>()))
             .ThrowsAsync(
-                new NotFoundException(
-                    $"Foster carer {fosterCarerId} not found"));
+                new NotFoundException("Foster carer not found"));
 
         // Act
         var result = await _sut.CreateFosterChild(
@@ -488,7 +491,7 @@ public class FosterFamilyControllerTests : TestBase
         var errorResponse = (ErrorResponse)notFound.Value!;
 
         errorResponse.Errors.First().Title
-            .Should().Be($"Foster carer {fosterCarerId} not found");
+            .Should().Be("Foster carer not found");
     }
 
     [Test]
@@ -672,8 +675,7 @@ public class FosterFamilyControllerTests : TestBase
                 201,
                 request))
             .ThrowsAsync(
-                new NotFoundException(
-                    $"Foster child {fosterChildId} not found"));
+                new NotFoundException("Foster child not found"));
 
         // Act
         var result = await _sut.UpdateFosterChild(
@@ -688,7 +690,7 @@ public class FosterFamilyControllerTests : TestBase
         var errorResponse = (ErrorResponse)notFound.Value!;
 
         errorResponse.Errors.First().Title
-            .Should().Be($"Foster child {fosterChildId} not found");
+            .Should().Be("Foster child not found");
     }
 
     [Test]
