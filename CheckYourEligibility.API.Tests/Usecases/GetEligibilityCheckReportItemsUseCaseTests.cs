@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 
-namespace CheckYourEligibility.API.Tests.Usecases
+namespace CheckYourEligibility.API.Tests.UseCases
 {
     [TestFixture]
     public class GetEligibilityCheckReportItemsUseCaseTests : TestBase.TestBase

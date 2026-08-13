@@ -25,19 +25,19 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly IBulkCheck _bulkCheckGateway;
-    private readonly IGetEligibilityCheckItemService _getEligibilityCheckItemService;
+    private readonly IEligiblityCheckDataResponseMapper _eligiblityCheckDataResponseMapper;
     private readonly ILogger<GetBulkUploadResultsUseCase> _logger;
 
     public GetBulkUploadResultsUseCase(
         IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
-        IGetEligibilityCheckItemService getEligibilityCheckItemService,
+        IEligiblityCheckDataResponseMapper getEligibilityCheckItemService,
         ILogger<GetBulkUploadResultsUseCase> logger)
     {
         _bulkCheckGateway = bulkCheckGateway;
         _auditGateway = auditGateway;
         _logger = logger;
-        _getEligibilityCheckItemService = getEligibilityCheckItemService;
+        _eligiblityCheckDataResponseMapper = getEligibilityCheckItemService;
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
                 foreach (var item in bulkItems)
                 {
 
-                    items.Add(_getEligibilityCheckItemService.MapCheckDataToResponse(item));
+                    items.Add(_eligiblityCheckDataResponseMapper.MapCheckDataToResponse(item));
 
                     sequence++;
                 }

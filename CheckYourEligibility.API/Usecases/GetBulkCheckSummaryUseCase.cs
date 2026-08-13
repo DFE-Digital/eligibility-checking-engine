@@ -3,7 +3,6 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using Polly;
 
 namespace CheckYourEligibility.API.UseCases;
 

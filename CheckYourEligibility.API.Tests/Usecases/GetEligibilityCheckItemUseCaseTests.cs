@@ -1,4 +1,5 @@
 using AutoFixture;
+using Azure;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
@@ -20,19 +21,19 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
     public void Setup()
     {
         _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
-        _getEligibilityCheckItemService = new Mock<IGetEligibilityCheckItemService>(MockBehavior.Strict);
+        _eligiblityCheckDataResponseMapper = new Mock<IEligiblityCheckDataResponseMapper>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetEligibilityCheckItemUseCase>>(MockBehavior.Loose);
-        _sut = new GetEligibilityCheckItemUseCase(_getEligibilityCheckItemService.Object, _mockLogger.Object, _mockCheckGateway.Object);
+        _sut = new GetEligibilityCheckItemUseCase(_eligiblityCheckDataResponseMapper.Object, _mockLogger.Object, _mockCheckGateway.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
-        _getEligibilityCheckItemService.VerifyAll();
+        _eligiblityCheckDataResponseMapper.VerifyAll();
        
     }
-    private Mock<IGetEligibilityCheckItemService> _getEligibilityCheckItemService;
+    private Mock<IEligiblityCheckDataResponseMapper> _eligiblityCheckDataResponseMapper;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICheckEligibility> _mockCheckGateway;
     private Mock<ILogger<GetEligibilityCheckItemUseCase>> _mockLogger;
@@ -77,13 +78,18 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var type = CheckEligibilityType.None;
         var item = _fixture.Create<EligibilityCheck>();
+        var mappedItem = _fixture.Create<CheckEligibilityItem>();
 
         _mockCheckGateway.Setup(s => s.GetItem(guid)).ReturnsAsync(item);
+        _eligiblityCheckDataResponseMapper
+            .Setup(x => x.MapCheckDataToResponse(item))
+            .Returns(mappedItem);
+
         // Act
         var result = await _sut.Execute(guid, type);
 
         // Assert
-        result.Data.Should().Be(item);
+        result.Data.Should().Be(mappedItem);
         result.Links.Should().NotBeNull();
         result.Links.Get_EligibilityCheck.Should().Be($"{CheckLinks.GetLink}{guid}");
         result.Links.Put_EligibilityCheckProcess.Should().Be($"{CheckLinks.ProcessLink}{guid}");
@@ -97,31 +103,21 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var guid = _fixture.Create<string>();
         var type = CheckEligibilityType.FreeSchoolMeals;
         var item = _fixture.Create<EligibilityCheck>();
+        var mappedItem = _fixture.Create<CheckEligibilityItem>();
+
         _mockCheckGateway.Setup(s => s.GetItem(guid)).ReturnsAsync(item);
+        _eligiblityCheckDataResponseMapper
+            .Setup(x => x.MapCheckDataToResponse(item))
+            .Returns(mappedItem);
         // Act
         var result = await _sut.Execute(guid, type);
 
         // Assert
-        result.Data.Should().Be(item);
+        result.Data.Should().Be(mappedItem);
         result.Links.Should().NotBeNull();
         result.Links.Get_EligibilityCheck.Should().Be($"{CheckLinks.GetLink}{type}/{guid}");
         result.Links.Put_EligibilityCheckProcess.Should().Be($"{CheckLinks.ProcessLink}{guid}");
         result.Links.Get_EligibilityCheckStatus.Should().Be($"{CheckLinks.GetLink}{type}/{guid}/Status");
     }
 
-    [Test]
-    public async Task Execute_calls_gateway_GetItem_with_correct_guid()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var type = _fixture.Create<CheckEligibilityType>();
-        var item = _fixture.Create<EligibilityCheck>();
-        _mockCheckGateway.Setup(s => s.GetItem(guid)).ReturnsAsync(item);
-        // Act
-        await _sut.Execute(guid, type);
-
-        // Assert
-        _mockCheckGateway.Verify(s => s.GetItem(guid), Times.Once);
- 
-    }
 }

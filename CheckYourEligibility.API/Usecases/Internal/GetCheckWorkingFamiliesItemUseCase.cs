@@ -25,12 +25,12 @@ public interface IGetCheckWorkingFamiliesUseCase
 public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCase
 {
 
-    private readonly IGetEligibilityCheckItemService _getEligibilityCheckItemService;
+    private readonly IEligiblityCheckDataResponseMapper _getEligibilityCheckItemService;
     private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
     private readonly ICheckEligibility _checkGateway;
 
     public GetCheckWorkingFamiliesItemUseCase(
-        IGetEligibilityCheckItemService getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
+        IEligiblityCheckDataResponseMapper getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
         _getEligibilityCheckItemService = getEligibilityCheckItemService;
         _logger = logger;

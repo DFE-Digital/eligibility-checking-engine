@@ -160,7 +160,7 @@ namespace CheckYourEligibility.API.Helpers
             );
         }
         /// <summary>
-        ///  Caclculates if child turns 9 months after the start of the current turm => child is too young
+        ///  Caclculates if child turns 9 months after the start of the current term => child is too young
         /// </summary>
         /// <param name="dateOfBirth"></param>
         /// <param name="checkDate"></param>

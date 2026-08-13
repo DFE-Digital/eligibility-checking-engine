@@ -213,7 +213,7 @@ builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>(
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
 builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
 
-builder.Services.AddScoped<IGetEligibilityCheckItemService, GetEligibilityCheckItemService>();
+builder.Services.AddScoped<IEligiblityCheckDataResponseMapper, EligiblityCheckDataResponseMapper>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 

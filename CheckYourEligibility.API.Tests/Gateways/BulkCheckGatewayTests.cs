@@ -383,7 +383,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         var response = _sut.GetBulkCheckResults(request);
 
         // Assert
-        response.Result.Should().BeNull();
+        response.Result.Should().BeEmpty();
     }
 
     [Test]
@@ -419,7 +419,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
 
         // Assert
         response.Should().NotBeNull();
-        response.Should().BeOfType<IList<EligibilityCheck>>();
+        response.Should().BeOfType<List<EligibilityCheck>>();
         response.First().EligibilityCheckID.Should().Be(eligibilityCheckId);
         response.First().CheckData.Should().Be("""{"nationalInsuranceNumber": "AB123456C", "lastName": "Something", "dateOfBirth": "2000-01-01", "nationalAsylumSeekerServiceNumber": null}""");
     }

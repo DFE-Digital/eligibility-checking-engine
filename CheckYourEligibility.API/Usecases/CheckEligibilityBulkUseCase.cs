@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 using BulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 

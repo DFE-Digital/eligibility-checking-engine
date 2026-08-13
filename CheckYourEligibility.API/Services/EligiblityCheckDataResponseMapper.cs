@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 namespace CheckYourEligibility.API.Services
 {
 
-    public interface IGetEligibilityCheckItemService {
+    public interface IEligiblityCheckDataResponseMapper {
         CheckEligibilityItem MapCheckDataToResponseStandard(EligibilityCheck eligibilityCheck);
         CheckEligibilityItemBase MapCheckDataToResponse(EligibilityCheck eligibilityCheck);
         CheckEligibilityWorkingFamiliesItem MapCheckDataToResponseWorkingFamilies(EligibilityCheck eligibilityCheck);
@@ -18,9 +18,9 @@ namespace CheckYourEligibility.API.Services
     /// <summary>
     /// Used by GetEligibilityCheck type Usecases
     /// </summary>
-    public class GetEligibilityCheckItemService : IGetEligibilityCheckItemService
+    public class EligiblityCheckDataResponseMapper : IEligiblityCheckDataResponseMapper
     {
-        public GetEligibilityCheckItemService(ILogger<GetEligibilityCheckItemService> logger, ICheckEligibility checkGateway) {
+        public EligiblityCheckDataResponseMapper(ILogger<EligiblityCheckDataResponseMapper> logger, ICheckEligibility checkGateway) {
 
                  
         }

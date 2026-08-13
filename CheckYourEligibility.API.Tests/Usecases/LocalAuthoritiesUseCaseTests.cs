@@ -5,7 +5,7 @@ using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Usecases;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests.Usecases
+namespace CheckYourEligibility.API.Tests.UseCases
 {
     [TestFixture]
     public class LocalAuthoritiesUseCaseTests
