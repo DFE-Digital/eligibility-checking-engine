@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using CheckYourEligibility.API.Boundary.Requests;
+﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Newtonsoft.Json;
@@ -13,7 +11,6 @@ namespace CheckYourEligibility.API.Services
 {
 
     public interface IGetEligibilityCheckItemService {
-        Task<EligibilityCheck> GetEligibilityCheckItemAsync(string guid); 
         CheckEligibilityItem MapCheckDataToResponseStandard(EligibilityCheck eligibilityCheck);
         CheckEligibilityItemBase MapCheckDataToResponse(EligibilityCheck eligibilityCheck);
         CheckEligibilityWorkingFamiliesItem MapCheckDataToResponseWorkingFamilies(EligibilityCheck eligibilityCheck);
@@ -23,33 +20,9 @@ namespace CheckYourEligibility.API.Services
     /// </summary>
     public class GetEligibilityCheckItemService : IGetEligibilityCheckItemService
     {
-        private readonly ILogger<GetEligibilityCheckItemService> _logger;
-        private readonly ICheckEligibility _checkGateway;
         public GetEligibilityCheckItemService(ILogger<GetEligibilityCheckItemService> logger, ICheckEligibility checkGateway) {
 
-             _logger = logger;
-            _checkGateway = checkGateway;
-        
-        }
-
-        public async Task<EligibilityCheck> GetEligibilityCheckItemAsync(string guid) {
-
-            if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
-
-            var item = await _checkGateway.GetItem(guid);
-            if (item == null)
-            {
-                _logger.LogWarning(
-                  "Eligibility check with ID {Guid} not found", guid);
-                throw new NotFoundException(guid);
-            }
-   
-               
-            _logger.LogInformation(
-                "Retrieved eligibility check details for ID: {Guid}", guid);
-
-            return item;
-
+                 
         }
         public CheckEligibilityItemBase MapCheckDataToResponse (EligibilityCheck eligibilityCheck)
         {
