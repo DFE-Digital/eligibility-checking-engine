@@ -126,11 +126,11 @@ public class FosterFamiliesGateway : IFosterFamilies
             {
                 FosterCarerId = fosterCarer.FosterCarerId,
                 ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-                EligiblityCode = workingEvent.EligibilityCode,
+                EligibilityCode = workingEvent.EligibilityCode,
                 Status = fosterChild.Status,
-                EligibilityConfirmed = request.SubmissionDate.ToString(),
-                ReconfirmBetween = "This still need doing",
-                GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
+                EligibilityConfirmed = request.SubmissionDate.ToString("dd-MMM-yyyy"),
+                ReconfirmBetween = "",
+                GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString("dd-MMM-yyyy")
             };
         }
         catch (Exception ex)
@@ -332,18 +332,18 @@ public class FosterFamiliesGateway : IFosterFamilies
                     ReconfirmationStatus = "",
                     CodeStatus = "",
 
-                    EligibilityConfirmedOn = x.SubmissionDate,
+                    EligibilityConfirmedOn = x.SubmissionDate.ToString("dd-MMM-yyyy"),
 
-                    ReconfirmFrom = x.ValidityStartDate,
-                    ReconfirmTo = x.ValidityEndDate,
+                    ReconfirmFrom = x.ValidityStartDate.ToString("dd-MMM-yyyy"),
+                    ReconfirmTo = x.ValidityEndDate.ToString("dd-MMM-yyyy"),
 
                     GracePeriodEnds = _db.WorkingFamiliesEvents
                         .Where(w => w.EligibilityCode == x.EligibilityCode)
-                        .Select(w => w.GracePeriodEndDate)
+                        .Select(w => w.GracePeriodEndDate.ToString("dd-MMM-yyyy"))
                         .SingleOrDefault(),
 
                     ChildFullName = $"{x.FirstName} {x.LastName}",
-                    ChildDateOfBirth = x.DateOfBirth,
+                    ChildDateOfBirth = x.DateOfBirth.ToString("dd-MMM-yyyy"),
                     PostCode = x.PostCode,
 
                     FosterCarerId = x.FosterCarerId,
@@ -371,18 +371,18 @@ public class FosterFamiliesGateway : IFosterFamilies
                     ReconfirmationStatus = "",
                     CodeStatus = "",
 
-                    EligibilityConfirmedOn = x.SubmissionDate,
+                    EligibilityConfirmedOn = x.SubmissionDate.ToString("dd-MMM-yyyy"),
 
-                    ReconfirmFrom = x.ValidityStartDate,
-                    ReconfirmTo = x.ValidityEndDate,
+                    ReconfirmFrom = x.ValidityStartDate.ToString("dd-MMM-yyyy"),
+                    ReconfirmTo = x.ValidityEndDate.ToString("dd-MMM-yyyy"),
 
                     GracePeriodEnds = _db.WorkingFamiliesEvents
                         .Where(w => w.EligibilityCode == x.EligibilityCode)
-                        .Select(w => w.GracePeriodEndDate)
+                        .Select(w => w.GracePeriodEndDate.ToString("dd-MMM-yyyy"))
                         .SingleOrDefault(),
 
                     ChildFullName = $"{x.FirstName} {x.LastName}",
-                    ChildDateOfBirth = x.DateOfBirth,
+                    ChildDateOfBirth = x.DateOfBirth.ToString("dd-MMM-yyyy"),
                     PostCode = x.PostCode,
 
                     FosterCarerId = x.FosterCarerId,
@@ -456,11 +456,11 @@ public class FosterFamiliesGateway : IFosterFamilies
         return new FosterChildCreatedResponse
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-            EligiblityCode = workingEvent.EligibilityCode,
+            EligibilityCode = workingEvent.EligibilityCode,
             Status = "",
-            EligibilityConfirmed = submissionDate.ToString(),
+            EligibilityConfirmed = submissionDate.ToString("dd-MMM-yyyy"),
             ReconfirmBetween = "",
-            GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
+            GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString("dd-MMM-yyyy")
         };
     }
 

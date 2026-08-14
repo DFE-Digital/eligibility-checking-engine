@@ -76,7 +76,7 @@ public class GetFosterChildUseCaseTests
         {
             FosterChildId = id,
             ChildFullName = "Child One",
-            ChildDateOfBirth = DateTime.UtcNow
+            ChildDateOfBirth = DateTime.UtcNow.ToString()
         };
 
         _mockGateway
