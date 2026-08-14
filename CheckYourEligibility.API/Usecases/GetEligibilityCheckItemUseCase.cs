@@ -38,21 +38,28 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
 
     }
 
+    private static string SanitizeForLog(string input)
+    {
+        return input?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
+    }
+
     public async Task<CheckEligibilityItemResponse<CheckEligibilityItemBase>> Execute(string guid, CheckEligibilityType type)
     {
       
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
+        var safeGuidForLog = SanitizeForLog(guid);
+
         var result = await _checkGateway.GetItem(guid);
         if (result == null)
         {
             _logger.LogWarning(
-              "Eligibility check with ID {Guid} not found", guid);
+              "Eligibility check with ID {Guid} not found", safeGuidForLog);
             throw new NotFoundException(guid);
         }
 
         _logger.LogInformation(
-            "Retrieved eligibility check details for ID: {Guid}", guid);
+            "Retrieved eligibility check details for ID: {Guid}", safeGuidForLog);
 
         var response = _getEligibilityCheckItemService.MapCheckDataToResponse(result);
 
