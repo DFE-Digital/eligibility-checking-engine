@@ -15,7 +15,7 @@ namespace CheckYourEligibility.API.Usecases.Internal;
 public interface IGetCheckWorkingFamiliesUseCase
 {
     /// <summary>
-    /// Apply buisiness logic for interal based eligibility checks
+    /// Apply buisiness logic for internal based eligibility checks
     /// </summary>
     /// <param name="eligibilityResponse"></param>
     /// <returns></returns>
@@ -54,7 +54,7 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
         _logger.LogInformation(
             "Retrieved eligibility check details for ID: {Guid}", guid);
 
-        var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result);
+        var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result, isInternal:true);
 
         item.EligibilityCodeType = WorkingFamiliesCheckHelper.GetEligibilityCodeType(item.EligibilityCode);
 
@@ -81,7 +81,6 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
                 Get_EligibilityCheckStatus = $"{CheckLinks.GetLink}{guid}/Status"
             }
         };
-
 
     }
 }

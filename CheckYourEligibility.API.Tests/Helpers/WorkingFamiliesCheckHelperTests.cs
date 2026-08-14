@@ -2,13 +2,13 @@
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;
-using NUnit.Framework;
 
 namespace CheckYourEligibility.API.Tests.Helpers
 {
     [TestFixture]
     public class WorkingFamiliesCheckHelperTests
     {
+
 
         [TestCase("2025-01-01", "2025-01-01", false)]
         [TestCase("2026-01-14", "2025-12-31", true)]
@@ -22,7 +22,6 @@ namespace CheckYourEligibility.API.Tests.Helpers
             // Assert
             result.Should().Be(dvsdIsApplied);
         }
-
         [TestCase("123456789", EligibilityCodeType.Temporary)]
         [TestCase("423456789", EligibilityCodeType.Foster)]
         [TestCase("523456789", EligibilityCodeType.Standard)]
@@ -79,7 +78,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
         /// Term validity test cases
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<TestCaseData> SetTermValidityCases()
+        private static IEnumerable<TestCaseData> SetTermValidityCases()
         {
             yield return new TestCaseData(
                 new DateTime(2025, 5, 1),     // check date
@@ -87,8 +86,8 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2024-01-01",                 // VSD
                 "2018-01-01",                 // DOB - too old
                 TermName.None,
-                TermName.None)
-                .SetName("None_When_Child_Too_Old");
+                TermName.None).SetArgDisplayNames("None_When_Child_Too_Old");
+               
 
             yield return new TestCaseData(
                 new DateTime(2025, 10, 1),
@@ -97,7 +96,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2023-01-01",
                 TermName.None,
                 TermName.None)
-                .SetName("None_When_Grace_Period_Expired");
+                .SetArgDisplayNames("None_When_Grace_Period_Expired");
             //
             yield return new TestCaseData(
                 new DateTime(2025, 2, 1),     // Spring term
@@ -106,7 +105,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2023-01-01",
                 TermName.None,
                 TermName.Summer)
-                .SetName("Next_Term_When_VSD_In_Current_Term");
+                .SetArgDisplayNames("Next_Term_When_VSD_In_Current_Term");
 
             yield return new TestCaseData(
                 new DateTime(2026, 5, 1),     // Summer term
@@ -115,7 +114,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2023-01-01",
                 TermName.Summer,
                 TermName.Autumn)
-                .SetName("Current_And_Next_Term");
+                .SetArgDisplayNames("Current_And_Next_Term");
 
             yield return new TestCaseData(
                 new DateTime(2026, 5, 1),     // Summer term
@@ -124,7 +123,8 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2024-01-01",
                 TermName.None,
                 TermName.Summer)
-                .SetName("Current_Term_Only");
+                .SetArgDisplayNames("Current_Term_Only");
+
             yield return new TestCaseData(
               DateTime.Today,
               "invalid",
@@ -132,13 +132,13 @@ namespace CheckYourEligibility.API.Tests.Helpers
               "invalid",
               TermName.None,
               TermName.None)
-              .SetName("Invalid_Dates");
+              .SetArgDisplayNames("Invalid_Dates");
         }
         /// <summary>
         /// Reconfirmation properties test cases
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<TestCaseData> SetReconfirmationPropertiesCases()
+        private static IEnumerable<TestCaseData> SetReconfirmationPropertiesCases()
         {
             yield return new TestCaseData(
                 "2025-12-31",                       // VED
@@ -152,7 +152,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                     StartDate = null,
                     EndDate = null
                 })
-                .SetName("ChildTooOld");
+                .SetArgDisplayNames("ChildTooOld");
 
             yield return new TestCaseData(
                 "2025-12-31",
@@ -166,7 +166,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                       StartDate = null,
                       EndDate = null
                   })
-                .SetName("NotApplicable_For_Temporary_Code");
+                .SetArgDisplayNames("NotApplicable_For_Temporary_Code");
 
             yield return new TestCaseData(
                 "2025-12-31",
@@ -179,7 +179,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                     StartDate = "2025-12-03",
                     EndDate = "2025-12-31"
                 })
-                .SetName("NotDueYet");
+                .SetArgDisplayNames("NotDueYet");
 
             yield return new TestCaseData(
                 "2025-12-31",
@@ -191,7 +191,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                     Status = ReconfirmationStatus.Due, 
                     StartDate = "2025-12-03",
                     EndDate = "2025-12-31" })
-                .SetName("Due");
+                .SetArgDisplayNames("Due");
 
             yield return new TestCaseData(
                 "2025-12-31",
@@ -203,7 +203,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                     Status = ReconfirmationStatus.Overdue, 
                     StartDate = "2025-12-03", 
                     EndDate = "2025-12-31" })
-                .SetName("Overdue");
+                .SetArgDisplayNames("Overdue");
             yield return new TestCaseData(
                 "invalid",
                 "invalid",
@@ -216,7 +216,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                     StartDate = null,
                     EndDate = null
                 })
-                .SetName("Invalid_Dates");
+                .SetArgDisplayNames("Invalid_Dates");
         }
 
         #endregion

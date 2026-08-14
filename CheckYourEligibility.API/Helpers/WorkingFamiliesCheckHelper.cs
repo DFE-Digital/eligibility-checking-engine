@@ -10,7 +10,7 @@ namespace CheckYourEligibility.API.Helpers
     /// 3. Calcuation of Reconfirmation properties
     /// 4. Set eligibility code type - Temporary,Permanent, Foster
     /// </summary>
-    public class WorkingFamiliesCheckHelper
+    public static class WorkingFamiliesCheckHelper
     {
 
         public class Term

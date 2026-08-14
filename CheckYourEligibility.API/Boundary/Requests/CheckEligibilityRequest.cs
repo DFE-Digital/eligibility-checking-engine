@@ -106,6 +106,7 @@ public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityReques
 
     public string? EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
+    public string? DiscretionaryValidityStartDate { get; set; }
     public string? ValidityEndDate { get; set; }
     public string? GracePeriodEndDate { get; set; }
 }

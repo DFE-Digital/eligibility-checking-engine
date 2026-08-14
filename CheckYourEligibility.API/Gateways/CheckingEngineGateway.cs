@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
+using CheckYourEligibility.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -86,7 +87,7 @@ public class CheckingEngineGateway : ICheckingEngine
         if (result != null)
         {
 
-            var checkData = GetCheckProcessData(result.Type, result.CheckData);
+            var checkData = MapCheckDataHelper.MapCheckDataBasedOnType(result.Type, result.CheckData);
             //TODO: This should live in the use case
             switch (result.Type)
             {
@@ -552,60 +553,6 @@ public class CheckingEngineGateway : ICheckingEngine
 
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
     }
-
-    private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
-    {
-        switch (type)
-        {
-            case CheckEligibilityType.FreeSchoolMeals:
-            case CheckEligibilityType.TwoYearOffer:
-            case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
-            case CheckEligibilityType.WorkingFamilies:
-                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesBulkData>(type, data);
-            default:
-                throw new NotImplementedException($"Type:-{type} not supported.");
-        }
-    }
-    //To do: This method has little purpose, it needs to be reviewed and removed
-    private static CheckProcessData GetCheckProcessDataType<T>(CheckEligibilityType type, string data)
-        where T : IEligibilityServiceType
-    {
-        dynamic checkItem = JsonConvert.DeserializeObject(data, typeof(T));
-        switch (type)
-        {
-            case CheckEligibilityType.WorkingFamilies:
-                return new CheckProcessData
-                {
-                    EligibilityCode = checkItem.EligibilityCode,
-                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-                    ValidityStartDate = checkItem.ValidityStartDate,
-                    ValidityEndDate = checkItem.ValidityEndDate,
-                    GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    LastName = checkItem.LastName?.ToUpper(),
-                    DateOfBirth = checkItem.DateOfBirth,
-                    ClientIdentifier = checkItem.ClientIdentifier,
-                    Type = type
-                };
-            default:
-                return new CheckProcessData
-                {
-                    FirstName = checkItem.FirstName?.ToUpper(),
-                    DateOfBirth = checkItem.DateOfBirth,
-                    LastName = checkItem.LastName?.ToUpper(),
-                    ChildFirstName = checkItem.ChildFirstName?.ToUpper(),
-                    ChildLastName = checkItem.ChildLastName?.ToUpper(),
-                    ChildDateOfBirth = checkItem.ChildDateOfBirth?.ToUpper(),
-                    ChildSchoolURN = checkItem.ChildSchoolURN?.ToUpper(),
-                    EmailAddress = checkItem.EmailAddress,
-                    NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
-                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-                    Type = type,
-                    ClientIdentifier = checkItem.ClientIdentifier
-                };
-        }
-    }
-
     //TODO: These two could be adapters
     private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
     {

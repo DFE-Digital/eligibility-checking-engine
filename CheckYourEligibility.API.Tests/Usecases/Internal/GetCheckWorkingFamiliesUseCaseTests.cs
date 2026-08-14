@@ -84,7 +84,7 @@ namespace CheckYourEligibility.API.Tests.Usecases.Internal
                 .ReturnsAsync(eligibilityCheck);
 
             _mapper
-                .Setup(x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck))
+                .Setup(x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck,true))
                 .Returns(mappedItem);
 
             // Act
@@ -92,7 +92,7 @@ namespace CheckYourEligibility.API.Tests.Usecases.Internal
 
             // Assert
             _mapper.Verify(
-                x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck),
+                x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck, true),
                 Times.Once);
             result.Should().NotBeNull();
             result.Data.Should().NotBeNull();
@@ -131,7 +131,7 @@ namespace CheckYourEligibility.API.Tests.Usecases.Internal
                 .ReturnsAsync(eligibilityCheck);
 
             _mapper
-                .Setup(x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck))
+                .Setup(x => x.MapCheckDataToResponseWorkingFamilies(eligibilityCheck, true))
                 .Returns(mappedItem);
 
             // Act
