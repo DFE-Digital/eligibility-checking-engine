@@ -145,7 +145,7 @@ public class CreateFosterChildUseCaseTests
         var expected = new FosterChildCreatedResponse
         {
             ChildName = "Child One",
-            EligiblityCode = "X1",
+            EligibilityCode = "X1",
             Status = "Active",
             EligibilityConfirmed = DateTime.UtcNow.ToString(),
             GracePeriodEndDate = DateTime.UtcNow.ToString()
@@ -187,7 +187,7 @@ public class CreateFosterChildUseCaseTests
         var expected = new FosterChildCreatedResponse
         {
             ChildName = "Child One",
-            EligiblityCode = "X1",
+            EligibilityCode = "X1",
             Status = "Active"
         };
 
