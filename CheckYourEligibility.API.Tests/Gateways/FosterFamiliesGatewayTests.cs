@@ -746,7 +746,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Assert
         result.ChildFullName.Should().Be("Tom Smith");
-        result.ChildDateOfBirth.Should().Be(new DateTime(2022, 1, 1).ToString());
+        result.ChildDateOfBirth.Should().Be(new DateTime(2022, 1, 1).ToString("dd-MMM-yyyy"));
         result.PostCode.Should().Be("NNU 1AE");
     }
 
