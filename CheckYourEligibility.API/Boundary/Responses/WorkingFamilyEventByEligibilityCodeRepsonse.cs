@@ -9,6 +9,7 @@ public class WorkingFamilyEventByEligibilityCodeRepsonseItem
 { 
     
     public WorkingFamilyEventType Event  { get; set; }
+    public string EventName { get; set; }
     public WorkingFamiliesEventEligibilityCodeRepsonseRecord Record { get; set; }
 }
 
