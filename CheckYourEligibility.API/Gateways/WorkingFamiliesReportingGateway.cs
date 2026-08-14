@@ -1,6 +1,7 @@
 
 using AutoMapper;
 using CheckYourEligibility.API.Domain;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using Microsoft.EntityFrameworkCore;
 
 public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
@@ -45,7 +46,6 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
 
             WorkingFamiliesEventEligibilityCodeRepsonseRecord? previous = null;
 
-            // check if each record is a reconfirm or application event
             foreach (var current in records)
             {
                 bool isReconfirm =
@@ -64,11 +64,28 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
                 previous = _mapper.Map<WorkingFamiliesEventEligibilityCodeRepsonseRecord>(current);
             }
 
+            var orderedResult = result
+                .OrderByDescending(x => x.Record.SubmissionDate)
+                .ToList();
+
+            var reconfirmationNumber = 1;
+
+            for (int i = orderedResult.Count - 1; i >= 0; i--)
+            {
+                if (orderedResult[i].Event == WorkingFamilyEventType.Application)
+                {
+                    orderedResult[i].EventName = "Application";
+                }
+                else
+                {
+                    orderedResult[i].EventName =
+                        $"Reconfirmation {reconfirmationNumber++}";
+                }
+            }
+
             return new WorkingFamilyEventByEligibilityCodeRepsonse
             {
-                Data = result
-                    .OrderByDescending(x => x.Record.SubmissionDate)
-                    .ToList()
+                Data = orderedResult
             };
         }
         catch (Exception ex)
