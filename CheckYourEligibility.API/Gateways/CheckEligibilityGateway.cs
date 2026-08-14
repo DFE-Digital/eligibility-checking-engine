@@ -361,6 +361,7 @@ public class CheckEligibilityGateway : ICheckEligibility
     public async Task<EligibilityCheck> GetItem(string guid)
     {
         var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.IsDeleted == false);
+
         return result;
     }
 

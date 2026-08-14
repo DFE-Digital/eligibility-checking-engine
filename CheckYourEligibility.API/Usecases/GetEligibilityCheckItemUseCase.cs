@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Services;
-using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -38,28 +37,26 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
 
     }
 
-    private static string SanitizeForLog(string input)
-    {
-        return input?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
-    }
-
     public async Task<CheckEligibilityItemResponse<CheckEligibilityItemBase>> Execute(string guid, CheckEligibilityType type)
     {
       
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var safeGuidForLog = SanitizeForLog(guid);
 
         var result = await _checkGateway.GetItem(guid);
-        if (result == null)
+
+        // if result is not found 
+        // if method is not called from /check/{guid} or the found result is of different type
+        // return not found
+        if (result == null || (type != CheckEligibilityType.None && result.Type != type))
         {
             _logger.LogWarning(
-              "Eligibility check with ID {Guid} not found", safeGuidForLog);
+              "Eligibility check with ID {Guid} not found", guid);
             throw new NotFoundException(guid);
         }
 
         _logger.LogInformation(
-            "Retrieved eligibility check details for ID: {Guid}", safeGuidForLog);
+            "Retrieved eligibility check details for ID: {Guid}", guid);
 
         var response = _getEligibilityCheckItemService.MapCheckDataToResponse(result);
 
