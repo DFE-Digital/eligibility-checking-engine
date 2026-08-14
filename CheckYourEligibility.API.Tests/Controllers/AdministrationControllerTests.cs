@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Tests.Properties;
 using CheckYourEligibility.API.UseCases;
@@ -346,5 +347,34 @@ public class AdministrationControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeEquivalentTo(expectedResult);
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_When_EstablishmentDoesNotExist_Should_Return_Status404NotFound()
+    {
+        // Arrange
+        const string errorMessage = "Establishment with URN 2147483647 not found";
+
+        _mockUpdateEstablishmentsPrivateBetaUseCase
+            .Setup(x => x.Execute(It.IsAny<IFormFile>()))
+            .ThrowsAsync(new NotFoundException(errorMessage));
+
+        // Act
+        var response = await _sut.UpdateEstablishmentsPrivateBeta(Mock.Of<IFormFile>());
+
+        // Assert
+        var result = response.Should()
+            .BeOfType<NotFoundObjectResult>()
+            .Subject;
+
+        result.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+
+        var errorResponse = result.Value.Should()
+            .BeOfType<ErrorResponse>()
+            .Subject;
+
+        errorResponse.Errors.Should().ContainSingle();
+        errorResponse.Errors[0].Status.Should().Be(StatusCodes.Status404NotFound);
+        errorResponse.Errors[0].Title.Should().Be(errorMessage);
     }
 }

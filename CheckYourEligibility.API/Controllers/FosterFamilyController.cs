@@ -81,9 +81,9 @@ public class FosterFamilyController : BaseController
             var result = await _getFosterFamily.Execute(fosterCarerId, localAuthorityId.Value, includeChildren);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-        catch (NotFoundException)
+        catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = fosterCarerId.ToString() }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster family not found", Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -177,7 +177,13 @@ public class FosterFamilyController : BaseController
     {
         try
         {
-            await _deleteFosterCarer.Execute(fosterCarerId);
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+
+            await _deleteFosterCarer.Execute(fosterCarerId, localAuthorityId.Value);
             return new StatusCodeResult(StatusCodes.Status204NoContent);
         }
         catch (NotFoundException ex)
@@ -207,7 +213,13 @@ public class FosterFamilyController : BaseController
     {
         try
         {
-            await _deleteFosterPartner.Execute(fosterCarerId);
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+
+            await _deleteFosterPartner.Execute(fosterCarerId, localAuthorityId.Value);
             return new StatusCodeResult(StatusCodes.Status204NoContent);
         }
         catch (NotFoundException ex)
@@ -290,9 +302,9 @@ public class FosterFamilyController : BaseController
             var result = await _getFosterChild.Execute(fosterChildId, localAuthorityId.Value, includeFosterCarer);
             return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
         }
-        catch (NotFoundException)
+        catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = fosterChildId.ToString() }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -329,7 +341,7 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster carer not found", Detail = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
@@ -366,7 +378,7 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
@@ -391,12 +403,18 @@ public class FosterFamilyController : BaseController
     {
         try
         {
-            await _deleteFosterChild.Execute(fosterChildId);
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+
+            await _deleteFosterChild.Execute(fosterChildId, localAuthorityId.Value);
             return new StatusCodeResult(StatusCodes.Status204NoContent);
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {

@@ -2,6 +2,7 @@
 
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.CsvImport;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -141,11 +142,36 @@ public class AdministrationGateway : IAdministration
         "In memory db does not support execute update, direct updating causes concurrency error")]
     public async Task UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data)
     {
-        foreach (var item in data)
+        var updates = data.ToList();
+        var establishmentIds = updates
+            .Select(x => x.EstablishmentId)
+            .Distinct()
+            .ToList();
+
+        var existingEstablishmentIds = await _db.Establishments
+            .Where(x => establishmentIds.Contains(x.EstablishmentID))
+            .Select(x => x.EstablishmentID)
+            .ToListAsync();
+
+        var missingEstablishmentIds = establishmentIds
+            .Except(existingEstablishmentIds)
+            .OrderBy(x => x)
+            .ToList();
+
+        if (missingEstablishmentIds.Count == 1)
+            throw new NotFoundException(
+                $"Establishment with URN {missingEstablishmentIds[0]} not found");
+
+        if (missingEstablishmentIds.Count > 1)
+            throw new NotFoundException(
+                $"Establishments with URNs {string.Join(", ", missingEstablishmentIds)} not found");
+
+        foreach (var item in updates)
         {
-            _db.Establishments.Where(b => b.EstablishmentID == item.EstablishmentId)
+            _db.Establishments
+                .Where(x => x.EstablishmentID == item.EstablishmentId)
                 .ExecuteUpdate(setters => setters
-                    .SetProperty(b => b.InPrivateBeta, item.InPrivateBeta));
+                    .SetProperty(x => x.InPrivateBeta, item.InPrivateBeta));
         }
 
         await _db.SaveChangesAsync();
