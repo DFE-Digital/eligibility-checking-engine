@@ -71,9 +71,9 @@ public class EligibilityCheckDataResponseMapperTests
         var request = new CheckProcessData
         {
             FirstName = "John",
-            LastName = "Smith",
+            LastName = "SMITH",
             ChildFirstName = "Child",
-            ChildLastName = "Smith",
+            ChildLastName = "SMITH",
             NationalInsuranceNumber = "AB123456C",
             DateOfBirth = "1980-01-01",
             ClientIdentifier = "CLIENT1",
@@ -105,7 +105,7 @@ public class EligibilityCheckDataResponseMapperTests
         var request = new CheckProcessData
         {
             EligibilityCode = "CODE123",
-            LastName = "Smith",
+            LastName = "SMITH",
             NationalInsuranceNumber = "AB123456C",
             ValidityStartDate = "2025-01-01",
             DiscretionaryValidityStartDate = "2024-12-31",
