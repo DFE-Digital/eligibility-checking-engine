@@ -147,8 +147,8 @@ public class CreateFosterChildUseCaseTests
             ChildName = "Child One",
             EligibilityCode = "X1",
             Status = "Active",
-            EligibilityConfirmed = DateTime.UtcNow.ToString(),
-            GracePeriodEndDate = DateTime.UtcNow.ToString()
+            EligibilityConfirmed = DateTime.UtcNow,
+            GracePeriodEndDate = DateTime.UtcNow
         };
 
         _mockGateway

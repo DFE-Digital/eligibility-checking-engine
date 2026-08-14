@@ -96,8 +96,8 @@ public class CreateFosterFamilyUseCaseTests
             ChildName = "Child One",
             EligibilityCode = "X1",
             Status = "Active",
-            EligibilityConfirmed = DateTime.UtcNow.ToString(),
-            GracePeriodEndDate = DateTime.UtcNow.ToString()
+            EligibilityConfirmed = DateTime.UtcNow,
+            GracePeriodEndDate = DateTime.UtcNow.AddMonths(3)
         };
 
         _mockGateway

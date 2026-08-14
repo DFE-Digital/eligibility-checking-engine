@@ -8,13 +8,13 @@ public class FosterChildResponse
 
     public string CodeStatus { get; set; } = string.Empty;
 
-    public string EligibilityConfirmedOn { get; set; }
+    public DateTime EligibilityConfirmedOn { get; set; }
 
-    public string ReconfirmFrom { get; set; }
+    public DateTime ReconfirmFrom { get; set; }
 
-    public string ReconfirmTo { get; set; }
+    public DateTime ReconfirmTo { get; set; }
 
-    public string GracePeriodEnds { get; set; }
+    public DateTime GracePeriodEnds { get; set; }
 
 
     // Child
@@ -23,7 +23,7 @@ public class FosterChildResponse
 
     public string ChildFullName { get; set; } 
 
-    public string ChildDateOfBirth { get; set; }
+    public DateTime ChildDateOfBirth { get; set; }
 
     public string PostCode { get; set; } 
 
