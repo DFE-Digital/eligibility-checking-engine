@@ -29,6 +29,11 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
     private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
     private readonly ICheckEligibility _checkGateway;
 
+    private static string SanitizeForLog(string value)
+    {
+        return value?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
+    }
+
     public GetCheckWorkingFamiliesItemUseCase(
         IEligiblityCheckDataResponseMapper getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
@@ -43,16 +48,18 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
 
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
+        var sanitizedGuidForLog = SanitizeForLog(guid);
+
         var result = await _checkGateway.GetItem(guid);
         if (result == null)
         {
             _logger.LogWarning(
-              "Eligibility check with ID {Guid} not found", guid);
+              "Eligibility check with ID {Guid} not found", sanitizedGuidForLog);
             throw new NotFoundException(guid);
         }
 
         _logger.LogInformation(
-            "Retrieved eligibility check details for ID: {Guid}", guid);
+            "Retrieved eligibility check details for ID: {Guid}", sanitizedGuidForLog);
 
         var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result, isInternal:true);
 
