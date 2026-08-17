@@ -43,6 +43,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<Audit> Audits { get; set; }
     public virtual DbSet<FosterCarer> FosterCarers { get; set; }
     public virtual DbSet<FosterChild> FosterChildren { get; set; }
+    public DbSet<EligibilityCodeRange> EligibilityCodeRanges { get; set; }
     public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
     public virtual DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
 
@@ -374,6 +375,17 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<LocalAuthority>()
             .Property(e => e.TwoYearPolicyID)
             .HasDefaultValue(3);
+
+        modelBuilder.Entity<EligibilityCodeRange>().Property(e => e.RowVersion).IsRowVersion();
+        modelBuilder.Entity<EligibilityCodeRange>().HasData(
+            new EligibilityCodeRange
+            {
+                EligibilityCodeRangeId = 1,
+                StartRange = 40000000001,
+                EndRange = 49999999999,
+                NextAvailableCode = 40000000001
+            }
+        );
 
         var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };

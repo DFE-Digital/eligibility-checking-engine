@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -19,10 +20,13 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(nameof(EligibilityCheckReportingGatewayTests), InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .AddInterceptors(new TestRowVersionInterceptor())
+            .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        
 
         _mockLogger = new Mock<ILogger<FosterFamiliesGateway>>();
 
@@ -410,7 +414,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    [Test]    
+    [Test]
     public async Task UpdateFosterCarer_Should_Throw_NotFoundException_When_LA_Does_Not_Match()
     {
         // Arrange
@@ -492,7 +496,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         Func<Task> act = () =>
             _sut.DeleteFosterCarer(
-            fosterCarerId, 
+            fosterCarerId,
             123); // wrong LA 
 
 
@@ -1226,7 +1230,64 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #endregion
 
+    #region EligibilityCode 
+
+    [Test]
+    public async Task GetEligibilityCodeForFosterFamily_ReturnsNextAvailableCode()
+    {
+        // Assert
+        _fakeInMemoryDb.EligibilityCodeRanges.Add(new EligibilityCodeRange
+        {
+            EligibilityCodeRangeId = 1,
+            StartRange = 40000000001,
+            EndRange = 49999999999,
+            NextAvailableCode = 40000000001,
+            RowVersion = [1]
+        });
+        
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.GetEligibilityCodeForFosterChild();
+
+        //
+        result.Should().Be("40000000001");
+    }
+
+    #endregion
+
     #region helpers
+
+    // Test-only interceptor.
+    // EF Core InMemory does not generate rowversion values.
+    // This supplies a dummy concurrency token so unit tests can
+    // exercise business logic without requiring SQL Server.
+    private sealed class TestRowVersionInterceptor : SaveChangesInterceptor
+    {
+        public override InterceptionResult<int> SavingChanges(
+            DbContextEventData eventData,
+            InterceptionResult<int> result)
+        {
+            var context = eventData.Context;
+
+            if (context is null)
+            {
+                return result;
+            }
+
+            foreach (var property in context.ChangeTracker
+                         .Entries()
+                         .SelectMany(e => e.Properties)
+                         .Where(p => p.Metadata.IsConcurrencyToken &&
+                                     p.CurrentValue is null))
+            {
+                property.CurrentValue = new byte[] { 1 };
+            }
+
+            return result;
+        }
+    }
 
     private static FosterFamilyRequest BuildValidRequest()
     {

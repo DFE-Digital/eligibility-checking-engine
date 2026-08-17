@@ -98,6 +98,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             );
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
         var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
@@ -106,9 +108,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         try
         {
             var workingEvent =
-               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request);
+               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
 
             fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
+            fosterChild.EligibilityCode = eligibilityCode;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
@@ -422,11 +425,14 @@ public class FosterFamiliesGateway : IFosterFamilies
                 $"Foster carer {fosterCarerId} not found");
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         // build domain model from request
         var fosterChild = BuildFosterChild(request, DateTime.UtcNow, fosterCarerId);
 
         // link child to current foster carer
         fosterChild.FosterCarerId = fosterCarer.FosterCarerId;
+        fosterChild.EligibilityCode = eligibilityCode;
 
         // Create new wf event
         var workingEvent =
@@ -441,7 +447,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                   },
                   FosterChild = request,
                   SubmissionDate = submissionDate
-              });
+              }, eligibilityCode);
 
         fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
         fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
@@ -567,6 +573,52 @@ public class FosterFamiliesGateway : IFosterFamilies
             Created = DateTime.UtcNow,
             Updated = DateTime.UtcNow
         };
+    }
+
+    public async Task<string> GetEligibilityCodeForFosterChild()
+    {
+        const int maxRetries = 3;
+
+        // Retry a limited number of times to prevent indefinite looping
+        // if persistent concurrency conflicts occur.
+        for (var retry = 1; retry <= maxRetries; retry++)
+        {
+            try
+            {
+                // There will only ever be one EligibilityCodeRange record.
+                var range = await _db.EligibilityCodeRanges
+                    .SingleAsync(x => x.EligibilityCodeRangeId == 1);
+
+                if (range.NextAvailableCode > range.EndRange)
+                {
+                    throw new InvalidOperationException(
+                        "No eligibility codes remaining.");
+                }
+
+                var code = range.NextAvailableCode;
+
+                // Increment for the next allocation. --- new code
+                range.NextAvailableCode++;
+
+                await _db.SaveChangesAsync();
+
+                // Convert to string to match WF event record
+                return code.ToString();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Concurrency conflict when allocating eligibility code. Retry {Retry} of {MaxRetries}.",
+                    retry,
+                    maxRetries);
+
+                _db.ChangeTracker.Clear();
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Failed to allocate an eligibility code after {maxRetries} attempts.");
     }
 
 
