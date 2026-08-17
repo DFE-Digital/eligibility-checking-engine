@@ -26,7 +26,7 @@ public static class ProgramExtensions
         services.AddDbContextFactory<EligibilityCheckContext>(options =>
           options.UseSqlServer(
               connectionString,
-              x => x.MigrationsAssembly("CheckYourEligibility.API")),lifetime: ServiceLifetime.Scoped);
+              x => x.MigrationsAssembly("CheckYourEligibility.API")), lifetime: ServiceLifetime.Scoped);
 
         services.AddDbContext<IEligibilityCheckContext, EligibilityCheckContext>(options =>
             options.UseSqlServer(
@@ -34,7 +34,7 @@ public static class ProgramExtensions
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
 
         );
-     
+
         return services;
     }
 
@@ -88,7 +88,8 @@ public static class ProgramExtensions
         services.AddHttpClient("Dwp", client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
-        }).ConfigurePrimaryHttpMessageHandler(() => {
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
 
             var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
             var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
@@ -97,9 +98,9 @@ public static class ProgramExtensions
             handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
             return handler;
         })
-    .AddPolicyHandler((sp, msg) =>  
+    .AddPolicyHandler((sp, msg) =>
     {
-       var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
         return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
     }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
 
@@ -121,7 +122,7 @@ public static class ProgramExtensions
             {
                 client.BaseAddress = new Uri(ecsBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
-               
+
             }).AddPolicyHandler((sp, msg) =>
             {
                 var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
@@ -129,7 +130,7 @@ public static class ProgramExtensions
             })
 
             .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-            
+
             services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();
@@ -190,7 +191,6 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireLocalAuthorityScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority")));
-            
             options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
@@ -244,17 +244,20 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireMatOrAdminScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
-                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));            
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
 
             options.AddPolicy(PolicyNames.RequireFreeSchoolMealsAdminPortalSource, policy =>
                 policy.RequireAssertion(context =>
                 {
                     var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+                    return string.Equals(checkSourceAndUserName.Item1, "free-school-meals-admin", StringComparison.OrdinalIgnoreCase);
+                }));
 
-                    return string.Equals(
-                        checkSourceAndUserName.Item1,
-                        "free-school-meals-admin",
-                        StringComparison.OrdinalIgnoreCase);
+            options.AddPolicy(PolicyNames.RequireSupportPortalSource, policy =>
+                policy.RequireAssertion(context =>
+                {
+                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+                    return string.Equals(checkSourceAndUserName.Item1, "eligibility-checking-engine-support", StringComparison.OrdinalIgnoreCase);
                 }));
         });
         return services;
