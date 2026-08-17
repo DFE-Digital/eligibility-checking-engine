@@ -4,7 +4,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Usecases.Internal;
+using CheckYourEligibility.API.UseCases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;

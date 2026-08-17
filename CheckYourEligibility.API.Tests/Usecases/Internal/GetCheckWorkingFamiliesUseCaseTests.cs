@@ -5,13 +5,13 @@ using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Services;
-using CheckYourEligibility.API.Usecases.Internal;
+using CheckYourEligibility.API.UseCases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests.Usecases.Internal
+namespace CheckYourEligibility.API.Tests.UseCases.Internal
 {
     [TestFixture]
     public class GetCheckWorkingFamiliesUseCaseTests : TestBase.TestBase

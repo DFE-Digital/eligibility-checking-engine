@@ -5,9 +5,8 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Services;
-using CheckYourEligibility.API.UseCases;
 
-namespace CheckYourEligibility.API.Usecases.Internal;
+namespace CheckYourEligibility.API.UseCases.Internal;
 
 /// <summary>
 ///     Interface for processing a single eligibility check
