@@ -5,7 +5,6 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Services
@@ -40,11 +39,7 @@ namespace CheckYourEligibility.API.Services
 
             var checkData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesBulkData>(eligibilityCheck.CheckData);
 
-            //var checkData = MapCheckDataHelper.MapCheckDataBasedOnType(
-            //        CheckEligibilityType.WorkingFamilies,
-            //         eligibilityCheck.CheckData);
-
-             var item = new CheckEligibilityWorkingFamiliesItem();
+            var item = new CheckEligibilityWorkingFamiliesItem();
 
             item.Created = eligibilityCheck.Created;
             item.Status = eligibilityCheck.Status.ToString();

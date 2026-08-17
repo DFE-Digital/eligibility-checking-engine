@@ -300,6 +300,7 @@ public class CheckingEngineGateway : ICheckingEngine
                 wfEvent.EligibilityCode = checkData.EligibilityCode;
                 wfEvent.ParentLastName = checkData.LastName;  //Return value as submitted in request
                 wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+                wfEvent.ValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
                 wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
                 wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
             }
