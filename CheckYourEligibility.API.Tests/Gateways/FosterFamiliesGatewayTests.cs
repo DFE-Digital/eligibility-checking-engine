@@ -664,6 +664,12 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #endregion
 
+    #region Reconfirm Eligibility Code
+    
+    // to do
+    
+    #endregion
+
     #region Get Foster Child 
 
     [Test]
