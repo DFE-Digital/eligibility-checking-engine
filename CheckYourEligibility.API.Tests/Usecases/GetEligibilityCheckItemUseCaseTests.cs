@@ -21,19 +21,19 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
     public void Setup()
     {
         _mockCheckGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
-        _eligiblityCheckDataResponseMapper = new Mock<IEligiblityCheckDataResponseMapper>(MockBehavior.Strict);
+        _eligibilityCheckDataResponseMapper = new Mock<IEligibilityCheckDataResponseMapper>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetEligibilityCheckItemUseCase>>(MockBehavior.Loose);
-        _sut = new GetEligibilityCheckItemUseCase(_eligiblityCheckDataResponseMapper.Object, _mockLogger.Object, _mockCheckGateway.Object);
+        _sut = new GetEligibilityCheckItemUseCase(_eligibilityCheckDataResponseMapper.Object, _mockLogger.Object, _mockCheckGateway.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
-        _eligiblityCheckDataResponseMapper.VerifyAll();
+        _eligibilityCheckDataResponseMapper.VerifyAll();
        
     }
-    private Mock<IEligiblityCheckDataResponseMapper> _eligiblityCheckDataResponseMapper;
+    private Mock<IEligibilityCheckDataResponseMapper> _eligibilityCheckDataResponseMapper;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICheckEligibility> _mockCheckGateway;
     private Mock<ILogger<GetEligibilityCheckItemUseCase>> _mockLogger;
@@ -81,7 +81,7 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var mappedItem = _fixture.Create<CheckEligibilityItem>();
 
         _mockCheckGateway.Setup(s => s.GetItem(guid)).ReturnsAsync(item);
-        _eligiblityCheckDataResponseMapper
+        _eligibilityCheckDataResponseMapper
             .Setup(x => x.MapCheckDataToResponse(item))
             .Returns(mappedItem);
 
@@ -106,7 +106,7 @@ public class GetEligibilityCheckItemUseCaseTests : TestBase.TestBase
         var mappedItem = _fixture.Create<CheckEligibilityItem>();
 
         _mockCheckGateway.Setup(s => s.GetItem(guid)).ReturnsAsync(item);
-        _eligiblityCheckDataResponseMapper
+        _eligibilityCheckDataResponseMapper
             .Setup(x => x.MapCheckDataToResponse(item))
             .Returns(mappedItem);
         // Act

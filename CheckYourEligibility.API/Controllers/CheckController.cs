@@ -147,7 +147,7 @@ public class CheckController : BaseController
     }
 
     /// <summary>
-    /// Posts a WF Eligibility Check to the processing queue from the unduser API
+    /// Posts a WF Eligibility Check to the processing queue from the enduser API
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>
@@ -284,7 +284,7 @@ public class CheckController : BaseController
     }
 
     /// <summary>
-    ///    Check done from Intenral systems - Gets Working families check using the supplied GUID
+    ///    Check done from Internal systems - Gets Working families check using the supplied GUID
     /// </summary>
     /// <param name="guid"></param>
     /// <returns></returns>

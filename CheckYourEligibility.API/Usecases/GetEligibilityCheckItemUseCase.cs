@@ -23,12 +23,12 @@ public interface IGetEligibilityCheckItemUseCase
 
 public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
 {
-    private readonly IEligiblityCheckDataResponseMapper _getEligibilityCheckItemService;
+    private readonly IEligibilityCheckDataResponseMapper _getEligibilityCheckItemService;
     private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
     private readonly ICheckEligibility _checkGateway;
 
     public GetEligibilityCheckItemUseCase(
-        IEligiblityCheckDataResponseMapper getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
+        IEligibilityCheckDataResponseMapper getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
 
         _getEligibilityCheckItemService = getEligibilityCheckItemService;

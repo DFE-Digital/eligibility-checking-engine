@@ -16,7 +16,7 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
     [TestFixture]
     public class GetCheckWorkingFamiliesUseCaseTests : TestBase.TestBase
     {
-        private Mock<IEligiblityCheckDataResponseMapper> _mapper;
+        private Mock<IEligibilityCheckDataResponseMapper> _mapper;
         private Mock<ICheckEligibility> _checkGateway;
         private Mock<ILogger<GetEligibilityCheckItemUseCase>> _logger;
 
@@ -25,7 +25,7 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
         [SetUp]
         public void Setup()
         {
-            _mapper = new Mock<IEligiblityCheckDataResponseMapper>(MockBehavior.Strict);
+            _mapper = new Mock<IEligibilityCheckDataResponseMapper>(MockBehavior.Strict);
             _checkGateway = new Mock<ICheckEligibility>(MockBehavior.Strict);
             _logger = new Mock<ILogger<GetEligibilityCheckItemUseCase>>();
 

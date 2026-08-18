@@ -25,13 +25,13 @@ public class GetBulkUploadResultsUseCase : IGetBulkUploadResultsUseCase
 {
     private readonly IAudit _auditGateway;
     private readonly IBulkCheck _bulkCheckGateway;
-    private readonly IEligiblityCheckDataResponseMapper _eligiblityCheckDataResponseMapper;
+    private readonly IEligibilityCheckDataResponseMapper _eligiblityCheckDataResponseMapper;
     private readonly ILogger<GetBulkUploadResultsUseCase> _logger;
 
     public GetBulkUploadResultsUseCase(
         IBulkCheck bulkCheckGateway,
         IAudit auditGateway,
-        IEligiblityCheckDataResponseMapper getEligibilityCheckItemService,
+        IEligibilityCheckDataResponseMapper getEligibilityCheckItemService,
         ILogger<GetBulkUploadResultsUseCase> logger)
     {
         _bulkCheckGateway = bulkCheckGateway;

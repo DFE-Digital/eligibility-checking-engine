@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.PowerPoint;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Boundary.Responses;
 

@@ -22,7 +22,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
         _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadResultsUseCase>>(MockBehavior.Loose);
-        _eligiblityCheckDataResponseMapper = new Mock<IEligiblityCheckDataResponseMapper>(MockBehavior.Strict);
+        _eligiblityCheckDataResponseMapper = new Mock<IEligibilityCheckDataResponseMapper>(MockBehavior.Strict);
         _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _eligiblityCheckDataResponseMapper.Object, _mockLogger.Object);
     }
 
@@ -35,7 +35,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase.TestBase
 
     private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
-    private Mock<IEligiblityCheckDataResponseMapper> _eligiblityCheckDataResponseMapper;
+    private Mock<IEligibilityCheckDataResponseMapper> _eligiblityCheckDataResponseMapper;
     private Mock<ILogger<GetBulkUploadResultsUseCase>> _mockLogger;
     private GetBulkUploadResultsUseCase _sut;
 
