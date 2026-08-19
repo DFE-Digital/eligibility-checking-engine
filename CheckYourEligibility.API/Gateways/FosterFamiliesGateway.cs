@@ -126,7 +126,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             {
                 FosterCarerId = fosterCarer.FosterCarerId,
                 ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-                EligiblityCode = workingEvent.EligibilityCode,
+                EligibilityCode = workingEvent.EligibilityCode,
                 Status = fosterChild.Status,
                 EligibilityConfirmed = request.SubmissionDate.ToString(),
                 ReconfirmBetween = "This still need doing",
@@ -456,7 +456,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         return new FosterChildCreatedResponse
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-            EligiblityCode = workingEvent.EligibilityCode,
+            EligibilityCode = workingEvent.EligibilityCode,
             Status = "",
             EligibilityConfirmed = submissionDate.ToString(),
             ReconfirmBetween = "",

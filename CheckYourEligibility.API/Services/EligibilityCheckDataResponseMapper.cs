@@ -18,9 +18,9 @@ namespace CheckYourEligibility.API.Services
     /// <summary>
     /// Used by GetEligibilityCheck type Usecases
     /// </summary>
-    public class EligiblityCheckDataResponseMapper : IEligibilityCheckDataResponseMapper
+    public class EligibilityCheckDataResponseMapper : IEligibilityCheckDataResponseMapper
     {
-        public EligiblityCheckDataResponseMapper(ILogger<EligiblityCheckDataResponseMapper> logger, ICheckEligibility checkGateway) {
+        public EligibilityCheckDataResponseMapper(ILogger<EligibilityCheckDataResponseMapper> logger, ICheckEligibility checkGateway) {
 
                  
         }

@@ -16,13 +16,13 @@ namespace CheckYourEligibility.API.Tests.Services;
 [TestFixture]
 public class EligibilityCheckDataResponseMapperTests
 {
-    private EligiblityCheckDataResponseMapper _sut;
+    private EligibilityCheckDataResponseMapper _sut;
 
     [SetUp]
     public void Setup()
     {
-        _sut = new EligiblityCheckDataResponseMapper(
-            Mock.Of<ILogger<EligiblityCheckDataResponseMapper>>(),
+        _sut = new EligibilityCheckDataResponseMapper(
+            Mock.Of<ILogger<EligibilityCheckDataResponseMapper>>(),
             Mock.Of<ICheckEligibility>());
     }
 

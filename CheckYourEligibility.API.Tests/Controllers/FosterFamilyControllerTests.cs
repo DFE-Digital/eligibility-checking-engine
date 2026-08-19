@@ -410,7 +410,7 @@ public class FosterFamilyControllerTests
         var response = new FosterChildCreatedResponse
         {
             ChildName = "Tom Smith",
-            EligiblityCode = "ABC123",
+            EligibilityCode = "ABC123",
             Status = "Active"
         };
 
