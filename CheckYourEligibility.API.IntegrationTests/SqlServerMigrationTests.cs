@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.IntegrationTests;
 
@@ -7,16 +6,18 @@ namespace CheckYourEligibility.API.IntegrationTests;
 public sealed class SqlServerMigrationTests
 {
     [Test]
-    public async Task Migrations_Create_And_Seed_EligibilityCodeRange()
+    public void Migrations_Create_And_Seed_EligibilityCodeRange()
     {
-        await using var context = SqlServerFixture.CreateContext();
+        SqlServerFixture.InitialRangeStart
+            .Should().Be(40000000001);
 
-        var range = await context.EligibilityCodeRanges.SingleAsync();
+        SqlServerFixture.InitialRangeEnd
+            .Should().Be(49999999999);
 
-        range.EligibilityCodeRangeId.Should().Be(1);
-        range.StartRange.Should().Be(40000000001);
-        range.EndRange.Should().Be(49999999999);
-        range.NextAvailableCode.Should().Be(40000000001);
-        range.RowVersion.Should().NotBeNullOrEmpty();
+        SqlServerFixture.InitialNextAvailableCode
+            .Should().Be(40000000001);
+
+        SqlServerFixture.InitialRowVersion
+            .Should().NotBeNullOrEmpty();
     }
 }

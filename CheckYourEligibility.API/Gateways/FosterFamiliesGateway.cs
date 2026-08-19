@@ -1,5 +1,7 @@
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Globalization;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -577,48 +579,75 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     public async Task<string> GetEligibilityCodeForFosterChild()
     {
-        const int maxRetries = 3;
-
-        // Retry a limited number of times to prevent indefinite looping
-        // if persistent concurrency conflicts occur.
-        for (var retry = 1; retry <= maxRetries; retry++)
+        // Existing fast unit tests use EF's InMemory provider, which cannot
+        // execute SQL Server-specific commands.
+        if (!_db.Database.IsSqlServer())
         {
-            try
-            {
-                // There will only ever be one EligibilityCodeRange record.
-                var range = await _db.EligibilityCodeRanges
-                    .SingleAsync(x => x.EligibilityCodeRangeId == 1);
-
-                if (range.NextAvailableCode > range.EndRange)
-                {
-                    throw new InvalidOperationException(
-                        "No eligibility codes remaining.");
-                }
-
-                var code = range.NextAvailableCode;
-
-                // Increment for the next allocation. --- new code
-                range.NextAvailableCode++;
-
-                await _db.SaveChangesAsync();
-
-                // Convert to string to match WF event record
-                return code.ToString();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Concurrency conflict when allocating eligibility code. Retry {Retry} of {MaxRetries}.",
-                    retry,
-                    maxRetries);
-
-                _db.ChangeTracker.Clear();
-            }
+            return await GetEligibilityCodeForNonSqlServerProvider();
         }
 
-        throw new InvalidOperationException(
-            $"Failed to allocate an eligibility code after {maxRetries} attempts.");
+        var connection = _db.Database.GetDbConnection();
+        var shouldCloseConnection =
+            connection.State != ConnectionState.Open;
+
+        try
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+
+            command.CommandText =
+                """
+            SET NOCOUNT ON;
+
+            UPDATE [EligibilityCodeRanges]
+            SET [NextAvailableCode] = [NextAvailableCode] + 1
+            OUTPUT DELETED.[NextAvailableCode]
+            WHERE [EligibilityCodeRangeId] = 1
+              AND [NextAvailableCode] <= [EndRange];
+            """;
+
+            var result = await command.ExecuteScalarAsync();
+
+            if (result is null || result is DBNull)
+            {
+                throw new InvalidOperationException(
+                    "Eligibility Code unavailable.");
+            }
+
+            return Convert
+                .ToInt64(result, CultureInfo.InvariantCulture)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+        finally
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private async Task<string> GetEligibilityCodeForNonSqlServerProvider()
+    {
+        var range = await _db.EligibilityCodeRanges
+            .SingleAsync(x => x.EligibilityCodeRangeId == 1);
+
+        if (range.NextAvailableCode > range.EndRange)
+        {
+            throw new InvalidOperationException(
+                "Eligibility Code unavailable.");
+        }
+
+        var code = range.NextAvailableCode;
+        range.NextAvailableCode++;
+
+        await _db.SaveChangesAsync();
+
+        return code.ToString(CultureInfo.InvariantCulture);
     }
 
 

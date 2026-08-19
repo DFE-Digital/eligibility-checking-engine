@@ -12,6 +12,18 @@ public sealed class SqlServerFixture
 
     private MsSqlContainer? _container;
 
+    internal static string ConnectionString { get; private set; } =
+        string.Empty;
+
+    internal static long InitialRangeStart { get; private set; }
+
+    internal static long InitialRangeEnd { get; private set; }
+
+    internal static long InitialNextAvailableCode { get; private set; }
+
+    internal static byte[] InitialRowVersion { get; private set; } =
+        Array.Empty<byte>();
+
     [OneTimeSetUp]
     public async Task StartSqlServer()
     {
@@ -24,7 +36,20 @@ public sealed class SqlServerFixture
         ConnectionString = _container.GetConnectionString();
 
         await using var context = CreateContext();
+
         await context.Database.MigrateAsync();
+
+        // Capture the original migration state before any tests
+        // allocate codes and change NextAvailableCode.
+        var initialRange = await context.EligibilityCodeRanges
+            .AsNoTracking()
+            .SingleAsync();
+
+        InitialRangeStart = initialRange.StartRange;
+        InitialRangeEnd = initialRange.EndRange;
+        InitialNextAvailableCode =
+            initialRange.NextAvailableCode;
+        InitialRowVersion = initialRange.RowVersion;
     }
 
     [OneTimeTearDown]
@@ -35,9 +60,6 @@ public sealed class SqlServerFixture
             await _container.DisposeAsync();
         }
     }
-
-    internal static string ConnectionString { get; private set; } =
-        string.Empty;
 
     internal static EligibilityCheckContext CreateContext()
     {
