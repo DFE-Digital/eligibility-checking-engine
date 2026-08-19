@@ -3,7 +3,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using Newtonsoft.Json;
 
-namespace CheckYourEligibility.API.Usecases
+namespace CheckYourEligibility.API.UseCases
 {
     public interface IGetEligibilityCheckReportItemsUseCase
     {

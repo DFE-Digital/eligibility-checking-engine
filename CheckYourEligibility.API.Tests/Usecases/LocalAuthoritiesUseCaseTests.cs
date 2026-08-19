@@ -2,10 +2,10 @@ using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.API.UseCases;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests.Usecases
+namespace CheckYourEligibility.API.Tests.UseCases
 {
     [TestFixture]
     public class LocalAuthoritiesUseCaseTests
