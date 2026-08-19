@@ -5,7 +5,7 @@ public enum UserType
     FreeSchoolMealsAdmin,
     FreeSchoolMealsParent,
     ChildcareAdmin,
-    Support,
+    EligibilityCheckingEngineSupport,
     API
 }
  

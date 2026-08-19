@@ -5,7 +5,7 @@ using AutoMapper;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -196,6 +196,92 @@ public class UserGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.Users.Should().HaveCount(1);
     }
 
+
+    [Test]
+    public async Task Given_UserRoles_Exist_For_User_Should_Return_Roles()
+    {
+        // Arrange
+        var userId = Guid.NewGuid().ToString();
+        var user = new User
+        {
+            UserID = userId,
+            Reference = "support-reference",
+            Email = "support@example.com",
+            UserName = "support-user",
+            UserType = UserType.EligibilityCheckingEngineSupport,
+            OrganisationType = Domain.Enums.OrganisationType.none,
+            LastLogin = DateTime.UtcNow
+        };
+
+        _fakeInMemoryDb.Users.Add(user);
+        _fakeInMemoryDb.UserRoles.AddRange(
+            new UserRole { UserId = userId, RoleName = UserRoleName.Support_CodeManagement },
+            new UserRole { UserId = userId, RoleName = UserRoleName.Support_UserManagement });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.GetUserRoles(userId);
+
+        // Assert
+        response.Should().HaveCount(2);
+        response.Select(x => x.RoleName).Should().Contain(
+        [
+            UserRoleName.Support_CodeManagement,
+            UserRoleName.Support_UserManagement
+        ]);
+    }
+
+    [Test]
+    public async Task Given_UserRole_Does_Not_Exist_Should_Add_Role_Assignment()
+    {
+        // Arrange
+        var userId = Guid.NewGuid().ToString();
+        _fakeInMemoryDb.Users.Add(new User
+        {
+            UserID = userId,
+            Reference = "assign-reference",
+            Email = "assign@example.com",
+            UserName = "assign-user",
+            UserType = UserType.EligibilityCheckingEngineSupport,
+            OrganisationType = Domain.Enums.OrganisationType.none,
+            LastLogin = DateTime.UtcNow
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var response = await _sut.AddUserRole(userId, UserRoleName.Support_CodeManagement);
+
+        // Assert
+        response.UserId.Should().Be(userId);
+        response.RoleName.Should().Be(UserRoleName.Support_CodeManagement);
+        _fakeInMemoryDb.UserRoles.Should().ContainSingle(x => x.UserId == userId && x.RoleName == UserRoleName.Support_CodeManagement);
+    }
+
+    [Test]
+    public async Task Given_UserRole_Exists_Should_Remove_Role_Assignment()
+    {
+        // Arrange
+        var userId = Guid.NewGuid().ToString();
+        _fakeInMemoryDb.Users.Add(new User
+        {
+            UserID = userId,
+            Reference = "remove-reference",
+            Email = "remove@example.com",
+            UserName = "remove-user",
+            UserType = UserType.EligibilityCheckingEngineSupport,
+            OrganisationType = Domain.Enums.OrganisationType.none,
+            LastLogin = DateTime.UtcNow
+        });
+        _fakeInMemoryDb.UserRoles.Add(new UserRole { UserId = userId, RoleName = UserRoleName.Support_UserManagement });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Act
+        var removed = await _sut.RemoveUserRole(userId, UserRoleName.Support_UserManagement);
+
+        // Assert
+        removed.Should().BeTrue();
+        _fakeInMemoryDb.UserRoles.Should().NotContain(x => x.UserId == userId && x.RoleName == UserRoleName.Support_UserManagement);
+    }
 
     [Test]
     public void Given_Existing_FSMParent_User_Should_Return_Guid()

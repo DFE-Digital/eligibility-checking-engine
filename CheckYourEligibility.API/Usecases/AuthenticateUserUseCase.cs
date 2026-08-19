@@ -108,9 +108,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     JwtConfig jwtConfig)
     {
         // NOTE : This will remain for now until we implement a better way to audit passed scopes
-        await _auditGateway.CreateAuditEntry(
-            AuditType.Client,
-            credentials.client_id);
+        await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
 
         if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret))
         {
@@ -134,18 +132,19 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         }
 
         var expiresInSeconds = (int)(expires - DateTime.UtcNow).TotalSeconds;
-
+        string userId = null;
         try
         {
             var userDetails = GetUserDetailsFromClientId(credentials.client_id);
             var organisationDetails = GetOrganisationDetails(credentials.scope);
 
-            await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
+            userId = await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
             {
                 Data = new()
                 {
                     Email = userDetails.Email,
                     Reference = Guid.NewGuid().ToString() // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
+                    
                 },
 
                 MetaData = new()
@@ -176,7 +175,8 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         {
             expires_in = expiresInSeconds,
             access_token = tokenString,
-            token_type = "Bearer"
+            token_type = "Bearer",
+            user_id = userId
         };
     }
 
@@ -282,7 +282,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             Enum.TryParse<UserType>(parts[0].Replace("-", ""), true, out userType);
 
             // Use the second part of clientId as the username and email
-            userName = parts[1]; 
+            userName = parts[1];
             email = parts[1];
         }
 
