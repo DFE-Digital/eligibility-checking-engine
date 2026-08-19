@@ -1,18 +1,18 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.Json.Serialization;
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
+using CheckYourEligibility.API.Gateways.Factories;
+using CheckYourEligibility.API.Gateways.Factories.Helper;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,6 +20,9 @@ using Notify.Client;
 using Notify.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-GB");
@@ -149,6 +152,12 @@ builder.Services.AddAzureClients(builder.Configuration);
 builder.Services.AddServices();
 builder.Services.AddExternalServices(builder.Configuration);
 builder.Services.AddJwtSettings(builder.Configuration);
+
+// Test Data Configuration and Providers
+var testDataConfig = TestDataConfiguration.CreateFromConfiguration(builder.Configuration);
+builder.Services.AddSingleton(testDataConfig);
+builder.Services.AddScoped<IStandardCheckTestScenarioFactroy, StandardCheckTestScenarioFactroy>();
+builder.Services.AddScoped<IWorkingFamiliesTestScenarioFactory, WorkingFamiliesTestScenarioFactory>();
 
 // Use cases
 builder.Services.AddScoped<ICreateOrUpdateFSMParentUserUseCase, CreateOrUpdateFSMParentUserUseCase>();

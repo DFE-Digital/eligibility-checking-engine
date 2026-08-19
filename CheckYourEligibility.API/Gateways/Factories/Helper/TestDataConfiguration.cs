@@ -7,12 +7,14 @@ namespace CheckYourEligibility.API.Gateways.Factories.Helper
     /// </summary>
     public  class TestDataConfiguration
     {
-        public string? TestLastName { get; set; }
-        public string? WFTestCodePrefix { get; set; }
-        public string? EligiblePrefix { get; set; }
-        public string? InGracePeriodPrefix { get; set; }
-        public string? NotYetEligiblePrefix { get; set; }
-        public string? ExpiredPrefix { get; set; }
+        public string TestLastName { get; set; }
+        public string WFTestCodePrefix { get; set; }
+        public string EligiblePrefix { get; set; }
+        public string EligibleTargeted { get; set; }
+        public string EligibleExpanded { get; set; }
+        public string InGracePeriodPrefix { get; set; }
+        public string NotYetEligiblePrefix { get; set; }
+        public string ExpiredPrefix { get; set; }
 
         // NINO test prefixes
         public Dictionary<string, (CheckEligibilityStatus, EligibilityTier?)> NinoTestScenarios { get; set; } = new();
@@ -27,39 +29,41 @@ namespace CheckYourEligibility.API.Gateways.Factories.Helper
         {
             var config = new TestDataConfiguration
             {
-                TestLastName = configuration.GetValue<string>("TestData:LastName"),
-                WFTestCodePrefix = configuration.GetValue<string>("TestData:WFTestCodePrefix"),
+                TestLastName = configuration.GetValue<string>("TestData:LastName") ?? "TESTER",
+                WFTestCodePrefix = configuration.GetValue<string>("TestData:WFTestCodePrefix") ?? "90",
                 EligiblePrefix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible"),
+
                 InGracePeriodPrefix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod"),
                 NotYetEligiblePrefix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible"),
-                ExpiredPrefix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired")
-            };
+                ExpiredPrefix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired"),
+                EligibleTargeted = configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted") ?? "NA" ,
+                EligibleExpanded = configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded") ?? "NE"
+            }; 
 
             // Setup NINO scenarios
-            config.NinoTestScenarios = new Dictionary<string, (CheckEligibilityStatus, EligibilityTier?)>
-        {
+            config.NinoTestScenarios = new Dictionary<string, (CheckEligibilityStatus, EligibilityTier?)>{
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible") ?? "NN",
                 (CheckEligibilityStatus.eligible, null)
             },
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible") ?? "PN",
                 (CheckEligibilityStatus.notEligible, null)
             },
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound") ?? "RA",
                 (CheckEligibilityStatus.parentNotFound, null)
             },
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error") ?? "XX",
                 (CheckEligibilityStatus.error, null)
             },
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted") ?? "NA",
                 (CheckEligibilityStatus.eligible, EligibilityTier.targeted)
             },
             {
-                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded") ?? "",
+                configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded") ?? "NE",
                 (CheckEligibilityStatus.eligible, EligibilityTier.expanded)
             }
         };

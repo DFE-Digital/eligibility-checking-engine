@@ -1,6 +1,8 @@
 ﻿using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories.Helper;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
+using NetTopologySuite.Triangulate;
 
 namespace CheckYourEligibility.API.Gateways.Factories
 {
@@ -14,7 +16,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             _testDataConfiguration = testDataConfiguration;
 
         }
-        public bool IsTestData(string? nino, string? nass) {
+        public bool IsTestCase(string? nino, string? nass) {
 
             if (!nino.IsNullOrEmpty())
             {
@@ -30,44 +32,31 @@ namespace CheckYourEligibility.API.Gateways.Factories
             return false;
         
         }
-        private (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
+        public (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
         {
 
             if (!nino.IsNullOrEmpty())
             {
-                if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted")))
-                    return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
+                if (checkType == CheckEligibilityType.FreeSchoolMeals) {
 
-                if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded")))
-                    return (CheckEligibilityStatus.eligible, EligibilityTier.expanded);
+                    if (nino.StartsWith(_testDataConfiguration.EligibleTargeted)) {
 
-                if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
-                    return (CheckEligibilityStatus.eligible, null);
-                if (nino.StartsWith(
-                        _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
-                    return (CheckEligibilityStatus.notEligible, null);
-                if (nino.StartsWith(
-                        _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")))
-                    return (CheckEligibilityStatus.parentNotFound, null);
-                if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")))
-                    return (CheckEligibilityStatus.error, null);
+                        return _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => x.Key == _testDataConfiguration.EligibleTargeted).Value;
+                    }
+                    if (nino.StartsWith(_testDataConfiguration.EligibleExpanded))
+                    {
 
+                        return _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => x.Key == _testDataConfiguration.EligibleExpanded).Value;
+                    }
+                }
+                var scenario = _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => nino.StartsWith(x.Key));
+                return scenario.Value;
             }
-            else
+            if (!nass.IsNullOrEmpty()) 
             {
-                nass = nass.Substring(2, 2);
-                if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                    return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
-                if (nass == _configuration.GetValue<string>(
-                        "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
-                    return (CheckEligibilityStatus.notEligible, null);
-                if (nass == _configuration.GetValue<string>(
-                        "TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
-                    return (CheckEligibilityStatus.parentNotFound, null);
-                if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
-                    return (CheckEligibilityStatus.error, null);
+                var scenario = _testDataConfiguration.NassTestScenarios.FirstOrDefault(x => nass.StartsWith(x.Key));
+                return scenario.Value;
             }
-
             return (CheckEligibilityStatus.parentNotFound, null);
         }
     }
