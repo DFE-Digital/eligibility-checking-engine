@@ -259,6 +259,17 @@ public static class ProgramExtensions
                     var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
                     return string.Equals(checkSourceAndUserName.Item1, "eligibility-checking-engine-support", StringComparison.OrdinalIgnoreCase);
                 }));
+
+            options.AddPolicy(PolicyNames.RequireChildCareAdminSource, policy =>
+                policy.RequireAssertion(context =>
+                {
+                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+
+                    return string.Equals(
+                        checkSourceAndUserName.Item1,
+                        "childcare-admin",
+                        StringComparison.OrdinalIgnoreCase);
+                }));
         });
         return services;
     }

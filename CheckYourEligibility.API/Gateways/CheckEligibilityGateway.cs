@@ -170,7 +170,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
             var baseType = data as CheckEligibilityRequestDataBase;           
 
-            item.CheckData = JsonConvert.SerializeObject(data);          
+            item.CheckData = JsonConvert.SerializeObject(data);
 
             item.Type = baseType.Type;
 
@@ -358,57 +358,11 @@ public class CheckEligibilityGateway : ICheckEligibility
 
         return response;
     }
-    public async Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false) where T : CheckEligibilityItem
+    public async Task<EligibilityCheck> GetItem(string guid)
     {
-        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
-                                                                           (type == CheckEligibilityType.None ||
-                                                                            type == x.Type) &&
-                                                                           x.IsDeleted == false);
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.IsDeleted == false);
 
-
-        var item = _mapper.Map<CheckEligibilityItem>(result);
-        if (result != null)
-        {
-            var CheckData = GetCheckProcessData(result.Type, result.CheckData);
-            if (isBatchRecord)
-            {
-                item.EligibilityCheckID = result.EligibilityCheckID;
-                item.Status = result.Status.ToString();
-                item.Created = result.Created;
-                item.ClientIdentifier = CheckData.ClientIdentifier;
-            }
-
-            //TODO: This can probably be done as a map
-            switch (result.Type)
-            {
-                case CheckEligibilityType.WorkingFamilies:
-                    item.EligibilityCode = CheckData.EligibilityCode;
-                    item.LastName = CheckData.LastName;
-                    item.ValidityStartDate = CheckData.ValidityStartDate;
-                    item.ValidityEndDate = CheckData.ValidityEndDate;
-                    item.GracePeriodEndDate = CheckData.GracePeriodEndDate;
-                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-                    item.DateOfBirth = CheckData.DateOfBirth;
-                    break;
-                default:
-                    item.DateOfBirth = CheckData.DateOfBirth;
-                    item.NationalInsuranceNumber = CheckData.NationalInsuranceNumber;
-                    item.NationalAsylumSeekerServiceNumber = CheckData.NationalAsylumSeekerServiceNumber;
-                    item.LastName = CheckData.LastName;
-                    item.FirstName = CheckData.FirstName;
-                    item.ChildFirstName = CheckData.ChildFirstName;
-                    item.ChildLastName = CheckData.ChildLastName;
-                    item.ChildDateOfBirth = CheckData.ChildDateOfBirth;
-                    item.ChildSchoolURN = CheckData.ChildSchoolURN;
-                    item.EligibilityEndDate = CheckData.EligibilityEndDate;
-                    item.EmailAddress = CheckData.EmailAddress;
-                    break;
-            }
-
-            return (T)item;
-        }
-
-        return default;
+        return result;
     }
 
     public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,

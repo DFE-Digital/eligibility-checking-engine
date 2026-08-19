@@ -21,4 +21,5 @@ public static class PolicyNames
     public const string RequireLaOrAdminScope = "RequireLaOrAdminScope";
     public const string RequireFreeSchoolMealsAdminPortalSource = "RequireFreeSchoolMealsAdminPortalSource";
     public const string RequireSupportPortalSource = "RequireSupportPortalSource";
+    public const string RequireChildCareAdminSource = "RequireChildCareAdminSource";
 }

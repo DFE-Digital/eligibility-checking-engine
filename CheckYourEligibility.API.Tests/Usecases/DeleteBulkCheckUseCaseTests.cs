@@ -3,7 +3,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.Usecases;
+using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.UseCases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
@@ -143,6 +144,39 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         capturedArg.Should().NotBeNull("PostCheck should have been called");
         if (capturedArg != null && capturedArg is CheckEligibilityRequestData requestData)
             requestData.NationalInsuranceNumber.Should().Be("AB123456C");
+    }
+
+    [Test]
+    public async Task Execute_normalizes_last_name_to_uppercase()
+    {
+        // Arrange
+        var model = new CheckEligibilityRequest<CheckEligibilityRequestData>
+        {
+            Data = new CheckEligibilityRequestData
+            {
+                NationalInsuranceNumber = "ab123456c",
+                DateOfBirth = "2000-01-01",
+                LastName = "doe"
+            }
+        };
+        var meta = _fixture.Create<CheckMetaData>();
+        var responseData = new PostCheckResult
+        {
+            Id = _fixture.Create<string>(),
+            Status = CheckEligibilityStatus.queuedForProcessing
+        };
+
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
+            .Returns(new ValidationResult());
+        _mockCheckGateway
+            .Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), It.IsAny<CheckMetaData>()))
+            .ReturnsAsync(responseData);
+
+        // Act
+        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
+
+        // Assert
+        model.Data!.LastName.Should().Be("DOE");
     }
 
     [Test]
