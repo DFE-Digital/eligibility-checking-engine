@@ -341,7 +341,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         });
 
         modelBuilder.Entity<FosterChild>()
-            .HasIndex(fc => fc.EligibilityCode);
+            .HasIndex(fc => fc.EligibilityCode)
+            .IsUnique();
 
         modelBuilder.Entity<WorkingFamiliesEvent>()
             .HasIndex(e => e.EligibilityCode);
@@ -376,16 +377,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .Property(e => e.TwoYearPolicyID)
             .HasDefaultValue(3);
 
-        modelBuilder.Entity<EligibilityCodeRange>().Property(e => e.RowVersion).IsRowVersion();
-        modelBuilder.Entity<EligibilityCodeRange>().HasData(
-            new EligibilityCodeRange
-            {
-                EligibilityCodeRangeId = 1,
-                StartRange = 40000000001,
-                EndRange = 49999999999,
-                NextAvailableCode = 40000000001
-            }
-        );
+        modelBuilder.Entity<EligibilityCodeRange>()
+            .Property(e => e.RowVersion)
+            .IsRowVersion();
 
         var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };

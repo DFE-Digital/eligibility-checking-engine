@@ -1015,15 +1015,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.HasKey("EligibilityCodeRangeId");
 
                     b.ToTable("EligibilityCodeRanges");
-
-                    b.HasData(
-                        new
-                        {
-                            EligibilityCodeRangeId = 1,
-                            EndRange = 49999999999L,
-                            NextAvailableCode = 40000000001L,
-                            StartRange = 40000000001L
-                        });
                 });
 
             modelBuilder.Entity("FosterCarer", b =>
@@ -1129,7 +1120,8 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.HasKey("FosterChildId");
 
-                    b.HasIndex("EligibilityCode");
+                    b.HasIndex("EligibilityCode")
+                        .IsUnique();
 
                     b.HasIndex("FosterCarerId");
 
