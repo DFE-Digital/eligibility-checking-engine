@@ -59,6 +59,16 @@ stages:
           testRunTitle: 'Unit Tests'
 
       - task: DotNetCoreCLI@2
+        displayName: 'Run SQL Server integration tests'
+        condition: and(succeeded(), eq(${{ parameters.isDeployRun }}, false))
+        inputs:
+          command: 'test'
+          projects: 'CheckYourEligibility.API.IntegrationTests/CheckYourEligibility.API.IntegrationTests.csproj'
+          arguments: '--configuration $(buildConfiguration) --no-build --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'SQL Server Integration Tests'
+
+      - task: DotNetCoreCLI@2
         inputs:
           command: publish
           publishWebProjects: True
