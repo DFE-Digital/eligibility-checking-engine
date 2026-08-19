@@ -4,7 +4,7 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Polly;
 
-namespace CheckYourEligibility.API.Usecases;
+namespace CheckYourEligibility.API.UseCases;
 
 public interface ILocalAuthoritiesUseCase
 {

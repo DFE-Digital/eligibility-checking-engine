@@ -256,6 +256,17 @@ public static class ProgramExtensions
                         "free-school-meals-admin",
                         StringComparison.OrdinalIgnoreCase);
                 }));
+
+            options.AddPolicy(PolicyNames.RequireChildCareAdminSource, policy =>
+                policy.RequireAssertion(context =>
+                {
+                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+
+                    return string.Equals(
+                        checkSourceAndUserName.Item1,
+                        "childcare-admin",
+                        StringComparison.OrdinalIgnoreCase);
+                }));
         });
         return services;
     }
