@@ -60,6 +60,13 @@
         </Compile>
     </ItemGroup>
 
+    <!-- Lets the test project exercise internal batching helpers (e.g. CheckEligibilityGateway.MapChecksBulk)
+         directly, without going through BulkInsert_EligibilityCheck - which the EF Core InMemory
+         provider used in tests can't execute. See docs/bulk-check-hash-batching-fix.md. -->
+    <ItemGroup>
+        <InternalsVisibleTo Include="CheckYourEligibility.API.Tests" />
+    </ItemGroup>
+
     <ItemGroup>
         <EmbeddedResource Update="Properties\Resources.resx">
             <Generator>ResXFileCodeGenerator</Generator>
