@@ -41,6 +41,8 @@ Postman collection below automates this.
 
 ## How to run tests
 
+See the [integration testing guide](docs/integration-testing-guide.md) for guidance on choosing and adding SQL-backed integration tests.
+
 We have two test-suites - one .NET NUnit for unit tests and one Cypress for integration and e2e tests. Cypress needs a
 running application responding to http calls.
 

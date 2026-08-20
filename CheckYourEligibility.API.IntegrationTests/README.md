@@ -1,7 +1,9 @@
-﻿# API integration tests
+# API integration tests
 
 This project contains database-sensitive integration tests that cannot be
 meaningfully executed with EF Core's InMemory provider.
+
+For repository-wide guidance on when and how to add integration coverage, see the [integration testing guide](../docs/integration-testing-guide.md).
 
 The tests currently use a disposable SQL Server container to verify:
 
