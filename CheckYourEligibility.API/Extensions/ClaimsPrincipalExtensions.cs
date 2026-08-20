@@ -1,7 +1,5 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Constants;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
-using DocumentFormat.OpenXml.Spreadsheet;
 using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Extensions;

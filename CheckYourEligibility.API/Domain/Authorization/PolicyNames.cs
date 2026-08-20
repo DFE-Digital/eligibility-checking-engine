@@ -1,4 +1,4 @@
-namespace CheckYourEligibility.API.Domain.Constants;
+namespace CheckYourEligibility.API.Domain.Authorization;
 
 /// <summary>
 ///     Authorization policy name constants
@@ -20,5 +20,10 @@ public static class PolicyNames
     public const string RequireLaOrMatOrSchoolScope = "RequireLaOrMatOrSchoolScope";
     public const string RequireLaOrAdminScope = "RequireLaOrAdminScope";
     public const string RequireFreeSchoolMealsAdminPortalSource = "RequireFreeSchoolMealsAdminPortalSource";
+    public const string RequireSupportPortalSource = "RequireSupportPortalSource";
     public const string RequireChildCareAdminSource = "RequireChildCareAdminSource";
+    public const string RequireUserRole = "RequireUserRole";
+
+    // New policies for compound authorization rules
+    public const string GetEligibilityCodeHistory = nameof(GetEligibilityCodeHistory);
 }

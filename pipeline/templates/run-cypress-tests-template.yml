@@ -9,6 +9,8 @@ parameters:
     type: string
   - name: jwtPassword
     type: string
+  - name: jwtSupportPortalPassword
+    type: string
   - name: cypressEnv
     type: string
   - name: prefix
@@ -39,6 +41,7 @@ stages:
               export CYPRESS_API_HOST="${{ parameters.cypressApiHost }}"
               export CYPRESS_JWT_USERNAME="${{ parameters.jwtUsername }}"
               export CYPRESS_JWT_PASSWORD="${{ parameters.jwtPassword }}"
+              export CYPRESS_JWT_SUPPORTPORTAL_PASSWORD="${{ parameters.jwtSupportPortalPassword }}"
               export CYPRESS_ENV="${{ parameters.cypressEnv }}"
               npm run e2e:electron
         - task: Bash@3

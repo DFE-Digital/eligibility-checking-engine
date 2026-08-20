@@ -45,8 +45,8 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<FosterChild> FosterChildren { get; set; }
     public virtual DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
     public virtual DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
-
     public virtual DbSet<EligibilityPolicy> EligibilityPolicies { get; set; }
+    public virtual DbSet<UserRole> UserRoles { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
@@ -287,7 +287,7 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasForeignKey(s => s.MultiAcademyTrustID)
             .HasPrincipalKey(t => t.MultiAcademyTrustID)
             .IsRequired(true);
-       
+
 
         modelBuilder.Entity<Application>()
             .HasIndex(b => b.Reference, "idx_Reference")
@@ -316,8 +316,9 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
         modelBuilder.Entity<User>()
             .HasIndex(p => new { p.Email, p.Reference, p.UserType }).IsUnique();
-        
-        modelBuilder.Entity<User>().HasIndex(x  => new {
+
+        modelBuilder.Entity<User>().HasIndex(x => new
+        {
             x.UserName,
             x.OrganisationType,
             x.OrganisationId,
@@ -325,19 +326,23 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         }).IsUnique();
 
 
-        modelBuilder.Entity<User>(u => 
+        modelBuilder.Entity<User>(u =>
         {
             u.Property(p => p.UserType)
                 .HasConversion<string>()
                 .HasMaxLength(50);
         });
 
-        modelBuilder.Entity<User>(u => 
+        modelBuilder.Entity<User>(u =>
         {
             u.Property(p => p.OrganisationType)
                 .HasConversion<string>()
                 .HasMaxLength(50);
         });
+
+        modelBuilder.Entity<UserRole>()
+            .HasIndex(e => e.UserId,
+                "idx_UserRole_UserId");
 
         modelBuilder.Entity<FosterChild>()
             .HasIndex(fc => fc.EligibilityCode);

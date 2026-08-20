@@ -17,6 +17,9 @@ public class UserControllerTests : TestBase.TestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICreateOrUpdateFSMParentUserUseCase> _mockCreateOrUpdateUserUseCase;
+    private Mock<IGetUserRolesUseCase> _mockGetUserRolesUseCase;
+    private Mock<IAddUserRoleUseCase> _mockAddUserRoleUseCase;
+    private Mock<IRemoveUserRoleUseCase> _mockRemoveUserRoleUseCase;
     private ILogger<UserController> _mockLogger;
     private UserController _sut;
 
@@ -24,15 +27,27 @@ public class UserControllerTests : TestBase.TestBase
     public void Setup()
     {
         _mockCreateOrUpdateUserUseCase = new Mock<ICreateOrUpdateFSMParentUserUseCase>(MockBehavior.Strict);
+        _mockGetUserRolesUseCase = new Mock<IGetUserRolesUseCase>(MockBehavior.Strict);
+        _mockAddUserRoleUseCase = new Mock<IAddUserRoleUseCase>(MockBehavior.Strict);
+        _mockRemoveUserRoleUseCase = new Mock<IRemoveUserRoleUseCase>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<UserController>>();
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new UserController(_mockLogger, _mockCreateOrUpdateUserUseCase.Object, _mockAuditGateway.Object);
+        _sut = new UserController(
+            _mockLogger,
+            _mockCreateOrUpdateUserUseCase.Object,
+            _mockGetUserRolesUseCase.Object,
+            _mockAddUserRoleUseCase.Object,
+            _mockRemoveUserRoleUseCase.Object,
+            _mockAuditGateway.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
         _mockCreateOrUpdateUserUseCase.VerifyAll();
+        _mockGetUserRolesUseCase.VerifyAll();
+        _mockAddUserRoleUseCase.VerifyAll();
+        _mockRemoveUserRoleUseCase.VerifyAll();
     }
 
     [Test]

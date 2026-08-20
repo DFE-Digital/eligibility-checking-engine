@@ -41,6 +41,7 @@ stages:
       cypressApiHost: '$(CYPRESS_API_HOST_DEV)'
       jwtUsername: '$(JWT_USERNAME_DEV)'
       jwtPassword: '$(JWT_PASSWORD_DEV)'
+      jwtSupportPortalPassword: '$(JWT_SUPPORTPORTAL_PASSWORD_DEV)'
       cypressEnv: 'DEV'
       prefix: 's203d01'
 ## -- dev cypress tests -- ##
@@ -68,6 +69,7 @@ stages:
       cypressApiHost: '$(CYPRESS_API_HOST_TEST)'
       jwtUsername: '$(JWT_USERNAME_TEST)'
       jwtPassword: '$(JWT_PASSWORD_TEST)'
+      jwtSupportPortalPassword: '$(JWT_SUPPORTPORTAL_PASSWORD_TEST)'
       cypressEnv: 'TEST'
       prefix: 's203t01'
 ## -- test cypress tests -- ##
@@ -95,6 +97,7 @@ stages:
       cypressApiHost: '$(CYPRESS_API_HOST_PP)'
       jwtUsername: '$(JWT_USERNAME_PP)'
       jwtPassword: '$(JWT_PASSWORD_PP)'
+      jwtSupportPortalPassword: '$(JWT_SUPPORTPORTAL_PASSWORD_PP)'
       cypressEnv: 'PP'
       prefix: 's203t02'
 ## -- pp cypress tests -- ##

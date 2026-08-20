@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Domain.Exceptions;
