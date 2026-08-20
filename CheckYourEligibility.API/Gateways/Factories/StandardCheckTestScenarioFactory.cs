@@ -6,12 +6,12 @@ using NetTopologySuite.Triangulate;
 
 namespace CheckYourEligibility.API.Gateways.Factories
 {
-    public interface IStandardCheckTestScenarioFactroy { }
-    public class StandardCheckTestScenarioFactroy : IStandardCheckTestScenarioFactroy
+    public interface IStandardCheckTestScenarioFactory { }
+    public class StandardCheckTestScenarioFactory : IStandardCheckTestScenarioFactory
     {
         private readonly TestDataConfiguration _testDataConfiguration;
 
-        public StandardCheckTestScenarioFactroy(TestDataConfiguration testDataConfiguration)
+        public StandardCheckTestScenarioFactory(TestDataConfiguration testDataConfiguration)
         {
             _testDataConfiguration = testDataConfiguration;
 
@@ -32,6 +32,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             return false;
         
         }
+
         public (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
         {
 

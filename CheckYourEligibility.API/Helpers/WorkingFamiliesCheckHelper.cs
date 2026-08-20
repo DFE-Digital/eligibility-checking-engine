@@ -132,9 +132,9 @@ namespace CheckYourEligibility.API.Helpers
             }; 
           
         }
-#region Private
 
-        private static (Term Current, Term Next) GetTerms(DateTime date)
+
+        public static (Term Current, Term Next) GetTerms(DateTime date)
         {
             int year = date.Year;
 
@@ -159,6 +159,7 @@ namespace CheckYourEligibility.API.Helpers
                 new Term(TermName.Summer, new DateTime(year, 4, 1))
             );
         }
+    #region Private
         /// <summary>
         ///  Caclculates if child turns 9 months after the start of the current term => child is too young
         /// </summary>
