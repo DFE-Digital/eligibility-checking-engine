@@ -3,19 +3,15 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
 {
-    private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase> _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase;
     private ILogger<WorkingFamiliesReportingController> _mockLogger;
@@ -27,21 +23,10 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase = new Mock<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = Mock.Of<ILogger<WorkingFamiliesReportingController>>();
-
-        var configData = new Dictionary<string, string?>
-        {
-            { "Jwt:Scopes:local_authority", "local_authority" }
-        };
-
-        _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
         _sut = new WorkingFamiliesReportingController(
             _mockLogger,
            _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase.Object,
-           _mockAuditGateway.Object,
-           _configuration
+           _mockAuditGateway.Object
         );
     }
 
@@ -58,10 +43,6 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
     {
         // Arrange
         var eligibilityCode = "TEST123";
-        
-        // Setup controller with local authority claims
-        var localAuthorityIds = new List<int> { 1 };
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         // single app
         var expectedResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
@@ -98,10 +79,6 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
     {
         // Arrange
         var eligibilityCode = "TEST-MULTI-BLOCK";
-
-        // Setup controller with local authority claims
-        var localAuthorityIds = new List<int> { 1 };
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
 
         var multiBlockResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
         {
@@ -200,9 +177,6 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         var eligibilityCode = "1234567";
         var localAuthorityIds = new List<int> { 1 }; // Regular user with LA ID 1
 
-        // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
-
         _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase
             .Setup(u => u.Execute(eligibilityCode))
             .ThrowsAsync(new ValidationException("Validation error"));
@@ -215,38 +189,5 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         var badRequestResult = (BadRequestObjectResult)response;
         ((ErrorResponse)badRequestResult.Value!).Errors.First().Title.Should().Be("Validation error");
     }
-
-
-     #region Helper methods
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
-
-    private List<Claim> SetupSpecificScopeIdClaims(List<int> ids, string scopeName)
-
-    {
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on ids
-        if (ids.Contains(0))
-        {
-            claims.Add(new Claim("scope", scopeName));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", ids.Select(id => $"{scopeName}:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        return claims;
-    }
-    #endregion
-
 
 }

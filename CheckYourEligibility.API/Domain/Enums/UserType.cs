@@ -1,3 +1,4 @@
+namespace CheckYourEligibility.API.Domain.Enums;
 
 public enum UserType 
 {

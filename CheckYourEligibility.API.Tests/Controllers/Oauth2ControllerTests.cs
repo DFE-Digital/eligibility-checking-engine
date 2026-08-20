@@ -28,8 +28,7 @@ public class Oauth2ControllerTests : TestBase.TestBase
     {
         // Initialize test users and clients
         validClient = new SystemUser { client_id = "client1", client_secret = "secret1" };
-        validClientWithScope = new SystemUser
-            { client_id = "client1:whatever", client_secret = "secret1", scope = "read write" };
+        validClientWithScope = new SystemUser { client_id = "client1:whatever", client_secret = "secret1", scope = "read write" };
         invalidClient = new SystemUser { client_id = "invalidClient", client_secret = "wrongSecret" };
 
         _mockAuthenticateUserUseCase = new Mock<IAuthenticateUserUseCase>(MockBehavior.Strict);
