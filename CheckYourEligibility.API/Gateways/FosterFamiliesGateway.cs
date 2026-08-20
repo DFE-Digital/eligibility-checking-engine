@@ -1,5 +1,7 @@
 using CheckYourEligibility.API.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Globalization;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -98,6 +100,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             );
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
         var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
@@ -106,9 +110,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         try
         {
             var workingEvent =
-               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request);
+               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
 
             fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
+            fosterChild.EligibilityCode = eligibilityCode;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
@@ -422,11 +427,14 @@ public class FosterFamiliesGateway : IFosterFamilies
                 $"Foster carer {fosterCarerId} not found");
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         // build domain model from request
         var fosterChild = BuildFosterChild(request, DateTime.UtcNow, fosterCarerId);
 
         // link child to current foster carer
         fosterChild.FosterCarerId = fosterCarer.FosterCarerId;
+        fosterChild.EligibilityCode = eligibilityCode;
 
         // Create new wf event
         var workingEvent =
@@ -441,7 +449,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                   },
                   FosterChild = request,
                   SubmissionDate = submissionDate
-              });
+              }, eligibilityCode);
 
         fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
         fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
@@ -567,6 +575,79 @@ public class FosterFamiliesGateway : IFosterFamilies
             Created = DateTime.UtcNow,
             Updated = DateTime.UtcNow
         };
+    }
+
+    public async Task<string> GetEligibilityCodeForFosterChild()
+    {
+        // Existing fast unit tests use EF's InMemory provider, which cannot
+        // execute SQL Server-specific commands.
+        if (!_db.Database.IsSqlServer())
+        {
+            return await GetEligibilityCodeForNonSqlServerProvider();
+        }
+
+        var connection = _db.Database.GetDbConnection();
+        var shouldCloseConnection =
+            connection.State != ConnectionState.Open;
+
+        try
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+
+            command.CommandText =
+                """
+            SET NOCOUNT ON;
+
+            UPDATE [EligibilityCodeRanges]
+            SET [NextAvailableCode] = [NextAvailableCode] + 1
+            OUTPUT DELETED.[NextAvailableCode]
+            WHERE [EligibilityCodeRangeId] = 1
+              AND [NextAvailableCode] <= [EndRange];
+            """;
+
+            var result = await command.ExecuteScalarAsync();
+
+            if (result is null || result is DBNull)
+            {
+                throw new InvalidOperationException(
+                    "Eligibility Code unavailable.");
+            }
+
+            return Convert
+                .ToInt64(result, CultureInfo.InvariantCulture)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+        finally
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private async Task<string> GetEligibilityCodeForNonSqlServerProvider()
+    {
+        var range = await _db.EligibilityCodeRanges
+            .SingleAsync(x => x.EligibilityCodeRangeId == 1);
+
+        if (range.NextAvailableCode > range.EndRange)
+        {
+            throw new InvalidOperationException(
+                "Eligibility Code unavailable.");
+        }
+
+        var code = range.NextAvailableCode;
+        range.NextAvailableCode++;
+
+        await _db.SaveChangesAsync();
+
+        return code.ToString(CultureInfo.InvariantCulture);
     }
 
 
