@@ -77,6 +77,7 @@ public class EligibilityCheckDataResponseMapperTests
             NationalInsuranceNumber = "AB123456C",
             DateOfBirth = "1980-01-01",
             ClientIdentifier = "CLIENT1",
+            Order = 7,
             EligibilityEndDate = "2025-12-31",
             EmailAddress = "test@test.com"
         };
@@ -95,6 +96,7 @@ public class EligibilityCheckDataResponseMapperTests
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("SMITH");
         result.ClientIdentifier.Should().Be("CLIENT1");
+        result.Order.Should().Be(7);
         result.EmailAddress.Should().Be("test@test.com");
     }
 
@@ -111,7 +113,8 @@ public class EligibilityCheckDataResponseMapperTests
             DiscretionaryValidityStartDate = "2024-12-31",
             ValidityEndDate = "2025-12-31",
             GracePeriodEndDate = "2026-03-31",
-            DateOfBirth = "1980-01-01"
+            DateOfBirth = "1980-01-01",
+            Order = 8
         };
 
         var check = new EligibilityCheck
@@ -130,6 +133,7 @@ public class EligibilityCheckDataResponseMapperTests
         result.DiscretionaryValidityStartDate.Should().Be(dvsd);
         result.ValidityEndDate.Should().Be("2025-12-31");
         result.GracePeriodEndDate.Should().Be("2026-03-31");
+        result.Order.Should().Be(8);
     }
 
     [Test]

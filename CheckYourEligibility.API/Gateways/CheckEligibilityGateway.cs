@@ -218,6 +218,7 @@ public class CheckEligibilityGateway : ICheckEligibility
 
                                 CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                                 hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                                hashCheckData.Order = checkData.Order;
                                 hashCheckData.FirstName = checkData.FirstName;
                                 hashCheckData.ChildFirstName = checkData.ChildFirstName;
                                 hashCheckData.ChildLastName = checkData.ChildLastName;
@@ -255,6 +256,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                         {
                             CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                             hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
+                            hashCheckData.Order = checkData.Order;
                             hashCheckData.FirstName = checkData.FirstName;
                             hashCheckData.ChildFirstName = checkData.ChildFirstName;
                             hashCheckData.ChildLastName = checkData.ChildLastName;
