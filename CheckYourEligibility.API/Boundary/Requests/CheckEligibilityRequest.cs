@@ -93,6 +93,7 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
+    public int? Order { get; set; }
 }
 
 public class CheckEligibilityRequestBulk
@@ -126,6 +127,7 @@ public class CheckEligibilityRequestWorkingFamiliesBulkData : CheckEligibilityRe
     public string? ClientIdentifier { get; set; }
     public string? Filename { get; set; }
     public string? SubmittedBy { get; set; }
+    public int? Order { get; set; }
 }
 
 #endregion
