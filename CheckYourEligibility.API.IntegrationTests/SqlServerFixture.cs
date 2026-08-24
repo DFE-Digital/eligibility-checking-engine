@@ -1,4 +1,5 @@
-﻿using CheckYourEligibility.API.Infrastructure;
+﻿using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using CheckYourEligibility.API.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.MsSql;
 
@@ -21,8 +22,7 @@ public sealed class SqlServerFixture
 
     internal static long InitialNextAvailableCode { get; private set; }
 
-    internal static byte[] InitialRowVersion { get; private set; } =
-        Array.Empty<byte>();
+    internal static EligibilityCodeType InitialRangeName { get; private set; }
 
     [OneTimeSetUp]
     public async Task StartSqlServer()
@@ -49,7 +49,7 @@ public sealed class SqlServerFixture
         InitialRangeEnd = initialRange.EndRange;
         InitialNextAvailableCode =
             initialRange.NextAvailableCode;
-        InitialRowVersion = initialRange.RowVersion;
+        InitialRangeName = initialRange.Name;
     }
 
     [OneTimeTearDown]

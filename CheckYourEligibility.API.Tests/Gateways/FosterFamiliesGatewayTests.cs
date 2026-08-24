@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -37,10 +38,10 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await context.EligibilityCodeRanges.AddAsync(new EligibilityCodeRange
         {
             EligibilityCodeRangeId = 1,
+            Name = EligibilityCodeType.Foster,
             StartRange = 40000000001,
             EndRange = 49999999999,
-            NextAvailableCode = 40000000001,
-            RowVersion = [1]
+            NextAvailableCode = 40000000001
         });
 
         await context.SaveChangesAsync();

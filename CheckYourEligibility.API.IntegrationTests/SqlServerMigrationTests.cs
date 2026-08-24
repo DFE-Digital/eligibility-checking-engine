@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using FluentAssertions;
 
 namespace CheckYourEligibility.API.IntegrationTests;
 
@@ -17,7 +18,7 @@ public sealed class SqlServerMigrationTests
         SqlServerFixture.InitialNextAvailableCode
             .Should().Be(40000000001);
 
-        SqlServerFixture.InitialRowVersion
-            .Should().NotBeNullOrEmpty();
+        SqlServerFixture.InitialRangeName
+            .Should().Be(EligibilityCodeType.Foster);
     }
 }

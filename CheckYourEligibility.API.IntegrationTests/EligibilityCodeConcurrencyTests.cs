@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,7 +18,7 @@ public sealed class EligibilityCodeConcurrencyTests
         await using var context = SqlServerFixture.CreateContext();
 
         await context.EligibilityCodeRanges
-            .Where(range => range.EligibilityCodeRangeId == 1)
+            .Where(range => range.Name == EligibilityCodeType.Foster)
             .ExecuteUpdateAsync(update => update
                 .SetProperty(
                     range => range.NextAvailableCode,
@@ -157,7 +158,7 @@ public sealed class EligibilityCodeConcurrencyTests
         });
 
         var range = await assertionContext.EligibilityCodeRanges
-            .SingleAsync(item => item.EligibilityCodeRangeId == 1);
+            .SingleAsync(item => item.Name == EligibilityCodeType.Foster);
 
         range.NextAvailableCode
             .Should().Be(RangeStart + creationCount);

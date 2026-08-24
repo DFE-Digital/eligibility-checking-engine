@@ -378,8 +378,13 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
             .HasDefaultValue(3);
 
         modelBuilder.Entity<EligibilityCodeRange>()
-            .Property(e => e.RowVersion)
-            .IsRowVersion();
+            .Property(e => e.Name)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<EligibilityCodeRange>()
+            .HasIndex(e => e.Name)
+            .IsUnique();
 
         var builder = modelBuilder.Entity<RateLimitEvent>().HasIndex(re => new { re.PartitionName, re.TimeStamp }, "idx_RateLimitEvent_PartitionName_TimeStamp");
         Expression<Func<RateLimitEvent, object?>> expr = re => new { re.QuerySize };

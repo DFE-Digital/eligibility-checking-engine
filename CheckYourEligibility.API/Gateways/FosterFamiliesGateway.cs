@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
@@ -579,11 +580,13 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     public async Task<string> GetEligibilityCodeForFosterChild()
     {
+        const EligibilityCodeType rangeName = EligibilityCodeType.Foster;
+
         // Existing fast unit tests use EF's InMemory provider, which cannot
         // execute SQL Server-specific commands.
         if (!_db.Database.IsSqlServer())
         {
-            return await GetEligibilityCodeForNonSqlServerProvider();
+            return await GetEligibilityCodeForNonSqlServerProvider(rangeName);
         }
 
         var connection = _db.Database.GetDbConnection();
@@ -599,6 +602,11 @@ public class FosterFamiliesGateway : IFosterFamilies
 
             await using var command = connection.CreateCommand();
 
+            var rangeNameParameter = command.CreateParameter();
+            rangeNameParameter.ParameterName = "@rangeName";
+            rangeNameParameter.Value = rangeName.ToString();
+            command.Parameters.Add(rangeNameParameter);
+
             command.CommandText =
                 """
             SET NOCOUNT ON;
@@ -606,7 +614,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             UPDATE [EligibilityCodeRanges]
             SET [NextAvailableCode] = [NextAvailableCode] + 1
             OUTPUT DELETED.[NextAvailableCode]
-            WHERE [EligibilityCodeRangeId] = 1
+            WHERE [Name] = @rangeName
               AND [NextAvailableCode] <= [EndRange];
             """;
 
@@ -631,10 +639,11 @@ public class FosterFamiliesGateway : IFosterFamilies
         }
     }
 
-    private async Task<string> GetEligibilityCodeForNonSqlServerProvider()
+    private async Task<string> GetEligibilityCodeForNonSqlServerProvider(
+        EligibilityCodeType rangeName)
     {
         var range = await _db.EligibilityCodeRanges
-            .SingleAsync(x => x.EligibilityCodeRangeId == 1);
+            .SingleAsync(x => x.Name == rangeName);
 
         if (range.NextAvailableCode > range.EndRange)
         {
