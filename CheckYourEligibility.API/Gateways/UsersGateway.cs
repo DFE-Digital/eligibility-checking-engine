@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -141,6 +142,12 @@ public class UsersGateway : IUsers
 
     public async Task<IList<UserRole>> GetUserRoles(string userId)
     {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+        
         return await _db.UserRoles
             .Where(x => x.UserId == userId)
             .OrderBy(x => x.RoleName)
@@ -149,6 +156,12 @@ public class UsersGateway : IUsers
 
     public async Task<UserRole> AddUserRole(string userId, UserRoleName roleName)
     {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+
         var existingRole = await _db.UserRoles
             .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleName == roleName);
 
@@ -168,6 +181,12 @@ public class UsersGateway : IUsers
 
     public async Task<bool> RemoveUserRole(string userId, UserRoleName roleName)
     {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+
         var role = await _db.UserRoles.FirstOrDefaultAsync(x => x.UserId == userId && x.RoleName == roleName);
 
         if (role == null) { return false; }

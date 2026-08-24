@@ -119,6 +119,14 @@ public class UserController : BaseController
             });
         }
 
+        if(!Guid.TryParse(userId, out _))
+        {
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = $"User ID '{userId}' is not a valid GUID." }]
+            });
+        }
+
         var response = await _addUserRoleUseCase.Execute(userId, roleName);
 
         return new ObjectResult(response)
