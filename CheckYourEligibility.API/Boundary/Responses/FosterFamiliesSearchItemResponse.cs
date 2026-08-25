@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+
 public class FosterFamiliesSearchItemResponse
 {
     public string ChildName { get; set; } = string.Empty;
@@ -15,5 +18,8 @@ public class FosterFamiliesSearchItemResponse
 
     public DateTime GracePeriodEnds { get; set; }
 
-    public string ReconfirmationStatus { get; set; } = string.Empty;
+    [JsonIgnore]
+    public DateTime? ValidityEndDate { get; set; }
+
+    public string ReconfirmationStatus { get; set; }
 }
