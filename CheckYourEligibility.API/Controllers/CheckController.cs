@@ -1,11 +1,13 @@
 using System.Net;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses.Internal;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Extensions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
+using CheckYourEligibility.Core.UseCases.Internal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
@@ -22,6 +24,7 @@ public class CheckController : BaseController
     private readonly ICheckEligibilityUseCase _checkEligibilityUseCase;
     private readonly IGetEligibilityCheckItemUseCase _getEligibilityCheckItemUseCase;
     private readonly IGetEligibilityCheckStatusUseCase _getEligibilityCheckStatusUseCase;
+    private readonly IGetCheckWorkingFamiliesUseCase _getCheckWorkingFamiliesUseCase;
     private readonly ILogger<CheckController> _logger;
 
     public CheckController(
@@ -29,12 +32,13 @@ public class CheckController : BaseController
         IAudit audit,
         ICheckEligibilityUseCase checkEligibilityUseCase,
         IGetEligibilityCheckStatusUseCase getEligibilityCheckStatusUseCase,
-        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase
+        IGetEligibilityCheckItemUseCase getEligibilityCheckItemUseCase,
+        IGetCheckWorkingFamiliesUseCase getCheckWorkingFamiliesUseCase
     )
         : base(audit)
     {
         _logger = logger;
-        
+        _getCheckWorkingFamiliesUseCase = getCheckWorkingFamiliesUseCase;
         _checkEligibilityUseCase = checkEligibilityUseCase;
         _getEligibilityCheckStatusUseCase = getEligibilityCheckStatusUseCase;
         _getEligibilityCheckItemUseCase = getEligibilityCheckItemUseCase;
@@ -143,7 +147,7 @@ public class CheckController : BaseController
     }
 
     /// <summary>
-    /// Posts a WF Eligibility Check to the processing queue
+    /// Posts a WF Eligibility Check to the processing queue from the enduser API
     /// </summary>
     /// <param name="model"></param>
     /// <remarks>
@@ -251,7 +255,7 @@ public class CheckController : BaseController
     /// </summary>
     /// <param name="guid"></param>
     /// <returns></returns>
-    [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse<CheckEligibilityItemBase>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/check/{guid}")]
@@ -280,12 +284,46 @@ public class CheckController : BaseController
     }
 
     /// <summary>
+    ///    Check done from Internal systems - Gets Working families check using the supplied GUID
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse<CheckEligibilityWorkingFamiliesItem>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpGet("/internal/check/working-families/{guid}")]
+    [Authorize(Policy = PolicyNames.RequireCheckScope)]
+    [Authorize(Policy = PolicyNames.RequireChildCareAdminSource)]
+    public async Task<ActionResult> InternalWorkingFamiliesEligibilityCheck(string guid)
+    {
+        try
+        {
+            var result = await _getCheckWorkingFamiliesUseCase.Execute(guid, DateTime.UtcNow);
+            return new ObjectResult(result) { StatusCode = StatusCodes.Status200OK };
+        }
+
+        catch (NotFoundException)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = guid }] });
+        }
+
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+        }
+    }
+
+    /// <summary>
     ///     Gets an Eligibility check of the given type using the supplied GUID
     /// </summary>
     /// <param name="guid"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    [ProducesResponseType(typeof(CheckEligibilityItemResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(CheckEligibilityItemResponse<CheckEligibilityItemBase>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/check/{type}/{guid}")]

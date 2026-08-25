@@ -1,5 +1,6 @@
 ﻿using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 
@@ -27,37 +28,34 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
     }
 
     public async Task<BulkCheckSummaryResponse> Execute(
-    Guid bulkCheckId,
-    IList<int> allowedLocalAuthorityIds,
-    CheckMetaData meta)
+        Guid bulkCheckId,
+        IList<int> allowedLocalAuthorityIds,
+        CheckMetaData meta)
     {
-        var bulkCheck = await _bulkCheckGateway.GetBulkCheck(bulkCheckId.ToString());
+        var bulkCheck = await _bulkCheckGateway.GetBulkCheck(bulkCheckId.ToString())
+            ?? throw new NotFoundException();
 
-        if (bulkCheck == null)
-        {
-            throw new NotFoundException();
-        }
+        var hasAccess =
+            allowedLocalAuthorityIds.Contains(0) ||
+            (bulkCheck.LocalAuthorityID.HasValue &&
+             allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value));
 
-        if (!allowedLocalAuthorityIds.Contains(0) &&
-            (bulkCheck.LocalAuthorityID == null ||
-             !allowedLocalAuthorityIds.Contains(bulkCheck.LocalAuthorityID.Value)))
+        if (!hasAccess)
         {
             _logger.LogWarning(
-                $"User attempted to access bulk check {bulkCheckId} belonging to local authority {bulkCheck.LocalAuthorityID} without permission");
+                "User attempted to access bulk check {BulkCheckId} belonging to local authority {LocalAuthorityId} without permission",
+                bulkCheckId,
+                bulkCheck.LocalAuthorityID);
 
             throw new UnauthorizedAccessException(
                 $"You do not have permission to access bulk check {bulkCheckId}");
         }
 
-        var results = await _bulkCheckGateway
-            .GetBulkCheckResults<IList<CheckEligibilityItem>>(bulkCheckId.ToString());
+        var results = await _bulkCheckGateway.GetBulkCheckResults(bulkCheckId.ToString());
 
         var outcomes = results
-            .GroupBy(result =>
-                string.IsNullOrWhiteSpace(result.Tier)
-                    ? result.Status
-                    : $"{result.Status}-{result.Tier}".ToLower())
-            .ToDictionary(group => group.Key, group => group.Count());
+            .GroupBy(GetOutcomeKey)
+            .ToDictionary(g => g.Key, g => g.Count());
 
         return new BulkCheckSummaryResponse
         {
@@ -67,5 +65,12 @@ public class GetBulkCheckSummaryUseCase : IGetBulkCheckSummaryUseCase
             SubmittedBy = bulkCheck.SubmittedBy,
             Outcomes = outcomes
         };
+    }
+
+    private static string GetOutcomeKey(EligibilityCheck result)
+    {
+        return result.Tier == null
+            ? result.Status.ToString().ToLowerInvariant()
+            : $"{result.Status}-{result.Tier}".ToLowerInvariant();
     }
 }

@@ -11,6 +11,7 @@ public class WorkingFamilyEventByEligibilityCodeResponseItem
 { 
     
     public WorkingFamilyEventType Event  { get; set; }
+    public string EventName { get; set; }
     public WorkingFamiliesEventEligibilityCodeResponseRecord Record { get; set; }
 }
 

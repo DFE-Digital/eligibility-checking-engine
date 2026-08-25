@@ -352,34 +352,14 @@ public class CheckEligibilityGatewayTests : TestBase
         var request = _fixture.Create<Guid>().ToString();
 
         // Act
-        var response = _sut.GetItem<CheckEligibilityItem>(request, CheckEligibilityType.None);
+        var response = _sut.GetItem(request);
 
         // Assert
         response.Result.Should().BeNull();
     }
 
     [Test]
-    public async Task Given_ValidRequest_DiffType_GetItem_Should_Return_null()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        item.Type = CheckEligibilityType.FreeSchoolMeals;
-        var type = CheckEligibilityType.TwoYearOffer;
-        var check = _fixture.Create<CheckEligibilityRequestData>();
-        check.DateOfBirth = "1990-01-01";
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
-
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
-        // Assert
-        response.Should().BeNull();
-    }
-
-    [Test]
-    public async Task Given_FSM_ValidRequest_GetItem_Should_Return_Item()
+    public async Task Given_ValidRequest_GetItem_Should_Return_Item()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -395,84 +375,18 @@ public class CheckEligibilityGatewayTests : TestBase
         check.ChildDateOfBirth = "2016-04-12";
         check.ChildSchoolURN = "123456";
         string eligibilityEndDate = (new DateTime(DateTime.UtcNow.Year, 07, 31)).ToString("yyyy-MM-dd");
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check, eligibilityEndDate));
+        var checkData = JsonConvert.SerializeObject(GetCheckProcessData(check, eligibilityEndDate));
+        item.CheckData = checkData;
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
+        var response = await _sut.GetItem(item.EligibilityCheckID);
         // Assert
-        response.Should().BeOfType<CheckEligibilityItem>();
-        response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
-        response.NationalAsylumSeekerServiceNumber.Should().BeEquivalentTo(check.NationalAsylumSeekerServiceNumber);
-        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
-        response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
-        response.EligibilityEndDate.Should().BeEquivalentTo(eligibilityEndDate);
-        response.FirstName.Should().BeEquivalentTo(check.FirstName);
-        response.ChildFirstName.Should().BeEquivalentTo(check.ChildFirstName);
-        response.ChildLastName.Should().BeEquivalentTo(check.ChildLastName);
-        response.ChildDateOfBirth.Should().BeEquivalentTo(check.ChildDateOfBirth);
-        response.ChildSchoolURN.Should().BeEquivalentTo(check.ChildSchoolURN);
+        response.Should().BeOfType<EligibilityCheck>();
+        response.CheckData.Should().Be(checkData);
     }
-
-    [Test]
-    public async Task Given_ValidRequest_SameType_GetItem_Should_Return_Item()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        var type = CheckEligibilityType.FreeSchoolMeals; // Use FSM instead of random type
-        item.Type = type;
-        item.Status = CheckEligibilityStatus.queuedForProcessing;// ensure it is not a 'deleted' status.
-        // Set navigation properties to null to avoid creating additional entities
-        item.EligibilityCheckHash = null;
-        item.EligibilityCheckHashID = null;
-        item.BulkCheck = null;
-
-        var check = _fixture.Create<CheckEligibilityRequestData>();
-        check.DateOfBirth = "1990-01-01";
-        check.Type = type; // Ensure both have the same type
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
-
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, type);
-        // Assert
-        response.Should().BeOfType<CheckEligibilityItem>();
-        response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
-        response.NationalAsylumSeekerServiceNumber.Should().BeEquivalentTo(check.NationalAsylumSeekerServiceNumber);
-        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
-        response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
-    }
-
-    [Test]
-    public async Task Given_ValidRequest_GetItem_Should_Return_Working_Families_Item()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        item.Type = CheckEligibilityType.WorkingFamilies;
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
-        var check = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
-        check.LastName = "simpson";
-        item.CheckData = JsonConvert.SerializeObject(GetCheckProcessData(check));
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-        await _fakeInMemoryDb.SaveChangesAsync();
-
-        // Act
-        var response = await _sut.GetItem<CheckEligibilityItem>(item.EligibilityCheckID, CheckEligibilityType.None);
-        // Assert
-        response.Should().BeOfType<CheckEligibilityItem>();
-        response.EligibilityCode.Should().BeEquivalentTo(check.EligibilityCode);
-        response.ValidityStartDate.Should().BeEquivalentTo(check.ValidityStartDate);
-        response.ValidityEndDate.Should().BeEquivalentTo(check.ValidityEndDate);
-        response.GracePeriodEndDate.Should().BeEquivalentTo(check.GracePeriodEndDate);
-        response.LastName.Should().BeEquivalentTo(check.LastName.ToUpper());
-        response.NationalInsuranceNumber.Should().BeEquivalentTo(check.NationalInsuranceNumber);
-        response.DateOfBirth.Should().BeEquivalentTo(check.DateOfBirth);
-    }
-
     [Test]
     public void Given_InValidRequest_UpdateEligibilityCheckStatus_Should_Return_null()
     {

@@ -46,7 +46,6 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
 
             WorkingFamiliesEventEligibilityCodeResponseRecord? previous = null;
 
-            // check if each record is a reconfirm or application event
             foreach (var current in records)
             {
                 bool isReconfirm =
@@ -65,11 +64,28 @@ public class WorkingFamiliesReportingGateway : IWorkingFamiliesReporting
                 previous = _mapper.Map<WorkingFamiliesEventEligibilityCodeResponseRecord>(current);
             }
 
+            var orderedResult = result
+                .OrderByDescending(x => x.Record.SubmissionDate)
+                .ToList();
+
+            var reconfirmationNumber = 1;
+
+            for (int i = orderedResult.Count - 1; i >= 0; i--)
+            {
+                if (orderedResult[i].Event == WorkingFamilyEventType.Application)
+                {
+                    orderedResult[i].EventName = "Application";
+                }
+                else
+                {
+                    orderedResult[i].EventName =
+                        $"Reconfirmation {reconfirmationNumber++}";
+                }
+            }
+
             return new WorkingFamilyEventByEligibilityCodeResponse
             {
-                Data = result
-                    .OrderByDescending(x => x.Record.SubmissionDate)
-                    .ToList()
+                Data = orderedResult
             };
         }
         catch (Exception ex)

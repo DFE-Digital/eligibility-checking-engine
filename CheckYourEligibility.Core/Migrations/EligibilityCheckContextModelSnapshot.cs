@@ -993,6 +993,33 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("EligibilityCheckReportItem");
                 });
 
+            modelBuilder.Entity("EligibilityCodeRange", b =>
+                {
+                    b.Property<int>("EligibilityCodeRangeId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("EndRange")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<long>("NextAvailableCode")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StartRange")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("EligibilityCodeRangeId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("EligibilityCodeRanges");
+                });
+
             modelBuilder.Entity("FosterCarer", b =>
                 {
                     b.Property<Guid>("FosterCarerId")
@@ -1096,7 +1123,8 @@ namespace CheckYourEligibility.Core.Migrations
 
                     b.HasKey("FosterChildId");
 
-                    b.HasIndex("EligibilityCode");
+                    b.HasIndex("EligibilityCode")
+                        .IsUnique();
 
                     b.HasIndex("FosterCarerId");
 

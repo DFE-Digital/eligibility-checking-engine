@@ -2,6 +2,7 @@
 
 public static class CheckLinks
 {
+    public const string InternalWorkingFamiliesGetLink = "/internal/check/working-families/";
     public const string GetLink = "/check/";
     public const string ProcessLink = "/engine/process/";
     public const string Status = "/status/";
@@ -9,6 +10,7 @@ public static class CheckLinks
     public const string BulkCheckLink = "/bulk-check/";
     public const string BulkCheckProgress = "/progress";
     public const string BulkCheckResults = "/";
+
 }
 
 public static class ApplicationLinks

@@ -84,16 +84,16 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster family not found", Detail = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status404NotFound, Title = "Foster family not found", Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting foster family");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -117,20 +117,20 @@ public class FosterFamilyController : BaseController
         }
         catch (ArgumentNullException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster family");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -153,20 +153,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status404NotFound, Title = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating foster carer");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -189,20 +189,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = StatusCodes.Status404NotFound, }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster carer");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -225,20 +225,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = ex.Message, Status = StatusCodes.Status404NotFound, }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster partner");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -271,17 +271,17 @@ public class FosterFamilyController : BaseController
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching foster families");
 
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -305,16 +305,16 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting foster child");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -338,24 +338,24 @@ public class FosterFamilyController : BaseController
         }
         catch (ArgumentNullException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster carer not found", Detail = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster carer not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster child");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -379,20 +379,20 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
         }
         catch (FluentValidation.ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating foster child");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -415,16 +415,16 @@ public class FosterFamilyController : BaseController
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Detail = ex.Message }] });
+            return NotFound(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status404NotFound, Title = "Foster child not found", Detail = ex.Message }] });
         }
         catch (ValidationException ex)
         {
-            return BadRequest(new ErrorResponse { Errors = ex.Errors });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting foster child");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 

@@ -148,10 +148,10 @@ public class CreateFosterChildUseCaseTests
         var expected = new FosterChildCreatedResponse
         {
             ChildName = "Child One",
-            EligiblityCode = "X1",
+            EligibilityCode = "X1",
             Status = "Active",
-            EligibilityConfirmed = DateTime.UtcNow.ToString(),
-            GracePeriodEndDate = DateTime.UtcNow.ToString()
+            EligibilityConfirmed = DateTime.UtcNow,
+            GracePeriodEndDate = DateTime.UtcNow
         };
 
         _mockGateway
@@ -190,7 +190,7 @@ public class CreateFosterChildUseCaseTests
         var expected = new FosterChildCreatedResponse
         {
             ChildName = "Child One",
-            EligiblityCode = "X1",
+            EligibilityCode = "X1",
             Status = "Active"
         };
 

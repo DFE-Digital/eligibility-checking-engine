@@ -41,7 +41,7 @@ Postman collection below automates this.
 ## How to run tests
 
 There are two types of tests in this repository - .NET NUnit for unit tests and Cypress for integration and e2e tests. Cypress needs a
-running application responding to http calls.
+See the [integration testing guide](docs/integration-testing-guide.md) for guidance on choosing and adding SQL-backed integration tests.
 
 ### .NET
 

@@ -2,6 +2,7 @@
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
 
 namespace CheckYourEligibility.Core.Gateways.Interfaces;
 
@@ -9,8 +10,7 @@ public interface ICheckEligibility
 {
     Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType;
     Task PostCheck<T>(T data, string bulkCheckId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>;
-    Task<T?> GetItem<T>(string guid, CheckEligibilityType type, bool isBatchRecord = false)
-        where T : CheckEligibilityItem;
+    Task<EligibilityCheck> GetItem(string guid);
 
     Task<(CheckEligibilityStatus?, EligibilityTier?, string?)> GetStatusAsync(
         string guid,

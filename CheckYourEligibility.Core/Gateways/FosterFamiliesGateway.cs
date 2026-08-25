@@ -2,10 +2,13 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Database;
 using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Globalization;
 
 namespace CheckYourEligibility.Core.Gateways;
 
@@ -105,6 +108,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             );
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
         var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
@@ -112,9 +117,10 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         try
         {
-            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request);
+            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
 
             fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
+            fosterChild.EligibilityCode = eligibilityCode;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
@@ -132,11 +138,11 @@ public class FosterFamiliesGateway : IFosterFamilies
             {
                 FosterCarerId = fosterCarer.FosterCarerId,
                 ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-                EligiblityCode = workingEvent.EligibilityCode,
+                EligibilityCode = workingEvent.EligibilityCode,
                 Status = fosterChild.Status,
-                EligibilityConfirmed = request.SubmissionDate.ToString(),
-                ReconfirmBetween = "This still need doing",
-                GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
+                EligibilityConfirmed = request.SubmissionDate,
+                ReconfirmBetween = "",
+                GracePeriodEndDate = workingEvent.GracePeriodEndDate,
             };
         }
         catch (Exception ex)
@@ -428,11 +434,14 @@ public class FosterFamiliesGateway : IFosterFamilies
                 $"Foster carer {fosterCarerId} not found");
         }
 
+        string eligibilityCode = await GetEligibilityCodeForFosterChild();
+
         // build domain model from request
         var fosterChild = BuildFosterChild(request, DateTime.UtcNow, fosterCarerId);
 
         // link child to current foster carer
         fosterChild.FosterCarerId = fosterCarer.FosterCarerId;
+        fosterChild.EligibilityCode = eligibilityCode;
 
         // Create new wf event
         var workingEvent =
@@ -447,7 +456,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                   },
                   FosterChild = request,
                   SubmissionDate = submissionDate
-              });
+              }, eligibilityCode);
 
         fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
         fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
@@ -462,11 +471,11 @@ public class FosterFamiliesGateway : IFosterFamilies
         return new FosterChildCreatedResponse
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-            EligiblityCode = workingEvent.EligibilityCode,
+            EligibilityCode = workingEvent.EligibilityCode,
             Status = "",
-            EligibilityConfirmed = submissionDate.ToString(),
+            EligibilityConfirmed = submissionDate,
             ReconfirmBetween = "",
-            GracePeriodEndDate = workingEvent.GracePeriodEndDate.ToString()
+            GracePeriodEndDate = workingEvent.GracePeriodEndDate
         };
     }
 
@@ -573,6 +582,87 @@ public class FosterFamiliesGateway : IFosterFamilies
             Created = DateTime.UtcNow,
             Updated = DateTime.UtcNow
         };
+    }
+
+    public async Task<string> GetEligibilityCodeForFosterChild()
+    {
+        const EligibilityCodeType rangeName = EligibilityCodeType.Foster;
+
+        // Existing fast unit tests use EF's InMemory provider, which cannot
+        // execute SQL Server-specific commands.
+        if (!_db.Database.IsSqlServer())
+        {
+            return await GetEligibilityCodeForNonSqlServerProvider(rangeName);
+        }
+
+        var connection = _db.Database.GetDbConnection();
+        var shouldCloseConnection =
+            connection.State != ConnectionState.Open;
+
+        try
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+
+            var rangeNameParameter = command.CreateParameter();
+            rangeNameParameter.ParameterName = "@rangeName";
+            rangeNameParameter.Value = rangeName.ToString();
+            command.Parameters.Add(rangeNameParameter);
+
+            command.CommandText =
+                """
+            SET NOCOUNT ON;
+
+            UPDATE [EligibilityCodeRanges]
+            SET [NextAvailableCode] = [NextAvailableCode] + 1
+            OUTPUT DELETED.[NextAvailableCode]
+            WHERE [Name] = @rangeName
+              AND [NextAvailableCode] <= [EndRange];
+            """;
+
+            var result = await command.ExecuteScalarAsync();
+
+            if (result is null || result is DBNull)
+            {
+                throw new InvalidOperationException(
+                    "Eligibility Code unavailable.");
+            }
+
+            return Convert
+                .ToInt64(result, CultureInfo.InvariantCulture)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+        finally
+        {
+            if (shouldCloseConnection)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private async Task<string> GetEligibilityCodeForNonSqlServerProvider(
+        EligibilityCodeType rangeName)
+    {
+        var range = await _db.EligibilityCodeRanges
+            .SingleAsync(x => x.Name == rangeName);
+
+        if (range.NextAvailableCode > range.EndRange)
+        {
+            throw new InvalidOperationException(
+                "Eligibility Code unavailable.");
+        }
+
+        var code = range.NextAvailableCode;
+        range.NextAvailableCode++;
+
+        await _db.SaveChangesAsync();
+
+        return code.ToString(CultureInfo.InvariantCulture);
     }
 
 

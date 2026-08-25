@@ -5,14 +5,14 @@ namespace CheckYourEligibility.Core.Helpers;
 
 public static class WorkingFamiliesEventHelper
 {
-    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data)
+    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data, string eligibilityCode)
     {
 
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
 
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
-            EligibilityCode = $"94{new Random().Next(100000000, 999999999)}", /// temp code
+            EligibilityCode = eligibilityCode,
             ValidityStartDate = data.SubmissionDate,
             ValidityEndDate = data.SubmissionDate.AddMonths(3),
 

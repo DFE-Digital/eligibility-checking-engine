@@ -1,14 +1,14 @@
-﻿using CheckYourEligibility.Core.Adapters;
+﻿using CheckYourEligibility.API.Filters;
+using CheckYourEligibility.Core.Adapters;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using CheckYourEligibility.API.Filters;
-using CheckYourEligibility.Core.Extensions;
 namespace CheckYourEligibility.API;
 
 [ExcludeFromCodeCoverage(Justification = "extension of program")]
@@ -197,6 +197,17 @@ public static class ProgramExtensions
                     return string.Equals(
                         checkSourceAndUserName.Item1,
                         "free-school-meals-admin",
+                        StringComparison.OrdinalIgnoreCase);
+                }));
+
+            options.AddPolicy(PolicyNames.RequireChildCareAdminSource, policy =>
+                policy.RequireAssertion(context =>
+                {
+                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+
+                    return string.Equals(
+                        checkSourceAndUserName.Item1,
+                        "childcare-admin",
                         StringComparison.OrdinalIgnoreCase);
                 }));
         });

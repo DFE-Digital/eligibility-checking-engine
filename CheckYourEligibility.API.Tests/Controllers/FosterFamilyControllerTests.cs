@@ -387,7 +387,7 @@ public class FosterFamilyControllerTests : TestBase
         errorResponse.Should().NotBeNull();
 
         errorResponse!.Errors.First().Title
-            .Should().Be("Invalid foster child id");
+            .Should().Be("Validation failed");
     }
 
     [Test]
@@ -409,7 +409,7 @@ public class FosterFamilyControllerTests : TestBase
         var response = new FosterChildCreatedResponse
         {
             ChildName = "Tom Smith",
-            EligiblityCode = "ABC123",
+            EligibilityCode = "ABC123",
             Status = "Active"
         };
 

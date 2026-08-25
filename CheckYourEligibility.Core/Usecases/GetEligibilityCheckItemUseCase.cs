@@ -3,6 +3,7 @@ using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Services;
 
 namespace CheckYourEligibility.Core.UseCases;
 
@@ -12,44 +13,52 @@ namespace CheckYourEligibility.Core.UseCases;
 public interface IGetEligibilityCheckItemUseCase
 {
     /// <summary>
-    ///     Execute the use case
+    ///     Execute the use case for client side API
     /// </summary>
     /// <param name="guid">The ID of the eligibility check</param>
     /// <param name="type">The type of the eligibility check being retrieved (Optional)</param> 
     /// <returns>Eligibility check item details</returns>
-    Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type);
+    Task<CheckEligibilityItemResponse<CheckEligibilityItemBase>> Execute(string guid, CheckEligibilityType type);
 }
 
 public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
 {
-    private readonly IAudit _auditGateway;
-    private readonly ICheckEligibility _checkGateway;
+    private readonly IEligibilityCheckDataResponseMapper _getEligibilityCheckItemService;
     private readonly ILogger<GetEligibilityCheckItemUseCase> _logger;
+    private readonly ICheckEligibility _checkGateway;
 
     public GetEligibilityCheckItemUseCase(
-        ICheckEligibility checkGateway,
-        IAudit auditGateway,
-        ILogger<GetEligibilityCheckItemUseCase> logger)
+        IEligibilityCheckDataResponseMapper getEligibilityCheckItemService, ILogger<GetEligibilityCheckItemUseCase> logger, ICheckEligibility checkGateway)
     {
-        _checkGateway = checkGateway;
-        _auditGateway = auditGateway;
+
+        _getEligibilityCheckItemService = getEligibilityCheckItemService;
         _logger = logger;
+        _checkGateway = checkGateway;
+
     }
 
-    public async Task<CheckEligibilityItemResponse> Execute(string guid, CheckEligibilityType type)
+    public async Task<CheckEligibilityItemResponse<CheckEligibilityItemBase>> Execute(string guid, CheckEligibilityType type)
     {
+      
         if (string.IsNullOrEmpty(guid)) throw new ValidationException(null, "Invalid Request, check ID is required.");
 
-        var response = await _checkGateway.GetItem<CheckEligibilityItem>(guid, type);
-        if (response == null)
+
+        var result = await _checkGateway.GetItem(guid);
+
+        // if result is not found 
+        // if method is not called from /check/{guid} or the found result is of different type
+        // return not found
+        if (result == null || (type != CheckEligibilityType.None && result.Type != type))
         {
             _logger.LogWarning(
-                $"Eligibility check with ID {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found");
+              "Eligibility check with ID {Guid} not found", guid);
             throw new NotFoundException(guid);
         }
 
         _logger.LogInformation(
-            $"Retrieved eligibility check details for ID: {guid.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")}");
+            "Retrieved eligibility check details for ID: {Guid}", guid);
+
+        var response = _getEligibilityCheckItemService.MapCheckDataToResponse(result);
 
         string typeUrl = "";
         if (type != CheckEligibilityType.None)
@@ -57,7 +66,7 @@ public class GetEligibilityCheckItemUseCase : IGetEligibilityCheckItemUseCase
             typeUrl = $"{type}/";
         }
 
-        return new CheckEligibilityItemResponse
+        return new CheckEligibilityItemResponse<CheckEligibilityItemBase>
         {
             Data = response,
             Links = new CheckEligibilityResponseLinks

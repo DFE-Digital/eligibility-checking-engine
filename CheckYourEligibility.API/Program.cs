@@ -1,14 +1,15 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.Json.Serialization;
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using CheckYourEligibility.API;
-using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.API.Telemetry;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Data.Mappings;
+using CheckYourEligibility.Core.Domain.Middleware;
 using CheckYourEligibility.Core.Extensions;
+using CheckYourEligibility.Core.Services;
 using CheckYourEligibility.Core.UseCases;
+using CheckYourEligibility.Core.UseCases.Internal;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -19,8 +20,9 @@ using Notify.Client;
 using Notify.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using CheckYourEligibility.Core.Data.Mappings;
-using CheckYourEligibility.Core.Domain.Middleware;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-GB");
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-GB");
@@ -210,6 +212,9 @@ builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
 builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
 builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
+builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
+
+builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 

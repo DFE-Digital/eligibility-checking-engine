@@ -9,6 +9,7 @@ using CheckYourEligibility.Core.UseCases;
 using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace CheckYourEligibility.API.Controllers;
 

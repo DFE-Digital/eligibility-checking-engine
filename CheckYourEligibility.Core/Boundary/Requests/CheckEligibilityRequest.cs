@@ -9,11 +9,16 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
     private string? nationalInsuranceNumber;
+    private string? lastName;
     //public int? Sequence { get; set; }
 
     public string? DateOfBirth { get; set; }
     public string? FirstName { get; set; }
-    public string? LastName { get; set; }
+    public string? LastName
+    {
+        get => lastName;
+        set => lastName = value == null ? null : value.Trim().ToUpperInvariant();
+    }
     public string? ChildFirstName { get; set; }
     public string? ChildLastName { get; set; }
     public string? ChildDateOfBirth { get; set; }
@@ -106,6 +111,7 @@ public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityReques
 
     public string? EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
+    public string? DiscretionaryValidityStartDate { get; set; }
     public string? ValidityEndDate { get; set; }
     public string? GracePeriodEndDate { get; set; }
 }
@@ -321,7 +327,6 @@ public static class EligibilityModelFactory
     {
         if (model.Data.Type != routeType)
             model.Data.Type = routeType;
-
         return model;
     }
 }

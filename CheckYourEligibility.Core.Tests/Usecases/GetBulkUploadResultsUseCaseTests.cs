@@ -1,8 +1,10 @@
 using AutoFixture;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Services;
 using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -20,7 +22,8 @@ public class GetBulkUploadResultsUseCaseTests : TestBase
         _mockBulkCheckGateway = new Mock<IBulkCheck>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<GetBulkUploadResultsUseCase>>(MockBehavior.Loose);
-        _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _eligiblityCheckDataResponseMapper = new Mock<IEligibilityCheckDataResponseMapper>(MockBehavior.Strict);
+        _sut = new GetBulkUploadResultsUseCase(_mockBulkCheckGateway.Object, _mockAuditGateway.Object, _eligiblityCheckDataResponseMapper.Object, _mockLogger.Object);
     }
 
     [TearDown]
@@ -32,6 +35,7 @@ public class GetBulkUploadResultsUseCaseTests : TestBase
 
     private Mock<IBulkCheck> _mockBulkCheckGateway;
     private Mock<IAudit> _mockAuditGateway;
+    private Mock<IEligibilityCheckDataResponseMapper> _eligiblityCheckDataResponseMapper;
     private Mock<ILogger<GetBulkUploadResultsUseCase>> _mockLogger;
     private GetBulkUploadResultsUseCase _sut;
 
@@ -61,8 +65,8 @@ public class GetBulkUploadResultsUseCaseTests : TestBase
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
-            .ReturnsAsync((IList<CheckEligibilityItem>)null!);
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
+            .ReturnsAsync((IList<EligibilityCheck>)null!);
 
         // Act
         Func<Task> act = async () => await _sut.Execute(guid, allowedLocalAuthorityIDs);
@@ -80,40 +84,33 @@ public class GetBulkUploadResultsUseCaseTests : TestBase
         var bulkCheck = _fixture.Create<BulkCheck>();
         bulkCheck.LocalAuthorityID = 201;
         
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
+        var resultItems = _fixture.CreateMany<EligibilityCheck>().ToList();
         
         _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults(guid))
             .ReturnsAsync(resultItems);
+
+        var mappedItems = new List<CheckEligibilityItemBase>();
+
+        foreach (var item in resultItems)
+        {
+            var mappedItem = _fixture.Create<CheckEligibilityItem>();
+
+            mappedItems.Add(mappedItem);
+
+            _eligiblityCheckDataResponseMapper
+                .Setup(x => x.MapCheckDataToResponse(item))
+                .Returns(mappedItem);
+        }
+
 
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
-        result.Data.Should().BeEquivalentTo(resultItems);
-    }
-
-    [Test]
-    public async Task Execute_calls_gateway_GetBulkCheckResults_with_correct_guid()
-    {
-        // Arrange
-        var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIDs = new List<int> { 201 };
-        var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityID = 201;
-        
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
-        
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
-            .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
-            .ReturnsAsync(resultItems);
-        // Act
-        await _sut.Execute(guid, allowedLocalAuthorityIDs);
-
-        // Assert
-        _mockBulkCheckGateway.Verify(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid), Times.Once);
+        _mockBulkCheckGateway.Verify(s => s.GetBulkCheckResults(guid), Times.Once);
+        result.Data.Should().BeEquivalentTo(mappedItems);
     }
 
     [Test]
@@ -135,29 +132,45 @@ public class GetBulkUploadResultsUseCaseTests : TestBase
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage($"You do not have permission to access bulk check {guid}");
     }
-
     [Test]
     public async Task Execute_succeeds_when_user_is_admin()
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Admin access (0 means all)
+        var allowedLocalAuthorityIDs = new List<int> { 0 }; // Admin access
+
         var bulkCheck = _fixture.Create<BulkCheck>();
-        bulkCheck.LocalAuthorityID = 305; // Any local authority
-        
-        var resultItems = _fixture.CreateMany<CheckEligibilityItem>().ToList();
-        
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheck(guid))
+        bulkCheck.LocalAuthorityID = 305;
+
+        var resultItems = _fixture.CreateMany<EligibilityCheck>(3).ToList();
+
+        _mockBulkCheckGateway
+            .Setup(x => x.GetBulkCheck(guid))
             .ReturnsAsync(bulkCheck);
-        _mockBulkCheckGateway.Setup(s => s.GetBulkCheckResults<IList<CheckEligibilityItem>>(guid))
+
+        _mockBulkCheckGateway
+            .Setup(x => x.GetBulkCheckResults(guid))
             .ReturnsAsync(resultItems);
-      
+
+        var mappedItems = new List<CheckEligibilityItemBase>();
+
+        foreach (var item in resultItems)
+        {
+            var mappedItem = _fixture.Create<CheckEligibilityItem>();
+
+            mappedItems.Add(mappedItem);
+
+            _eligiblityCheckDataResponseMapper
+                .Setup(x => x.MapCheckDataToResponse(item))
+                .Returns(mappedItem);
+        }
+
         // Act
         var result = await _sut.Execute(guid, allowedLocalAuthorityIDs);
 
         // Assert
         result.Should().NotBeNull();
-        result.Data.Should().BeEquivalentTo(resultItems);
+        result.Data.Should().BeEquivalentTo(mappedItems);
     }
 
     [Test]
