@@ -150,7 +150,10 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to create or update user for client {ClientId}", credentials.client_id);
+            _logger.LogWarning(
+                ex,
+                "Failed to create or update user for client {ClientId}",
+                (credentials.client_id ?? string.Empty).Replace("\r", "").Replace("\n", ""));
             // Do not fail authentication if user creation/updating fails; proceed with token generation
         }
 
