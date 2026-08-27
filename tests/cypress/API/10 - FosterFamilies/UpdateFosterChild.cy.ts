@@ -48,6 +48,27 @@ describe("Update Foster Child - happy paths", () => {
               );
 
               expect(response.body.postCode).to.eq("AB1 2CD");
+
+              // clean up
+          cy.apiRequest(
+            "DELETE",
+            `/foster-family/${fosterCarerId}`,
+            null,
+            token,
+          ).then((deleteResponse) => {
+            expect(deleteResponse.status).to.eq(204);
+
+            // verify fam is gone.
+            cy.apiRequest(
+              "GET",
+              `/foster-family/${fosterCarerId}`,
+              null,
+              token,
+              false,
+            ).then((getResponse) => {
+              expect(getResponse.status).to.eq(404);
+            });
+          });
             });
           });
         });

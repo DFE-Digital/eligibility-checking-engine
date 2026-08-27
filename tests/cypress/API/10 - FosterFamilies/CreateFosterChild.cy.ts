@@ -3,90 +3,113 @@ import {
   validFosterFamilyRequestBody,
   validFosterChildRequestBody,
   invalidFosterChildRequestBody,
-  validLoginRequestBodyFosterFamilies
+  validLoginRequestBodyFosterFamilies,
 } from "@/cypress/support/requestBodies";
 
 describe("Create Foster Child - happy paths", () => {
   it("POST - Should create a foster child and return it in the foster family", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
-      (token) => {
-        // Create family
+    getandVerifyBearerToken(
+      "/oauth2/token",
+      validLoginRequestBodyFosterFamilies,
+    ).then((token) => {
+      // Create family
+      cy.apiRequest(
+        "POST",
+        "/foster-family?localAuthorityId=201",
+        validFosterFamilyRequestBody(),
+        token,
+      ).then((createFamilyResponse) => {
+        const fosterCarerId = createFamilyResponse.body.fosterCarerId;
+
+        // Create second child
         cy.apiRequest(
           "POST",
-          "/foster-family?localAuthorityId=201",
-          validFosterFamilyRequestBody(),
+          `/foster-family/${fosterCarerId}/child`,
+          validFosterChildRequestBody(),
           token,
-        ).then((createFamilyResponse) => {
-          const fosterCarerId = createFamilyResponse.body.fosterCarerId;
+        ).then((createChildResponse) => {
+          expect(createChildResponse.status).to.eq(201);
 
-          // Create second child
+          expect(createChildResponse.body.childName).to.eq("Sam Jones");
+
+          // Get family including children
           cy.apiRequest(
-            "POST",
-            `/foster-family/${fosterCarerId}/child`,
-            validFosterChildRequestBody(),
+            "GET",
+            `/foster-family/${fosterCarerId}?includeChildren=true`,
+            null,
             token,
-          ).then((createChildResponse) => {
-            expect(createChildResponse.status).to.eq(201);
+          ).then((familyResponse) => {
+            expect(familyResponse.status).to.eq(200);
 
-            expect(createChildResponse.body.childName).to.eq("Sam Jones");
+            expect(familyResponse.body.fosterChildren).to.be.an("array");
 
-            // Get family including children
+            const child = familyResponse.body.fosterChildren.find(
+              (x: any) =>
+                x.firstName === validFosterChildRequestBody().childFirstName &&
+                x.lastName === validFosterChildRequestBody().childLastName,
+            );
+
+            expect(child).to.exist;
+
+            // delete fam
             cy.apiRequest(
-              "GET",
-              `/foster-family/${fosterCarerId}?includeChildren=true`,
+              "DELETE",
+              `/foster-family/${fosterCarerId}`,
               null,
               token,
-            ).then((familyResponse) => {
-              expect(familyResponse.status).to.eq(200);
+            ).then((deleteResponse) => {
+              expect(deleteResponse.status).to.eq(204);
 
-              expect(familyResponse.body.fosterChildren).to.be.an("array");
-
-              const child = familyResponse.body.fosterChildren.find(
-                (x: any) =>
-                  x.firstName ===
-                    validFosterChildRequestBody().childFirstName &&
-                  x.lastName === validFosterChildRequestBody().childLastName,
-              );
-
-              expect(child).to.exist;
+              // verify fam is gone.
+              cy.apiRequest(
+                "GET",
+                `/foster-family/${fosterCarerId}`,
+                null,
+                token,
+                false,
+              ).then((getResponse) => {
+                expect(getResponse.status).to.eq(404);
+              });
             });
           });
         });
-      },
-    );
+      });
+    });
   });
 });
 
 describe("Create Foster Child - unhappy paths", () => {
   it("POST - Should return 404 when foster carer does not exist", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
-      (token) => {
-        cy.apiRequest(
-          "POST",
-          `/foster-family/${crypto.randomUUID()}/child`,
-          validFosterChildRequestBody(),
-          token,
-          false,
-        ).then((response) => {
-          expect(response.status).to.eq(404);
-        });
-      },
-    );
+    getandVerifyBearerToken(
+      "/oauth2/token",
+      validLoginRequestBodyFosterFamilies,
+    ).then((token) => {
+      cy.apiRequest(
+        "POST",
+        `/foster-family/${crypto.randomUUID()}/child`,
+        validFosterChildRequestBody(),
+        token,
+        false,
+      ).then((response) => {
+        expect(response.status).to.eq(404);
+      });
+    });
   });
 
   it("POST - Should return 400 when request is invalid", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyFosterFamilies).then(
-      (token) => {
-        cy.apiRequest(
-          "POST",
-          `/foster-family/${crypto.randomUUID()}/child`,
-          invalidFosterChildRequestBody(),
-          token,
-          false,
-        ).then((response) => {
-          expect(response.status).to.eq(400);
-        });
-      },
-    );
+    getandVerifyBearerToken(
+      "/oauth2/token",
+      validLoginRequestBodyFosterFamilies,
+    ).then((token) => {
+      cy.apiRequest(
+        "POST",
+        `/foster-family/${crypto.randomUUID()}/child`,
+        invalidFosterChildRequestBody(),
+        token,
+        false,
+      ).then((response) => {
+        expect(response.status).to.eq(400);
+      });
+    });
   });
 });
