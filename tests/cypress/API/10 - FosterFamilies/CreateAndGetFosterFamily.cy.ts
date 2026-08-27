@@ -27,7 +27,6 @@ describe("GET & POST Foster Family - Happy path", () => {
             null,
             token,
           ).then((response) => {
-            console.log(response);
             cy.verifyApiResponseCode(response, 200);
             cy.verifyFosterFamilyCreatedAndReturned(response, request);
 

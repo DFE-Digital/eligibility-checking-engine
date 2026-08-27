@@ -175,7 +175,6 @@ Cypress.Commands.add("verifyPostEligibilityBulkCheckResponse", (response) => {
 });
 
 Cypress.Commands.add("verifyBulkResults", (results, requestData) => {
-  console.log(results, requestData);
 
   expect(results.length).to.eq(requestData.length);
 

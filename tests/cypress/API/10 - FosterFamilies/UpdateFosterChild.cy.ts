@@ -37,7 +37,6 @@ describe("Update Foster Child - happy paths", () => {
               updateRequest,
               token,
             ).then((response) => {
-              console.log(familyResponse.body);
 
               expect(response.status).to.eq(200);
 
