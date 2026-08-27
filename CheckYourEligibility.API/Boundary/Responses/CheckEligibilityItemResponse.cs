@@ -11,6 +11,7 @@ public class CheckEligibilityItemBase
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string LastName { get; set; }
     public DateTime Created { get; set; }
+    public int? Order { get; set; }
 }
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
