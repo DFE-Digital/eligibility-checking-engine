@@ -15,7 +15,7 @@ describe("Create Foster Child - happy paths", () => {
       // Create family
       cy.apiRequest(
         "POST",
-        "/foster-family?localAuthorityId=201",
+        "/foster-family",
         validFosterFamilyRequestBody(),
         token,
       ).then((createFamilyResponse) => {

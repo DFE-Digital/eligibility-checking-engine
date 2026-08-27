@@ -63,7 +63,7 @@ describe("Get Foster Child - happy paths", () => {
     ).then((token) => {
       cy.apiRequest(
         "GET",
-        `/foster-family/child/${newfosterChildId}?localAuthorityId=201&includeFosterCarer=true`,
+        `/foster-family/child/${newfosterChildId}?includeFosterCarer=true`,
         null,
         token,
       ).then((response) => {
