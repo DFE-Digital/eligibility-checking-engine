@@ -81,7 +81,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
         // they could be a lot of checks, so we need to batch the inserts
         // to avoid loading them all into memory at once
-        const int BatchSize = 1000;
+        const int BatchSize = 500;
         var batch = new List<EligibilityCheckReportItem>(BatchSize);
         var totalResults = 0;
         string? lastProcessedCheckId = null;
@@ -97,7 +97,10 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 {
                     query = query.Where(c => string.Compare(c.EligibilityCheckID, lastProcessedCheckId) > 0);
                 }
-
+                
+                // Apply extended command timeout for this query
+                int priorTimeout = _db.Database.GetCommandTimeout() ?? 30;
+                _db.Database.SetCommandTimeout(120);
                 var checks = await query
                         .OrderBy(e => e.EligibilityCheckID)
                         .Take(BatchSize)
@@ -106,6 +109,9 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                             e.EligibilityCheckID,
                             e.BulkCheckID != null))
                         .ToListAsync(cancellationToken);
+
+                // Reset command timeout
+                _db.Database.SetCommandTimeout(priorTimeout);
 
                 // if no more checks, break the loop
                 if (checks.Count == 0)
