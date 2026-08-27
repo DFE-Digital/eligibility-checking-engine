@@ -1,18 +1,23 @@
+using System.Text.Json.Serialization;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+
 public class FosterChildResponse
 {
     // Eligibility Code Details
 
     public string EligibilityCode { get; set; } = string.Empty;
 
-    public string ReconfirmationStatus { get; set; } = string.Empty;
+    public string ReconfirmationStatus { get; set; }
 
     public string CodeStatus { get; set; } = string.Empty;
 
     public DateTime EligibilityConfirmedOn { get; set; }
 
-    public DateTime ReconfirmFrom { get; set; }
-
-    public DateTime ReconfirmTo { get; set; }
+    [JsonIgnore]
+    public DateTime ValidityStartDate { get; set; }
+    [JsonIgnore]
+    public DateTime ValidityEndDate { get; set; }
+    public string ReconfirmBetween { get; set; }
 
     public DateTime GracePeriodEnds { get; set; }
 
