@@ -21,9 +21,9 @@ USE EligibilityCheck;
 GO
 
 -- 1. Local Authority
-INSERT INTO LocalAuthorities (LocalAuthorityID, LaName, SchoolCanReviewEvidence)
+INSERT INTO LocalAuthorities (LocalAuthorityID, LaName, SchoolCanReviewEvidence, EarlyYearsPupilPremiumPolicyID, FreeSchoolMealsPolicyID, TwoYearPolicyID)
 VALUES
-    (9000, 'Camberwick Council', 0);
+    (9000, 'Camberwick Council', 0, 2, 4, 3);
 GO
 
 -- 2. Establishments
