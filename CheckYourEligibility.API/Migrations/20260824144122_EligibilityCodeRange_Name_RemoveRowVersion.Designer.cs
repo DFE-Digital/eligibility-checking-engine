@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260824144122_EligibilityCodeRange_Name_RemoveRowVersion")]
+    partial class EligibilityCodeRange_Name_RemoveRowVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1130,26 +1133,6 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("FosterChildren");
                 });
 
-            modelBuilder.Entity("UserRole", b =>
-                {
-                    b.Property<Guid>("UserRoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("RoleName")
-                        .IsRequired()
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserRoleId");
-
-                    b.HasIndex(new[] { "UserId" }, "idx_UserRole_UserId");
-
-                    b.ToTable("UserRoles");
-                });
-
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.HasOne("CheckYourEligibility.API.Domain.EligibilityCheckHash", "EligibilityCheckHash")
@@ -1312,17 +1295,6 @@ namespace CheckYourEligibility.API.Migrations
                         .IsRequired();
 
                     b.Navigation("FosterCarer");
-                });
-
-            modelBuilder.Entity("UserRole", b =>
-                {
-                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>

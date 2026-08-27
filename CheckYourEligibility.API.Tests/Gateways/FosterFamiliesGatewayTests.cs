@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -19,10 +20,13 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(nameof(EligibilityCheckReportingGatewayTests), InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .ConfigureWarnings(x => x.Ignore(
+                Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        
 
         _mockLogger = new Mock<ILogger<FosterFamiliesGateway>>();
 
@@ -30,6 +34,17 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
+
+        await context.EligibilityCodeRanges.AddAsync(new EligibilityCodeRange
+        {
+            EligibilityCodeRangeId = 1,
+            Name = EligibilityCodeType.Foster,
+            StartRange = 40000000001,
+            EndRange = 49999999999,
+            NextAvailableCode = 40000000001
+        });
+
+        await context.SaveChangesAsync();
 
         _sut = new FosterFamiliesGateway(_fakeInMemoryDb, _mockLogger.Object);
     }
@@ -410,7 +425,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    [Test]    
+    [Test]
     public async Task UpdateFosterCarer_Should_Throw_NotFoundException_When_LA_Does_Not_Match()
     {
         // Arrange
@@ -492,7 +507,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Act
         Func<Task> act = () =>
             _sut.DeleteFosterCarer(
-            fosterCarerId, 
+            fosterCarerId,
             123); // wrong LA 
 
 
@@ -1226,8 +1241,24 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #endregion
 
-    #region helpers
+    #region EligibilityCode 
 
+    [Test]
+    public async Task GetEligibilityCodeForFosterChild_ReturnsNextAvailableCode()
+    {
+        // Act
+        var result = await _sut.GetEligibilityCodeForFosterChild();
+
+        // Assert
+        result.Should().Be("40000000001");
+
+        var range = await _fakeInMemoryDb.EligibilityCodeRanges.SingleAsync();
+        range.NextAvailableCode.Should().Be(40000000002);
+    }
+
+    #endregion
+
+    #region helpers
     private static FosterFamilyRequest BuildValidRequest()
     {
         return new FosterFamilyRequest
