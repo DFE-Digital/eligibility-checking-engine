@@ -5,6 +5,7 @@ using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Services;
@@ -29,6 +30,8 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
     private readonly IEligibilityPolicy _eligibilityPolicy;
+    private readonly IWorkingFamiliesTestScenarioFactory _workingFamiliesTestScenarioFactory;
+    private readonly IStandardCheckTestScenarioFactory _standardCheckTestScenarioFactory;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
@@ -40,7 +43,15 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new();
     private readonly Dictionary<CheckEligibilityType, string> _DWP_ApiCriteria = new();
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
-        IConfiguration configuration, IEcsAdapter ecsAdapter, IDwpAdapter dwpAdapter, IHash hashGateway, ILocalAuthority localAuthority, IEligibilityPolicy eligibilityPolicy)
+        IConfiguration configuration,
+        IEcsAdapter ecsAdapter, 
+        IDwpAdapter dwpAdapter, 
+        IHash hashGateway,
+        ILocalAuthority 
+        localAuthority, 
+        IEligibilityPolicy eligibilityPolicy,
+        IWorkingFamiliesTestScenarioFactory workingFamiliesTestScenarioFactory,
+        IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -50,6 +61,8 @@ public class CheckingEngineGateway : ICheckingEngine
         _configuration = configuration;
         _localAuthority = localAuthority;
         _eligibilityPolicy = eligibilityPolicy;
+        _workingFamiliesTestScenarioFactory = workingFamiliesTestScenarioFactory;
+        _standardCheckTestScenarioFactory = standardCheckTestScenarioFactory;
 
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
@@ -112,47 +125,6 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     #region Private
-    private (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
-    {
-
-        if (!nino.IsNullOrEmpty())
-        {
-            if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted")))
-                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
-
-            if (checkType == CheckEligibilityType.FreeSchoolMeals && nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded")))
-                return (CheckEligibilityStatus.eligible, EligibilityTier.expanded);
-
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Eligible")))
-                return (CheckEligibilityStatus.eligible, null);
-            if (nino.StartsWith(
-                    _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:NotEligible")))
-                return (CheckEligibilityStatus.notEligible, null);
-            if (nino.StartsWith(
-                    _configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:ParentNotFound")))
-                return (CheckEligibilityStatus.parentNotFound, null);
-            if (nino.StartsWith(_configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:Error")))
-                return (CheckEligibilityStatus.error, null);
-
-        }
-        else
-        {
-            nass = nass.Substring(2, 2);
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Eligible"))
-                return (CheckEligibilityStatus.eligible, EligibilityTier.targeted);
-            if (nass == _configuration.GetValue<string>(
-                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:NotEligible"))
-                return (CheckEligibilityStatus.notEligible, null);
-            if (nass == _configuration.GetValue<string>(
-                    "TestData:Outcomes:NationalAsylumSeekerServiceNumber:ParentNotFound"))
-                return (CheckEligibilityStatus.parentNotFound, null);
-            if (nass == _configuration.GetValue<string>("TestData:Outcomes:NationalAsylumSeekerServiceNumber:Error"))
-                return (CheckEligibilityStatus.error, null);
-        }
-
-        return (CheckEligibilityStatus.parentNotFound, null);
-    }
-
     /// <summary>
     /// Logic to find a match in Working families events' table
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
@@ -201,66 +173,6 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     /// <summary>
-    /// This method is used for generating test data in runtime
-    /// If code starts with 900 it will generate an event record that must return Eligible
-    /// If code starts with 901 it will generate an event record that must return Eligible in grace period
-    /// If code starts with 902 it will generate an event record that must return NotEligible as it has not reached VSD yet
-    /// If code starts with 903 it will generate an event record that must return NotEligible as the GPED has passed
-    /// If code starts with 904 it will generate an event record that must return NotFound
-    /// If code starts with 905 it will generate an event record that must return Error
-    /// </summary>
-    /// <param name="checkData"></param>
-    /// <returns></returns>
-    private async Task<WorkingFamiliesEvent> Generate_Test_Working_Families_EventRecord(CheckProcessData checkData)
-    {
-        string eligibilityCode = checkData.EligibilityCode;
-        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
-
-        // Parse date offsets from eligibility code
-        int.TryParse(eligibilityCode.Substring(3, 2), out var vsdOffset);
-        int.TryParse(eligibilityCode.Substring(5, 2), out var vedOffset);
-        int.TryParse(eligibilityCode.Substring(7, 2), out var gpedOffset);
-
-        // Apply date offsets based on scenario type
-        if (!isEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isEligiblePrefix))
-        {
-            wfEvent.ValidityStartDate = DateTime.Today.AddDays(-vsdOffset);
-            wfEvent.ValidityEndDate = DateTime.Today.AddDays(vedOffset);
-            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
-        }
-        else if (!isInGracePeriodPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isInGracePeriodPrefix))
-        {
-            wfEvent.ValidityEndDate = DateTime.Today.AddDays(-vedOffset);
-            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
-            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(gpedOffset);
-        }
-        else if (!isNotYetEligiblePrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isNotYetEligiblePrefix))
-        {
-            wfEvent.ValidityStartDate = DateTime.Today.AddDays(vsdOffset);
-            wfEvent.ValidityEndDate = wfEvent.ValidityStartDate.AddDays(vedOffset);
-            wfEvent.GracePeriodEndDate = wfEvent.ValidityEndDate.AddDays(gpedOffset);
-        }
-        else if (!isExpiredPrefix.IsNullOrEmpty() && eligibilityCode.StartsWith(isExpiredPrefix))
-        {
-            wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-gpedOffset);
-            wfEvent.ValidityEndDate = wfEvent.GracePeriodEndDate.AddDays(-vedOffset);
-            wfEvent.ValidityStartDate = wfEvent.ValidityEndDate.AddDays(-vsdOffset);
-        }
-        else
-        {
-            return null;
-        }
-
-        // Populate the rest of the test record
-        wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
-        wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
-        wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
-        wfEvent.EligibilityCode = eligibilityCode;
-
-        return wfEvent;
-    }
-
-    /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
@@ -278,14 +190,22 @@ public class CheckingEngineGateway : ICheckingEngine
 
         var sw = Stopwatch.StartNew();
 
-        // Get event for TEST record
-        if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
-            checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
+   
+        if (!string.IsNullOrEmpty(wfTestCodePrefix))
         {
-            wfEvent = await Generate_Test_Working_Families_EventRecord(checkData);
+            // Get event for TEST record client side
+            if (checkData.EligibilityCode.StartsWith(wfTestCodePrefix)) {
+                wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioClientSide(checkData);
+            }
+            // Get event for TEST record internal side
+            else if (checkData.EligibilityCode.StartsWith("7"))
+            {
+                wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioInternalSide(checkData);
+            }
+
             if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
         }
-
+       
         // Get event for ECS record
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
@@ -404,7 +324,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
         {
-            var (testStatus, testTier) = TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
+            var(testStatus, testTier) = _standardCheckTestScenarioFactory.TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
             checkStatusResult = testStatus;
             checkTierResult = testTier;
             source = ProcessEligibilityCheckSource.TEST;

@@ -1,12 +1,13 @@
 ﻿using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories.Helper;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
-using NetTopologySuite.Triangulate;
 
 namespace CheckYourEligibility.API.Gateways.Factories
 {
-    public interface IStandardCheckTestScenarioFactory { }
+    public interface IStandardCheckTestScenarioFactory {
+        (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType);
+
+    }
     public class StandardCheckTestScenarioFactory : IStandardCheckTestScenarioFactory
     {
         private readonly TestDataConfiguration _testDataConfiguration;
@@ -46,7 +47,6 @@ namespace CheckYourEligibility.API.Gateways.Factories
                     }
                     if (nino.StartsWith(_testDataConfiguration.EligibleExpanded))
                     {
-
                         return _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => x.Key == _testDataConfiguration.EligibleExpanded).Value;
                     }
                 }

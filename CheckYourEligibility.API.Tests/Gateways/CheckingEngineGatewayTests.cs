@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -38,6 +39,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     private Mock<IEligibilityPolicy> _eligibilityPolicy;
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueue> _moqStorageQueueGateway;
+    private Mock<IWorkingFamiliesTestScenarioFactory> _moqWFTestScenarioFactory;
+    private Mock<IStandardCheckTestScenarioFactory> _moqStandardTestScenarioFactory;
     private CheckingEngineGateway _sut;
     private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
@@ -84,11 +87,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _eligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
         _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
+        _moqWFTestScenarioFactory = new Mock<IWorkingFamiliesTestScenarioFactory>(MockBehavior.Strict);
+        _moqStandardTestScenarioFactory = new Mock<IStandardCheckTestScenarioFactory>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 
 
         _sut = new CheckingEngineGateway(new NullLoggerFactory(), _fakeInMemoryDb,
-            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object, _eligibilityPolicy.Object);
+            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object, 
+            _eligibilityPolicy.Object, _moqWFTestScenarioFactory.Object, _moqStandardTestScenarioFactory.Object);
     }
 
     [TearDown]

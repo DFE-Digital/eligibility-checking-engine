@@ -64,7 +64,7 @@ namespace CheckYourEligibility.API.Helpers
 
                 if (gpd > next.StartDate) { return new TermValidity(current.Name, next.Name); }
 
-                return new TermValidity(TermName.None, current.Name);
+                return new TermValidity(current.Name, TermName.None);
             }
             return new TermValidity(null, null);
 
@@ -74,6 +74,15 @@ namespace CheckYourEligibility.API.Helpers
             if (eligibilityCode.StartsWith("1")) return EligibilityCodeType.Temporary;
             if (eligibilityCode.StartsWith("4")) return EligibilityCodeType.Foster;
             return EligibilityCodeType.Standard;
+           
+        }
+        public static EligibilityCodeType GetTestEligibilityCodeType(string eligibilityCode)
+        {
+
+            if (eligibilityCode.EndsWith("1")) return EligibilityCodeType.Temporary;
+            if (eligibilityCode.EndsWith("4")) return EligibilityCodeType.Foster;
+            return EligibilityCodeType.Standard;
+
         }
         /// <summary>
         /// Calculates reconfirmation window and reconfirmation status
@@ -108,13 +117,13 @@ namespace CheckYourEligibility.API.Helpers
                     DateTime startReconfirmDate = ved.AddDays(-28);
                     ReconfirmationProperties reconfirmationProperties = new ReconfirmationProperties();
 
-                    if (checkDate > ved)
+                    if (checkDate.Date > ved.Date)
                     {
 
                         reconfirmationProperties.Status = ReconfirmationStatus.Overdue;
                     }
 
-                    else if (checkDate < startReconfirmDate)
+                    else if (checkDate.Date < startReconfirmDate.Date)
                     {
                         reconfirmationProperties.Status = ReconfirmationStatus.NotDueYet;
                     }
