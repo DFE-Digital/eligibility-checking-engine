@@ -121,8 +121,8 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 "2026-08-31",                 // GPED before Autumn start
                 "2024-01-01",
                 "2024-01-01",
-                TermName.None,
-                TermName.Summer)
+                TermName.Summer,
+                TermName.None)
                 .SetArgDisplayNames("Current_Term_Only");
 
             yield return new TestCaseData(
