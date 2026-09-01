@@ -33,6 +33,27 @@ describe("Search Foster Families - Happy Path", () => {
           );
 
           expect(family).to.exist;
+
+          // clean up
+          cy.apiRequest(
+            "DELETE",
+            `/foster-family/${family.carerId}`,
+            null,
+            token,
+          ).then((deleteResponse) => {
+            expect(deleteResponse.status).to.eq(204);
+
+            // verify fam is gone.
+            cy.apiRequest(
+              "GET",
+              `/foster-family/${family.carerId}`,
+              null,
+              token,
+              false,
+            ).then((getResponse) => {
+              expect(getResponse.status).to.eq(404);
+            });
+          });
         });
       });
     });
