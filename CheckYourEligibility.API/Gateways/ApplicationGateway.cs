@@ -59,7 +59,7 @@ public class ApplicationGateway : IApplication
             item.Tier = hashCheck.Tier;
             
             // If status is Entitled, calculate and set EligibilityEndDate
-            if (item.Status == ApplicationStatus.Entitled )
+            if (item.Status == ApplicationStatus.Entitled)
             {
                 item.EligibilityEndDate = EligibilityCheckHelper.GetEligibilityEndDateFSM(item.Created);
             }
@@ -687,8 +687,6 @@ public class ApplicationGateway : IApplication
     //TODO: Doesn't this exist as a static method elsewhere?
     private EligibilityCheckHash? GetHash(CheckEligibilityType type, Application data)
     {
-        var hashValidityDays = type == CheckEligibilityType.WorkingFamilies ? _hashCheckDaysWF : _hashCheckDays;
-        var age = DateTime.UtcNow.AddDays(-hashValidityDays);
         var hash = CheckEligibilityGateway.GetHash(new CheckProcessData
         {
             DateOfBirth = data.ParentDateOfBirth.ToString("yyyy-MM-dd"),
@@ -697,7 +695,7 @@ public class ApplicationGateway : IApplication
             LastName = data.ParentLastName.ToUpper(),
             Type = type
         });
-        return _db.EligibilityCheckHashes.FirstOrDefault(x => x.Hash == hash && x.TimeStamp >= age);
+        return _db.EligibilityCheckHashes.OrderByDescending(x => x.TimeStamp).FirstOrDefault(x => x.Hash == hash);
     }
 
     private async Task AddStatusHistory(Application application, ApplicationStatus applicationStatus, EligibilityTier? tier = null)
