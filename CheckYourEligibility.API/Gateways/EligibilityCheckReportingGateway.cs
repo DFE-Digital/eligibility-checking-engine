@@ -81,10 +81,14 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
         // they could be a lot of checks, so we need to batch the inserts
         // to avoid loading them all into memory at once
-        const int BatchSize = 1000;
+        const int BatchSize = 500;
         var batch = new List<EligibilityCheckReportItem>(BatchSize);
         var totalResults = 0;
         string? lastProcessedCheckId = null;
+
+        // Apply extended command timeout for this process
+        int priorTimeout = _db.Database.GetCommandTimeout() ?? 30;
+        _db.Database.SetCommandTimeout(120);
 
         try
         {
@@ -98,10 +102,10 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                     query = query.Where(c => string.Compare(c.EligibilityCheckID, lastProcessedCheckId) > 0);
                 }
 
-                var checks = await query
+                 var checks = await query
+                        .Where(c => c.Type == eligiblityCheckType)
                         .OrderBy(e => e.EligibilityCheckID)
                         .Take(BatchSize)
-                        .Where(c => c.Type == eligiblityCheckType)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
                             e.BulkCheckID != null))
@@ -142,6 +146,11 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
             _logger.LogError(ex, "Error generating eligibility check report");
             throw;
+        }
+        finally
+        {
+            // Reset command timeout
+            _db.Database.SetCommandTimeout(priorTimeout);
         }
     }
     public async Task<EligibilityCheckReport> CreateReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken)

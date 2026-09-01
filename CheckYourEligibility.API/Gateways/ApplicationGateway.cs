@@ -697,7 +697,7 @@ public class ApplicationGateway : IApplication
             LastName = data.ParentLastName.ToUpper(),
             Type = type
         });
-        return _db.EligibilityCheckHashes.FirstOrDefault(x => x.Hash == hash && x.TimeStamp >= age);
+        return _db.EligibilityCheckHashes.OrderByDescending(x => x.TimeStamp).FirstOrDefault(x => x.Hash == hash);
     }
 
     private async Task AddStatusHistory(Application application, ApplicationStatus applicationStatus, EligibilityTier? tier = null)
