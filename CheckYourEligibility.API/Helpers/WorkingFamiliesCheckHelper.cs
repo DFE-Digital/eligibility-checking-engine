@@ -54,11 +54,17 @@ namespace CheckYourEligibility.API.Helpers
 
             if (DateTime.TryParse(gracePeriodEndDAte, out var gpd) && DateTime.TryParse(validityStartDate, out var vsd) && DateTime.TryParse(childDOB, out var dob)) {
 
-
+              
                 (Term current, Term next) = GetTerms(checkDate);
-                if (ChildIsTooYoung(dob, checkDate) ||
-                    ChildIsTooOld(dob, checkDate) ||
-                    checkDate > gpd) return new TermValidity(TermName.None, TermName.None);
+
+                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd)
+                {
+                    return new TermValidity(TermName.None, TermName.None);
+                }
+                if (ChildIsTooYoung(dob, checkDate) && vsd < dob.AddMonths(9)) {
+
+                    vsd = dob.AddMonths(9);
+                }
 
                 if (vsd >= current.StartDate) { return new TermValidity(TermName.None, next.Name); }
 
