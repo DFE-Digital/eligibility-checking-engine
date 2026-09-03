@@ -20,7 +20,7 @@ public class NotifyGatewayTests : TestBase.TestBase
         _mockClient = new Mock<INotificationClient>();
         var configData = new Dictionary<string, string>
         {
-            { "Notify:Templates:ParentApplicationCreated", "mock_id" }
+            { "Notify:Templates:ParentApplicationSuccessful", "mock_id" }
         };
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configData)
