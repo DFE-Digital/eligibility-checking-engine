@@ -157,7 +157,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
 
             // VSD must be before the start of the current term
             wfEvent.ValidityStartDate =
-                RandomDateGenerator(currentTerm.StartDate.AddDays(-28), currentTerm.StartDate);
+                RandomDateGenerator(currentTerm.StartDate.AddDays(-28), currentTerm.StartDate.AddDays(-1));
 
             var termEndDate = currentTerm.Name switch
             {
@@ -217,7 +217,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
             // VSD must be before the start of the current term
             // Generates a random date between the start of the reconfirmation window and the start of the current term.
-            wfEvent.ValidityStartDate = RandomDateGenerator(currentTerm.StartDate.AddDays(-28), currentTerm.StartDate);
+            wfEvent.ValidityStartDate = RandomDateGenerator(currentTerm.StartDate.AddDays(-28), currentTerm.StartDate.AddDays(-1));
             // VED must be in a range so the GPED falls in the next term
             wfEvent.ValidityEndDate = currentTerm.Name switch
             {

@@ -53,9 +53,11 @@ namespace CheckYourEligibility.API.Gateways.Factories
                 var scenario = _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => nino.StartsWith(x.Key));
                 return scenario.Value;
             }
-            if (!nass.IsNullOrEmpty()) 
+            if (!nass.IsNullOrEmpty())
+               
             {
-                var scenario = _testDataConfiguration.NassTestScenarios.FirstOrDefault(x => nass.StartsWith(x.Key));
+                var nassPrefix = nass.Substring(2, 2);
+                var scenario = _testDataConfiguration.NassTestScenarios.FirstOrDefault(x => nassPrefix == x.Key);
                 return scenario.Value;
             }
             return (CheckEligibilityStatus.parentNotFound, null);

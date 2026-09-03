@@ -66,12 +66,12 @@ namespace CheckYourEligibility.API.Gateways.Factories.Helper
                 EligibleTargeted = configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleTargeted") ?? "NA",
                 EligibleExpanded = configuration.GetValue<string>("TestData:Outcomes:NationalInsuranceNumber:EligibleExpanded") ?? "NE",
 
-                //API internal side test case confiurations for working families
+                //API internal side test case configurations for working families
                 CannotBeUsedYet = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:cannotBeUsedYet") ?? "700",
                 ValidForThisTerm = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:validForThisTerm") ?? "701",
                 ValidForThisTermAndNextTerm  = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:validForThisTermAndNextTerm") ?? "702",
                 InGracePeriod = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:inGracePeriod") ?? "703",
-                IsExpired  = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:isExpired") ?? "704",
+                IsExpired  = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Prefixes:expired") ?? "704",
 
                 //API internal side test case scenario configurations for working families
                 TemporaryCodeSuffix = configuration.GetValue<string>("TestData:Outcomes:EligibilityCode-Frontend:Scenarios:temporaryCodeSuffix") ?? "1",

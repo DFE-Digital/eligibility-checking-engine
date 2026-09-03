@@ -190,22 +190,27 @@ public class CheckingEngineGateway : ICheckingEngine
 
         var sw = Stopwatch.StartNew();
 
-   
-        if (!string.IsNullOrEmpty(wfTestCodePrefix))
+        // Get event for TEST record client side
+        if (!string.IsNullOrEmpty(wfTestCodePrefix) && checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
         {
-            // Get event for TEST record client side
-            if (checkData.EligibilityCode.StartsWith(wfTestCodePrefix)) {
-                wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioClientSide(checkData);
-            }
-            // Get event for TEST record internal side
-            else if (checkData.EligibilityCode.StartsWith("7"))
-            {
-                wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioInternalSide(checkData);
-            }
+            wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioClientSide(checkData);
 
-            if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
+            if (wfEvent == null)
+            {
+                result.Status = CheckEligibilityStatus.notFound;
+            }           
         }
-       
+        // Get event for TEST record internal side
+        else if (!string.IsNullOrEmpty(wfTestCodePrefix) && checkData.EligibilityCode.StartsWith("7"))
+        {
+            wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioInternalSide(checkData);
+
+            if (wfEvent == null)
+            {
+                result.Status = CheckEligibilityStatus.notFound;
+            }
+        }
+
         // Get event for ECS record
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {

@@ -1531,7 +1531,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
     [Test]
-    public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error__Should_Return_Error()
+    public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error_Should_Return_Error()
     {
 
         // Arrange
