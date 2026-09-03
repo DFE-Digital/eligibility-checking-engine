@@ -109,7 +109,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
 
                 wfEvent = CreateInGracePeriod(terms.Current, checkDate);
             }
-            else if (eligibilityCode.StartsWith(_testDataConfig.ExpiredPrefix)) {
+            else if (eligibilityCode.StartsWith(_testDataConfig.IsExpired)) {
 
                 wfEvent = CreateExpiredReconfirmationOverDue(checkDate);
 
