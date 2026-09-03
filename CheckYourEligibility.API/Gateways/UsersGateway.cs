@@ -124,8 +124,8 @@ public class UsersGateway : IUsers
 
         // map metadata where exists
         item.LastLogin = DateTime.UtcNow;
-        item.UserType = UserType.FreeSchoolMealsParent; // will always be fsm parent
-        item.UserName = request.MetaData.UserName;
+        item.UserType = UserType.FreeSchoolMealsParent;
+        item.UserName = request.Data.Email;
         item.OrganisationType = Enum.Parse<OrganisationType>(request.MetaData.OrganisationType ?? OrganisationType.none.ToString());
         item.OrganisationId = request.MetaData.OrganisationID;
 
