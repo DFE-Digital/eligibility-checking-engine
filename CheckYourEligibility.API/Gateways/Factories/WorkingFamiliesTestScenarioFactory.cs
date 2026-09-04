@@ -88,15 +88,17 @@ namespace CheckYourEligibility.API.Gateways.Factories
             // Get terms
             var checkDate = DateTime.Today;
             var terms = GetTerms(checkDate);
-            
+
             string eligibilityCode = checkData.EligibilityCode;
             string nino = checkData.NationalInsuranceNumber;
 
-            if (eligibilityCode.StartsWith(_testDataConfig.CannotBeUsedYet)) {
+            if (eligibilityCode.StartsWith(_testDataConfig.CannotBeUsedYet))
+            {
 
                 wfEvent = CreateValidCannotBeUsedYet(terms.Current, checkDate);
             }
-            else if (eligibilityCode.StartsWith(_testDataConfig.ValidForThisTerm)) {
+            else if (eligibilityCode.StartsWith(_testDataConfig.ValidForThisTerm))
+            {
 
                 wfEvent = CreateValidThisTermOnly(terms.Current, checkDate, nino);
 
@@ -105,29 +107,33 @@ namespace CheckYourEligibility.API.Gateways.Factories
             {
                 wfEvent = CreateValidCurrentAndNextTerm(terms.Current, checkDate);
             }
-            else if (eligibilityCode.StartsWith(_testDataConfig.InGracePeriod)) {
+            else if (eligibilityCode.StartsWith(_testDataConfig.InGracePeriod))
+            {
 
                 wfEvent = CreateInGracePeriod(terms.Current, checkDate);
             }
-            else if (eligibilityCode.StartsWith(_testDataConfig.IsExpired)) {
+            else if (eligibilityCode.StartsWith(_testDataConfig.IsExpired))
+            {
 
                 wfEvent = CreateExpiredReconfirmationOverDue(checkDate);
 
             }
+            if (wfEvent == null) { return null; }
 
-              PopulateCommonFields(wfEvent, checkData);
+            PopulateCommonFields(wfEvent, checkData);
 
             // Apply DVSD
-            if (nino.StartsWith(_testDataConfig.ApplyDvsdNINOPrefix)) {
+            if (nino.StartsWith(_testDataConfig.ApplyDvsdNINOPrefix))
+            {
 
                 wfEvent.DiscretionaryValidityStartDate = terms.Current.Name switch
                 {
-                    TermName.Spring => new DateTime(terms.Current.StartDate.Year - 1, 12, 31 ) ,
+                    TermName.Spring => new DateTime(terms.Current.StartDate.Year - 1, 12, 31),
                     TermName.Summer => new DateTime(terms.Current.StartDate.Year, 3, 31),
                     TermName.Autumn => new DateTime(terms.Current.StartDate.Year, 8, 31),
                     _ => throw new NotImplementedException()
                 };
-            }            
+            }
             return wfEvent;
 
         }
@@ -178,28 +184,29 @@ namespace CheckYourEligibility.API.Gateways.Factories
                     ? termEndDate
                     : dueWindowEnd;
 
-                wfEvent.ValidityEndDate = RandomDateGenerator(minVed , maxVed);
+                wfEvent.ValidityEndDate = RandomDateGenerator(minVed, maxVed);
             }
             else
             {
                 // checkDate must NOT be within (VED - 28) and VED
-                //Generate a VED after the due-now window
-                var minVed = dueWindowEnd.AddDays(1);
-
+                // Generate a VED after the due-now window
+                var minVed = checkDate.AddDays(29);
+                // if the minimum value of VED is before the end of the current term 
+                // Generate a VED that is between that minimum value and the termEndDate to guarantee VED after the due window
                 if (minVed <= termEndDate)
                 {
                     wfEvent.ValidityEndDate = RandomDateGenerator(minVed, termEndDate);
                 }
+                // If checkdate + 29 days is greater then the current termendDate
+                // To generate a VED before the due-window
                 else
                 {
-                    // Fallback: generate before the due-now window
-                    wfEvent.ValidityEndDate =
-                        RandomDateGenerator(checkDate.AddDays(1), dueWindowStart.AddDays(-1));
+                    wfEvent.ValidityEndDate = RandomDateGenerator(currentTerm.StartDate, dueWindowStart.AddDays(-29));
                 }
             }
 
             wfEvent.GracePeriodEndDate = termEndDate;
-               
+
             return wfEvent;
         }
         /// <summary>
@@ -232,7 +239,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             return wfEvent;
 
         }
-    
+
         /// <summary>
         /// VSD - set a date in the past, ensure it is before the VED
         /// VED must be less than the Check date and within range to calculate a GPED in the past using the business logic method
@@ -247,7 +254,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             // Check date = 1 Jan - 10 Feb 
             if (checkDate >= new DateTime(year, 1, 1) && checkDate <= new DateTime(year, 2, 10))
             {
-                wfEvent.ValidityStartDate = new DateTime(year - 1,7, 31);
+                wfEvent.ValidityStartDate = new DateTime(year - 1, 7, 31);
                 // GPED business logic:
                 // If validity end date between 1 September – 21 October - GPED = 31-Dec the previous year
                 wfEvent.ValidityEndDate = RandomDateGenerator(new DateTime(year - 1, 9, 1), new DateTime(year - 1, 10, 21));
@@ -255,7 +262,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
             // Check date 11 Feb - 26 May
             else if (checkDate >= new DateTime(year, 2, 11) && checkDate <= new DateTime(year, 5, 26))
             {
-                wfEvent.ValidityStartDate = new DateTime(year - 1,10, 30);
+                wfEvent.ValidityStartDate = new DateTime(year - 1, 10, 30);
 
                 // GPED business logic:
                 // If validity end date between 1 Sept – 21 Oct - GPED = 31-Dec the previous year
@@ -267,7 +274,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
                 wfEvent.ValidityStartDate = new DateTime(year, 1, 1);
                 // GPED business logic
                 // If validity end date between 11 Feb – 26 May - GPED = 31-March the same year
-                wfEvent.ValidityEndDate = RandomDateGenerator(new DateTime(year-1,10,22), new DateTime(year-1,12,31));
+                wfEvent.ValidityEndDate = RandomDateGenerator(new DateTime(year - 1, 10, 22), new DateTime(year - 1, 12, 31));
             }
             // Check date 1 September – 21 October
             else if (checkDate >= new DateTime(year, 9, 1) && checkDate <= new DateTime(year, 10, 21))
@@ -286,7 +293,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
                 // If validity end date between 1 May – 26 May - GPED = 31 - Aug the same year
                 wfEvent.ValidityEndDate = RandomDateGenerator(new DateTime(year, 5, 1), new DateTime(year, 5, 26));
             }
-            
+
             wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
 
             return wfEvent;
@@ -298,7 +305,8 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private WorkingFamiliesEvent CreateValidCannotBeUsedYet(Term currentTerm , DateTime checkDate) {
+        private WorkingFamiliesEvent CreateValidCannotBeUsedYet(Term currentTerm, DateTime checkDate)
+        {
             WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(15);
             wfEvent.ValidityEndDate = checkDate.AddMonths(3);
@@ -314,13 +322,14 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private WorkingFamiliesEvent CreateInGracePeriod(Term currentTerm, DateTime checkDate) {
-            
+        private WorkingFamiliesEvent CreateInGracePeriod(Term currentTerm, DateTime checkDate)
+        {
+
             WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(-1);
             wfEvent.ValidityEndDate = checkDate.AddDays(-1);
             wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
-           return wfEvent;
+            return wfEvent;
 
         }
         private WorkingFamiliesEvent CreateEligibleScenario(int vsdOffset, int vedOffset, int gpedOffset)
