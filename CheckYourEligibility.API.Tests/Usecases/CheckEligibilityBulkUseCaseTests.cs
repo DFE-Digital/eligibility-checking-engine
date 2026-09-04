@@ -83,7 +83,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, limit , meta);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, limit, meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>()
@@ -258,7 +258,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
 
         // Act
         Func<Task> act = async () =>
-            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit,meta);
+            await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
 
         // Assert
         act.Should().ThrowAsync<ValidationException>().WithMessage($"Unknown request type:-{model.GetType()}");
@@ -300,6 +300,38 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         // Assert
         capturedBulkCheck.Should().NotBeNull();
         capturedBulkCheck.FinalNameInCheck.Should().Be("");
+    }
+
+    [Test]
+    public async Task Execute_sets_FinalNameInCheck_to_uppercase()
+    {
+        // Arrange
+        var meta = _fixture.Create<CheckMetaData>();
+        var data = new List<CheckEligibilityRequestBulkData>
+        {
+            new() { LastName = "smith", DateOfBirth = "1991-01-01", NationalInsuranceNumber = "AB123456C" },
+        };
+        var model = new CheckEligibilityRequestBulk { Data = data };
+
+        _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
+            .Returns(new ValidationResult());
+
+        BulkCheck capturedBulkCheck = null;
+        _mockBulkCheckGateway.Setup(s => s.CreateBulkCheck(It.IsAny<BulkCheck>()))
+            .Callback<BulkCheck>(b => capturedBulkCheck = b)
+            .ReturnsAsync("bulk-check-id");
+        var postCheckCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEnumerable<IEligibilityServiceType>>(), It.IsAny<string>(), meta))
+            .Callback(() => postCheckCalled.SetResult(true))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, _recordCountLimit, meta);
+        await postCheckCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Assert
+        capturedBulkCheck.Should().NotBeNull();
+        capturedBulkCheck.FinalNameInCheck.Should().Be("SMITH");
     }
 }
 
