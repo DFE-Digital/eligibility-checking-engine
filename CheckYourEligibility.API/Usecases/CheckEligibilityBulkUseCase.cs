@@ -120,7 +120,7 @@ public class CheckEligibilityBulkUseCase : ICheckEligibilityBulkUseCase
             OrganisationID = meta.OrganisationID,
             SubmittedDate = DateTime.UtcNow,
             LocalAuthorityID = model.Meta?.LocalAuthorityId,
-            FinalNameInCheck = bulkData[index - 1].LastName ?? string.Empty,
+            FinalNameInCheck = (bulkData[index - 1].LastName ?? string.Empty).ToUpperInvariant(),
             NumberOfRecords = bulkData.Count
         };
 
