@@ -54,17 +54,23 @@ namespace CheckYourEligibility.API.Helpers
 
             if (DateTime.TryParse(gracePeriodEndDAte, out var gpd) && DateTime.TryParse(validityStartDate, out var vsd) && DateTime.TryParse(childDOB, out var dob)) {
 
-
+              
                 (Term current, Term next) = GetTerms(checkDate);
-                if (ChildIsTooYoung(dob, checkDate) ||
-                    ChildIsTooOld(dob, checkDate) ||
-                    checkDate > gpd) return new TermValidity(TermName.None, TermName.None);
+
+                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd)
+                {
+                    return new TermValidity(TermName.None, TermName.None);
+                }
+                if (ChildIsTooYoung(dob, checkDate) && vsd < dob.AddMonths(9)) {
+
+                    vsd = dob.AddMonths(9);
+                }
 
                 if (vsd >= current.StartDate) { return new TermValidity(TermName.None, next.Name); }
 
                 if (gpd > next.StartDate) { return new TermValidity(current.Name, next.Name); }
 
-                return new TermValidity(TermName.None, current.Name);
+                return new TermValidity(current.Name, TermName.None);
             }
             return new TermValidity(null, null);
 
@@ -74,6 +80,15 @@ namespace CheckYourEligibility.API.Helpers
             if (eligibilityCode.StartsWith("1")) return EligibilityCodeType.Temporary;
             if (eligibilityCode.StartsWith("4")) return EligibilityCodeType.Foster;
             return EligibilityCodeType.Standard;
+           
+        }
+        public static EligibilityCodeType GetTestEligibilityCodeType(string eligibilityCode)
+        {
+
+            if (eligibilityCode.EndsWith("1")) return EligibilityCodeType.Temporary;
+            if (eligibilityCode.EndsWith("4")) return EligibilityCodeType.Foster;
+            return EligibilityCodeType.Standard;
+
         }
         /// <summary>
         /// Calculates reconfirmation window and reconfirmation status
@@ -108,13 +123,13 @@ namespace CheckYourEligibility.API.Helpers
                     DateTime startReconfirmDate = ved.AddDays(-28);
                     ReconfirmationProperties reconfirmationProperties = new ReconfirmationProperties();
 
-                    if (checkDate > ved)
+                    if (checkDate.Date > ved.Date)
                     {
 
                         reconfirmationProperties.Status = ReconfirmationStatus.Overdue;
                     }
 
-                    else if (checkDate < startReconfirmDate)
+                    else if (checkDate.Date < startReconfirmDate.Date)
                     {
                         reconfirmationProperties.Status = ReconfirmationStatus.NotDueYet;
                     }
@@ -132,9 +147,9 @@ namespace CheckYourEligibility.API.Helpers
             }; 
           
         }
-#region Private
 
-        private static (Term Current, Term Next) GetTerms(DateTime date)
+
+        public static (Term Current, Term Next) GetTerms(DateTime date)
         {
             int year = date.Year;
 
@@ -159,6 +174,7 @@ namespace CheckYourEligibility.API.Helpers
                 new Term(TermName.Summer, new DateTime(year, 4, 1))
             );
         }
+    #region Private
         /// <summary>
         ///  Caclculates if child turns 9 months after the start of the current term => child is too young
         /// </summary>

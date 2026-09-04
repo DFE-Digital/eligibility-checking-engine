@@ -45,17 +45,24 @@ namespace CheckYourEligibility.API.Services
             item.Status = eligibilityCheck.Status.ToString();
             item.EligibilityCode = checkData.EligibilityCode;
             item.LastName = checkData.LastName;
-            item.ValidityStartDate = isInternal == true ? checkData.ValidityStartDate : checkData.DiscretionaryValidityStartDate;
-            item.DiscretionaryValidityStartDate = isInternal == true ? checkData.DiscretionaryValidityStartDate: null;
+            // return DVSD as the absolute truth for client site checks
+            // if old hash  of new made check still exists and DVSD is null fall back to VSD from old code
+            // NOTE: once we remove hashing this conditional should be removed
+            item.ValidityStartDate = checkData.DiscretionaryValidityStartDate ?? checkData.ValidityStartDate; 
             item.ValidityEndDate = checkData.ValidityEndDate;
             item.GracePeriodEndDate = checkData.GracePeriodEndDate;
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
             item.DateOfBirth = checkData.DateOfBirth;
             item.Order = checkData.Order;
 
+            // for internal site endpoint provide both dates
+            if (isInternal) {
+                item.ValidityStartDate = checkData.ValidityStartDate;
+                item.DiscretionaryValidityStartDate = checkData.DiscretionaryValidityStartDate;
+            }
+                
             if (eligibilityCheck.BulkCheckID != null)
                 item.EligibilityCheckID = eligibilityCheck.EligibilityCheckID;
-
 
             return item;
 

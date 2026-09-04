@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -38,6 +39,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     private Mock<IEligibilityPolicy> _eligibilityPolicy;
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueue> _moqStorageQueueGateway;
+    private Mock<IWorkingFamiliesTestScenarioFactory> _moqWFTestScenarioFactory;
+    private Mock<IStandardCheckTestScenarioFactory> _moqStandardTestScenarioFactory;
     private CheckingEngineGateway _sut;
     private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
 
@@ -64,6 +67,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             { "QueueFsmCheckBulk", "notSet" },
             { "HashCheckDays", "7" },
             { "Dwp:UseEcsforChecksWF", "false" },
+            { "TestData:WFTestCodePrefix", "9" },
             // DefaultEligibilityPolicies mock config
             { "Dwp:DefaultEligibilityPolicies:FreeSchoolMeals:Criteria", "standard" },
             { "Dwp:DefaultEligibilityPolicies:FreeSchoolMeals:Threshold", "61667" },
@@ -84,11 +88,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _eligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
         _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
+        _moqWFTestScenarioFactory = new Mock<IWorkingFamiliesTestScenarioFactory>(MockBehavior.Strict);
+        _moqStandardTestScenarioFactory = new Mock<IStandardCheckTestScenarioFactory>(MockBehavior.Strict);
         _hashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
 
 
         _sut = new CheckingEngineGateway(new NullLoggerFactory(), _fakeInMemoryDb,
-            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object, _eligibilityPolicy.Object);
+            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object, 
+            _eligibilityPolicy.Object, _moqWFTestScenarioFactory.Object, _moqStandardTestScenarioFactory.Object);
     }
 
     [TearDown]
@@ -963,6 +970,117 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Given_EcsForWorkingFamiliesChecks_Is_Enabled_Process_Should_Use_Ecs_Result()
+    {
+        var item = CreateWorkingFamiliesCheck("50012345678");
+        var ecsResponse = new SoapCheckResponse
+        {
+            Status = "1",
+            ErrorCode = "0",
+            Qualifier = "",
+            ValidityStartDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
+            ValidityEndDate = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"),
+            GracePeriodEndDate = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")
+        };
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        _moqEcsGateway
+            .Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()))
+            .ReturnsAsync(ecsResponse);
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.eligible);
+        _moqEcsGateway.Verify(
+            x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Test]
+    public async Task Given_ClientSideTestScenario_Returns_Event_Process_Should_Return_Eligible()
+    {
+        var item = CreateWorkingFamiliesCheck("90012345678");
+        var wfEvent = CreateWorkingFamiliesEvent(item);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqWFTestScenarioFactory
+            .Setup(x => x.GenerateTestScenarioClientSide(It.IsAny<CheckProcessData>()))
+            .Returns(wfEvent);
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.eligible);
+        _moqWFTestScenarioFactory.Verify(
+            x => x.GenerateTestScenarioClientSide(It.IsAny<CheckProcessData>()), Times.Once);
+        _moqEcsGateway.Verify(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Given_ClientSideTestScenario_Returns_Null_Process_Should_Return_NotFound()
+    {
+        var item = CreateWorkingFamiliesCheck("90012345678");
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqWFTestScenarioFactory
+            .Setup(x => x.GenerateTestScenarioClientSide(It.IsAny<CheckProcessData>()))
+            .Returns((WorkingFamiliesEvent)null);
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.notFound);
+        _moqEcsGateway.Verify(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Given_InternalTestScenario_Returns_Event_Process_Should_Return_Eligible()
+    {
+        var item = CreateWorkingFamiliesCheck("70012345678");
+        var wfEvent = CreateWorkingFamiliesEvent(item);
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqWFTestScenarioFactory
+            .Setup(x => x.GenerateTestScenarioInternalSide(It.IsAny<CheckProcessData>()))
+            .Returns(wfEvent);
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.eligible);
+        _moqWFTestScenarioFactory.Verify(
+            x => x.GenerateTestScenarioInternalSide(It.IsAny<CheckProcessData>()), Times.Once);
+        _moqEcsGateway.Verify(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Given_InternalTestScenario_Returns_Null_Process_Should_Return_NotFound()
+    {
+        var item = CreateWorkingFamiliesCheck("70012345678");
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqWFTestScenarioFactory
+            .Setup(x => x.GenerateTestScenarioInternalSide(It.IsAny<CheckProcessData>()))
+            .Returns((WorkingFamiliesEvent)null);
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.notFound);
+        _moqEcsGateway.Verify(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
     public async Task Given_validRequest_Process_Should_Return_LastName_From_Request()
     {
         // Arrange
@@ -1525,7 +1643,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
     [Test]
-    public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error__Should_Return_Error()
+    public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error_Should_Return_Error()
     {
 
         // Arrange
@@ -1676,6 +1794,47 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.eligible);
         response.Reason.Should().Be(reason);
         response.ResponseCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private EligibilityCheck CreateWorkingFamiliesCheck(string eligibilityCode)
+    {
+        var checkData = new CheckProcessData
+        {
+            DateOfBirth = "2022-01-01",
+            LastName = "smith",
+            NationalInsuranceNumber = "AB123456C",
+            EligibilityCode = eligibilityCode,
+            Type = CheckEligibilityType.WorkingFamilies
+        };
+
+        return new EligibilityCheck
+        {
+            EligibilityCheckID = Guid.NewGuid().ToString(),
+            Type = CheckEligibilityType.WorkingFamilies,
+            Status = CheckEligibilityStatus.queuedForProcessing,
+            IsDeleted = false,
+            CheckData = JsonConvert.SerializeObject(checkData)
+        };
+    }
+
+    private WorkingFamiliesEvent CreateWorkingFamiliesEvent(EligibilityCheck check)
+    {
+        var checkData = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
+        var startDate = DateTime.Today.AddDays(-1);
+
+        return new WorkingFamiliesEvent
+        {
+            WorkingFamiliesEventID = Guid.NewGuid().ToString(),
+            EligibilityCode = checkData.EligibilityCode,
+            ParentNationalInsuranceNumber = checkData.NationalInsuranceNumber,
+            ParentLastName = checkData.LastName,
+            ChildDateOfBirth = DateTime.ParseExact(checkData.DateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+            SubmissionDate = startDate,
+            ValidityStartDate = startDate,
+            DiscretionaryValidityStartDate = startDate,
+            ValidityEndDate = DateTime.Today.AddDays(1),
+            GracePeriodEndDate = DateTime.Today.AddDays(1)
+        };
     }
 
     private CheckProcessData GetCheckProcessData(CheckEligibilityRequestData request)

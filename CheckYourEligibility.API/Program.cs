@@ -4,11 +4,12 @@ using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Data.Mappings;
+using CheckYourEligibility.API.Gateways.Factories;
+using CheckYourEligibility.API.Gateways.Factories.Helper;
 using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.API.UseCases;
 using CheckYourEligibility.API.UseCases.Internal;
-using CheckYourEligibility.API.UseCases;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -151,6 +152,12 @@ builder.Services.AddAzureClients(builder.Configuration);
 builder.Services.AddServices();
 builder.Services.AddExternalServices(builder.Configuration);
 builder.Services.AddJwtSettings(builder.Configuration);
+
+// Test Data Configuration and Providers
+var testDataConfig = TestDataConfiguration.CreateFromConfiguration(builder.Configuration);
+builder.Services.AddSingleton(testDataConfig);
+builder.Services.AddSingleton<IStandardCheckTestScenarioFactory, StandardCheckTestScenarioFactory>();
+builder.Services.AddSingleton<IWorkingFamiliesTestScenarioFactory, WorkingFamiliesTestScenarioFactory>();
 
 // Use cases
 builder.Services.AddScoped<ICreateOrUpdateFSMParentUserUseCase, CreateOrUpdateFSMParentUserUseCase>();

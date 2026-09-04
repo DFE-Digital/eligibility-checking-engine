@@ -62,7 +62,9 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
 
         var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result, isInternal:true);
 
-        item.EligibilityCodeType = WorkingFamiliesCheckHelper.GetEligibilityCodeType(item.EligibilityCode);
+        item.EligibilityCodeType = item.EligibilityCode.StartsWith("7")
+            ? WorkingFamiliesCheckHelper.GetTestEligibilityCodeType(item.EligibilityCode)
+            : WorkingFamiliesCheckHelper.GetEligibilityCodeType(item.EligibilityCode);      
 
         item.IsDiscretionaryValidityStartDateApplied =
         WorkingFamiliesCheckHelper.IsDiscretionaryValidityStartDateApplied(item.ValidityStartDate, item.DiscretionaryValidityStartDate);

@@ -76,7 +76,6 @@ public class CheckEligibilityGateway : ICheckEligibility
 
                 string bulkQueueName = GetBulkQueueName(queuedBulkItems.First().Type, meta.Source);
 
-
                 foreach (var item in queuedBulkItems)
                 {
                     await _storageQueueGateway.SendMessage(item, bulkQueueName);
@@ -157,7 +156,6 @@ public class CheckEligibilityGateway : ICheckEligibility
             throw;
 
         }
-
 
     }
 
