@@ -1,17 +1,19 @@
 ﻿using CheckYourEligibility.API.Adapters;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Constants;
+using CheckYourEligibility.API.Domain.Authorization;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Extensions;
+using CheckYourEligibility.API.Extensions.Authorization;
 using CheckYourEligibility.API.Filters;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Security;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 namespace CheckYourEligibility.API;
@@ -26,7 +28,7 @@ public static class ProgramExtensions
         services.AddDbContextFactory<EligibilityCheckContext>(options =>
           options.UseSqlServer(
               connectionString,
-              x => x.MigrationsAssembly("CheckYourEligibility.API")),lifetime: ServiceLifetime.Scoped);
+              x => x.MigrationsAssembly("CheckYourEligibility.API")), lifetime: ServiceLifetime.Scoped);
 
         services.AddDbContext<IEligibilityCheckContext, EligibilityCheckContext>(options =>
             options.UseSqlServer(
@@ -34,7 +36,7 @@ public static class ProgramExtensions
                 x => x.MigrationsAssembly("CheckYourEligibility.API"))
 
         );
-     
+
         return services;
     }
 
@@ -88,7 +90,8 @@ public static class ProgramExtensions
         services.AddHttpClient("Dwp", client =>
         {
             client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
-        }).ConfigurePrimaryHttpMessageHandler(() => {
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
 
             var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
             var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
@@ -97,9 +100,9 @@ public static class ProgramExtensions
             handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
             return handler;
         })
-    .AddPolicyHandler((sp, msg) =>  
+    .AddPolicyHandler((sp, msg) =>
     {
-       var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
         return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
     }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
 
@@ -121,7 +124,7 @@ public static class ProgramExtensions
             {
                 client.BaseAddress = new Uri(ecsBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
-               
+
             }).AddPolicyHandler((sp, msg) =>
             {
                 var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
@@ -129,7 +132,7 @@ public static class ProgramExtensions
             })
 
             .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-            
+
             services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();
@@ -185,12 +188,14 @@ public static class ProgramExtensions
                 };
             });
 
+        services.AddSingleton<IAuthorizationHandler, RuleRequirementHandler>();
         services.AddAuthorization(options =>
         {
+            // API scope-based policies
             options.AddPolicy(PolicyNames.RequireLocalAuthorityScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasSingleScope(configuration["Jwt:Scopes:local_authority"] ?? "local_authority")));
-            
+
             options.AddPolicy(PolicyNames.RequireMultiAcademyTrustScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust")));
@@ -244,30 +249,49 @@ public static class ProgramExtensions
             options.AddPolicy(PolicyNames.RequireMatOrAdminScope, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasScopeWithColon(configuration["Jwt:Scopes:multi_academy_trust"] ?? "multi_academy_trust") ||
-                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));            
+                    context.User.HasScope(configuration["Jwt:Scopes:admin"] ?? "admin")));
 
-            options.AddPolicy(PolicyNames.RequireFreeSchoolMealsAdminPortalSource, policy =>
-                policy.RequireAssertion(context =>
+            // User source and role-based policies
+            options.AddPolicy(PolicyNames.RequireFreeSchoolMealsAdminPortalSource,
+                policy =>
                 {
-                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+                    policy.Requirements.Add(new RuleRequirement(
+                        RuleBuilder.UserType(UserType.FreeSchoolMealsAdmin)
+                    ));
+                });
 
-                    return string.Equals(
-                        checkSourceAndUserName.Item1,
-                        "free-school-meals-admin",
-                        StringComparison.OrdinalIgnoreCase);
-                }));
+            options.AddPolicy(PolicyNames.RequireSupportPortalSource, policy =>
+            {
+                policy.Requirements.Add(RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport).Build());
+            });
 
             options.AddPolicy(PolicyNames.RequireChildCareAdminSource, policy =>
-                policy.RequireAssertion(context =>
-                {
-                    var checkSourceAndUserName = context.User.GetCheckSourceAndUserNameFromClientId();
+            {
+                policy.Requirements.Add(RuleBuilder.UserType(UserType.ChildcareAdmin).Build());
+            });
 
-                    return string.Equals(
-                        checkSourceAndUserName.Item1,
-                        "childcare-admin",
-                        StringComparison.OrdinalIgnoreCase);
-                }));
+            // Compound authorization rules
+
+            // Allow users to retrieve eligibility code history:
+            // - If request is from the Childcare Admin portal they must have LA scope
+            // - If request is from the Support portal they must have code management role
+            options.AddPolicy(PolicyNames.GetEligibilityCodeHistory, policy =>
+            {
+                policy.Requirements.Add(
+                    RuleBuilder.Or(
+                        RuleBuilder.And(
+                            RuleBuilder.UserType(UserType.ChildcareAdmin),
+                            RuleBuilder.OrganisationType(OrganisationType.local_authority)
+                        ),
+                        RuleBuilder.And(
+                            RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
+                            RuleBuilder.Role(UserRoleName.Support_CodeManagement)
+                        )
+                    )
+                    .Build());
+            });
         });
+
         return services;
     }
 }

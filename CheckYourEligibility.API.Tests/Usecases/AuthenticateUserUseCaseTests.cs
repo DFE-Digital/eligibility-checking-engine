@@ -62,11 +62,13 @@ public class AuthenticateUserUseCaseTests
             client_secret = "correct_password"
         };
 
+        var userId = Guid.NewGuid().ToString();
+
         _mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -155,12 +157,13 @@ public class AuthenticateUserUseCaseTests
             client_id = "test_client",
             client_secret = "correct_password"
         };
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -179,12 +182,13 @@ public class AuthenticateUserUseCaseTests
             client_id = "test_client",
             client_secret = "correct_password"
         };
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -232,12 +236,13 @@ public class AuthenticateUserUseCaseTests
             client_secret = "correct_password",
             scope = "read write"
         };
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -277,12 +282,13 @@ public class AuthenticateUserUseCaseTests
             client_id = "test_client",
             client_secret = "correct_password"
         };
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -317,12 +323,13 @@ public class AuthenticateUserUseCaseTests
             client_secret = "correct_password",
             grant_type = "invalid_grant_type" // Using an invalid grant type
         };
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync(_fixture.Create<string>());
 
-        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).Returns(Task.CompletedTask);
+        _mockUsersGateway.Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>())).ReturnsAsync(userId);
 
         // Act
         var result = await _sut.Execute(login);
@@ -456,7 +463,8 @@ public class AuthenticateUserUseCaseTests
         _jwtSettings.Clients["test_client"].Scope =
             "check free_school_meals local_authority";
 
-        _mockAuditGateway
+		var userId = Guid.NewGuid().ToString();
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(
                 AuditType.Client,
                 login.client_id,
@@ -466,7 +474,7 @@ public class AuthenticateUserUseCaseTests
         _mockUsersGateway
             .Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>()))
             .Callback<UserCreateRequest>(r => capturedRequest = r)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(userId);
 
         // Act
         await _sut.Execute(login);
@@ -502,15 +510,16 @@ public class AuthenticateUserUseCaseTests
 
         _jwtSettings.Clients["test_client"].Scope =
             $"check {allowedScope}";
+		var userId = Guid.NewGuid().ToString();
 
-        _mockAuditGateway
+		_mockAuditGateway
             .Setup(a => a.CreateAuditEntry(AuditType.Client, login.client_id, null))
             .ReturnsAsync("audit");
 
         _mockUsersGateway
             .Setup(u => u.CreateOrUpdateUser(It.IsAny<UserCreateRequest>()))
             .Callback<UserCreateRequest>(r => capturedRequest = r)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(userId);
 
         await _sut.Execute(login);
 

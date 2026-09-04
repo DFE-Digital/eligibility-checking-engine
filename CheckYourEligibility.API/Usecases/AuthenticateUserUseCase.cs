@@ -1,6 +1,7 @@
 using CheckYourEligibility.Api.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Authorization;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
@@ -107,9 +108,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
     JwtConfig jwtConfig)
     {
         // NOTE : This will remain for now until we implement a better way to audit passed scopes
-        await _auditGateway.CreateAuditEntry(
-            AuditType.Client,
-            credentials.client_id);
+        await _auditGateway.CreateAuditEntry(AuditType.Client, credentials.client_id);
 
         if (!ValidateSecret(credentials.client_secret, jwtConfig.ExpectedSecret))
         {
@@ -121,70 +120,97 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             throw new InvalidScopeException();
         }
 
-        var tokenString = GenerateJSONWebToken(
-            credentials.client_id,
-            credentials.scope,
-            jwtConfig,
-            out var expires);
+        // Get user details from client ID, including user type, username, and email
+        var userDetails = GetUserDetailsFromClientId(credentials.client_id);
 
-        if (string.IsNullOrEmpty(tokenString))
-        {
-            throw new ServerErrorException();
-        }
+        // Get organisation details based on the provided scope
+        var organisationDetails = GetOrganisationDetails(credentials.scope);
 
-        var expiresInSeconds = (int)(expires - DateTime.UtcNow).TotalSeconds;
-
+        // Create or update the user in the database and get the user ID
+        string userId = null;
         try
         {
-            var userDetails = GetUserDetailsFromClientId(credentials.client_id);
-            var organisationDetails = GetOrganisationDetails(credentials.scope);
-
-            await _usersGateway.CreateOrUpdateUser(new UserCreateRequest
+            var userCreateRequest = new UserCreateRequest
             {
                 Data = new()
                 {
                     Email = userDetails.Email,
-                    Reference = Guid.NewGuid().ToString() // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
+                    Reference = Guid.NewGuid().ToString()
+                    // temp. this needs to be passed in from front end where needed. its sub claim. its already done on FSM parent
                 },
-
                 MetaData = new()
                 {
                     Source = userDetails.UserType.ToString(),
                     UserName = userDetails.UserName,
                     OrganisationID = organisationDetails.OrganisationId,
-                    OrganisationType = organisationDetails.OrganisationType
+                    OrganisationType = organisationDetails.OrganisationType.ToString()
                 }
-            });
+            };
+            userId = await _usersGateway.CreateOrUpdateUser(userCreateRequest);
         }
         catch (Exception ex)
         {
-            var safeClientId = (credentials.client_id ?? string.Empty)
-                .Replace("\r", string.Empty)
-                .Replace("\n", string.Empty);
-
             _logger.LogWarning(
                 ex,
                 "Failed to create or update user for client {ClientId}",
-                safeClientId);
-
-            // Do not fail authentication.
-            // JWT generation and validation have already succeeded.
+                (credentials.client_id ?? string.Empty).Replace("\r", "").Replace("\n", ""));
+            // Do not fail authentication if user creation/updating fails; proceed with token generation
         }
 
-        return new JwtAuthResponse
+        // Build the JWT response
+        var response = new JwtAuthResponse { token_type = "Bearer" };
+
+        // Build claims for the JWT token, including user type claim based on client ID
+        List<Claim> additionalClaims = [
+            new Claim(JwtClaimTypes.UserType, userDetails.UserType.ToString()),
+            new Claim(JwtClaimTypes.UserId, userId ?? string.Empty),
+            new Claim(JwtClaimTypes.OrganisationType, organisationDetails.OrganisationType.ToString()),
+            new Claim(JwtClaimTypes.OrganisationId, organisationDetails.OrganisationId.ToString())
+        ];
+
+        // Add extra user details and roles to JwtAuthResponse only for non-API users
+        if (userDetails.UserType != UserType.API)
         {
-            expires_in = expiresInSeconds,
-            access_token = tokenString,
-            token_type = "Bearer"
-        };
+            response.UserType = userDetails.UserType;
+            response.UserId = userId ?? string.Empty;
+            response.OrganisationType = organisationDetails.OrganisationType;
+            response.OrganisationId = organisationDetails.OrganisationId;
+            response.Roles = [];
+
+            // Get any UserRoles from the database for the logged in user and append them to the claims
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var roles = await _usersGateway.GetUserRoles(userId);
+                foreach (var role in roles)
+                {
+                    response.Roles.Add(role.RoleName);
+                    additionalClaims.Add(new Claim(ClaimTypes.Role, role.RoleName.ToString()));
+                }
+            }
+        }
+
+        response.access_token = GenerateJSONWebToken(
+            credentials.client_id,
+            additionalClaims,
+            credentials.scope,
+            jwtConfig,
+            out var expires);
+        response.expires_in = (int)(expires - DateTime.UtcNow).TotalSeconds;
+
+        if (string.IsNullOrEmpty(response.access_token))
+        {
+            throw new ServerErrorException();
+        }
+
+        return response;
     }
 
 
-    private (int OrganisationId, string? OrganisationType) GetOrganisationDetails(string scope)
+    private (int OrganisationId, OrganisationType OrganisationType) GetOrganisationDetails(string scope)
     {
         if (string.IsNullOrWhiteSpace(scope))
         {
-            return (0, "none");
+            return (0, OrganisationType.none);
         }
 
         var laId = GetSingleScopeId(scope, "local_authority");
@@ -200,7 +226,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             (matId == null && hasMatScope) ||
             (estId == null && hasEstScope))
         {
-            return (0, "none");
+            return (0, OrganisationType.none);
         }
 
         // Different org types with IDs
@@ -208,25 +234,25 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             (laId > 0 && estId > 0) ||
             (matId > 0 && estId > 0))
         {
-            return (0, "none");
+            return (0, OrganisationType.none);
         }
 
         if (laId >= 0)
         {
-            return (laId.Value, "local_authority");
+            return (laId.Value, OrganisationType.local_authority);
         }
 
         if (matId >= 0)
         {
-            return (matId.Value, "multi_academy_trust");
+            return (matId.Value, OrganisationType.multi_academy_trust);
         }
 
         if (estId >= 0)
         {
-            return (estId.Value, "establishment");
+            return (estId.Value, OrganisationType.establishment);
         }
 
-        return (0, "none");
+        return (0, OrganisationType.none);
     }
 
     private int? GetSingleScopeId(string scope, string scopeName)
@@ -281,7 +307,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
             Enum.TryParse<UserType>(parts[0].Replace("-", ""), true, out userType);
 
             // Use the second part of clientId as the username and email
-            userName = parts[1]; 
+            userName = parts[1];
             email = parts[1];
         }
 
@@ -459,7 +485,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         return false;
     }
 
-    private static string GenerateJSONWebToken(string identifier, string? scope, JwtConfig jwtConfig,
+    private static string GenerateJSONWebToken(string identifier, List<Claim> additionalClaims, string? scope, JwtConfig jwtConfig,
         out DateTime expires)
     {
         try
@@ -475,6 +501,9 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
 
             // Only include scope claim if scope was provided
             if (!string.IsNullOrEmpty(scope) && scope != "default") claimsList.Add(new Claim("scope", scope));
+
+            // Add any additional claims if supplied
+            if (additionalClaims != null) { claimsList.AddRange(additionalClaims); }
 
             expires = DateTime.UtcNow.AddMinutes(120);
             var token = new JwtSecurityToken(

@@ -2,6 +2,7 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,8 +35,8 @@ public class UsersGateway : IUsers
     ///  Portal users are matched using Email, UserType, OrganisationType and  OrganisationId
     ///  </summary> <param name="request">
     ///  Details of the user to create or update </param> 
-    ///  <returns> A task representing the asynchronous operation </returns>
-    public async Task CreateOrUpdateUser(UserCreateRequest request)
+    ///  <returns> The GUID of the created user </returns>
+    public async Task<string> CreateOrUpdateUser(UserCreateRequest request)
     {
         var isApiUser =
             Enum.TryParse<UserType>(request.MetaData.Source, true, out var userType)
@@ -44,11 +45,11 @@ public class UsersGateway : IUsers
         var organisationType =
             Enum.Parse<OrganisationType>(request.MetaData.OrganisationType);
 
-        User? existingUser;
+        User? user;
 
         if (isApiUser)
         {
-            existingUser = await _db.Users.FirstOrDefaultAsync(u =>
+            user = await _db.Users.FirstOrDefaultAsync(u =>
                 u.UserName.ToLower() == request.MetaData.UserName.ToLower() &&
                 u.UserType == UserType.API &&
                 u.OrganisationType == organisationType &&
@@ -56,24 +57,24 @@ public class UsersGateway : IUsers
         }
         else
         {
-            existingUser = await _db.Users.FirstOrDefaultAsync(u =>
+            user = await _db.Users.FirstOrDefaultAsync(u =>
                 u.Email.ToLower() == request.Data.Email.ToLower() &&
                 u.UserType == userType &&
                 u.OrganisationType == organisationType &&
                 u.OrganisationId == request.MetaData.OrganisationID);
         }
 
-        if (existingUser != null)
+        if (user != null)
         {
-            existingUser.LastLogin = DateTime.UtcNow;
+            user.LastLogin = DateTime.UtcNow;
 
             _logger.LogInformation(
                 "Updated last login for user {UserName}",
-                SanitizeForLog(existingUser.UserName));
+                SanitizeForLog(user.UserName));
         }
         else
         {
-            existingUser = new User
+            user = new User
             {
                 UserID = Guid.NewGuid().ToString(),
                 Reference = request.Data.Reference,
@@ -85,14 +86,16 @@ public class UsersGateway : IUsers
                 LastLogin = DateTime.UtcNow
             };
 
-            await _db.Users.AddAsync(existingUser);
+            await _db.Users.AddAsync(user);
 
             _logger.LogInformation(
                 "Created user {UserName}",
-                SanitizeForLog(existingUser.UserName));
+                SanitizeForLog(user.UserName));
         }
 
         await _db.SaveChangesAsync();
+
+        return user.UserID;
     }
 
 
@@ -135,5 +138,62 @@ public class UsersGateway : IUsers
         await _db.SaveChangesAsync();
 
         return item.UserID;
+    }
+
+    public async Task<IList<UserRole>> GetUserRoles(string userId)
+    {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+        
+        return await _db.UserRoles
+            .Where(x => x.UserId == userId)
+            .OrderBy(x => x.RoleName)
+            .ToListAsync();
+    }
+
+    public async Task<UserRole> AddUserRole(string userId, UserRoleName roleName)
+    {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+
+        var existingRole = await _db.UserRoles
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleName == roleName);
+
+        if (existingRole != null) { return existingRole; }
+
+        var role = new UserRole
+        {
+            UserId = userId,
+            RoleName = roleName
+        };
+
+        await _db.UserRoles.AddAsync(role);
+        await _db.SaveChangesAsync();
+
+        return role;
+    }
+
+    public async Task<bool> RemoveUserRole(string userId, UserRoleName roleName)
+    {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserID == userId);
+        if (user is null)
+        {
+            throw new NotFoundException($"User {userId} not found");
+        }
+
+        var role = await _db.UserRoles.FirstOrDefaultAsync(x => x.UserId == userId && x.RoleName == roleName);
+
+        if (role == null) { return false; }
+
+        _db.UserRoles.Remove(role);
+        await _db.SaveChangesAsync();
+
+        return true;
     }
 }

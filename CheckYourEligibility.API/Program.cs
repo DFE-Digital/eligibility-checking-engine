@@ -154,6 +154,9 @@ builder.Services.AddJwtSettings(builder.Configuration);
 
 // Use cases
 builder.Services.AddScoped<ICreateOrUpdateFSMParentUserUseCase, CreateOrUpdateFSMParentUserUseCase>();
+builder.Services.AddScoped<IGetUserRolesUseCase, GetUserRolesUseCase>();
+builder.Services.AddScoped<IAddUserRoleUseCase, AddUserRoleUseCase>();
+builder.Services.AddScoped<IRemoveUserRoleUseCase, RemoveUserRoleUseCase>();
 builder.Services.AddScoped<IAuthenticateUserUseCase, AuthenticateUserUseCase>();
 builder.Services.AddScoped<IGetCitizenClaimsUseCase, GetCitizenClaimsUseCase>();
 builder.Services.AddScoped<ISearchEstablishmentsUseCase, SearchEstablishmentsUseCase>();

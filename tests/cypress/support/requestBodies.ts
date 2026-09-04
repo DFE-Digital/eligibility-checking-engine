@@ -29,6 +29,13 @@ export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
   encodeURIComponent(Cypress.env("JWT_PASSWORD")),
 );
 
+export const validSupportPortalLoginRequestBody = "client_id=eligibility-checking-engine-support:".concat(
+  encodeURIComponent("ece.service+cypress@education.gov.uk"),
+  "&client_secret=",
+  encodeURIComponent(Cypress.env("JWT_SUPPORTPORTAL_PASSWORD")),
+  "&scope=user admin support",
+);
+
 export function validHMRCRequestBody() {
   return {
     data: {

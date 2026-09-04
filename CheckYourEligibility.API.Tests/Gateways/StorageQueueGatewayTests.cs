@@ -1,29 +1,14 @@
-// Ignore Spelling: Levenshtein
-
-using System.Globalization;
-using System.Net;
-using AutoFixture;
 using AutoMapper;
 using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Tests;
 
@@ -63,20 +48,19 @@ public class StorageQueueGatewayTests : TestBase.TestBase
         _mapper = config.CreateMapper();
 
         var configForSmsApi = new Dictionary<string, string>
-    {
-        { "BulkEligibilityCheckLimit", "250" },
-        { "QueueFsmCheckStandard", "notSet" },
-        { "QueueFsmCheckBulk", "notSet" },
-        { "HashCheckDays", "7" },
-        { "Dwp:UseEcsforChecksWF", "false" }
-    };
+        {
+            { "BulkEligibilityCheckLimit", "250" },
+            { "QueueFsmCheckStandard", "notSet" },
+            { "QueueFsmCheckBulk", "notSet" },
+            { "HashCheckDays", "7" },
+            { "Dwp:UseEcsforChecksWF", "false" }
+        };
 
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
 
-        var webJobsConnection =
-            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+        var webJobsConnection = "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
         _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
         _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
