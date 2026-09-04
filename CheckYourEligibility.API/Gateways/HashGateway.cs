@@ -45,6 +45,36 @@ public class HashGateway : IHash
     }
 
     /// <summary>
+    ///     Batched version of <see cref="Exists" />. See interface doc comment (<see cref="IHash.ExistsBatch" />)
+    ///     for the full rationale (ELIG-3354 / docs/bulk-check-hash-batching-fix.md).
+    /// </summary>
+    public async Task<Dictionary<string, EligibilityCheckHash>> ExistsBatch(IEnumerable<CheckProcessData> items, CheckEligibilityType type)
+    {
+        var hashValidityDays = type == CheckEligibilityType.WorkingFamilies ? _hashCheckDaysWF : _hashCheckDays;
+        var age = DateTime.UtcNow.AddDays(-hashValidityDays);
+
+        // Compute every record's hash in memory first (cheap, no DB access), then issue ONE
+        // "WHERE Hash IN (...)" query for the WHOLE batch, instead of the old one-query-per-record
+        // loop (which was doing thousands of sequential awaited round-trips for large batches).
+        var hashes = items.Select(i => i.GetHash()).Distinct().ToList();
+        if (hashes.Count == 0)
+        {
+            return new Dictionary<string, EligibilityCheckHash>();
+        }
+
+        var matches = await _db.EligibilityCheckHashes
+            .Where(x => hashes.Contains(x.Hash) && x.TimeStamp >= age)
+            .ToListAsync();
+
+        // A hash string could (rarely) match more than one stored row within the validity window.
+        // Exists() above just returns whatever FirstOrDefaultAsync() happens to give back; here we
+        // deliberately prefer the most recent row per hash so the batched result is deterministic.
+        return matches
+            .GroupBy(x => x.Hash)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.TimeStamp).First());
+    }
+
+    /// <summary>
     ///     Create the hash item and audit
     /// </summary>
     /// <param name="item"></param>
