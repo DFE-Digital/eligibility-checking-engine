@@ -34,6 +34,23 @@ public class CheckEligibilityGateway : ICheckEligibility
         _configuration = configuration;
     }
 
+    private string GetBulkQueueName(
+    CheckEligibilityType type,
+    string source)
+    {
+        return type switch
+        {
+            CheckEligibilityType.FreeSchoolMeals
+                when source == "free-school-meals-admin"
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Frontend"],
+
+            CheckEligibilityType.FreeSchoolMeals
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Api"],
+
+            _ => _configuration[$"Queue:Bulk:{type}"]
+        };
+    }
+    
     public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
     {
         _groupId = groupId;
@@ -395,81 +412,4 @@ public class CheckEligibilityGateway : ICheckEligibility
         return Convert.ToHexString(inputHash);
     }
 
-    #region Private
-
-    private string GetBulkQueueName(
-    CheckEligibilityType type,
-    string source)
-    {
-        return type switch
-        {
-            CheckEligibilityType.FreeSchoolMeals
-                when source == "free-school-meals-admin"
-                    => _configuration["Queue:Bulk:FreeSchoolMeals:Frontend"],
-
-            CheckEligibilityType.FreeSchoolMeals
-                    => _configuration["Queue:Bulk:FreeSchoolMeals:Api"],
-
-            _ => _configuration[$"Queue:Bulk:{type}"]
-        };
-    }
-
-    private CheckProcessData GetCheckProcessData(CheckEligibilityType type, string data)
-    {
-        //TODO: This should probably live with the usecase
-        switch (type)
-        {
-            case CheckEligibilityType.FreeSchoolMeals:
-            case CheckEligibilityType.TwoYearOffer:
-            case CheckEligibilityType.EarlyYearPupilPremium:
-                return GetCheckProcessDataType<CheckEligibilityRequestBulkData>(type, data);
-            case CheckEligibilityType.WorkingFamilies:
-                return GetCheckProcessDataType<CheckEligibilityRequestWorkingFamiliesBulkData>(type, data);
-            default:
-                throw new NotImplementedException($"Type:-{type} not supported.");
-        }
-    }
-
-    private static CheckProcessData GetCheckProcessDataType<T>(CheckEligibilityType type, string data)
-        where T : IEligibilityServiceType
-    {
-        dynamic checkItem = JsonConvert.DeserializeObject(data, typeof(T));
-        switch (type)
-        {
-            case CheckEligibilityType.WorkingFamilies:
-                return new CheckProcessData
-                {
-                    EligibilityCode = checkItem.EligibilityCode,
-                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-                    ValidityStartDate = checkItem.ValidityStartDate,
-                    ValidityEndDate = checkItem.ValidityEndDate,
-                    GracePeriodEndDate = checkItem.GracePeriodEndDate,
-                    LastName = checkItem.LastName?.ToUpper(),
-                    DateOfBirth = checkItem.DateOfBirth,
-                    ClientIdentifier = checkItem.ClientIdentifier,
-                    Type = type
-                };
-            default:
-                return new CheckProcessData
-                {
-                    DateOfBirth = checkItem.DateOfBirth,
-                    LastName = checkItem.LastName?.ToUpper(),
-                    FirstName = checkItem.FirstName,
-                    ChildFirstName = checkItem.ChildFirstName,
-                    ChildLastName = checkItem.ChildLastName,
-                    ChildDateOfBirth = checkItem.ChildDateOfBirth,
-                    ChildSchoolURN = checkItem.ChildSchoolURN,
-                    EmailAddress = checkItem.EmailAddress,
-                    NationalAsylumSeekerServiceNumber = checkItem.NationalAsylumSeekerServiceNumber,
-                    NationalInsuranceNumber = checkItem.NationalInsuranceNumber,
-                    Type = type,
-                    ClientIdentifier = checkItem.ClientIdentifier,
-                    EligibilityEndDate = checkItem.EligibilityEndDate
-
-                };
-        }
-    }
-
-
-    #endregion
 }
