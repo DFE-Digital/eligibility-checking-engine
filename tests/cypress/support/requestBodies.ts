@@ -14,7 +14,7 @@ export const validLoginRequestBodyFosterFamilies = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
   "&client_secret=",
   encodeURIComponent(Cypress.env("JWT_PASSWORD")),
-  "&scope=local_authority:99 check application admin bulk_check establishment user engine",
+  "&scope=local_authority:9004 check application admin bulk_check establishment user engine",
 );
 export const invalidLoginRequestBodyFosterFamilies = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),

@@ -63,7 +63,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     /// <exception cref="InvalidOperationException"></exception>
     public async Task EligibilityCheckReports(
     Guid reportId,
-    CheckEligibilityType eligiblityCheckType,string? source,
+    CheckEligibilityType eligiblityCheckType, string? source,
     CancellationToken cancellationToken = default)
     {
         if (reportId == Guid.Empty)
@@ -81,13 +81,18 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
         // they could be a lot of checks, so we need to batch the inserts
         // to avoid loading them all into memory at once
-        const int BatchSize = 1000;
+        const int BatchSize = 500;
         var batch = new List<EligibilityCheckReportItem>(BatchSize);
         var totalResults = 0;
         string? lastProcessedCheckId = null;
 
+        // Apply extended command timeout for this process
+        int priorTimeout = _db.Database.GetCommandTimeout() ?? 30;
+        _db.Database.SetCommandTimeout(120);
+
         try
         {
+
             while (true)
             {
                 var query = GetCheckQuery(report, source);
@@ -99,13 +104,14 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 }
 
                 var checks = await query
+                        .Where(c => c.Type == eligiblityCheckType)
                         .OrderBy(e => e.EligibilityCheckID)
                         .Take(BatchSize)
-                        .Where(c => c.Type == eligiblityCheckType)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
                             e.BulkCheckID != null))
                         .ToListAsync(cancellationToken);
+
 
                 // if no more checks, break the loop
                 if (checks.Count == 0)
@@ -142,6 +148,11 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
             _logger.LogError(ex, "Error generating eligibility check report");
             throw;
+        }
+        finally
+        {
+            // Reset command timeout
+            _db.Database.SetCommandTimeout(priorTimeout);
         }
     }
     public async Task<EligibilityCheckReport> CreateReport(EligibilityCheckReportRequest request, CancellationToken cancellationToken)
@@ -267,7 +278,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
     );
 
     // public to allow testing
-    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request, string source )
+    public IQueryable<EligibilityCheck> GetCheckQuery(EligibilityCheckReport request, string source)
     {
         return request.CheckType switch
         {
@@ -293,7 +304,7 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
             CheckType.AllChecks =>
                 _db.CheckEligibilities
                     .Where(c =>
-                       c.Source  == source &&
+                       c.Source == source &&
                        c.Created >= request.StartDate &&
                        c.Created <= request.EndDate &&
                        c.OrganisationID == request.LocalAuthorityID)

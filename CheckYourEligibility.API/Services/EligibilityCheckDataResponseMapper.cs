@@ -53,6 +53,7 @@ namespace CheckYourEligibility.API.Services
             item.GracePeriodEndDate = checkData.GracePeriodEndDate;
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
             item.DateOfBirth = checkData.DateOfBirth;
+            item.Order = checkData.Order;
 
             // for internal site endpoint provide both dates
             if (isInternal) {
@@ -80,6 +81,7 @@ namespace CheckYourEligibility.API.Services
             item.Status = eligibilityCheck.Status.ToString();
             item.Created = eligibilityCheck.Created;
             item.ClientIdentifier = checkData?.ClientIdentifier;
+            item.Order = checkData?.Order;
             item.DateOfBirth = checkData.DateOfBirth;
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
             item.NationalAsylumSeekerServiceNumber =
