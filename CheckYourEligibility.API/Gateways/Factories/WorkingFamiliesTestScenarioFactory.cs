@@ -143,7 +143,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// Creates an event with
         /// VSD before the current term
         /// VED is before the end of the term
-        /// VED in a range so GPED is greater than current term's end date
+        /// GPED is end of term
         /// </summary>
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
@@ -194,7 +194,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
                 {
                     // Fallback: generate before the due-now window
                     wfEvent.ValidityEndDate =
-                        RandomDateGenerator(wfEvent.ValidityStartDate, dueWindowStart.AddDays(-1));
+                        RandomDateGenerator(checkDate.AddDays(1), dueWindowStart.AddDays(-1));
                 }
             }
 

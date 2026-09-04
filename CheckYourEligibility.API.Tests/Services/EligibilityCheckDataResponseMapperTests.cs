@@ -98,9 +98,42 @@ public class EligibilityCheckDataResponseMapperTests
         result.EmailAddress.Should().Be("test@test.com");
     }
 
-    [TestCase("2024-12-31",null, false)]
-    [TestCase("2025-01-01","2024-12-31", true)]
-    public void MapCheckDataToResponseWorkingFamilies_Maps_All_Fields(string vsd,string dvsd, bool isIntenral)
+    [TestCase("2024-12-31", null)]
+    [TestCase("2025-01-01", "2024-12-31")]
+    public void MapCheckDataToResponseWorkingFamilies_ExternalMapping_MapsValidityStartDate(string vsd, string dvsd)
+    {
+        var request = new CheckProcessData
+        {
+            EligibilityCode = "CODE123",
+            LastName = "SMITH",
+            NationalInsuranceNumber = "AB123456C",
+            ValidityStartDate = vsd,
+            DiscretionaryValidityStartDate = dvsd,
+            ValidityEndDate = "2025-12-31",
+            GracePeriodEndDate = "2026-03-31",
+            DateOfBirth = "1980-01-01"
+        };
+
+        var check = new EligibilityCheck
+        {
+            Type = CheckEligibilityType.WorkingFamilies,
+            Status = CheckEligibilityStatus.eligible,
+            CheckData = JsonConvert.SerializeObject(request)
+        };
+
+        var result = _sut.MapCheckDataToResponseWorkingFamilies(check);
+
+        result.Status.Should().Be("eligible");
+        result.EligibilityCode.Should().Be("CODE123");
+        result.LastName.Should().Be("SMITH");
+        // for external check if DVSD is found in checkData map it to VSD , else use old VSD value for old checks
+        result.ValidityStartDate.Should().Be(dvsd != null ? dvsd:vsd);
+        result.ValidityEndDate.Should().Be("2025-12-31");
+        result.GracePeriodEndDate.Should().Be("2026-03-31");
+    }
+
+    [Test]
+    public void MapCheckDataToResponseWorkingFamilies_InternalMapping_ReturnsBothStartDates()
     {
         var request = new CheckProcessData
         {
@@ -121,15 +154,10 @@ public class EligibilityCheckDataResponseMapperTests
             CheckData = JsonConvert.SerializeObject(request)
         };
 
-        var result = _sut.MapCheckDataToResponseWorkingFamilies(check, isIntenral);
+        var result = _sut.MapCheckDataToResponseWorkingFamilies(check, isInternal: true);
 
-        result.Status.Should().Be("eligible");
-        result.EligibilityCode.Should().Be("CODE123");
-        result.LastName.Should().Be("SMITH");
-        result.ValidityStartDate.Should().Be(vsd);
-        result.DiscretionaryValidityStartDate.Should().Be(dvsd);
-        result.ValidityEndDate.Should().Be("2025-12-31");
-        result.GracePeriodEndDate.Should().Be("2026-03-31");
+        result.ValidityStartDate.Should().Be("2025-01-01");
+        result.DiscretionaryValidityStartDate.Should().Be("2024-12-31");
     }
 
     [Test]

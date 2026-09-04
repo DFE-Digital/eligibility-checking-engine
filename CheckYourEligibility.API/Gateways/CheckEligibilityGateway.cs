@@ -140,7 +140,6 @@ public class CheckEligibilityGateway : ICheckEligibility
 
         }
 
-
     }
 
     public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
