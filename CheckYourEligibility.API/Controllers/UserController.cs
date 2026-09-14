@@ -55,7 +55,18 @@ public class UserController : BaseController
             });
         }
 
-        model.MetaData = HttpContext.User.CalculateMetaData();
+        // Calculate best user metadata from all available sources
+        var contextMetadata = HttpContext.User.CalculateMetaData();
+        if (model.MetaData == null)
+        {
+            model.MetaData = contextMetadata;
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(model.MetaData.UserName)) { model.MetaData.UserName = contextMetadata.UserName; }
+            if (string.IsNullOrEmpty(model.MetaData.Source)) { model.MetaData.Source = contextMetadata.Source; }
+            if (string.IsNullOrEmpty(model.MetaData.OrganisationType)) { model.MetaData.OrganisationType = contextMetadata.OrganisationType; }
+        }
 
         var response = await _createOrUpdateUserUseCase.Execute(model);
 
@@ -119,7 +130,7 @@ public class UserController : BaseController
             });
         }
 
-        if(!Guid.TryParse(userId, out _))
+        if (!Guid.TryParse(userId, out _))
         {
             return BadRequest(new ErrorResponse
             {
