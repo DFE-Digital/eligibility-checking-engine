@@ -79,6 +79,7 @@ namespace CheckYourEligibility.API.Services
 
             var item = new CheckEligibilityItem();
             item.Status = eligibilityCheck.Status.ToString();
+            item.Tier = eligibilityCheck.Tier != null ? eligibilityCheck.Tier.ToString() : null;
             item.Created = eligibilityCheck.Created;
             item.ClientIdentifier = checkData?.ClientIdentifier;
             item.Order = checkData?.Order;

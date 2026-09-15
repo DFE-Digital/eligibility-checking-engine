@@ -146,6 +146,14 @@ public class WorkingFamiliesTestScenarioFactoryTests
 
         Assert.That(result!.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 31))); //Summer
     }
+    [Test]
+    public void GenerateTestScenarioInternalSide_DoNotApplyDvsdNino_ForCannotBeUsetYetScenario()
+    {
+        var result = _sut.GenerateTestScenarioInternalSide(
+            CreateCheckData("70010000000", "NN123456A"), new DateTime(2026, 10, 15));
+
+        Assert.That(result!.DiscretionaryValidityStartDate, Is.EqualTo(result.ValidityStartDate));
+    }
 
     [Test]
     public void GenerateTestScenarioInternalSide_ExpiredReconfirmationOverdue_JanuaryCheckDate_GeneratesExpectedDates()

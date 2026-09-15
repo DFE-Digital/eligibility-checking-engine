@@ -16,8 +16,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Notify.Client;
-using Notify.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
@@ -227,9 +225,6 @@ builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamil
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
-
-builder.Services.AddTransient<INotificationClient>(x =>
-    new NotificationClient(!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty() ? builder.Configuration.GetValue<string>("Notify:Key") : "key"));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

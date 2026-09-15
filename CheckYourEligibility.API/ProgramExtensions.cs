@@ -59,6 +59,7 @@ public static class ProgramExtensions
         services.AddTransient<ILocalAuthority, LocalAuthorityGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();
         services.AddTransient<INotify, NotifyGateway>();
+        services.AddSingleton<INotificationClientFactory, NotificationClientFactory>();
         services.AddTransient<IEcsAdapter, EcsAdapter>();
         services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
         services.AddTransient<IUsers, UsersGateway>();

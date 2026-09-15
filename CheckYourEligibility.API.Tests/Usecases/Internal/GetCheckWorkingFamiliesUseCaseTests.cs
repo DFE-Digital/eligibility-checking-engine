@@ -74,11 +74,11 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
             var checkDate = DateTime.Today;
 
             var eligibilityCheck = _fixture.Create<EligibilityCheck>();
-
+            
             var mappedItem = _fixture.Build<CheckEligibilityWorkingFamiliesItem>()
                 .With(x => x.EligibilityCode, "50012345678")
                 .Create();
-
+             mappedItem.DateOfBirth = "2024-10-10";
             _checkGateway
                 .Setup(x => x.GetItem(guid))
                 .ReturnsAsync(eligibilityCheck);
@@ -142,6 +142,7 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
             result.Data.EligibilityCodeType.Should().NotBeNull();
             result.Data.TermValidity.Should().NotBeNull();
             result.Data.ReconfirmationProperties.Should().NotBeNull();
+            result.Data.ChildTooYoung.Should().BeFalse();
         }
 
     }

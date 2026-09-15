@@ -123,8 +123,9 @@ namespace CheckYourEligibility.API.Gateways.Factories
 
             PopulateCommonFields(wfEvent, checkData);
 
-            // Apply DVSD
-            if (nino.StartsWith(_testDataConfig.ApplyDvsdNINOPrefix))
+            // Apply DVSD rule
+            // do not apply if for cannot be used yet as it will never be true in the real world
+            if (nino.StartsWith(_testDataConfig.ApplyDvsdNINOPrefix) && !eligibilityCode.StartsWith(_testDataConfig.CannotBeUsedYet))
             {
 
                 wfEvent.DiscretionaryValidityStartDate = terms.Current.Name switch

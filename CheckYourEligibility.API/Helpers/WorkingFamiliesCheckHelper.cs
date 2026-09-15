@@ -165,22 +165,20 @@ namespace CheckYourEligibility.API.Helpers
                 new Term(TermName.Summer, new DateTime(year, 4, 1))
             );
         }
-        #region Private
         /// <summary>
-        ///  Caclculates if child turns 9 months after the start of the current term => child is too young
+        ///  Calculates if child turns 9 months after the start of the current term => child is too young
         /// </summary>
         /// <param name="dateOfBirth"></param>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private static bool ChildIsTooYoung(DateTime dateOfBirth, DateTime checkDate)
+        public static bool ChildIsTooYoung(DateTime dateOfBirth, DateTime checkDate)
         {
-
             DateTime nineMonthsOld = dateOfBirth.AddMonths(9);
             var (currentTerm, _) = GetTerms(checkDate);
             return nineMonthsOld > currentTerm.StartDate;
-
         }
 
+        #region Private
         /// <summary>
         /// Calculates if checkDate is on/after the start of this term => child is too old
         /// </summary>
