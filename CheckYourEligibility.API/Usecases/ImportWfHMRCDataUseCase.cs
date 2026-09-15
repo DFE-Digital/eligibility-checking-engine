@@ -1,13 +1,11 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using Newtonsoft.Json;
-using System.Runtime.CompilerServices;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -83,53 +81,26 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             _logger.LogError("ImportWfHMRCData", ex);
             throw new InvalidDataException(
                 $"{file.FileName} - {JsonConvert.SerializeObject(new WorkingFamiliesEvent())} :- {ex.Message}, {ex.InnerException?.Message}");
-        }
-
-             
+        }           
 
         try
         {
+            IList<WorkingFamiliesEventSummary> summaryRecordsDataLoad = [];
 
-            // for each code check if it is a new event
-            // if old events found
-            // check if the new event is reconfirmed on time (contigous)
-            // true - only update the VED and GPED from the new event
-            // false - update VSD , VED and GPED from the new event
-            // else if no historical event found for this code
-            // create a new summary event using the data from the new event
             for (int i = 0; i < DataLoad.Count; i++)
-            {
-                // parse PI to the summary record 
-                var eventSummaryRecord = WorkingFamiliesEventHelper.ParsePIWorkingFamilySummaryFromWorkingFamilyEvent(DataLoad[i]);
-                //check for exisitng records
-                var eventRecords = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsByEligibilityCode(DataLoad[i].EligibilityCode);
-                //if older events found, initiate contigous logic
-                if (eventRecords.Any())
-                {                   
-                    //Check if event is contigous and set VSD to earliest VSD of the current contiguous block
-                    // if newEvent.VSD <= olderEvent.VED (reconfirmed before the end of the reconfirmaion window)
-                    // and newEvent.VSD <= olderEvent.GPED (reconfirmation is before the )
-                    for (int e = 0; e < eventRecords.Count; e++)
-                    {
-                        if (DataLoad[i].ValidityStartDate <= eventRecords[e].GracePeriodEndDate)
-                        {
-                            //  DataLoad[i].DiscretionaryValidityStartDate = eventRecords[e].DiscretionaryValidityStartDate;
-                            //  DataLoad[i].ValidityStartDate = eventRecords[e].ValidityStartDate;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                                              
-                    eventSummaryRecord.ValidityEndDate = eventRecords[0].ValidityEndDate;
-                    eventSummaryRecord.GracePeriodEndDate = eventRecords[0].GracePeriodEndDate;
-                    
-                    }
-                }
+            {               
+                WorkingFamiliesEventSummary eventSummaryRecord = new();
 
-                await _gateway.ImportWfHMRCData(DataLoad);
+                // check for exisitng records in the working families events table
+                // check for existing summary record for that event
+                var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(DataLoad[i].EligibilityCode);
+                // pass record to evaluate contiguity for each incoming event
+                eventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(DataLoad[i], summaryRecord);
+                
+                summaryRecordsDataLoad.Add(eventSummaryRecord);
+               
             }
-
+                 await _gateway.ImportWfHMRCData(DataLoad, summaryRecordsDataLoad);  
         }
         catch (Exception ex)
         {

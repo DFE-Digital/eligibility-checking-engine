@@ -141,6 +141,28 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     {
         this.BulkInsert(data);
     }
+    public void BulkInsertOrUpdate_WorkingFamiliesEventSummary(IEnumerable<WorkingFamiliesEventSummary> data)
+    {
+        using var transaction = base.Database.BeginTransaction();
+
+        try
+        {
+            this.BulkInsertOrUpdate(data, config =>
+            {
+
+                config.UpdateByProperties = new List<string>() {
+
+                    nameof(WorkingFamiliesEventSummary.WorkingFamiliesEventSummaryID)
+                };  
+            });
+            transaction.Commit();
+        }
+        catch (Exception ex) {
+
+            transaction.Rollback();
+            throw;
+        }        
+    }
 
     public void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data)
     {

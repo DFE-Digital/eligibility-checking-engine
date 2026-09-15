@@ -28,8 +28,16 @@ public interface IWorkingFamiliesEvent
     Task<bool> DeleteWorkingFamiliesEventByHmrcId(string hmrcId);
 
     /// <summary>
-    /// Get none-deleted WF events by eligiblitycode ordered by submissionDate descen
+    /// Get latest recorded event for a code
+    /// Return null if none found
     /// </summary>
     /// <returns>List of events</returns>
-    Task<IList<WorkingFamiliesEvent>> GetWorkingFamiliesEventsByEligibilityCode(string eligibilityCode);
+    Task<WorkingFamiliesEvent?> GetLatestWorkingFamiliesEventByEligibilityCode(string eligibilityCode);
+
+    /// <summary>
+    /// Get working families event summary record by eligibilityCode
+    /// </summary>
+    /// <param name="eligibilityCode"></param>
+    /// <returns></returns>
+    Task<WorkingFamiliesEventSummary?> GetWorkingFamiliesEventSummaryRecordByEligibilityCode(string eligibilityCode);
 }

@@ -94,10 +94,19 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
         return true;
     }
     /// <inheritdoc />
-    public async Task<IList<WorkingFamiliesEvent>> GetWorkingFamiliesEventsByEligibilityCode(string eligibilityCode) {
+    public async Task<WorkingFamiliesEvent?> GetLatestWorkingFamiliesEventByEligibilityCode(string eligibilityCode) {
 
-        var events = await _db.WorkingFamiliesEvents.Where(x =>
-            x.EligibilityCode == eligibilityCode && x.IsDeleted == false).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
-        return events;
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x =>
+            x.EligibilityCode == eligibilityCode && x.IsDeleted == false);
+        return wfEvent;
+    }
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEventSummary?> GetWorkingFamiliesEventSummaryRecordByEligibilityCode(string eligibilityCode)
+    {
+
+        var eventSummary = await _db.WorkingFamiliesEventSummaries.FirstOrDefaultAsync(x =>
+            x.EligibilityCode == eligibilityCode);
+
+        return eventSummary;
     }
 }

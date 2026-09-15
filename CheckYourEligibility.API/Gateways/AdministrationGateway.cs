@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using CheckYourEligibility.API.Domain;
+﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.CsvImport;
@@ -126,7 +124,7 @@ public class AdministrationGateway : IAdministration
         _db.BulkInsert_FreeSchoolMealsHO(data);
     }
 
-    public async Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data)
+    public async Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data, IEnumerable<WorkingFamiliesEventSummary> summaryData)
     {
         // Don't insert exact duplicates; exclude soft-deleted records from the comparison
         var codesToInsert = data.Select(x => x.EligibilityCode).ToList();
@@ -136,6 +134,8 @@ public class AdministrationGateway : IAdministration
         var codeHashes = codeEvents.Select(x => x.getHash());
         data = data.Where(x => !codeHashes.Contains(x.getHash()));
         _db.BulkInsert_WorkingFamiliesEvent(data);
+        // Insert or update the summary records for the incoming events
+        _db.BulkInsertOrUpdate_WorkingFamiliesEventSummary(summaryData);
     }
 
     [ExcludeFromCodeCoverage(Justification =
