@@ -1,24 +1,18 @@
 -- =============================================================================
 -- Seed-PerfTestData.sql
--- LOCAL DEVELOPMENT ONLY — do NOT run against dev/staging/production.
---
--- Creates 20 BulkChecks with 20,000 EligibilityChecks each (400,000 total)
+-- Creates 10 BulkChecks with 10,000 EligibilityChecks each (100,000 total)
 -- for LocalAuthorityID = 201, all submitted within the last 7 days.
--- All rows tagged BulkCheckID LIKE 'perf-test-%' for easy cleanup.
+-- All rows are tagged with BulkCheckID LIKE 'perf-test-%' for easy cleanup.
 --
--- PURPOSE: Reproduce the GetBulkStatuses timeout bug locally.
--- Each batch uses 20,000 rows (exceeds the 5,000 app limit intentionally for stress testing).
--- 20 batches × 20,000 = 400,000 rows, spaced 8 hours apart so all
--- 20 batches fall within the 7-day query window (20 × 8h = 160h < 168h).
---
--- CLEANUP: Run the DELETE block at the bottom when done.
+-- Run against: EligibilityCheck (local DB)
+-- Cleanup:     Run the DELETE block at the bottom
 -- =============================================================================
 
 SET NOCOUNT ON;
 
 DECLARE @LAID        INT = 201;
-DECLARE @BatchCount  INT = 21;
-DECLARE @PerBatch    INT = 20000;  -- intentionally above the 5k app limit for stress testing
+DECLARE @BatchCount  INT = 10;
+DECLARE @PerBatch    INT = 25000;   -- 10 x 25,000 = 250,000 EligibilityCheck rows
 
 -- ---------------------------------------------------------------------------
 -- Cleanup any previous run
@@ -28,7 +22,7 @@ DELETE FROM [dbo].[EligibilityCheck] WHERE BulkCheckID LIKE 'perf-test-%';
 DELETE FROM [dbo].[BulkChecks]       WHERE BulkCheckID LIKE 'perf-test-%';
 
 -- ---------------------------------------------------------------------------
--- Insert BulkChecks spread across the last 6 days
+-- Insert BulkChecks (one per "batch"), spread across the last 6 days
 -- ---------------------------------------------------------------------------
 PRINT 'Inserting BulkChecks...';
 
@@ -42,7 +36,7 @@ BEGIN
         'perf-test-' + CAST(@i AS VARCHAR(10)),
         'perf-test-batch-' + CAST(@i AS VARCHAR(10)) + '.csv',
         'FreeSchoolMeals',
-        DATEADD(HOUR, -(@i * 8), GETUTCDATE()),  -- 8h spacing keeps 20 batches within 7 days
+        DATEADD(HOUR, -(@i * 12), GETUTCDATE()),   -- spread: 12h, 24h, 36h ... ago
         'perf-test@dfe.gov.uk',
         @LAID,
         'perf-test-batch-' + CAST(@i AS VARCHAR(10)) + '.csv',
@@ -54,7 +48,10 @@ END
 PRINT 'BulkChecks inserted: ' + CAST(@BatchCount AS VARCHAR);
 
 -- ---------------------------------------------------------------------------
--- Insert EligibilityCheck rows via tally-table (no per-row CURSOR)
+-- Insert EligibilityCheck rows via a tally-table approach (no CURSOR per row)
+-- Statuses are spread across eligible / notEligible / parentNotFound to
+-- simulate a realistic completed batch (no queuedForProcessing rows, so the
+-- gateway will mark all batches as Completed).
 -- ---------------------------------------------------------------------------
 PRINT 'Inserting EligibilityCheck rows (this may take a few seconds)...';
 
@@ -65,12 +62,13 @@ WHILE @b <= @BatchCount
 BEGIN
     SET @bcid = 'perf-test-' + CAST(@b AS VARCHAR(10));
 
+    -- Tally CTE generates enough rows; TOP caps it at @PerBatch
     ;WITH
         N1  AS (SELECT 1 n UNION ALL SELECT 1),
         N2  AS (SELECT 1 n FROM N1  a, N1  b),
         N4  AS (SELECT 1 n FROM N2  a, N2  b),
         N8  AS (SELECT 1 n FROM N4  a, N4  b),
-        N16 AS (SELECT 1 n FROM N8  a, N8  b),   -- 65,536 rows — enough for 25,000
+        N16 AS (SELECT 1 n FROM N8  a, N8  b),   -- 65,536 rows — enough for 10,000
         Tally AS (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS rn FROM N16)
     INSERT INTO [dbo].[EligibilityCheck]
         (EligibilityCheckID, [Type], [Status], Created, Updated,
@@ -84,8 +82,8 @@ BEGIN
             WHEN 1 THEN 'notEligible'
             ELSE        'parentNotFound'
         END,
-        DATEADD(HOUR, -(@b * 8), GETUTCDATE()),
-        DATEADD(HOUR, -(@b * 8), GETUTCDATE()),
+        DATEADD(HOUR, -(@b * 12), GETUTCDATE()),
+        DATEADD(HOUR, -(@b * 12), GETUTCDATE()),
         '{"LastName":"TESTER","DateOfBirth":"1990-01-01","NationalInsuranceNumber":"NN000001C"}',
         'bulk',
         'perf-test@dfe.gov.uk',
@@ -116,7 +114,7 @@ GROUP BY b.BulkCheckID, b.SubmittedDate
 ORDER BY b.SubmittedDate DESC;
 
 -- ---------------------------------------------------------------------------
--- CLEANUP — run this block to remove all perf-test rows
+-- CLEANUP (run separately when done testing)
 -- ---------------------------------------------------------------------------
 -- DELETE FROM [dbo].[EligibilityCheck] WHERE BulkCheckID LIKE 'perf-test-%';
 -- DELETE FROM [dbo].[BulkChecks]       WHERE BulkCheckID LIKE 'perf-test-%';

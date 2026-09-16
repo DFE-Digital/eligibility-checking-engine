@@ -58,6 +58,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             ["QueueFsmCheckStandard"] = "notSet",
             ["QueueFsmCheckBulk"] = "notSet",
             ["HashCheckDays"] = "7",
+            ["HashCheckDaysWF"] = "1",
             ["Dwp:UseEcsforChecksWF"] = "false"
         };
 
@@ -154,6 +155,197 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var data = new List<CheckEligibilityRequestData> { request };
         await _sut.PostCheck(data, groupId, meta);
         Assert.Pass();
+    }
+
+    // --- Fix for ELIG-3354 / bulk-check hash batching + Failed status marking.
+    // See docs/bulk-check-hash-batching-fix.md for the full incident these tests cover.
+
+    [Test]
+    public async Task Given_PostCheck_Bulk_MappingOrHashingThrows_Should_MarkBulkCheckFailed_AndRethrow()
+    {
+        // Arrange - simulate a failure DURING the batched mapping/hashing phase (not the final
+        // insert). Before this fix, such a failure escaped PostCheck entirely and the BulkCheck
+        // was left stuck at InProgress forever with no error ever raised against it.
+        var groupId = Guid.NewGuid().ToString();
+        var meta = _fixture.Create<CheckMetaData>();
+
+        _fakeInMemoryDb.BulkChecks.Add(new CheckYourEligibility.API.Domain.BulkCheck
+        {
+            BulkCheckID = groupId,
+            Status = BulkCheckStatus.InProgress,
+            SubmittedDate = DateTime.UtcNow,
+            NumberOfRecords = 1,
+            EligibilityType = CheckEligibilityType.FreeSchoolMeals,
+            FinalNameInCheck = "Test",
+            Filename = "test.csv",
+            SubmittedBy = "tester"
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var moqHashGateway = new Mock<IHash>(MockBehavior.Strict);
+        moqHashGateway
+            .Setup(x => x.ExistsBatch(It.IsAny<IEnumerable<CheckProcessData>>(), It.IsAny<CheckEligibilityType>()))
+            .ThrowsAsync(new InvalidOperationException("simulated failure mid-batch"));
+
+        var svc = new CheckEligibilityGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper, _configuration,
+            moqHashGateway.Object, _moqStorageQueueGateway.Object);
+
+        var request = _fixture.Create<CheckEligibilityRequestData>();
+        request.DateOfBirth = "1970-02-01";
+        request.NationalAsylumSeekerServiceNumber = null;
+        var data = new List<CheckEligibilityRequestData> { request };
+
+        // Act
+        Func<Task> act = async () => await svc.PostCheck(data, groupId, meta);
+
+        // Assert - the exception still propagates (so the caller's own "Background PostCheck
+        // failed" log line still fires)...
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        // ...but unlike before this fix, the BulkCheck is now left in a terminal Failed state
+        // instead of stuck at InProgress forever with zero signal.
+        var bulkCheck = await _fakeInMemoryDb.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+        bulkCheck.Should().NotBeNull();
+        bulkCheck!.Status.Should().Be(BulkCheckStatus.Failed);
+        bulkCheck.CompletedDate.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task Given_NoHashMatch_MapChecksBulk_Should_Leave_Status_QueuedForProcessing()
+    {
+        // Arrange - nothing seeded in EligibilityCheckHashes, so the batched lookup finds nothing.
+        var request = _fixture.Create<CheckEligibilityRequestData>();
+        request.DateOfBirth = "1985-05-05";
+        var meta = _fixture.Create<CheckMetaData>();
+
+        // Act
+        var mapped = await _sut.MapChecksBulk(new List<IEligibilityServiceType> { request }, meta);
+
+        // Assert
+        mapped.Should().HaveCount(1);
+        mapped[0].Status.Should().Be(CheckEligibilityStatus.queuedForProcessing);
+        mapped[0].EligibilityCheckHashID.Should().BeNullOrEmpty();
+    }
+
+    [Test]
+    public async Task Given_WorkingFamiliesHashMatch_MapChecksBulk_Should_CopyPriorCheckData()
+    {
+        // Arrange - seed a hash + a prior CheckEligibilities row it resolves to, then submit a
+        // NEW record that hashes identically (same NINO/LastName/DateOfBirth/WF fields) but with
+        // its own ClientIdentifier - proving the batched lookup (ExistsBatch + the batched retry
+        // loop in ApplyPriorCheckDataBatch) resolves and copies data correctly, not just for a
+        // single record processed alone.
+        var priorRequest = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulkData>();
+        priorRequest.DateOfBirth = "1990-01-01";
+        priorRequest.Type = CheckEligibilityType.WorkingFamilies;
+        priorRequest.EligibilityCode = "PRIOR-CODE";
+
+        var newRequest = _fixture.Create<CheckEligibilityRequestWorkingFamiliesBulkData>();
+        newRequest.DateOfBirth = priorRequest.DateOfBirth;
+        newRequest.LastName = priorRequest.LastName;
+        newRequest.NationalInsuranceNumber = priorRequest.NationalInsuranceNumber;
+        newRequest.Type = CheckEligibilityType.WorkingFamilies;
+        newRequest.EligibilityCode = priorRequest.EligibilityCode;
+        newRequest.GracePeriodEndDate = priorRequest.GracePeriodEndDate;
+        newRequest.ValidityStartDate = priorRequest.ValidityStartDate;
+        newRequest.ValidityEndDate = priorRequest.ValidityEndDate;
+        newRequest.ClientIdentifier = "NEW-CLIENT-ID";
+
+        var hashSource = new CheckProcessData
+        {
+            DateOfBirth = priorRequest.DateOfBirth,
+            LastName = priorRequest.LastName,
+            NationalInsuranceNumber = priorRequest.NationalInsuranceNumber,
+            Type = CheckEligibilityType.WorkingFamilies,
+            EligibilityCode = priorRequest.EligibilityCode,
+            GracePeriodEndDate = priorRequest.GracePeriodEndDate,
+            ValidityStartDate = priorRequest.ValidityStartDate,
+            ValidityEndDate = priorRequest.ValidityEndDate
+        };
+        var hashId = await _hashGateway.Create(hashSource, CheckEligibilityStatus.eligible, null, ProcessEligibilityCheckSource.HMRC);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _fakeInMemoryDb.CheckEligibilities.Add(new EligibilityCheck
+        {
+            EligibilityCheckID = Guid.NewGuid().ToString(),
+            EligibilityCheckHashID = hashId,
+            Status = CheckEligibilityStatus.eligible,
+            Type = CheckEligibilityType.WorkingFamilies,
+            Created = DateTime.UtcNow.AddDays(-1),
+            Updated = DateTime.UtcNow.AddDays(-1),
+            CheckData = JsonConvert.SerializeObject(hashSource)
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var meta = _fixture.Create<CheckMetaData>();
+
+        // Act
+        var mapped = await _sut.MapChecksBulk(new List<IEligibilityServiceType> { newRequest }, meta);
+
+        // Assert
+        mapped.Should().HaveCount(1);
+        var result = mapped[0];
+        result.Status.Should().Be(CheckEligibilityStatus.eligible);
+        result.EligibilityCheckHashID.Should().Be(hashId);
+
+        var copiedData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+        copiedData!.ClientIdentifier.Should().Be("NEW-CLIENT-ID"); // overwritten from the NEW submission
+        copiedData.EligibilityCode.Should().Be("PRIOR-CODE"); // copied across from the PRIOR check, unmodified
+    }
+
+    [Test]
+    public async Task Given_FreeSchoolMealsHashMatch_MapChecksBulk_Should_CopyPriorCheckData_SingleAttempt()
+    {
+        // Arrange - same idea as the WorkingFamilies test above, but for the FreeSchoolMeals
+        // branch, which only ever does a single one-shot lookup (no retry).
+        var priorRequest = _fixture.Create<CheckEligibilityRequestBulkData>();
+        priorRequest.DateOfBirth = "1988-08-08";
+        priorRequest.Type = CheckEligibilityType.FreeSchoolMeals;
+
+        var newRequest = _fixture.Create<CheckEligibilityRequestBulkData>();
+        newRequest.DateOfBirth = priorRequest.DateOfBirth;
+        newRequest.LastName = priorRequest.LastName;
+        newRequest.NationalInsuranceNumber = priorRequest.NationalInsuranceNumber;
+        newRequest.NationalAsylumSeekerServiceNumber = priorRequest.NationalAsylumSeekerServiceNumber;
+        newRequest.Type = CheckEligibilityType.FreeSchoolMeals;
+        newRequest.ClientIdentifier = "NEW-CLIENT-ID";
+
+        var hashSource = new CheckProcessData
+        {
+            DateOfBirth = priorRequest.DateOfBirth,
+            LastName = priorRequest.LastName,
+            NationalInsuranceNumber = priorRequest.NationalInsuranceNumber,
+            NationalAsylumSeekerServiceNumber = priorRequest.NationalAsylumSeekerServiceNumber,
+            Type = CheckEligibilityType.FreeSchoolMeals,
+            EligibilityEndDate = "2030-01-01"
+        };
+        var hashId = await _hashGateway.Create(hashSource, CheckEligibilityStatus.notEligible, null, ProcessEligibilityCheckSource.HMRC);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _fakeInMemoryDb.CheckEligibilities.Add(new EligibilityCheck
+        {
+            EligibilityCheckID = Guid.NewGuid().ToString(),
+            EligibilityCheckHashID = hashId,
+            Status = CheckEligibilityStatus.notEligible,
+            Type = CheckEligibilityType.FreeSchoolMeals,
+            Created = DateTime.UtcNow.AddDays(-1),
+            Updated = DateTime.UtcNow.AddDays(-1),
+            CheckData = JsonConvert.SerializeObject(hashSource)
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var meta = _fixture.Create<CheckMetaData>();
+
+        // Act
+        var mapped = await _sut.MapChecksBulk(new List<IEligibilityServiceType> { newRequest }, meta);
+
+        // Assert
+        mapped.Should().HaveCount(1);
+        mapped[0].Status.Should().Be(CheckEligibilityStatus.notEligible);
+
+        var copiedData = JsonConvert.DeserializeObject<CheckProcessData>(mapped[0].CheckData);
+        copiedData!.ClientIdentifier.Should().Be("NEW-CLIENT-ID");
+        copiedData.EligibilityEndDate.Should().Be("2030-01-01"); // preserved from the prior check
     }
 
 
