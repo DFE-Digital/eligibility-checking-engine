@@ -200,7 +200,6 @@ public static class WorkingFamiliesEventHelper
        
 
         //if older events found (summary record is not null), initiate contiguous logic
-        // Q LILI: is that safe ? what if historic data does not have a summary record attached to it for whatever reason
         if (summaryRecord != null)
         {                    
 
