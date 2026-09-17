@@ -169,6 +169,15 @@ public class FosterFamiliesGateway : IFosterFamilies
             fosterCarer.LastName = request.FosterCarerRequest.CarerLastName;
             fosterCarer.DateOfBirth = request.FosterCarerRequest.CarerDateOfBirth;
             fosterCarer.NationalInsuranceNumber = request.FosterCarerRequest.CarerNationalInsuranceNumber;
+            fosterCarer.HasPartner = request.FosterCarerRequest.HasPartner;
+            if (!fosterCarer.HasPartner)
+            {
+                // Clear partner fields if update if no partner is specified
+                fosterCarer.PartnerFirstName = null;
+                fosterCarer.PartnerLastName = null;
+                fosterCarer.PartnerDateOfBirth = null;
+                fosterCarer.PartnerNationalInsuranceNumber = null;
+            }
         }
 
         if (request.FosterPartnerRequest is not null)
