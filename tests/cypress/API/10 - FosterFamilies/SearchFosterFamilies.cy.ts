@@ -15,15 +15,8 @@ describe("Search Foster Families - Happy Path", () => {
       cy.apiRequest("POST", "/foster-family", request, token).then(() => {
         cy.wait(3000);
 
-        cy.request({
-          method: "GET",
-          url: `${Cypress.config("baseUrl")}/foster-family/search?pageNumber=1&pageSize=10`,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).then((response) => {
+        cy.apiRequest("GET", "/foster-family/search?pageNumber=1&pageSize=10", request, token).then((response) => {
           expect(response.status).to.eq(200);
-
           expect(response.body.data).to.be.an("array");
 
           const family = response.body.data.find(
@@ -35,22 +28,11 @@ describe("Search Foster Families - Happy Path", () => {
           expect(family).to.exist;
 
           // clean up
-          cy.apiRequest(
-            "DELETE",
-            `/foster-family/${family.carerId}`,
-            null,
-            token,
-          ).then((deleteResponse) => {
+          cy.apiRequest("DELETE", `/foster-family/${family.fosterCarerId}`, null, token, false).then((deleteResponse) => {
             expect(deleteResponse.status).to.eq(204);
 
             // verify fam is gone.
-            cy.apiRequest(
-              "GET",
-              `/foster-family/${family.carerId}`,
-              null,
-              token,
-              false,
-            ).then((getResponse) => {
+            cy.apiRequest("GET", `/foster-family/${family.fosterCarerId}`, null, token, false,).then((getResponse) => {
               expect(getResponse.status).to.eq(404);
             });
           });
@@ -68,7 +50,7 @@ describe("Search Foster Families - Unhappy Paths", () => {
     ).then((token) => {
       cy.request({
         method: "GET",
-        url: `${Cypress.config("baseUrl")}/foster-family/search?pageNumber=-1&pageSize=10`,
+        url: `/foster-family/search?pageNumber=-1&pageSize=10`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,7 +71,7 @@ describe("Search Foster Families - Unhappy Paths", () => {
     ).then((token) => {
       cy.request({
         method: "GET",
-        url: `${Cypress.config("baseUrl")}/foster-family/search?pageNumber=0&pageSize=10`,
+        url: `/foster-family/search?pageNumber=0&pageSize=10`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,7 +91,7 @@ describe("Search Foster Families - Unhappy Paths", () => {
     ).then((token) => {
       cy.request({
         method: "GET",
-        url: `${Cypress.config("baseUrl")}/foster-family/search?pageNumber=1&pageSize=0`,
+        url: `/foster-family/search?pageNumber=1&pageSize=0`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -129,7 +111,7 @@ describe("Search Foster Families - Unhappy Paths", () => {
     ).then((token) => {
       cy.request({
         method: "GET",
-        url: `${Cypress.config("baseUrl")}/foster-family/search?pageNumber=1&pageSize=11`,
+        url: `/foster-family/search?pageNumber=1&pageSize=11`,
         headers: {
           Authorization: `Bearer ${token}`,
         },

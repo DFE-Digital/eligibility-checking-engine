@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
 using CheckYourEligibility.API.Helpers;
-using CheckYourEligibility.API.Boundary.Responses.Internal;
+using CheckYourEligibility.API.Boundary.Responses;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -112,22 +112,16 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         try
         {
-            var workingEvent =
-               WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
+            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
 
-            fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
             fosterChild.EligibilityCode = eligibilityCode;
+            fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
-
-            fosterChild.EligibilityCode = workingEvent.EligibilityCode;
-
             await _db.FosterCarers.AddAsync(fosterCarer);
             await _db.FosterChildren.AddAsync(fosterChild);
-
             await _db.SaveChangesAsync();
-
             await transaction.CommitAsync();
 
             ReconfirmationProperties reconfirmation = WorkingFamiliesCheckHelper
@@ -142,12 +136,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             return new FosterFamilyCreatedResponse()
             {
                 FosterCarerId = fosterCarer.FosterCarerId,
-                ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-                EligibilityCode = workingEvent.EligibilityCode,
-                Status = fosterChild.Status,
-                EligibilityConfirmed = request.SubmissionDate,
-                ReconfirmBetween = $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}",
-                GracePeriodEndDate = workingEvent.GracePeriodEndDate,
+                FosterChildId = fosterChild.FosterChildId
             };
         }
         catch (Exception ex)
@@ -160,10 +149,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         }
     }
 
-    public async Task UpdateFosterCarer(
-    Guid fosterCarerId,
-    int localAuthorityId,
-    UpdateFosterCarerRequest request)
+    public async Task UpdateFosterCarer(Guid fosterCarerId, int localAuthorityId, UpdateFosterCarerRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -172,44 +158,35 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         if (fosterCarer is null)
         {
-            _logger.LogWarning(
-                "Foster carer with ID {FosterCarerId} not found",
-                fosterCarerId);
+            _logger.LogWarning("Foster carer with ID {FosterCarerId} not found", fosterCarerId);
 
-            throw new NotFoundException(
-                $"Foster carer {fosterCarerId} not found");
+            throw new NotFoundException($"Foster carer {fosterCarerId} not found");
         }
 
         if (request.FosterCarerRequest is not null)
         {
-            fosterCarer.FirstName =
-                request.FosterCarerRequest.CarerFirstName;
-
-            fosterCarer.LastName =
-                request.FosterCarerRequest.CarerLastName;
-
-            fosterCarer.DateOfBirth =
-                request.FosterCarerRequest.CarerDateOfBirth;
-
-            fosterCarer.NationalInsuranceNumber =
-                request.FosterCarerRequest.CarerNationalInsuranceNumber;
+            fosterCarer.FirstName = request.FosterCarerRequest.CarerFirstName;
+            fosterCarer.LastName = request.FosterCarerRequest.CarerLastName;
+            fosterCarer.DateOfBirth = request.FosterCarerRequest.CarerDateOfBirth;
+            fosterCarer.NationalInsuranceNumber = request.FosterCarerRequest.CarerNationalInsuranceNumber;
+            fosterCarer.HasPartner = request.FosterCarerRequest.HasPartner;
+            if (!fosterCarer.HasPartner)
+            {
+                // Clear partner fields if update if no partner is specified
+                fosterCarer.PartnerFirstName = null;
+                fosterCarer.PartnerLastName = null;
+                fosterCarer.PartnerDateOfBirth = null;
+                fosterCarer.PartnerNationalInsuranceNumber = null;
+            }
         }
 
         if (request.FosterPartnerRequest is not null)
         {
             fosterCarer.HasPartner = true;
-
-            fosterCarer.PartnerFirstName =
-                request.FosterPartnerRequest.PartnerFirstName;
-
-            fosterCarer.PartnerLastName =
-                request.FosterPartnerRequest.PartnerLastName;
-
-            fosterCarer.PartnerDateOfBirth =
-                request.FosterPartnerRequest.PartnerDateOfBirth;
-
-            fosterCarer.PartnerNationalInsuranceNumber =
-                request.FosterPartnerRequest.PartnerNationalInsuranceNumber;
+            fosterCarer.PartnerFirstName = request.FosterPartnerRequest.PartnerFirstName;
+            fosterCarer.PartnerLastName = request.FosterPartnerRequest.PartnerLastName;
+            fosterCarer.PartnerDateOfBirth = request.FosterPartnerRequest.PartnerDateOfBirth;
+            fosterCarer.PartnerNationalInsuranceNumber = request.FosterPartnerRequest.PartnerNationalInsuranceNumber;
         }
 
         fosterCarer.Updated = DateTime.UtcNow;
@@ -226,8 +203,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         if (fosterCarer is null)
         {
-            throw new NotFoundException(
-                $"Foster carer {fosterCarerId} not found");
+            throw new NotFoundException($"Foster carer {fosterCarerId} not found");
         }
 
         _db.FosterChildren.RemoveRange(fosterCarer.FosterChildren);
@@ -243,8 +219,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         if (fosterCarer is null)
         {
-            throw new NotFoundException(
-                $"Foster carer {fosterCarerId} not found");
+            throw new NotFoundException($"Foster carer {fosterCarerId} not found");
         }
 
         fosterCarer.HasPartner = false;
@@ -297,17 +272,17 @@ public class FosterFamiliesGateway : IFosterFamilies
             .Take(pageSize)
             .Select(x => new FosterFamiliesSearchItemResponse
             {
-                CarerId = x.FosterCarerId,
+                FosterCarerId = x.FosterCarerId,
+                FosterChildId = x.FosterChildId,
                 ChildName = $"{x.FirstName} {x.LastName}",
                 ChildDateOfBirth = x.DateOfBirth,
                 EligibilityCode = x.EligibilityCode,
 
-                CarerName =
-                    $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}",
+                CarerName = $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}",
 
-                EligibilityConfirmedOn = x.SubmissionDate,
+                ValidityStartDate = x.SubmissionDate,
 
-                GracePeriodEnds = _db.WorkingFamiliesEvents
+                GracePeriodEndDate = _db.WorkingFamiliesEvents
                     .Where(w => w.EligibilityCode == x.EligibilityCode)
                     .Select(w => w.GracePeriodEndDate)
                     .SingleOrDefault(),
@@ -320,17 +295,13 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         foreach (var item in results)
         {
-            var reconfirmation =
-                WorkingFamiliesCheckHelper.SetReconfirmationProperties(
-                    item.ValidityEndDate.ToString(),
-                    item.GracePeriodEnds.ToString(),
-                    item.EligibilityConfirmedOn,
-                    EligibilityCodeType.Foster,
-                    item.ChildDateOfBirth.ToString());
-
-            item.ReconfirmationStatus = reconfirmation.Status.ToString();
-            item.ReconfirmBetween =
-                $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}";
+            item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+                item.ValidityEndDate.ToString(),
+                item.GracePeriodEndDate.ToString(),
+                item.ValidityStartDate,
+                EligibilityCodeType.Foster,
+                item.ChildDateOfBirth.ToString()
+            );
         }
 
         return new FosterFamiliesSearchResponse
@@ -349,108 +320,64 @@ public class FosterFamiliesGateway : IFosterFamilies
     {
         FosterChildResponse? result;
 
-        if (includeFosterCarer)
-        {
-            result = await _db.FosterChildren
-                .Where(x =>
-                    x.FosterChildId == fosterChildId &&
-                    x.FosterCarer.LocalAuthorityID == localAuthorityId)
-                .Select(x => new FosterChildResponse
-                {
-                    FosterChildId = x.FosterChildId,
-
-                    EligibilityCode = x.EligibilityCode,
-
-                    EligibilityConfirmedOn = x.SubmissionDate,
-
-                    // Needed for reconfirmation logic
-                    ValidityStartDate = x.ValidityStartDate,
-                    ValidityEndDate = x.ValidityEndDate,
-
-                    GracePeriodEnds = _db.WorkingFamiliesEvents
-                        .Where(w => w.EligibilityCode == x.EligibilityCode)
-                        .Select(w => w.GracePeriodEndDate)
-                        .SingleOrDefault(),
-
-                    ChildFullName = $"{x.FirstName} {x.LastName}",
-                    ChildDateOfBirth = x.DateOfBirth,
-                    PostCode = x.PostCode,
-
-                    FosterCarerId = x.FosterCarerId,
-
-                    CarerName =
-                        $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}",
-
-                    PartnerName = x.FosterCarer.HasPartner
-                        ? $"{x.FosterCarer.PartnerFirstName} {x.FosterCarer.PartnerLastName}"
-                        : null
-                })
-                .AsNoTracking()
-                .SingleOrDefaultAsync();
-        }
-        else
-        {
-            result = await _db.FosterChildren
-                .Where(x =>
-                    x.FosterChildId == fosterChildId &&
-                    x.FosterCarer.LocalAuthorityID == localAuthorityId)
-                .Select(x => new FosterChildResponse
-                {
-                    FosterChildId = x.FosterChildId,
-
-                    EligibilityCode = x.EligibilityCode,
-
-                    EligibilityConfirmedOn = x.SubmissionDate,
-
-                    // Needed for reconfirmation logic
-                    ValidityStartDate = x.ValidityStartDate,
-                    ValidityEndDate = x.ValidityEndDate,
-
-                    GracePeriodEnds = _db.WorkingFamiliesEvents
-                        .Where(w => w.EligibilityCode == x.EligibilityCode)
-                        .Select(w => w.GracePeriodEndDate)
-                        .SingleOrDefault(),
-
-                    ChildFullName = $"{x.FirstName} {x.LastName}",
-                    ChildDateOfBirth = x.DateOfBirth,
-                    PostCode = x.PostCode,
-
-                    FosterCarerId = x.FosterCarerId,
-
-                    CarerName = null,
-                    PartnerName = null
-                })
-                .AsNoTracking()
-                .SingleOrDefaultAsync();
-        }
+        result = await _db.FosterChildren
+            .Where(x =>
+                x.FosterChildId == fosterChildId &&
+                x.FosterCarer.LocalAuthorityID == localAuthorityId)
+            .Select(x => new FosterChildResponse
+            {
+                FosterChildId = x.FosterChildId,
+                EligibilityCode = x.EligibilityCode,
+                ValidityStartDate = x.ValidityStartDate,
+                ValidityEndDate = x.ValidityEndDate,
+                ChildFullName = $"{x.FirstName} {x.LastName}",
+                ChildDateOfBirth = x.DateOfBirth,
+                PostCode = x.PostCode,
+                FosterCarerId = x.FosterCarerId,
+                CarerName = includeFosterCarer ? $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}" : null,
+                PartnerName = includeFosterCarer && x.FosterCarer.HasPartner
+                    ? $"{x.FosterCarer.PartnerFirstName} {x.FosterCarer.PartnerLastName}"
+                    : null
+            })
+            .AsNoTracking()
+            .SingleOrDefaultAsync();
 
         if (result is null)
         {
-            _logger.LogWarning(
-                "Foster child with ID {FosterChildId} not found",
-                fosterChildId);
-
-            throw new NotFoundException(
-                $"Foster child {fosterChildId} not found");
+            _logger.LogWarning("Foster child with ID {FosterChildId} not found", fosterChildId);
+            throw new NotFoundException($"Foster child {fosterChildId} not found");
         }
 
-        var reconfirmation = WorkingFamiliesCheckHelper
-            .SetReconfirmationProperties(
-                result.ValidityEndDate.ToString(),
-                result.GracePeriodEnds.ToString(),
-                result.EligibilityConfirmedOn,
-                EligibilityCodeType.Foster,
-                result.ChildDateOfBirth.ToString());
+        var workingEvent = _db.WorkingFamiliesEvents
+                    .Where(w => w.EligibilityCode == result.EligibilityCode)
+                    .OrderByDescending(w => w.CreatedDateTime)
+                    .SingleOrDefault();
+        result.GracePeriodEndDate = workingEvent.GracePeriodEndDate;
 
-        result.ReconfirmationStatus = reconfirmation.Status.ToString();
+        // Calculate child too young
+        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(result.ChildDateOfBirth, result.ValidityStartDate);
 
-        result.ReconfirmBetween =
-            $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}";
+        // Calculate term validity
+        result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
+            workingEvent.SubmissionDate,
+            workingEvent.GracePeriodEndDate.ToString(),
+            workingEvent.ValidityStartDate.ToString(),
+            result.ChildDateOfBirth.ToString()
+        );
+
+        // Calculate reconfirmation properties
+        result.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+            result.ValidityEndDate.ToString(),
+            result.GracePeriodEndDate.ToString(),
+            result.ValidityStartDate,
+            EligibilityCodeType.Foster,
+            result.ChildDateOfBirth.ToString()
+        );
 
         return result;
     }
 
-    public async Task<FosterChildCreatedResponse> CreateFosterChild(
+    public async Task<FosterChildResponse> CreateFosterChild(
     FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -499,24 +426,8 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.FosterChildren.AddAsync(fosterChild);
         await _db.SaveChangesAsync();
 
-        ReconfirmationProperties reconfirmation = WorkingFamiliesCheckHelper
-            .SetReconfirmationProperties(
-                workingEvent.ValidityEndDate.ToString(),
-                workingEvent.GracePeriodEndDate.ToString(),
-                submissionDate,
-                EligibilityCodeType.Foster,
-                fosterChild.DateOfBirth.ToString()
-            );
-
-        return new FosterChildCreatedResponse
-        {
-            ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
-            EligibilityCode = workingEvent.EligibilityCode,
-            Status = "",
-            EligibilityConfirmed = submissionDate,
-            ReconfirmBetween = $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}",
-            GracePeriodEndDate = workingEvent.GracePeriodEndDate
-        };
+        // Return the response as a get for the new record
+        return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, true);
     }
 
     public async Task<FosterChildResponse> UpdateFosterChild(
