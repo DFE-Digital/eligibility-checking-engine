@@ -286,17 +286,13 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         foreach (var item in results)
         {
-            var reconfirmation =
-                WorkingFamiliesCheckHelper.SetReconfirmationProperties(
-                    item.ValidityEndDate.ToString(),
-                    item.GracePeriodEndDate.ToString(),
-                    item.ValidityStartDate,
-                    EligibilityCodeType.Foster,
-                    item.ChildDateOfBirth.ToString());
-
-            item.ReconfirmationStatus = reconfirmation.Status.ToString();
-            item.ReconfirmBetweenStart = reconfirmation.StartDate;
-            item.ReconfirmBetweenEnd = reconfirmation.EndDate;
+            item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+                item.ValidityEndDate.ToString(),
+                item.GracePeriodEndDate.ToString(),
+                item.ValidityStartDate,
+                EligibilityCodeType.Foster,
+                item.ChildDateOfBirth.ToString()
+            );
         }
 
         return new FosterFamiliesSearchResponse
@@ -339,12 +335,8 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         if (result is null)
         {
-            _logger.LogWarning(
-                "Foster child with ID {FosterChildId} not found",
-                fosterChildId);
-
-            throw new NotFoundException(
-                $"Foster child {fosterChildId} not found");
+            _logger.LogWarning("Foster child with ID {FosterChildId} not found", fosterChildId);
+            throw new NotFoundException($"Foster child {fosterChildId} not found");
         }
 
         var workingEvent = _db.WorkingFamiliesEvents
@@ -353,25 +345,25 @@ public class FosterFamiliesGateway : IFosterFamilies
                     .SingleOrDefault();
         result.GracePeriodEndDate = workingEvent.GracePeriodEndDate;
 
-        // Term validity
-        var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(
+        // Calculate child too young
+        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(result.ChildDateOfBirth, result.ValidityStartDate);
+
+        // Calculate term validity
+        result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
             workingEvent.SubmissionDate,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
-            result.ChildDateOfBirth.ToString());
-        result.ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next;
+            result.ChildDateOfBirth.ToString()
+        );
 
-        var reconfirmation = WorkingFamiliesCheckHelper
-            .SetReconfirmationProperties(
-                result.ValidityEndDate.ToString(),
-                result.GracePeriodEndDate.ToString(),
-                result.ValidityStartDate,
-                EligibilityCodeType.Foster,
-                result.ChildDateOfBirth.ToString());
-
-        result.ReconfirmationStatus = reconfirmation.Status.ToString();
-        result.ReconfirmBetweenStart = reconfirmation.StartDate;
-        result.ReconfirmBetweenEnd = reconfirmation.EndDate;
+        // Calculate reconfirmation properties
+        result.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+            result.ValidityEndDate.ToString(),
+            result.GracePeriodEndDate.ToString(),
+            result.ValidityStartDate,
+            EligibilityCodeType.Foster,
+            result.ChildDateOfBirth.ToString()
+        );
 
         return result;
     }

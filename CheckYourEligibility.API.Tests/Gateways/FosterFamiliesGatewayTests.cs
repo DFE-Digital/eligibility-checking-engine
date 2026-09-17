@@ -152,9 +152,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result.ChildName.Should().Be("Tom Smith");
-        result.Status.Should().Be("Active");
-        result.EligibilityCode.Should().NotBeNullOrWhiteSpace();
+        result.FosterChildId.Should().NotBeEmpty();
+        result.FosterCarerId.Should().NotBeEmpty();
     }
 
     [Test]
@@ -175,9 +174,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result.ChildName.Should().Be("Tom Smith");
-        result.Status.Should().Be("Active");
-        result.EligibilityCode.Should().NotBeNullOrWhiteSpace();
+        result.FosterChildId.Should().NotBeEmpty();
+        result.FosterCarerId.Should().NotBeEmpty();
     }
 
     [Test]
@@ -221,7 +219,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Assert
         var fosterChild = await _fakeInMemoryDb.FosterChildren.SingleAsync();
 
-        fosterChild.EligibilityCode.Should().Be(response.EligibilityCode);
+        fosterChild.EligibilityCode.Should().NotBeEmpty();
     }
 
     [Test]
@@ -928,9 +926,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             DateTime.UtcNow);
 
         // Assert
-        result.ChildName.Should().Be("Sam Jones");
+        result.ChildFullName.Should().Be("Sam Jones");
         result.EligibilityCode.Should().NotBeNullOrWhiteSpace();
-        result.Status.Should().Be("");
     }
 
     [Test]

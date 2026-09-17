@@ -18,15 +18,12 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public DateTime ValidityStartDate { get; set; }
 
-        public DateTime ReconfirmBetweenStart { get; set; }
-        
-        public DateTime ReconfirmBetweenEnd { get; set; }
+        public ReconfirmationProperties ReconfirmationProperties { get; set; }
 
         public DateTime GracePeriodEndDate { get; set; }
 
         [JsonIgnore]
         public DateTime? ValidityEndDate { get; set; }
 
-        public string ReconfirmationStatus { get; set; }
     }
 }

@@ -136,7 +136,7 @@ public class FosterFamilyController : BaseController
         }
     }
 
-    [ProducesResponseType(typeof(EligibilityCodeResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(FosterFamilyCodePreviewResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family/preview")]

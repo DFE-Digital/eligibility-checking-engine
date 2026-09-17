@@ -10,24 +10,20 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public string EligibilityCode { get; set; } = string.Empty;
 
-        public string ReconfirmationStatus { get; set; }
-
-        public Term ValidFromTerm { get; set; }
-
-        [JsonIgnore]
         public DateTime ValidityStartDate { get; set; }
-        [JsonIgnore]
+
         public DateTime ValidityEndDate { get; set; }
-
-        public DateTime ReconfirmBetweenStart { get; set; }
-
-        public DateTime ReconfirmBetweenEnd { get; set; }
 
         public DateTime GracePeriodEndDate { get; set; }
 
+        public ReconfirmationProperties ReconfirmationProperties { get; set; }
+
+        public TermValidity TermValidity { get; set; }
+        
+        public bool ChildTooYoung { get; set; }
+
 
         // Child
-
         public Guid FosterChildId { get; set; }
 
         public string ChildFullName { get; set; }
@@ -44,5 +40,6 @@ namespace CheckYourEligibility.API.Boundary.Responses
         public string? CarerName { get; set; }
 
         public string? PartnerName { get; set; }
+
     }
 }
