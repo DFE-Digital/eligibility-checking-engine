@@ -7,8 +7,6 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -398,16 +396,11 @@ public class CheckEligibilityGateway : ICheckEligibility
         return null;
     }
 
+    // Delegate to CheckProcessData.GetHash() so hashes created at check time and read at
+    // application time always use identical normalisation (ELIG-3639) instead of a diverging copy.
     public static string GetHash(CheckProcessData item)
     {
-        var key = string.IsNullOrEmpty(item.NationalInsuranceNumber)
-            ? item.NationalAsylumSeekerServiceNumber?.ToUpper()
-            : item.NationalInsuranceNumber?.ToUpper();
-
-        var input = $"{item.LastName?.ToUpper()}{key}{item.DateOfBirth}{item.Type}";
-        var inputBytes = Encoding.UTF8.GetBytes(input);
-        var inputHash = SHA256.HashData(inputBytes);
-        return Convert.ToHexString(inputHash);
+        return item.GetHash();
     }
 
 }
