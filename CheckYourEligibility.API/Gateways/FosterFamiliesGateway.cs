@@ -1,10 +1,10 @@
-using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using CheckYourEligibility.API.Domain.Exceptions;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
-using CheckYourEligibility.API.Helpers;
-using CheckYourEligibility.API.Boundary.Responses.Internal;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -115,13 +115,17 @@ public class FosterFamiliesGateway : IFosterFamilies
             var workingEvent =
                WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
 
+            var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
+
             fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
             fosterChild.EligibilityCode = eligibilityCode;
             fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
+            await _db.WorkingFamiliesEventSummaries.AddAsync(newWorkingSummaryEvent);
 
             fosterChild.EligibilityCode = workingEvent.EligibilityCode;
+            fosterChild.WorkingFamiliesEventSummaryID = newWorkingSummaryEvent.WorkingFamiliesEventSummaryID;
 
             await _db.FosterCarers.AddAsync(fosterCarer);
             await _db.FosterChildren.AddAsync(fosterChild);
@@ -704,7 +708,6 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         return code.ToString(CultureInfo.InvariantCulture);
     }
-
 
     #endregion
 }

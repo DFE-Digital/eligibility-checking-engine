@@ -40,4 +40,11 @@ public interface IWorkingFamiliesEvent
     /// <param name="eligibilityCode"></param>
     /// <returns></returns>
     Task<WorkingFamiliesEventSummary?> GetWorkingFamiliesEventSummaryRecordByEligibilityCode(string eligibilityCode);
+
+    /// <summary>
+    /// Get the count of none-soft deleted working families records by eligibility code
+    /// </summary>
+    /// <param name="eligibilityCode"></param>
+    /// <returns></returns>
+    Task<int> GetWorkingFamiliesEventsCount(string eligibilityCode);
 }

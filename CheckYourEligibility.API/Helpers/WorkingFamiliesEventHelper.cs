@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using System.Threading.Tasks;
 
 
 public static class WorkingFamiliesEventHelper
@@ -42,56 +43,48 @@ public static class WorkingFamiliesEventHelper
     /// <param name="isContiguous">
     /// if True - it will also map FirstEventDate, LastCheckDate, FirstCheckDate, DVSD, VSD</param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, bool isContiguous = false) {
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false) {
         DateTime today = DateTime.UtcNow.Date;
-        WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
-        {
-          
-            FirstCheckLocalAuthorityId = null, // what ? 
-            HasCodeBeenCheckedByOwningLA = false, // what?
-            LastCheckLocalAuthorityId = null, // who cares (respectfully)?
-            LastUpdatedDate = today,
-            LatestSubmissionDate = workingFamiliesEvent.SubmissionDate,
-            OwningLocalAuthorityId = null, // ok?
-            Qualifier = null, //nope
-            ValidityEndDate = workingFamiliesEvent.ValidityEndDate,
-            GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate
 
-        };
+     //   eventSummary.FirstCheckLocalAuthorityId = null; // what ? 
+     //   eventSummary.HasCodeBeenCheckedByOwningLA = false; // what?
+        eventSummary.LastUpdatedDate = today;
+        eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
+       // eventSummary.OwningLocalAuthorityId = null; // who, how we are getting this information?
+        eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
+        eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
+
+
 
         if (!isContiguous)
         {
-            newEventSummary.FirstEventDate = today; // right ? 
-            newEventSummary.LastCheckDate = null; // if the chain breaks do we set this to null?
-            newEventSummary.FirstCheckDate = null; // if the chain breaks do we set this to null ? 
-            newEventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
-            newEventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
+            eventSummary.FirstEventDate = today; // right ? 
+           // eventSummary.LastCheckDate = null; // if the chain breaks do we set this to null?
+           // eventSummary.FirstCheckDate = null; // if the chain breaks do we set this to null ? 
+            eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
+            eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
 
         }
-        return newEventSummary;
+        return eventSummary;
     }
     public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent) {
 
         DateTime today = DateTime.UtcNow.Date;
         WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
         {
+            WorkingFamiliesEventSummaryID = Guid.NewGuid().ToString(),
             EligibilityCode = workingFamiliesEvent.EligibilityCode,
             ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,
             ChildFirstName = workingFamiliesEvent.ChildFirstName,
-            ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber, // why do we allow null for the event but not for the summary ? ,
+            ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
             PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
             ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
-            ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName,
-            FirstCheckDate = null, // if the chain breaks do we set this to null ? 
-            FirstCheckLocalAuthorityId = null, // what ? 
-            FirstEventDate = today, // if the chain breaks do we set this to null? 
+            ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName, // what is the point of this?
+            FirstEventDate = today,
             HasCodeBeenCheckedByOwningLA = false,
-            LastCheckLocalAuthorityId = null,
-            LastCheckDate = null,
             LastUpdatedDate = today,
             LatestSubmissionDate = workingFamiliesEvent.SubmissionDate,
-            OwningLocalAuthorityId = null,
-            Qualifier = null, // why
+            OwningLocalAuthorityId = null, //how do we get this information ?
             GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate,
             DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
             ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
@@ -108,10 +101,8 @@ public static class WorkingFamiliesEventHelper
     /// <returns></returns>
     public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEvent workingFamiliesEvent) { 
         
-        WorkingFamiliesEventSummary eventSummary = new WorkingFamiliesEventSummary() { 
-           EligibilityCode = workingFamiliesEvent.EligibilityCode,
-           ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,
-           ChildFirstName = workingFamiliesEvent.ChildFirstName,
+        WorkingFamiliesEventSummary eventSummary = new WorkingFamiliesEventSummary() {  
+           ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,  
            ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber, //why do we allow null for the event but not for the summary ? ,
            PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
            ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, //why do we allow null for the event but not for the summary ?          
@@ -195,34 +186,41 @@ public static class WorkingFamiliesEventHelper
         // Else use VSD
         return validityStartDate;
     }
-    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord) {
+    /// <summary>
+    /// Determines if the contiguity of an event is broken:
+    /// If only one historic event is found and the reconfirmation(new event VSD) has happened after the hisoricEvent VED
+    /// or if more than one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent GPED
+    /// </summary>
+    /// <param name="incomingEvent"></param>
+    /// <param name="summaryRecord"></param>
+    /// <param name="historicEventRecordCount"></param>
+    /// <returns></returns>
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
 
-        WorkingFamiliesEventSummary eventSummaryRecord = new();
+       
 
         //if older events found (summary record is not null), initiate contiguous logic
-        // Q LILI: is that safe ? what id historic data does not have a summary record attached to it for whatever reason
+        // Q LILI: is that safe ? what if historic data does not have a summary record attached to it for whatever reason
         if (summaryRecord != null)
-        {
-            eventSummaryRecord = summaryRecord;
-            // Check if event is contiguous and set VSD to earliest VSD of the current contiguous block
-            // if newEvent.VSD > olderEvent.GPED
-            // break the contiguous chain and update all dates on the summary record with the new event
-            if (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate)
+        {                    
+
+            // if contiguous chain is broken
+            if ((historicEventRecordCount == 1 && incomingEvent.ValidityStartDate > summaryRecord.ValidityEndDate) ||
+                (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate))
             {
-                eventSummaryRecord = MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, isContiguous: false);
+               return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
             }
             // continue the chain
             else
             {
-                eventSummaryRecord = MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, isContiguous: true);
+                return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: true);
             }
-
         }
-        // if no histortic event found, create a new summary record from the incoming event.
+        // if no summary event record found, create a new summary record from the incoming event.
         else
         {
-            eventSummaryRecord = MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+           WorkingFamiliesEventSummary eventSummaryRecord = new();
+          return  eventSummaryRecord = MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
         }
-        return eventSummaryRecord;
     }
 }

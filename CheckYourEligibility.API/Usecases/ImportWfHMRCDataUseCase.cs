@@ -91,16 +91,17 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
             {               
                 WorkingFamiliesEventSummary eventSummaryRecord = new();
 
-                // check for exisitng records in the working families events table
+                // check for existing records in the working families events table
                 // check for existing summary record for that event
                 var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(DataLoad[i].EligibilityCode);
+                int hitoricEventRecordsCount = await  _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(DataLoad[i].EligibilityCode);
                 // pass record to evaluate contiguity for each incoming event
-                eventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(DataLoad[i], summaryRecord);
+                eventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(DataLoad[i], summaryRecord, hitoricEventRecordsCount);
                 
                 summaryRecordsDataLoad.Add(eventSummaryRecord);
                
             }
-                 await _gateway.ImportWfHMRCData(DataLoad, summaryRecordsDataLoad);  
+                 await _gateway.ImportWfHMRCData(DataLoad, summaryRecordsDataLoad);
         }
         catch (Exception ex)
         {

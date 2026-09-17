@@ -1,6 +1,5 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -108,5 +107,11 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
             x.EligibilityCode == eligibilityCode);
 
         return eventSummary;
+    }
+    /// <inheritdoc />
+    public async Task<int> GetWorkingFamiliesEventsCount(string eligibilityCode) {
+        
+        return await _db.WorkingFamiliesEvents.CountAsync(x=> x.EligibilityCode == eligibilityCode && x.IsDeleted == false);
+          
     }
 }

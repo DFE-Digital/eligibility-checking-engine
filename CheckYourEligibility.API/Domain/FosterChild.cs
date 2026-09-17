@@ -25,6 +25,6 @@ public class FosterChild
 
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; } = null!;
 
-    public Guid WorkingFamiliesEventSummaryID { get; set; }
-    public WorkingFamiliesEventSummary eventSummary { get; set; }
+    public string? WorkingFamiliesEventSummaryID { get; set; }
+    public virtual WorkingFamiliesEventSummary eventSummary { get; set; }
 }
