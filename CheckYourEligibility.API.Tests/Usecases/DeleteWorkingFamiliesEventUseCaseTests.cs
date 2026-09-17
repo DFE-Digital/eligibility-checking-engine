@@ -34,21 +34,21 @@ public class DeleteWorkingFamiliesEventUseCaseTests : TestBase.TestBase
     public async Task Execute_ShouldDeleteEvent_Successfully()
     {
         // Arrange
-        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(true);
+        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEventByHmrcId(ValidHmrcId)).ReturnsAsync(true);
 
         // Act
         var result = await _sut.Execute(ValidHmrcId);
 
         // Assert
         result.Should().BeTrue();
-        _mockGateway.Verify(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId), Times.Once);
+        _mockGateway.Verify(g => g.DeleteWorkingFamiliesEventByHmrcId(ValidHmrcId), Times.Once);
     }
 
     [Test]
     public async Task Execute_ShouldReturnFalse_WhenEventNotFound()
     {
         // Arrange
-        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEvent(ValidHmrcId)).ReturnsAsync(false);
+        _mockGateway.Setup(g => g.DeleteWorkingFamiliesEventByHmrcId(ValidHmrcId)).ReturnsAsync(false);
 
         // Act
         var result = await _sut.Execute(ValidHmrcId);

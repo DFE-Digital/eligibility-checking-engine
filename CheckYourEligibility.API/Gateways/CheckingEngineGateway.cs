@@ -134,7 +134,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
-        //TODO: This should probably be its own adapter
+        
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
