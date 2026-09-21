@@ -30,7 +30,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
 
         // Term validity
         var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(
-            request.SubmissionDate,
+            DateTime.Today,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
             request.FosterChild.ChildDateOfBirth.ToString());

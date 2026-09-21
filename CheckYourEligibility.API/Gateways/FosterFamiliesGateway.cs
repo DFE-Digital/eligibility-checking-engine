@@ -359,7 +359,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         // Calculate term validity
         result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
-            workingEvent.SubmissionDate,
+            DateTime.Today,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
             result.ChildDateOfBirth.ToString()
