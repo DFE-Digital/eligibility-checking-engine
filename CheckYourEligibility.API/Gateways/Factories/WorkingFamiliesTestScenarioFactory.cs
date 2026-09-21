@@ -195,7 +195,7 @@ namespace CheckYourEligibility.API.Gateways.Factories
                 var minVed = checkDate.AddDays(31);
                 // if the minimum value of VED is before the end of the current term 
                 // Generate a VED that is between that minimum value and the termEndDate to guarantee VED after the due window
-                if (minVed <= termEndDate)
+                if (minVed < termEndDate)
                 {
                     wfEvent.ValidityEndDate = RandomDateGenerator(minVed, termEndDate);
                 }
