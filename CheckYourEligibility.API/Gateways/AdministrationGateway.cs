@@ -124,7 +124,7 @@ public class AdministrationGateway : IAdministration
         _db.BulkInsert_FreeSchoolMealsHO(data);
     }
 
-    public async Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data, IEnumerable<WorkingFamiliesEventSummary> summaryData)
+    public async Task BulkImportWorkingFamiliesEventHMRCData(IEnumerable<WorkingFamiliesEvent> data)
     {
         // Don't insert exact duplicates; exclude soft-deleted records from the comparison
         var codesToInsert = data.Select(x => x.EligibilityCode).ToList();
@@ -134,6 +134,10 @@ public class AdministrationGateway : IAdministration
         var codeHashes = codeEvents.Select(x => x.getHash());
         data = data.Where(x => !codeHashes.Contains(x.getHash()));
         _db.BulkInsert_WorkingFamiliesEvent(data);
+
+    }
+    public async Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData) {
+
         // Insert or update the summary records for the incoming events
         _db.BulkInsertOrUpdate_WorkingFamiliesEventSummary(summaryData);
     }

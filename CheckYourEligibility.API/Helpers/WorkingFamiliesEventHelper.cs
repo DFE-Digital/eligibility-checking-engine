@@ -44,13 +44,11 @@ public static class WorkingFamiliesEventHelper
     /// if True - it will also map FirstEventDate, LastCheckDate, FirstCheckDate, DVSD, VSD</param>
     /// <returns></returns>
     public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false) {
+        
         DateTime today = DateTime.UtcNow.Date;
 
-     //   eventSummary.FirstCheckLocalAuthorityId = null; // what ? 
-     //   eventSummary.HasCodeBeenCheckedByOwningLA = false; // what?
         eventSummary.LastUpdatedDate = today;
         eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
-       // eventSummary.OwningLocalAuthorityId = null; // who, how we are getting this information?
         eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
         eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
 
@@ -58,9 +56,7 @@ public static class WorkingFamiliesEventHelper
 
         if (!isContiguous)
         {
-            eventSummary.FirstEventDate = today; // right ? 
-           // eventSummary.LastCheckDate = null; // if the chain breaks do we set this to null?
-           // eventSummary.FirstCheckDate = null; // if the chain breaks do we set this to null ? 
+            eventSummary.FirstEventDate = today;     
             eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
             eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
 
@@ -188,7 +184,7 @@ public static class WorkingFamiliesEventHelper
     }
     /// <summary>
     /// Determines if the contiguity of an event is broken:
-    /// If only one historic event is found and the reconfirmation(new event VSD) has happened after the hisoricEvent VED
+    /// If only one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent VED
     /// or if more than one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent GPED
     /// </summary>
     /// <param name="incomingEvent"></param>

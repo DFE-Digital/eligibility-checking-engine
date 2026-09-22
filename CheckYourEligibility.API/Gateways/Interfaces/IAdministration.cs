@@ -1,6 +1,4 @@
-﻿// Ignore Spelling: Fsm
-
-using CheckYourEligibility.API.Domain;
+﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Gateways.CsvImport;
 
 namespace CheckYourEligibility.API.Gateways.Interfaces;
@@ -12,6 +10,7 @@ public interface IAdministration
     Task ImportMats(IEnumerable<MatRow> data);
     Task ImportHMRCData(IEnumerable<FreeSchoolMealsHMRC> data);
     Task ImportHomeOfficeData(IEnumerable<FreeSchoolMealsHO> data);
-    Task ImportWfHMRCData(IEnumerable<WorkingFamiliesEvent> data,IEnumerable<WorkingFamiliesEventSummary> summaryData);
+    Task BulkImportWorkingFamiliesEventHMRCData(IEnumerable<WorkingFamiliesEvent> data);
+    Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData);
     Task UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data);
 }
