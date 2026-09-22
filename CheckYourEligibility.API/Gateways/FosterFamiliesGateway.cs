@@ -298,7 +298,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
                 item.ValidityEndDate.ToString(),
                 item.GracePeriodEndDate.ToString(),
-                item.ValidityStartDate,
+                DateTime.Today,
                 EligibilityCodeType.Foster,
                 item.ChildDateOfBirth.ToString()
             );
@@ -369,7 +369,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         result.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
             result.ValidityEndDate.ToString(),
             result.GracePeriodEndDate.ToString(),
-            result.ValidityStartDate,
+            DateTime.Today,
             EligibilityCodeType.Foster,
             result.ChildDateOfBirth.ToString()
         );
