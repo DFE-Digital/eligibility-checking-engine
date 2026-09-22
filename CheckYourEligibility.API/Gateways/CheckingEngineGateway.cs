@@ -1,6 +1,5 @@
 ﻿using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
@@ -8,7 +7,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
-using CheckYourEligibility.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;

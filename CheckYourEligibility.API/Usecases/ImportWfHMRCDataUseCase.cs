@@ -105,7 +105,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
 
 
             }
-            await _gateway.BulkImportWorkingFamiliesEventSummaryRecords(summaryRecordsDataLoad);
+            await _workingFamiliesEventGateway.BulkImportWorkingFamiliesEventSummaryRecords(summaryRecordsDataLoad);
         }
         catch (Exception ex)
         {

@@ -109,7 +109,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
             .ReturnsAsync(0);
 
         _mockGateway.Setup(s => s.BulkImportWorkingFamiliesEventHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
-        _mockGateway.Setup(s=> s.BulkImportWorkingFamiliesEventSummaryRecords(It.IsAny<List<WorkingFamiliesEventSummary>>())).Returns(Task.CompletedTask);
+        _mockWorkingFamiliesEventGateway.Setup(s=> s.BulkImportWorkingFamiliesEventSummaryRecords(It.IsAny<List<WorkingFamiliesEventSummary>>())).Returns(Task.CompletedTask);
 
         // Act
         await _sut.Execute(fileMock.Object);
@@ -122,7 +122,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
                     && list[0].EligibilityCode == "50173110190"
                     && list[1].EligibilityCode == "50173110191")),
             Times.Once);
-        _mockGateway.Verify(
+        _mockWorkingFamiliesEventGateway.Verify(
            s => s.BulkImportWorkingFamiliesEventSummaryRecords(
                It.Is<List<WorkingFamiliesEventSummary>>(list =>
                    list.Count == 2

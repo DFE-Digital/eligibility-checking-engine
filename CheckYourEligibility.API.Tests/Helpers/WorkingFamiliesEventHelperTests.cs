@@ -271,25 +271,27 @@ public class WorkingFamiliesEventHelperTests
         Assert.That(result.ValidityEndDate, Is.EqualTo(new DateTime(2026, 11, 20)));
     }
 
-    [Test]
-    public void MapPIWorkingFamilySummaryFromWorkingFamilyEvent_MapsPersonalDataAndNullSafePostcode()
+    [TestCase("Test-Beta")]
+    [TestCase("Test")]
+    public void MapPIWorkingFamilySummaryFromWorkingFamilyEvent_MapsPersonalDataAndNullSafePostcode(string childFirstName)
     {
         var incomingEvent = new WorkingFamiliesEvent
         {
             ChildDateOfBirth = new DateTime(2022, 6, 7),
-            ChildFirstName = "Casey",
+            ChildFirstName = childFirstName,
             ParentNationalInsuranceNumber = "AB123456C",
             PartnerNationalInsuranceNumber = "CD654321E",
-            ChildPostCode = null,
+            ChildPostCode = "NT4 9TS",
         };
-
-        var result = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(incomingEvent);
+        var summaryRecord = new WorkingFamiliesEventSummary();
+        var result = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(summaryRecord,incomingEvent);
 
         Assert.That(result.ChildDateOfBirth, Is.EqualTo(new DateTime(2022, 6, 7)));
         Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
         Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("CD654321E"));
-        Assert.That(result.ChildPostCode, Is.EqualTo(string.Empty));
-        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("Casey"));
+        Assert.That(result.ChildPostCode, Is.EqualTo("NT4 9TS"));
+        Assert.That(result.ChildFirstName, Is.EqualTo(childFirstName));
+        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("test"));
     }
 
     [Test]

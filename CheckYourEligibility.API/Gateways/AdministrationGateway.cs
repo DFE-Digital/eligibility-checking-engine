@@ -136,12 +136,6 @@ public class AdministrationGateway : IAdministration
         _db.BulkInsert_WorkingFamiliesEvent(data);
 
     }
-    public async Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData) {
-
-        // Insert or update the summary records for the incoming events
-        _db.BulkInsertOrUpdate_WorkingFamiliesEventSummary(summaryData);
-    }
-
     [ExcludeFromCodeCoverage(Justification =
         "In memory db does not support execute update, direct updating causes concurrency error")]
     public async Task UpdateEstablishmentsPrivateBeta(IEnumerable<EstablishmentPrivateBetaRow> data)
@@ -180,25 +174,4 @@ public class AdministrationGateway : IAdministration
 
         await _db.SaveChangesAsync();
     }
-
-    public async Task CreateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record){
-        
-        await _db.WorkingFamiliesEventSummaries.AddAsync(record);
-
-    }
-  
-    public async Task UpdateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
-    {
-       
-       _db.WorkingFamiliesEventSummaries.Update(record);
-       await _db.SaveChangesAsync();
-
-    }
-    //Placeholder for future soft deletion
-    //public async Task DeleteWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
-    //{
-
-    //    _db.WorkingFamiliesEventSummaries.ExecuteUpdateAsync(setters => setters.SetProperty(eventSummary => eventSummary.IsDeleted, true));       
-
-    //}
 }

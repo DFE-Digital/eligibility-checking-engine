@@ -47,4 +47,8 @@ public interface IWorkingFamiliesEvent
     /// <param name="eligibilityCode"></param>
     /// <returns></returns>
     Task<int> GetWorkingFamiliesEventsCount(string eligibilityCode);
+
+    Task CreateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record);
+    Task UpdateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record);
+    Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData);
 }

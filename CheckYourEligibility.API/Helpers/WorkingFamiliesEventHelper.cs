@@ -95,15 +95,15 @@ public static class WorkingFamiliesEventHelper
     /// </summary>
     /// <param name="workingFamiliesEvent"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEvent workingFamiliesEvent) { 
-        
-        WorkingFamiliesEventSummary eventSummary = new WorkingFamiliesEventSummary() {  
-           ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,  
-           ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber, //why do we allow null for the event but not for the summary ? ,
-           PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
-           ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, //why do we allow null for the event but not for the summary ?          
-           ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName,
-        };
+    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent) {
+
+        eventSummary.ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth;
+        eventSummary.ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber;
+        eventSummary.PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber;
+        eventSummary.ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty;
+        eventSummary.ChildFirstName = workingFamiliesEvent.ChildFirstName;
+        eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
+       
         return eventSummary;
     }
 
@@ -211,7 +211,7 @@ public static class WorkingFamiliesEventHelper
                 return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: true);
             }
         }
-        // if no summary event record found, create a new summary record from the incoming event.
+        // if no summary event record found, map a new summary record from the incoming event.
         else
         {
            WorkingFamiliesEventSummary eventSummaryRecord = new();
