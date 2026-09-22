@@ -681,10 +681,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #region Get Foster Child 
 
     [Test]
-    public async Task GetFosterChild_Should_Use_CurrentDate_For_Reconfirmation()
+    public async Task GetFosterChild_Should_Use_CheckDate_For_TermValidity()
     {
-
-
 		// Arrange
 		// Create backdated foster appliaction for August 2026
 		var fosterCarer = new FosterCarer
@@ -703,7 +701,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             FosterCarerId = fosterCarer.FosterCarerId,
             FirstName = "Tom",
             LastName = "Smith",
-            DateOfBirth = new DateTime(2025, 1, 1),
+            DateOfBirth = new DateTime(2025, 12, 1),
             PostCode = "NNU 1AE",
             EligibilityCode = "40000000001",
             ValidityStartDate = new DateTime(2026, 8, 20),

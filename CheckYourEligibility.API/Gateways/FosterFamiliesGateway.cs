@@ -5,6 +5,7 @@ using System.Data;
 using System.Globalization;
 using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Boundary.Responses;
+using Microsoft.AspNetCore.SignalR;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
@@ -298,7 +299,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
                 item.ValidityEndDate.ToString(),
                 item.GracePeriodEndDate.ToString(),
-                DateTime.Today,
+                GetCheckDate(),
                 EligibilityCodeType.Foster,
                 item.ChildDateOfBirth.ToString()
             );
