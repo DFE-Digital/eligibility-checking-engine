@@ -7,6 +7,8 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Data.Mappings;
 using CheckYourEligibility.Core.Domain.Middleware;
 using CheckYourEligibility.Core.Extensions;
+using CheckYourEligibility.Core.Gateways.Factories;
+using CheckYourEligibility.Core.Gateways.Factories.Helper;
 using CheckYourEligibility.Core.Services;
 using CheckYourEligibility.Core.UseCases;
 using CheckYourEligibility.Core.UseCases.Internal;
@@ -16,8 +18,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Notify.Client;
-using Notify.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
@@ -153,8 +153,17 @@ builder.Services.AddServices();
 builder.Services.AddExternalServices(builder.Configuration);
 builder.Services.AddJwtSettings(builder.Configuration);
 
+// Test Data Configuration and Providers
+var testDataConfig = TestDataConfiguration.CreateFromConfiguration(builder.Configuration);
+builder.Services.AddSingleton(testDataConfig);
+builder.Services.AddSingleton<IStandardCheckTestScenarioFactory, StandardCheckTestScenarioFactory>();
+builder.Services.AddSingleton<IWorkingFamiliesTestScenarioFactory, WorkingFamiliesTestScenarioFactory>();
+
 // Use cases
 builder.Services.AddScoped<ICreateOrUpdateFSMParentUserUseCase, CreateOrUpdateFSMParentUserUseCase>();
+builder.Services.AddScoped<IGetUserRolesUseCase, GetUserRolesUseCase>();
+builder.Services.AddScoped<IAddUserRoleUseCase, AddUserRoleUseCase>();
+builder.Services.AddScoped<IRemoveUserRoleUseCase, RemoveUserRoleUseCase>();
 builder.Services.AddScoped<IAuthenticateUserUseCase, AuthenticateUserUseCase>();
 builder.Services.AddScoped<IGetCitizenClaimsUseCase, GetCitizenClaimsUseCase>();
 builder.Services.AddScoped<ISearchEstablishmentsUseCase, SearchEstablishmentsUseCase>();
@@ -217,9 +226,6 @@ builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamil
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
-
-builder.Services.AddTransient<INotificationClient>(x =>
-    new NotificationClient(!builder.Configuration.GetValue<string>("Notify:Key").IsNullOrEmpty() ? builder.Configuration.GetValue<string>("Notify:Key") : "key"));
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

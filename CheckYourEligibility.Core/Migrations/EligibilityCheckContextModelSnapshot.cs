@@ -746,7 +746,7 @@ namespace CheckYourEligibility.Core.Migrations
                         .IsUnique()
                         .HasFilter("[UserType] IS NOT NULL");
 
-                    b.HasIndex("UserName", "OrganisationType", "OrganisationId", "UserType")
+                    b.HasIndex("UserName", "Reference", "OrganisationType", "OrganisationId", "UserType")
                         .IsUnique()
                         .HasFilter("[UserName] IS NOT NULL AND [OrganisationType] IS NOT NULL AND [OrganisationId] IS NOT NULL AND [UserType] IS NOT NULL");
 
@@ -1131,7 +1131,27 @@ namespace CheckYourEligibility.Core.Migrations
                     b.ToTable("FosterChildren");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Application", b =>
+            modelBuilder.Entity("UserRole", b =>
+                {
+                    b.Property<Guid>("UserRoleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserRoleId");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_UserRole_UserId");
+
+                    b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.HasOne("CheckYourEligibility.Core.Domain.EligibilityCheckHash", "EligibilityCheckHash")
                         .WithMany()
@@ -1295,7 +1315,18 @@ namespace CheckYourEligibility.Core.Migrations
                     b.Navigation("FosterCarer");
                 });
 
-            modelBuilder.Entity("CheckYourEligibility.Core.Domain.Application", b =>
+            modelBuilder.Entity("UserRole", b =>
+                {
+                    b.HasOne("CheckYourEligibility.API.Domain.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.Application", b =>
                 {
                     b.Navigation("Evidence");
 

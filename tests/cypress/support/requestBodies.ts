@@ -14,7 +14,7 @@ export const validLoginRequestBodyFosterFamilies = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
   "&client_secret=",
   encodeURIComponent(Cypress.env("JWT_PASSWORD")),
-  "&scope=local_authority:99 check application admin bulk_check establishment user engine",
+  "&scope=local_authority:9004 check application admin bulk_check establishment user engine",
 );
 export const invalidLoginRequestBodyFosterFamilies = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
@@ -29,6 +29,13 @@ export const validLoginRequestBodyWithClientDetails = "client_id=".concat(
   encodeURIComponent(Cypress.env("JWT_PASSWORD")),
 );
 
+export const validSupportPortalLoginRequestBody = "client_id=eligibility-checking-engine-support:".concat(
+  encodeURIComponent("ece.service+cypress@education.gov.uk"),
+  "&client_secret=",
+  encodeURIComponent(Cypress.env("JWT_SUPPORTPORTAL_PASSWORD")),
+  "&scope=user admin support",
+);
+
 export function validHMRCRequestBody() {
   return {
     data: {
@@ -40,6 +47,30 @@ export function validHMRCRequestBody() {
     },
   };
 }
+export function validFSMTieredExpanded() {
+  return {
+    data: {
+      nationalInsuranceNumber: "NE123456C",
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
+      dateOfBirth: "2001-01-01",
+      nationalAsylumSeekerServiceNumber: "",
+    },
+  };
+}
+export function validFSMTieredTargeted() {
+  return {
+    data: {
+      nationalInsuranceNumber: "NA123456C",
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
+      dateOfBirth: "2001-01-01",
+      nationalAsylumSeekerServiceNumber: "",
+    },
+  };
+}
+
+
 
 export function invalidHMRCRequestBody() {
   return {

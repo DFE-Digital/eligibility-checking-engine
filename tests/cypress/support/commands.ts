@@ -27,6 +27,7 @@ declare namespace Cypress {
     verifyGetEligibilityCheckResponseData(
       response: any,
       requestData: any,
+      isTiered?: boolean,
     ): Chainable<void>;
     verifyPostEligibilityReportResponse(response: any): Chainable<void>;
     verifyEligibilityReportHistoryResponse(response: any): Chainable<void>;
@@ -175,7 +176,6 @@ Cypress.Commands.add("verifyPostEligibilityBulkCheckResponse", (response) => {
 });
 
 Cypress.Commands.add("verifyBulkResults", (results, requestData) => {
-  console.log(results, requestData);
 
   expect(results.length).to.eq(requestData.length);
 
@@ -254,13 +254,16 @@ Cypress.Commands.add(
 
 Cypress.Commands.add(
   "verifyGetEligibilityCheckResponseData",
-  (response, requestData) => {
+  (response, requestData, isTiered) => {
     // Verify body has data and links properties
     expect(response.body).to.have.property("data");
     expect(response.body).to.have.property("links");
     const responseData = response.body.data;
     const responseLinks = response.body.links;
 
+    if (isTiered) {
+      expect(responseData).to.have.property("tier");
+    }
     // Verify expected data properties
     expect(responseData).to.have.property(
       "nationalInsuranceNumber",
@@ -441,6 +444,7 @@ Cypress.Commands.add("verifyApiResponseCode", (response, expectedStatus) => {
     200: "OK",
     201: "Created",
     202: "Accepted",
+    204: "No Content",
     400: "Bad Request",
     401: "Unauthorized",
     404: "Not Found",

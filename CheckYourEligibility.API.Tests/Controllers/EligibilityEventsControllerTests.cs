@@ -15,7 +15,7 @@ using System.Net;
 namespace CheckYourEligibility.API.Tests.Controllers;
 
 [TestFixture]
-public class EligibilityEventsControllerTests : TestBase
+public class EligibilityEventsControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<IUpsertWorkingFamiliesEventUseCase> _mockUpsertUseCase = null!;

@@ -9,6 +9,8 @@ using CheckYourEligibility.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
+using CheckYourEligibility.Core.Helpers;
+using CheckYourEligibility.Core.Boundary.Responses.Internal;
 
 namespace CheckYourEligibility.Core.Gateways;
 
@@ -134,6 +136,15 @@ public class FosterFamiliesGateway : IFosterFamilies
 
             await transaction.CommitAsync();
 
+            ReconfirmationProperties reconfirmation = WorkingFamiliesCheckHelper
+            .SetReconfirmationProperties(
+                workingEvent.ValidityEndDate.ToString(),
+                workingEvent.GracePeriodEndDate.ToString(),
+                request.SubmissionDate,
+                EligibilityCodeType.Foster,
+                request.FosterChild.ChildDateOfBirth.ToString()
+            );
+
             return new FosterFamilyCreatedResponse()
             {
                 FosterCarerId = fosterCarer.FosterCarerId,
@@ -141,7 +152,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                 EligibilityCode = workingEvent.EligibilityCode,
                 Status = fosterChild.Status,
                 EligibilityConfirmed = request.SubmissionDate,
-                ReconfirmBetween = "",
+                ReconfirmBetween = $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}",
                 GracePeriodEndDate = workingEvent.GracePeriodEndDate,
             };
         }
@@ -302,18 +313,31 @@ public class FosterFamiliesGateway : IFosterFamilies
 
                 EligibilityConfirmedOn = x.SubmissionDate,
 
-                ReconfirmBetween = "",
-
                 GracePeriodEnds = _db.WorkingFamiliesEvents
                     .Where(w => w.EligibilityCode == x.EligibilityCode)
                     .Select(w => w.GracePeriodEndDate)
                     .SingleOrDefault(),
 
-                ReconfirmationStatus = ""
+                ValidityEndDate = x.ValidityEndDate
+
             })
             .AsNoTracking()
             .ToListAsync();
 
+        foreach (var item in results)
+        {
+            var reconfirmation =
+                WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+                    item.ValidityEndDate.ToString(),
+                    item.GracePeriodEnds.ToString(),
+                    item.EligibilityConfirmedOn,
+                    EligibilityCodeType.Foster,
+                    item.ChildDateOfBirth.ToString());
+
+            item.ReconfirmationStatus = reconfirmation.Status.ToString();
+            item.ReconfirmBetween =
+                $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}";
+        }
 
         return new FosterFamiliesSearchResponse
         {
@@ -334,20 +358,20 @@ public class FosterFamiliesGateway : IFosterFamilies
         if (includeFosterCarer)
         {
             result = await _db.FosterChildren
-                .Where(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId)
+                .Where(x =>
+                    x.FosterChildId == fosterChildId &&
+                    x.FosterCarer.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterChildResponse
                 {
                     FosterChildId = x.FosterChildId,
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "",
-                    CodeStatus = "",
-
                     EligibilityConfirmedOn = x.SubmissionDate,
 
-                    ReconfirmFrom = x.ValidityStartDate,
-                    ReconfirmTo = x.ValidityEndDate,
+                    // Needed for reconfirmation logic
+                    ValidityStartDate = x.ValidityStartDate,
+                    ValidityEndDate = x.ValidityEndDate,
 
                     GracePeriodEnds = _db.WorkingFamiliesEvents
                         .Where(w => w.EligibilityCode == x.EligibilityCode)
@@ -373,20 +397,20 @@ public class FosterFamiliesGateway : IFosterFamilies
         else
         {
             result = await _db.FosterChildren
-                .Where(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId)
+                .Where(x =>
+                    x.FosterChildId == fosterChildId &&
+                    x.FosterCarer.LocalAuthorityID == localAuthorityId)
                 .Select(x => new FosterChildResponse
                 {
                     FosterChildId = x.FosterChildId,
 
                     EligibilityCode = x.EligibilityCode,
 
-                    ReconfirmationStatus = "",
-                    CodeStatus = "",
-
                     EligibilityConfirmedOn = x.SubmissionDate,
 
-                    ReconfirmFrom = x.ValidityStartDate,
-                    ReconfirmTo = x.ValidityEndDate,
+                    // Needed for reconfirmation logic
+                    ValidityStartDate = x.ValidityStartDate,
+                    ValidityEndDate = x.ValidityEndDate,
 
                     GracePeriodEnds = _db.WorkingFamiliesEvents
                         .Where(w => w.EligibilityCode == x.EligibilityCode)
@@ -415,6 +439,19 @@ public class FosterFamiliesGateway : IFosterFamilies
             throw new NotFoundException(
                 $"Foster child {fosterChildId} not found");
         }
+
+        var reconfirmation = WorkingFamiliesCheckHelper
+            .SetReconfirmationProperties(
+                result.ValidityEndDate.ToString(),
+                result.GracePeriodEnds.ToString(),
+                result.EligibilityConfirmedOn,
+                EligibilityCodeType.Foster,
+                result.ChildDateOfBirth.ToString());
+
+        result.ReconfirmationStatus = reconfirmation.Status.ToString();
+
+        result.ReconfirmBetween =
+            $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}";
 
         return result;
     }
@@ -468,13 +505,22 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.FosterChildren.AddAsync(fosterChild);
         await _db.SaveChangesAsync();
 
+        ReconfirmationProperties reconfirmation = WorkingFamiliesCheckHelper
+            .SetReconfirmationProperties(
+                workingEvent.ValidityEndDate.ToString(),
+                workingEvent.GracePeriodEndDate.ToString(),
+                submissionDate,
+                EligibilityCodeType.Foster,
+                fosterChild.DateOfBirth.ToString()
+            );
+
         return new FosterChildCreatedResponse
         {
             ChildName = $"{fosterChild.FirstName} {fosterChild.LastName}",
             EligibilityCode = workingEvent.EligibilityCode,
             Status = "",
             EligibilityConfirmed = submissionDate,
-            ReconfirmBetween = "",
+            ReconfirmBetween = $"{reconfirmation.StartDate:dd MMMM yyyy} and {reconfirmation.EndDate:dd MMMM yyyy}",
             GracePeriodEndDate = workingEvent.GracePeriodEndDate
         };
     }

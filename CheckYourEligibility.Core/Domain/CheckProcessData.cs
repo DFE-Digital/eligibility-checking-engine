@@ -28,6 +28,7 @@ public class CheckProcessData
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
     public string? ClientIdentifier { get; set; }
+    public int? Order { get; set; }
 
     public CheckEligibilityType Type { get; set; }
 
@@ -37,11 +38,13 @@ public class CheckProcessData
     /// <returns>String of hashed values</returns>
     public string GetHash()
     {
+        // Normalise here so callers don't need to pre-format input, and so a hash created at check
+        // time always matches one looked up later even if either side has stray whitespace/casing (ELIG-3639).
         var key = string.IsNullOrEmpty(NationalInsuranceNumber)
-            ? NationalAsylumSeekerServiceNumber?.ToUpper()
-            : NationalInsuranceNumber?.ToUpper();
+            ? NationalAsylumSeekerServiceNumber?.Trim().ToUpperInvariant()
+            : NationalInsuranceNumber?.Replace(" ", string.Empty).Trim().ToUpperInvariant();
 
-        var input = $"{LastName?.ToUpper()}{key}{DateOfBirth}{Type}";
+        var input = $"{LastName?.Trim().ToUpperInvariant()}{key}{DateOfBirth}{Type}";
 
         switch (this.Type)
         {

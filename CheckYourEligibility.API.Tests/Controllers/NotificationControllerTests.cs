@@ -13,7 +13,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class NotificationControllerTests : TestBase
+public class NotificationControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private ILogger<NotificationController> _mockLogger;

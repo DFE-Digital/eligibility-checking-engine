@@ -6,15 +6,17 @@ public class FosterChildResponse
 
     public string EligibilityCode { get; set; } = string.Empty;
 
-    public string ReconfirmationStatus { get; set; } = string.Empty;
+    public string ReconfirmationStatus { get; set; }
 
     public string CodeStatus { get; set; } = string.Empty;
 
     public DateTime EligibilityConfirmedOn { get; set; }
 
-    public DateTime ReconfirmFrom { get; set; }
+    public DateTime ValidityStartDate { get; set; }
 
-    public DateTime ReconfirmTo { get; set; }
+    public DateTime ValidityEndDate { get; set; }
+
+    public string ReconfirmBetween { get; set; }
 
     public DateTime GracePeriodEnds { get; set; }
 

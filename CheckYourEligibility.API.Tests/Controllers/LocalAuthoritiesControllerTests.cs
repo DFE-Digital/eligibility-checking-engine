@@ -15,7 +15,7 @@ using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class LocalAuthoritiesControllerTests : TestBase
+public class LocalAuthoritiesControllerTests : ControllerTestBase
 {
     private Mock<ILocalAuthority> _mockLocalAuthority;
 

@@ -2,7 +2,8 @@
 
 public enum NotificationType
 {
-    ParentApplicationCreated,
     ParentApplicationEvidenceSent,
-    ParentApplicationSuccessful
+    ParentApplicationSuccessful,
+    ParentApplicationEvidenceToTakeToSchool,
+    ParentApplicationUnsuccessful
 }

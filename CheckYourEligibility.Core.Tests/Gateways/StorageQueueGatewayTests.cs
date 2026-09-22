@@ -19,11 +19,9 @@ public class StorageQueueGatewayTests : TestBase
     private HashGateway _hashGateway;
     private IMapper _mapper;
     private Mock<IAudit> _moqAudit;
-    private Mock<IEcsAdapter> _moqEcsGateway;
     private Mock<QueueServiceClient> _queueClientService;
     private Mock<ICheckingEngine> _moqCheckingEngineGateway;
     private Mock<ICheckEligibility> _moqCheckEligibilityGateway;
-    private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueue> _moqStorageQueueGateway;
     private StorageQueueGateway _sut;
 
@@ -46,23 +44,20 @@ public class StorageQueueGatewayTests : TestBase
         _mapper = config.CreateMapper();
 
         var configForSmsApi = new Dictionary<string, string>
-    {
-        { "BulkEligibilityCheckLimit", "250" },
-        { "QueueFsmCheckStandard", "notSet" },
-        { "QueueFsmCheckBulk", "notSet" },
-        { "HashCheckDays", "7" },
-        { "Dwp:UseEcsforChecksWF", "false" }
-    };
+        {
+            { "BulkEligibilityCheckLimit", "250" },
+            { "QueueFsmCheckStandard", "notSet" },
+            { "QueueFsmCheckBulk", "notSet" },
+            { "HashCheckDays", "7" },
+            { "Dwp:UseEcsforChecksWF", "false" }
+        };
 
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configForSmsApi)
             .Build();
 
-        var webJobsConnection =
-            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+        var webJobsConnection = "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
-        _moqEcsGateway = new Mock<IEcsAdapter>(MockBehavior.Strict);
-        _moqDwpGateway = new Mock<IDwpAdapter>(MockBehavior.Strict);
         _moqStorageQueueGateway = new Mock<IStorageQueue>();
         _moqCheckEligibilityGateway = new Mock<ICheckEligibility>();
         _moqCheckingEngineGateway = new Mock<ICheckingEngine>();

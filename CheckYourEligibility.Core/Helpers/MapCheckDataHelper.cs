@@ -31,6 +31,7 @@ namespace CheckYourEligibility.Core.Helpers
                             LastName = checkItem?.LastName?.ToUpper(),
                             DateOfBirth = checkItem?.DateOfBirth,
                             ClientIdentifier = checkItem?.ClientIdentifier,
+                            Order = checkItem?.Order,
                             Type = type
                         };
                     }
@@ -55,7 +56,8 @@ namespace CheckYourEligibility.Core.Helpers
                             NationalInsuranceNumber = checkItem?.NationalInsuranceNumber,
                             Type = type,
                             ClientIdentifier = checkItem?.ClientIdentifier,
-                            EligibilityEndDate = checkItem?.EligibilityEndDate
+                            EligibilityEndDate = checkItem?.EligibilityEndDate,
+                            Order = checkItem?.Order
                         };
                     }
 

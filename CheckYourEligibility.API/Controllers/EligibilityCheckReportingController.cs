@@ -1,15 +1,13 @@
 using System.Net;
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
-using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Domain.Authorization;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Extensions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
-using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 
 namespace CheckYourEligibility.API.Controllers;
 

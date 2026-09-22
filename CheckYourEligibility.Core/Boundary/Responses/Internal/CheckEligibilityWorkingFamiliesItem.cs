@@ -8,7 +8,7 @@ namespace CheckYourEligibility.Core.Boundary.Responses.Internal
     public class CheckEligibilityWorkingFamiliesItem : CheckEligibilityItemBase
     {
         public TermValidity? TermValidity { get; set; }
-
+      
         public ReconfirmationProperties? ReconfirmationProperties { get; set; }
 
         public bool? IsDiscretionaryValidityStartDateApplied { get; set; }
@@ -20,6 +20,7 @@ namespace CheckYourEligibility.Core.Boundary.Responses.Internal
         public string GracePeriodEndDate { get; set; }
         public string EligibilityCode { get; set; }
         public string DateOfBirth { get; set; }
+        public bool? ChildTooYoung { get; set; }
     }
 
     public class TermValidity { 

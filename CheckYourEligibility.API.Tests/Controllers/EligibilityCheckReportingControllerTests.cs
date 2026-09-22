@@ -14,7 +14,7 @@ using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class EligibilityCheckReportingControllerTests : TestBase
+public class EligibilityCheckReportingControllerTests : ControllerTestBase
 {
     private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
@@ -31,6 +31,8 @@ public class EligibilityCheckReportingControllerTests : TestBase
     [SetUp]
     public void SetUp()
     {
+        TestClaimIdentifier ="unit-test-report-controller";
+
         _mockEligibilityCheckReportingUseCase = new Mock<IGetEligibilityCheckReportingUseCase>(MockBehavior.Strict);
         _mockGetEligibilityReportHistoryUseCase = new Mock<IGetEligibilityReportHistoryUseCase>(MockBehavior.Strict);
         _mockDeleteEligibilityCheckReportUseCase = new Mock<IDeleteEligibilityCheckReportUseCase>(MockBehavior.Strict);
@@ -71,31 +73,11 @@ public class EligibilityCheckReportingControllerTests : TestBase
         _mockAuditGateway.VerifyAll();
     }
 
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-        claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "unit-test-bulk-check-controller"));
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
     [Test]
     public async Task EligibilityCheckReportItems_ReturnsOk_WhenUseCaseReturnsData()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         var reportId = "123e4567-e89b-12d3-a456-426614174000";
         var response = new EligibilityCheckReportItemsResponse { Data = new List<CheckItem> { new CheckItem { ParentName = "Smith", NationalInsuranceNumber = "AB123456C", DateOfBirth = "2000-01-01", CheckSubmittedDate = "2024-01-01", Outcome = "Success", Tier = "1", CheckType = "TypeA", CheckedBy = "admin" } } };
         _mockGetEligibilityCheckReportItemsUseCase.Setup(x => x.Execute(reportId)).ReturnsAsync(response);
@@ -111,7 +93,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     public async Task EligibilityCheckReportItems_ReturnsBadRequest_WhenNoLocalAuthorityScope()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
         // Act
         var result = await _sut.EligibilityCheckReportItems("any-id");
         // Assert
@@ -126,7 +108,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     public async Task EligibilityCheckReportItems_ReturnsNotFound_WhenNotFoundExceptionThrown()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         _mockGetEligibilityCheckReportItemsUseCase.Setup(x => x.Execute(It.IsAny<string>())).ThrowsAsync(new NotFoundException());
         // Act
         var result = await _sut.EligibilityCheckReportItems("notfound-id");
@@ -138,7 +120,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     public async Task EligibilityCheckReportItems_ReturnsBadRequest_WhenValidationExceptionThrown()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         _mockGetEligibilityCheckReportItemsUseCase.Setup(x => x.Execute(It.IsAny<string>())).ThrowsAsync(new ValidationException(null, "Invalid report ID format. Must be a GUID"));
         // Act
         var result = await _sut.EligibilityCheckReportItems("bad-guid");
@@ -164,7 +146,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
             }
         };
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockEligibilityCheckReportingUseCase.Setup(u => u.Execute(It.Is<EligibilityCheckReportRequest>(r => r.LocalAuthorityID == localAuthorityId),It.IsAny<CheckMetaData>())).ReturnsAsync(reportResponse);
 
@@ -185,7 +167,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
         // Arrange
         var model = new EligibilityCheckReportRequest();
 
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var response = await _sut.EligibilityCheckReportRequest(model);
@@ -206,7 +188,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
         // Arrange
         var model = new EligibilityCheckReportRequest { LocalAuthorityID = 201 };
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockEligibilityCheckReportingUseCase
             .Setup(u => u.Execute(It.IsAny<EligibilityCheckReportRequest>(), It.IsAny<CheckMetaData>()))
@@ -235,7 +217,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
         var localAuthorityId = "201";
 
         // Set up controller with NO local authority context (empty scopes)
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var response = await _sut.GetAllReportHistory(localAuthorityId, pageNumber: 1);
@@ -254,7 +236,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
         var localAuthorityId = "201";
         var pageNumber = 2;
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var responseFromUseCase = new EligibilityCheckReportHistoryResponse
         {
@@ -292,7 +274,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     public async Task GetAllReportHistory_returns_bad_request_for_fluent_validation_exception()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockGetEligibilityReportHistoryUseCase
             .Setup(u => u.Execute(It.IsAny<string>(), It.IsAny<List<int>>(), It.IsAny<int>()))
@@ -315,7 +297,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = Guid.NewGuid();
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockDeleteEligibilityCheckReportUseCase
             .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
@@ -334,7 +316,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = Guid.NewGuid();
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockDeleteEligibilityCheckReportUseCase
             .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
@@ -352,7 +334,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = Guid.NewGuid();
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockDeleteEligibilityCheckReportUseCase
             .Setup(u => u.Execute(reportId, It.IsAny<List<int>>()))
@@ -373,7 +355,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = Guid.NewGuid();
-        SetupControllerWithLocalAuthorityIds(new List<int>()); // Empty scopes
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>()); // Empty scopes
 
         // Act
         var result = await _sut.DeleteReportHistory(reportId);
@@ -390,7 +372,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
         // Arrange
         var reportId = "report-123";
         var expectedResponse = new EligibilityReportStatusResponse { Status = "Complete" };
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         _mockGetEligibilityReportStatusUseCase
             .Setup(u => u.Execute(reportId))
             .ReturnsAsync(expectedResponse);
@@ -409,7 +391,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = "report-123";
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var result = await _sut.EligibilityCheckReportStatus(reportId);
@@ -427,7 +409,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = "report-123";
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         _mockGetEligibilityReportStatusUseCase
             .Setup(u => u.Execute(reportId))
             .ThrowsAsync(new NotFoundException());
@@ -448,7 +430,7 @@ public class EligibilityCheckReportingControllerTests : TestBase
     {
         // Arrange
         var reportId = "report-123";
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
         var errorMsg = "Validation failed";
         _mockGetEligibilityReportStatusUseCase
             .Setup(u => u.Execute(reportId))

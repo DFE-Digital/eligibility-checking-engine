@@ -70,7 +70,11 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
-
+    //If VED => 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
+    //If VED => 11 Feb and VED <= 26 May then GPED = 31-Aug 
+    //If VED => 27 May and VED <= 31 August then GPED  = 31-Dec 
+    //If VED => 1 September and VED <= 21 October then GPED = 31-Dec
+    //If VED => 22 October and VED <= 31 Dec then GPED  31-Mar following year
     public static DateTime GetGracePeriodEndDate(DateTime validityEndDate)
     {
         if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 10, 22)) >= 0)
@@ -90,7 +94,7 @@ public static class WorkingFamiliesEventHelper
             return new DateTime(validityEndDate.Year, 3, 31);
         }
     }
-
+    // if submitted date is before the current term, and the VSD is < 15 days from the start of the term
     public static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
     {
         var firstTermStart = new DateTime(validityStartDate.Year, 9, 1);
@@ -100,7 +104,7 @@ public static class WorkingFamiliesEventHelper
 
         foreach (DateTime termStart in termDates)
         {
-            if (validityStartDate.CompareTo(termStart) > 0 &&
+            if (validityStartDate.CompareTo(termStart) >= 0 &&
                 validityStartDate.CompareTo(termStart.AddDays(13)) <= 0 &&
                 submissionDate.CompareTo(termStart) < 0)
             {
@@ -110,7 +114,5 @@ public static class WorkingFamiliesEventHelper
         // Else use VSD
         return validityStartDate;
     }
-
-
 
 }

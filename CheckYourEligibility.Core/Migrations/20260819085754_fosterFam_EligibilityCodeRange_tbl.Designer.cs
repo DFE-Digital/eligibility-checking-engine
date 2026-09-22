@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CheckYourEligibility.API.Migrations
+namespace CheckYourEligibility.Core.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
     [Migration("20260819085754_fosterFam_EligibilityCodeRange_tbl")]

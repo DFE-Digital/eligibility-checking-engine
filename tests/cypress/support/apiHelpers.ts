@@ -12,6 +12,13 @@ export const verifyUnauthorizedWithoutToken = (method: string, endpoint: string,
 }
 
 
+export const getAuthResponse = (url: string, requestBody: any): Cypress.Chainable<any> => {
+    return cy.apiRequest('POST', url, requestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {
+        expect(response.status).to.equal(200);
+        return response.body;
+    });
+};
+
 export const getandVerifyBearerToken = (url: string, requestBody: any): Cypress.Chainable<string> => {
     cy.log(requestBody);
     return cy.apiRequest('POST', url, requestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {

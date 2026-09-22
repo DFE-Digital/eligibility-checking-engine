@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CheckYourEligibility.Core.Boundary.Responses;
 
 public class FosterFamiliesSearchItemResponse
@@ -17,5 +19,8 @@ public class FosterFamiliesSearchItemResponse
 
     public DateTime GracePeriodEnds { get; set; }
 
-    public string ReconfirmationStatus { get; set; } = string.Empty;
+    [JsonIgnore]
+    public DateTime? ValidityEndDate { get; set; }
+
+    public string ReconfirmationStatus { get; set; }
 }

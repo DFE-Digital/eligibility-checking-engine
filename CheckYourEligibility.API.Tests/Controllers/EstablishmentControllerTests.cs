@@ -11,7 +11,7 @@ using Moq;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class EstablishmentControllerTests : TestBase
+public class EstablishmentControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private Mock<IApplication> _mockApplicationGateway;

@@ -16,7 +16,7 @@ using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class EngineControllerTests : TestBase
+public class EngineControllerTests : ControllerTestBase
 {
     private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
@@ -100,27 +100,6 @@ public class EngineControllerTests : TestBase
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }
-
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Test]

@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace CheckYourEligibility.API.Migrations
+namespace CheckYourEligibility.Core.Migrations
 {
     /// <inheritdoc />
     public partial class EligibilityCodeRange_Name_RemoveRowVersion : Migration

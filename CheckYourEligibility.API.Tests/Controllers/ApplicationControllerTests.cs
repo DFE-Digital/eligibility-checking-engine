@@ -12,12 +12,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class ApplicationControllerTests : TestBase
+public class ApplicationControllerTests : ControllerTestBase
 {
     private IConfigurationRoot _configuration = null!;
     private Mock<IAudit> _mockAuditGateway = null!;
@@ -92,7 +91,7 @@ public class ApplicationControllerTests : TestBase
         _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds)).ReturnsAsync(applicationFsm);
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         var expectedResult = new ObjectResult(applicationFsm)
         { StatusCode = StatusCodes.Status201Created };
@@ -104,44 +103,6 @@ public class ApplicationControllerTests : TestBase
         response.Should().BeEquivalentTo(expectedResult);
     }
 
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
-
-    private void SetupControllerWithLaAndMatIds(List<int> localAuthorityIds, List<int> multiAcademyTrustIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = SetupSpecificScopeIdClaims(localAuthorityIds, "local_authority");
-        claims.AddRange(SetupSpecificScopeIdClaims(multiAcademyTrustIds, "multi_academy_trust"));
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
-    }
-
-    private List<Claim> SetupSpecificScopeIdClaims(List<int> ids, string scopeName)
-    {
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on ids
-        if (ids.Contains(0))
-        {
-            claims.Add(new Claim("scope", scopeName));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", ids.Select(id => $"{scopeName}:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        return claims;
-    }
 
     [Test]
     public async Task Given_InValidRequest_Values_Application_Should_Return_Status400BadRequest()
@@ -151,7 +112,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockCreateApplicationUseCase.Setup(cs => cs.Execute(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Invalid request, data is required"));
@@ -173,7 +134,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         if (request.Data != null)
         {
@@ -199,7 +160,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         if (request.Data != null)
         {
@@ -225,7 +186,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
             .ThrowsAsync(new NotFoundException());
@@ -247,7 +208,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds)).ReturnsAsync(expectedResponse);
         var expectedResult = new ObjectResult(expectedResponse)
@@ -270,7 +231,7 @@ public class ApplicationControllerTests : TestBase
         var establishmentIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLaAndMatIds(localAuthorityIds, multiAcademyTrustIds);
+        SetupControllerWithLaAndMatIds(_sut, localAuthorityIds, multiAcademyTrustIds);
 
         // Set the LocalAuthority in the model to match our authorized LocalAuthority
         if (model.Data == null)
@@ -301,7 +262,7 @@ public class ApplicationControllerTests : TestBase
         var establishmentIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLaAndMatIds(localAuthorityIds, multiAcademyTrustIds);
+        SetupControllerWithLaAndMatIds(_sut, localAuthorityIds, multiAcademyTrustIds);
 
         // Set the LocalAuthority in the model to match our authorized LocalAuthority
         if (model.Data == null)
@@ -331,7 +292,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ReturnsAsync((ApplicationUpdateResponse)null!);
         var expectedResult = new NotFoundObjectResult(new ErrorResponse { Errors = [new Error { Title = "" }] });
@@ -353,7 +314,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ReturnsAsync(expectedResponse);
@@ -374,7 +335,7 @@ public class ApplicationControllerTests : TestBase
         var model = _fixture.Create<ApplicationSearchRequest>();
 
         // Setup controller with empty local authority claims
-        SetupControllerWithLaAndMatIds(new List<int>(), new List<int>());
+        SetupControllerWithLaAndMatIds(_sut, new List<int>(), new List<int>());
 
         // Act
         var response = await _sut.ApplicationSearch(model);
@@ -400,7 +361,7 @@ public class ApplicationControllerTests : TestBase
         model.Data.LocalAuthority = 5; // A different local authority than we'll authorize
 
         // Setup controller with specific local authority claims (not including 5)
-        SetupControllerWithLocalAuthorityIds(new List<int> { 1, 2, 3 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 1, 2, 3 });
 
         // Setup mock to throw UnauthorizedAccessException for unauthorized access
         _mockSearchApplicationsUseCase
@@ -428,7 +389,7 @@ public class ApplicationControllerTests : TestBase
         var request = _fixture.Create<ApplicationUpdateRequest>();
 
         // Setup controller with empty local authority claims
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var response = await _sut.UpdateApplication(guid, request);
@@ -450,7 +411,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new NotFoundException("Application not found"));
@@ -475,7 +436,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new UnauthorizedAccessException("Access denied"));
@@ -500,7 +461,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockUpdateApplicationUseCase.Setup(cs => cs.Execute(guid, request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Invalid status"));
@@ -523,7 +484,7 @@ public class ApplicationControllerTests : TestBase
         var guid = _fixture.Create<string>();
 
         // Setup controller with empty local authority claims
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var response = await _sut.Application(guid);
@@ -544,7 +505,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockGetApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
             .ThrowsAsync(new UnauthorizedAccessException("Access denied"));
@@ -570,7 +531,7 @@ public class ApplicationControllerTests : TestBase
         var establishmentIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds))
             .ThrowsAsync(new ArgumentException("Invalid request, data is required"));
@@ -596,7 +557,7 @@ public class ApplicationControllerTests : TestBase
         var establishmentIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds))
             .ThrowsAsync(
@@ -625,7 +586,7 @@ public class ApplicationControllerTests : TestBase
         var establishmentIds = new List<int> { };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockSearchApplicationsUseCase.Setup(cs => cs.Execute(model, localAuthorityIds, multiAcademyTrustIds, establishmentIds))
             .ThrowsAsync(new Exception("Database connection failed"));
@@ -650,7 +611,7 @@ public class ApplicationControllerTests : TestBase
         var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds)).ReturnsAsync(expectedResponse);
 
         // Act
@@ -668,7 +629,7 @@ public class ApplicationControllerTests : TestBase
         // Arrange
         var request = new ApplicationBulkImportRequest
         { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var result = await _sut.BulkImportApplications(request);
@@ -688,7 +649,7 @@ public class ApplicationControllerTests : TestBase
         { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Validation error"));
 
@@ -710,7 +671,7 @@ public class ApplicationControllerTests : TestBase
         { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
             .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
 
@@ -732,7 +693,7 @@ public class ApplicationControllerTests : TestBase
         { File = new FormFile(new MemoryStream(), 0, 0, "file", "file.csv") };
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.Execute(request, localAuthorityIds))
             .ThrowsAsync(new Exception("General error"));
 
@@ -754,7 +715,7 @@ public class ApplicationControllerTests : TestBase
         var expectedResponse = _fixture.Create<ApplicationBulkImportResponse>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
             .ReturnsAsync(expectedResponse);
 
@@ -772,7 +733,7 @@ public class ApplicationControllerTests : TestBase
     {
         // Arrange
         var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var result = await _sut.BulkImportApplicationsFromJson(request);
@@ -791,7 +752,7 @@ public class ApplicationControllerTests : TestBase
         var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
             .ThrowsAsync(new ValidationException("Validation error"));
 
@@ -812,7 +773,7 @@ public class ApplicationControllerTests : TestBase
         var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
             .ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
 
@@ -833,7 +794,7 @@ public class ApplicationControllerTests : TestBase
         var request = _fixture.Create<ApplicationBulkImportJsonRequest>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockImportApplicationsUseCase.Setup(x => x.ExecuteFromJson(request, localAuthorityIds))
             .ThrowsAsync(new Exception("General error"));
 
@@ -854,7 +815,7 @@ public class ApplicationControllerTests : TestBase
         var guid = _fixture.Create<string>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).Returns(Task.CompletedTask);
 
         // Act
@@ -869,7 +830,7 @@ public class ApplicationControllerTests : TestBase
     {
         // Arrange
         var guid = _fixture.Create<string>();
-        SetupControllerWithLocalAuthorityIds(new List<int>());
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int>());
 
         // Act
         var result = await _sut.DeleteApplication(guid);
@@ -888,7 +849,7 @@ public class ApplicationControllerTests : TestBase
         var guid = _fixture.Create<string>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new NotFoundException("Application not found"));
 
         // Act
@@ -908,7 +869,7 @@ public class ApplicationControllerTests : TestBase
         var guid = _fixture.Create<string>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new UnauthorizedAccessException("Unauthorized"));
 
         // Act
@@ -928,7 +889,7 @@ public class ApplicationControllerTests : TestBase
         var guid = _fixture.Create<string>();
         var localAuthorityIds = new List<int> { 1 };
 
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
         _mockDeleteApplicationUseCase.Setup(x => x.Execute(guid, localAuthorityIds)).ThrowsAsync(new Exception("General error"));
 
         // Act
@@ -950,7 +911,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockRestoreArchiveApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
             .ReturnsAsync(expectedResponse);
@@ -974,7 +935,7 @@ public class ApplicationControllerTests : TestBase
         var localAuthorityIds = new List<int> { 1 };
 
         // Setup controller with local authority claims
-        SetupControllerWithLocalAuthorityIds(localAuthorityIds);
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
 
         _mockRestoreArchiveApplicationUseCase.Setup(cs => cs.Execute(guid, localAuthorityIds))
             .ReturnsAsync((ApplicationStatusRestoreResponse)null!);

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CheckYourEligibility.API.Migrations
+namespace CheckYourEligibility.Core.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
     [Migration("20260824144122_EligibilityCodeRange_Name_RemoveRowVersion")]

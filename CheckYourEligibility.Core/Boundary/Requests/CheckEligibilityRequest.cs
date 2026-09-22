@@ -89,10 +89,11 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
-
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
     public string? ClientIdentifier { get; set; }
+    public int? Order { get; set; }
 }
 
 public class CheckEligibilityRequestBulk
@@ -121,11 +122,13 @@ public class CheckEligibilityRequestWorkingFamiliesBulk : CheckEligibilityReques
     public IEnumerable<CheckEligibilityRequestWorkingFamiliesBulkData> Data { get; set; }
 }
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestWorkingFamiliesBulkData : CheckEligibilityRequestWorkingFamiliesData
 {
     public string? ClientIdentifier { get; set; }
     public string? Filename { get; set; }
     public string? SubmittedBy { get; set; }
+    public int? Order { get; set; }
 }
 
 #endregion

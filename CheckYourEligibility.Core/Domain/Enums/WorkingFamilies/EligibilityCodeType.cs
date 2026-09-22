@@ -3,9 +3,9 @@
     public enum EligibilityCodeType
     {
 
-        Temporary = 11,
+        Temporary = 1,
         Standard = 9,
-        Foster = 400
+        Foster = 4
 
     }
 }

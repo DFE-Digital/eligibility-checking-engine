@@ -1,6 +1,5 @@
 import { verifyUnauthorizedWithoutToken, getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validLoginRequestBodyWithClientDetails, validLoginRequestBody } from '../../support/requestBodies';
-
+import { validLoginRequestBodyWithClientDetails, validLoginRequestBody, validSupportPortalLoginRequestBody } from '../../support/requestBodies';
 
 describe('Authorisation Tests', () => {
   const invalidRequestBody = { lolzname: 'ecsUiUser', password: '123456' };

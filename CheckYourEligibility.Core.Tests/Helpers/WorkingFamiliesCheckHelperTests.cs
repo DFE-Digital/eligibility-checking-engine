@@ -9,6 +9,15 @@ namespace CheckYourEligibility.Core.Tests.Helpers
     public class WorkingFamiliesCheckHelperTests
     {
 
+        [TestCase("2026-01-02", true)]
+        [TestCase("2024-01-02", false)]
+        public void IsChildTooYoung_expected_result(string dob , bool ischildTooYoung) {
+
+            var checkDate = new DateTime(2026,9, 9);
+            var result = WorkingFamiliesCheckHelper.ChildIsTooYoung(DateTime.Parse(dob),checkDate);
+
+            result.Should().Be(ischildTooYoung);
+        }
 
         [TestCase("2025-01-01", "2025-01-01", false)]
         [TestCase("2026-01-14", "2025-12-31", true)]
@@ -121,8 +130,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2026-08-31",                 // GPED before Autumn start
                 "2024-01-01",
                 "2024-01-01",
-                TermName.None,
-                TermName.Summer)
+                TermName.Summer,
+                TermName.None)
                 .SetArgDisplayNames("Current_Term_Only");
 
             yield return new TestCaseData(
@@ -140,6 +149,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
         /// <returns></returns>
         private static IEnumerable<TestCaseData> SetReconfirmationPropertiesCases()
         {
+
+
             yield return new TestCaseData(
                 "2025-12-31",                       // VED
                 "2026-03-31",                       // GPED

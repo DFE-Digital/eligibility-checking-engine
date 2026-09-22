@@ -45,6 +45,27 @@ describe("Update Foster Carer - happy paths", () => {
             response,
             updateFosterCarerRequestBody(),
           );
+
+          // clean up
+          cy.apiRequest(
+            "DELETE",
+            `/foster-family/${fosterCarerId}`,
+            null,
+            token,
+          ).then((deleteResponse) => {
+            expect(deleteResponse.status).to.eq(204);
+
+            // verify fam is gone.
+            cy.apiRequest(
+              "GET",
+              `/foster-family/${fosterCarerId}`,
+              null,
+              token,
+              false,
+            ).then((getResponse) => {
+              expect(getResponse.status).to.eq(404);
+            });
+          });
         });
       });
     });

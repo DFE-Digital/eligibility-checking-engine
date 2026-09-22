@@ -62,7 +62,9 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
 
         var item = _getEligibilityCheckItemService.MapCheckDataToResponseWorkingFamilies(result, isInternal:true);
 
-        item.EligibilityCodeType = WorkingFamiliesCheckHelper.GetEligibilityCodeType(item.EligibilityCode);
+        item.EligibilityCodeType = item.EligibilityCode.StartsWith("7")
+            ? WorkingFamiliesCheckHelper.GetTestEligibilityCodeType(item.EligibilityCode)
+            : WorkingFamiliesCheckHelper.GetEligibilityCodeType(item.EligibilityCode);      
 
         item.IsDiscretionaryValidityStartDateApplied =
         WorkingFamiliesCheckHelper.IsDiscretionaryValidityStartDateApplied(item.ValidityStartDate, item.DiscretionaryValidityStartDate);
@@ -75,6 +77,8 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
            checkDate,
            item.EligibilityCodeType,
            item.DateOfBirth);
+
+        item.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(DateTime.Parse(item.DateOfBirth), checkDate);
 
         return new CheckEligibilityItemResponse<CheckEligibilityWorkingFamiliesItem>
         {

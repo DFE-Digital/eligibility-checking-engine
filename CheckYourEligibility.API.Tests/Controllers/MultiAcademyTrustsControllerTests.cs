@@ -14,7 +14,7 @@ using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class MultiAcademyTrustsControllerTests : TestBase
+public class MultiAcademyTrustsControllerTests : ControllerTestBase
 {
     private Mock<IMultiAcademyTrust> _mockMultiAcademyTrust;
     private Mock<IGetEstablishmentsByMultiAcademyTrustIdUseCase> _getEstablismentsByMultiAcademyTrustId;

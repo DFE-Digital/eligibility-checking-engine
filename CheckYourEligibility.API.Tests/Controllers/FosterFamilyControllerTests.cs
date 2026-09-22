@@ -14,7 +14,7 @@ using CheckYourEligibility.Core.Domain.Exceptions;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class FosterFamilyControllerTests : TestBase
+public class FosterFamilyControllerTests : ControllerTestBase
 {
     private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamily = null!;
     private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamily = null!;
@@ -34,6 +34,8 @@ public class FosterFamilyControllerTests : TestBase
     [SetUp]
     public void Setup()
     {
+        TestClaimIdentifier = "unit-test-user";
+
         _mockGetFosterFamily = new Mock<IGetFosterFamilyUseCase>(MockBehavior.Strict);
         _mockCreateFosterFamily = new Mock<ICreateFosterFamilyUseCase>(MockBehavior.Strict);
         _mockUpdateFosterCarer = new Mock<IUpdateFosterCarerUseCase>(MockBehavior.Strict);
@@ -86,44 +88,13 @@ public class FosterFamilyControllerTests : TestBase
         _mockDeleteFosterChild.VerifyAll();
     }
 
-    private void SetupControllerWithLocalAuthorityIds(List<int> ids)
-    {
-        var httpContext = new DefaultHttpContext();
-
-        var claims = new List<Claim>
-        {
-            new Claim(
-                ClaimTypes.NameIdentifier,
-                "unit-test-user")
-        };
-
-        if (ids.Any())
-        {
-            var scopeValue = ids.Contains(0)
-                ? "local_authority"
-                : string.Join(" ",
-                    ids.Select(x => $"local_authority:{x}"));
-
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(
-            new ClaimsIdentity(claims));
-
-        _sut.ControllerContext =
-            new ControllerContext
-            {
-                HttpContext = httpContext
-            };
-    }
-
     [Test]
     public async Task GetFosterFamily_Returns_Ok()
     {
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var response = new FosterFamilyResponse
         {
@@ -140,7 +111,7 @@ public class FosterFamilyControllerTests : TestBase
         // Act
         var result = await _sut.GetFosterFamily(
             id,
-            true);  
+            true);
 
         // Assert
         result.Should().BeOfType<ObjectResult>();
@@ -155,7 +126,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task GetFosterFamily_Returns_BadRequest_When_No_LA_Scope()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds([]);
+        SetupControllerWithLocalAuthorityIds(_sut, []);
 
         // Act
         var result = await _sut.GetFosterFamily(
@@ -179,11 +150,11 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockGetFosterFamily
             .Setup(x => x.Execute(
-                id, 
+                id,
                 201,
                 false))
             .ThrowsAsync(new NotFoundException());
@@ -201,7 +172,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task CreateFosterFamily_Returns_Created()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterFamilyRequest
         {
@@ -235,7 +206,7 @@ public class FosterFamilyControllerTests : TestBase
     [Test]
     public async Task CreateFosterFamily_Returns_BadRequest_For_ValidationException()
     {
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterFamilyRequest();
 
@@ -259,7 +230,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockDeleteFosterCarer
             .Setup(x => x.Execute(id, 201))
@@ -283,7 +254,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockDeleteFosterCarer
             .Setup(x => x.Execute(id, 201))
@@ -303,7 +274,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var response = new FosterChildResponse
         {
@@ -336,7 +307,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task GetFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds([]);
+        SetupControllerWithLocalAuthorityIds(_sut, []);
 
         // Act
         var result = await _sut.GetFosterChild(
@@ -361,7 +332,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var id = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockGetFosterChild
             .Setup(x => x.Execute(
@@ -396,7 +367,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterCarerId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterChildRequest
         {
@@ -439,7 +410,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task CreateFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds([]);
+        SetupControllerWithLocalAuthorityIds(_sut, []);
 
         var request = new FosterChildRequest();
 
@@ -465,7 +436,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterCarerId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterChildRequest();
 
@@ -500,7 +471,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterCarerId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         _mockCreateFosterChild
             .Setup(x => x.Execute(
@@ -525,7 +496,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterCarerId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterChildRequest();
 
@@ -561,7 +532,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterCarerId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new FosterChildRequest();
 
@@ -595,7 +566,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterChildId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new UpdateFosterChildRequest
         {
@@ -639,7 +610,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task UpdateFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds([]);
+        SetupControllerWithLocalAuthorityIds(_sut, []);
 
         var request = new UpdateFosterChildRequest();
 
@@ -665,7 +636,7 @@ public class FosterFamilyControllerTests : TestBase
         // Arrange
         var fosterChildId = Guid.NewGuid();
 
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var request = new UpdateFosterChildRequest();
 
@@ -697,7 +668,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task SearchFosterFamilies_Returns_Multiple_Results()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var response = new FosterFamiliesSearchResponse
         {
@@ -764,7 +735,7 @@ public class FosterFamilyControllerTests : TestBase
     public async Task SearchFosterFamilies_Returns_Empty_Data()
     {
         // Arrange
-        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+        SetupControllerWithLocalAuthorityIds(_sut, new List<int> { 201 });
 
         var response = new FosterFamiliesSearchResponse
         {

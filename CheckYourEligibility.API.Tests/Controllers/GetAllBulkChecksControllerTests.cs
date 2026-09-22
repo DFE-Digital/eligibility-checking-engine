@@ -13,8 +13,7 @@ using System.Security.Claims;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
-    [TestFixture]
-    public class GetAllBulkChecksControllerTests
+    public class GetAllBulkChecksControllerTests : ControllerTestBase
     {
         private Mock<IGetAllBulkChecksUseCase> _mockUseCase = null!;
         private Mock<ICreateApplicationsFromBulkCheckUseCase> _mockCreateApplicationsFromBulkCheckUseCase = null!;
