@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
@@ -680,6 +681,77 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #region Get Foster Child 
 
     [Test]
+    public async Task GetFosterChild_Should_Use_CurrentDate_For_Reconfirmation()
+    {
+
+
+		// Arrange
+		// Create backdated foster appliaction for August 2026
+		var fosterCarer = new FosterCarer
+        {
+            FosterCarerId = Guid.NewGuid(),
+            FirstName = "John",
+            LastName = "Smith",
+            LocalAuthorityID = 0,
+            NationalInsuranceNumber = "AA123456A",
+            DateOfBirth = new DateTime(1980, 1, 1)
+        };
+
+        var fosterChild = new FosterChild
+        {
+            FosterChildId = Guid.NewGuid(),
+            FosterCarerId = fosterCarer.FosterCarerId,
+            FirstName = "Tom",
+            LastName = "Smith",
+            DateOfBirth = new DateTime(2025, 1, 1),
+            PostCode = "NNU 1AE",
+            EligibilityCode = "40000000001",
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 11, 20),
+            SubmissionDate = new DateTime(2026, 8, 20),
+            Status = "Active"
+        };
+
+        var workingEvent = new WorkingFamiliesEvent
+        {
+            WorkingFamiliesEventID = Guid.NewGuid().ToString(),
+            EligibilityCode = fosterChild.EligibilityCode,
+            SubmissionDate = new DateTime(2026, 8, 20),
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 11, 20),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
+            GracePeriodEndDate = new DateTime(2027, 3, 31),
+            ParentNationalInsuranceNumber = "AA123456A",
+            ParentFirstName = "John",
+            ParentLastName = "Smith",
+            ParentDateOfBirth = new DateTime(1980, 1, 1),
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith",
+            ChildDateOfBirth = fosterChild.DateOfBirth,
+            ChildPostCode = "NNU 1AE",
+            CreatedDateTime = new DateTime(2026, 8, 20)
+        };
+
+        await _fakeInMemoryDb.FosterCarers.AddAsync(fosterCarer);
+        await _fakeInMemoryDb.FosterChildren.AddAsync(fosterChild);
+        await _fakeInMemoryDb.WorkingFamiliesEvents.AddAsync(workingEvent);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        // Simulate check date as September 2026
+		var checkDate = new DateTime(2026, 9, 10);
+		var deterministicGateway = new FixedDateFosterFamiliesGateway(_fakeInMemoryDb, _mockLogger.Object, checkDate);
+
+        // Act
+        var result = await deterministicGateway.GetFosterChild(fosterChild.FosterChildId, 0, false);
+
+        // Assert
+        result.TermValidity.Current.Should().NotBeNull();
+        result.TermValidity.Current!.Name.Should().Be(TermName.Autumn);
+        result.TermValidity.Next!.Name.Should().NotBe(TermName.Autumn);
+        result.ChildTooYoung.Should().BeFalse();
+    }
+
+    [Test]
     public async Task GetFosterChild_Should_Return_FosterCarer_Details_When_Requested()
     {
         // Arrange
@@ -1294,6 +1366,14 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     private static string GenerateValidNi()
     {
         return $"AA{Random.Shared.Next(1_000_000):D6}A";
+    }
+
+    private sealed class FixedDateFosterFamiliesGateway(IEligibilityCheckContext db, ILogger<FosterFamiliesGateway> logger, DateTime checkDate)
+        : FosterFamiliesGateway(db, logger)
+    {
+        private readonly DateTime _checkDate = checkDate;
+
+        protected override DateTime GetCheckDate() => _checkDate;
     }
 
     #endregion

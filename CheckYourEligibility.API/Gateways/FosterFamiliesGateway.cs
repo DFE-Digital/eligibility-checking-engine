@@ -354,12 +354,17 @@ public class FosterFamiliesGateway : IFosterFamilies
                     .SingleOrDefault();
         result.GracePeriodEndDate = workingEvent.GracePeriodEndDate;
 
+        var checkDate = GetCheckDate();
+
         // Calculate child too young
-        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(result.ChildDateOfBirth, result.ValidityStartDate);
+        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(
+            result.ChildDateOfBirth,
+            checkDate
+        );
 
         // Calculate term validity
         result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
-            DateTime.Today,
+            checkDate,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
             result.ChildDateOfBirth.ToString()
@@ -369,13 +374,15 @@ public class FosterFamiliesGateway : IFosterFamilies
         result.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
             result.ValidityEndDate.ToString(),
             result.GracePeriodEndDate.ToString(),
-            DateTime.Today,
+            checkDate,
             EligibilityCodeType.Foster,
             result.ChildDateOfBirth.ToString()
         );
 
         return result;
     }
+
+    protected virtual DateTime GetCheckDate() => DateTime.Today;
 
     public async Task<FosterChildResponse> CreateFosterChild(
     FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
