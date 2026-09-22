@@ -5,7 +5,6 @@ using System.Data;
 using System.Globalization;
 using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Boundary.Responses;
-using Microsoft.AspNetCore.SignalR;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
