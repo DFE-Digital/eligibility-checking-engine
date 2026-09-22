@@ -21,6 +21,7 @@ public class FosterFamilyController : BaseController
 
     private readonly IGetFosterFamilyUseCase _getFosterFamily;
     private readonly ICreateFosterFamilyUseCase _createFosterFamily;
+    private readonly IPreviewFosterFamilyCodeUseCase _previewFosterFamilyCode;
     private readonly IUpdateFosterCarerUseCase _updateFosterCarer;
     private readonly IDeleteFosterCarerUseCase _deleteFosterCarer;
     private readonly IDeleteFosterPartnerUseCase _deleteFosterPartner;
@@ -36,6 +37,7 @@ public class FosterFamilyController : BaseController
         IConfiguration configuration,
         IGetFosterFamilyUseCase getFosterFamily,
         ICreateFosterFamilyUseCase createFosterFamily,
+        IPreviewFosterFamilyCodeUseCase previewFosterFamilyCode,
         IUpdateFosterCarerUseCase updateFosterCarer,
         IDeleteFosterCarerUseCase deleteFosterCarer,
         IDeleteFosterPartnerUseCase deleteFosterPartner,
@@ -52,6 +54,7 @@ public class FosterFamilyController : BaseController
 
         _getFosterFamily = getFosterFamily;
         _createFosterFamily = createFosterFamily;
+        _previewFosterFamilyCode = previewFosterFamilyCode;
         _updateFosterCarer = updateFosterCarer;
         _deleteFosterCarer = deleteFosterCarer;
         _deleteFosterPartner = deleteFosterPartner;
@@ -120,7 +123,7 @@ public class FosterFamilyController : BaseController
         }
         catch (FluentValidation.ValidationException ex)
         {
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (ValidationException ex)
         {
@@ -129,7 +132,44 @@ public class FosterFamilyController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster family");
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+    }
+
+    [ProducesResponseType(typeof(FosterFamilyCodePreviewResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/foster-family/preview")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> PreviewFosterFamilyCode([FromBody] FosterFamilyRequest model)
+    {
+        try
+        {
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+
+            var response = await _previewFosterFamilyCode.Execute(model, localAuthorityId.Value);
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status201Created };
+        }
+        catch (ArgumentNullException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating foster family code preview");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
@@ -262,10 +302,8 @@ public class FosterFamilyController : BaseController
                 PageSize = pageSize
             };
 
-            var response = await _searchFosterFamilies.Execute(
-                request,
-                localAuthorityId.Value);
-
+            var response = await _searchFosterFamilies.Execute(request, localAuthorityId.Value);
+            
             return Ok(response);
         }
         catch (ArgumentException ex)
@@ -308,16 +346,16 @@ public class FosterFamilyController : BaseController
         }
         catch (ValidationException ex)
         {
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting foster child");
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }
 
-    [ProducesResponseType(typeof(FosterChildCreatedResponse), (int)HttpStatusCode.Created)]
+    [ProducesResponseType(typeof(FosterChildResponse), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family/{fosterCarerId}/child")]
@@ -386,7 +424,7 @@ public class FosterFamilyController : BaseController
         }
         catch (ValidationException ex)
         {
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
         catch (Exception ex)
         {

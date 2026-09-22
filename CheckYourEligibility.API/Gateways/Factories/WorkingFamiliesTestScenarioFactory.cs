@@ -1,4 +1,5 @@
-﻿using CheckYourEligibility.API.Domain;
+﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Gateways.Factories.Helper;
 using Microsoft.IdentityModel.Tokens;

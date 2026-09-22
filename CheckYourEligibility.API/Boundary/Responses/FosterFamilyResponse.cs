@@ -1,19 +1,24 @@
-public class FosterFamilyResponse
+
+namespace CheckYourEligibility.API.Boundary.Responses
 {
-    public Guid FosterCarerId { get; set; }
 
-    public string CarerFirstName { get; set; } 
-    public string CarerLastName { get; set; } 
-    public DateTime CarerDateOfBirth { get; set; }
-    public string CarerNationalInsuranceNumber { get; set; } 
+    public class FosterFamilyResponse
+    {
+        public Guid FosterCarerId { get; set; }
 
-    public bool HasPartner { get; set; }
+        public string CarerFirstName { get; set; }
+        public string CarerLastName { get; set; }
+        public DateTime CarerDateOfBirth { get; set; }
+        public string CarerNationalInsuranceNumber { get; set; }
 
-    public string? PartnerFirstName { get; set; }
-    public string? PartnerLastName { get; set; }
-    public DateTime? PartnerDateOfBirth { get; set; }
-    public string? PartnerNationalInsuranceNumber { get; set; }
+        public bool HasPartner { get; set; }
 
-    // Populated when includeChildren = true
-    public List<FosterChildSummaryResponse> FosterChildren { get; set; } = [];
+        public string? PartnerFirstName { get; set; }
+        public string? PartnerLastName { get; set; }
+        public DateTime? PartnerDateOfBirth { get; set; }
+        public string? PartnerNationalInsuranceNumber { get; set; }
+
+        // Populated when includeChildren = true
+        public List<FosterChildSummaryResponse> FosterChildren { get; set; } = [];
+    }
 }
