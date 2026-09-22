@@ -191,18 +191,20 @@ namespace CheckYourEligibility.API.Gateways.Factories
             {
                 // checkDate must NOT be within (VED - 28) and VED
                 // Generate a VED after the due-now window
-                var minVed = checkDate.AddDays(29);
+                // Add a buffer for hashed values
+                var minVed = checkDate.AddDays(31);
                 // if the minimum value of VED is before the end of the current term 
                 // Generate a VED that is between that minimum value and the termEndDate to guarantee VED after the due window
-                if (minVed <= termEndDate)
+                if (minVed < termEndDate)
                 {
                     wfEvent.ValidityEndDate = RandomDateGenerator(minVed, termEndDate);
                 }
-                // If checkdate + 29 days is greater then the current termendDate
-                // To generate a VED before the due-window
+                // else force it to be on the termEndDate endDate
+                // this is necessary to enforce this term only scenario
+
                 else
                 {
-                    wfEvent.ValidityEndDate = RandomDateGenerator(currentTerm.StartDate, dueWindowStart.AddDays(-29));
+                    wfEvent.ValidityEndDate = termEndDate;
                 }
             }
 

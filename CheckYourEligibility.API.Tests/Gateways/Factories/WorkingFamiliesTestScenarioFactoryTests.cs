@@ -88,36 +88,41 @@ public class WorkingFamiliesTestScenarioFactoryTests
     }
 
     [Test]
-    public void GenerateTestScenarioInternalSide_DueNowNino_GeneratesEndDateInDueWindow()
+    public void GenerateTestScenarioInternalSide_ValidThisTermOnly_DueNowNino_GeneratesEndDateInDueWindow()
     {
+        var termEndDate = GetCurrentTermEndDate(CurrentTerm);
         var result = _sut.GenerateTestScenarioInternalSide(CreateCheckData("70100000000", "AB123456C"), CheckDate);
 
         Assert.That(result!.ValidityEndDate, Is.GreaterThanOrEqualTo(CheckDate));
         Assert.That(result.ValidityEndDate, Is.LessThanOrEqualTo(CheckDate.AddDays(28)));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(termEndDate));
     }
 
+
     [Test]
-    public void GenerateTestScenarioInternalSide_NinoNotDueNow_GeneratesEndDateAfterDueWindow()
+    public void GenerateTestScenarioInternalSide_ValidThisTermOnly_WhenMinVEDIsBeforeTermEndDate_ReturnsVEDAfterStartOfReconfirmWindow()
     {
         var termEndDate = GetCurrentTermEndDate(CurrentTerm);
-        var minVed = CheckDate.AddDays(29);
+        var minVed = CheckDate.AddDays(31);
 
         var result = _sut.GenerateTestScenarioInternalSide(CreateCheckData("70100000000", "AB123456A"), CheckDate);
 
         Assert.That(result!.ValidityEndDate, Is.InRange(minVed, termEndDate));
         Assert.That(result.ValidityEndDate, Is.GreaterThan(CheckDate.AddDays(28)));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(termEndDate));
     }
 
-    [Test]
-    public void GenerateTestScenarioInternalSide_NinoNotDueNow_GeneratesEndDateBeforeDueWindow()
+    [TestCase(2026, 12, 20)]
+    [TestCase(2026, 11, 30)]
+    public void GenerateTestScenarioInternalSide_ValidThisTermOnly_WhenMinVEDGreaterThenOrEqualToTermEndDate_ReturnsVEDEqualToTermEndDate(int year, int month, int day)
     {
+        var termEndDate = GetCurrentTermEndDate(CurrentTerm);
+        DateTime lateTermCheckDate = new(year, month, day);
+        var result = _sut.GenerateTestScenarioInternalSide(
+              CreateCheckData("70100000000", "AB123456A"), lateTermCheckDate);
 
-     DateTime lateTermCheckDate = new(2026, 12, 20);
-      var result = _sut.GenerateTestScenarioInternalSide(
-            CreateCheckData("70100000000", "AB123456A"), lateTermCheckDate);
-
-        Assert.That(result!.ValidityEndDate, Is.InRange(CurrentTerm.StartDate, lateTermCheckDate.AddDays(-29)));
-        Assert.That(result.ValidityEndDate, Is.LessThan(lateTermCheckDate.AddDays(-28)));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(termEndDate));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(termEndDate));
     }
 
     [Test]
