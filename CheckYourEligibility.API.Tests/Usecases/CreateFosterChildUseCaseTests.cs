@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
@@ -28,7 +29,7 @@ public class CreateFosterChildUseCaseTests
     public async Task Execute_Should_Throw_When_Request_Is_Null()
     {
         // Arrange
-        
+
         // Act
         var act = () => _sut.Execute(
             null!,
@@ -142,12 +143,11 @@ public class CreateFosterChildUseCaseTests
 
         var carerId = Guid.NewGuid();
 
-        var expected = new FosterChildCreatedResponse
+        var expected = new FosterChildResponse
         {
-            ChildName = "Child One",
+            ChildFullName = "Child One",
             EligibilityCode = "X1",
-            Status = "Active",
-            EligibilityConfirmed = DateTime.UtcNow,
+            ValidityStartDate = DateTime.UtcNow,
             GracePeriodEndDate = DateTime.UtcNow
         };
 
@@ -184,11 +184,12 @@ public class CreateFosterChildUseCaseTests
 
         var carerId = Guid.NewGuid();
 
-        var expected = new FosterChildCreatedResponse
+        var expected = new FosterChildResponse
         {
-            ChildName = "Child One",
+            ChildFullName = "Child One",
             EligibilityCode = "X1",
-            Status = "Active"
+            FosterCarerId = carerId,
+            PostCode = req.ChildPostCode
         };
 
         _mockGateway

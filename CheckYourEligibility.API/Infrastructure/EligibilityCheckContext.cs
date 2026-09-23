@@ -343,11 +343,11 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<User>().HasIndex(x => new
         {
             x.UserName,
+            x.Reference,
             x.OrganisationType,
             x.OrganisationId,
             x.UserType
         }).IsUnique();
-
 
         modelBuilder.Entity<User>(u =>
         {

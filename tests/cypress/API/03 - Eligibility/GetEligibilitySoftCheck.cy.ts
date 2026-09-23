@@ -1,5 +1,5 @@
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible } from '../../support/requestBodies';
+import { validFSMTieredExpanded, validFSMTieredTargeted, validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible } from '../../support/requestBodies';
 
 
 describe('GET eligibility soft check by Guid', () => {
@@ -24,8 +24,64 @@ describe('GET eligibility soft check by Guid', () => {
                     })
                 });
             });
+
         });
-    })
+    });
+        it('Verify 200 Success response is returned with valid guid for FSM tiered expanded', () => {
+        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+            const requestBody = validFSMTieredExpanded();
+            cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
+                cy.verifyApiResponseCode(response, 202);
+                cy.extractGuid(response);
+
+                const pollCheck = (retries = 0, waitTime = 2000) => {
+                    cy.get('@Guid').then((Guid) => {
+                        cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
+                            cy.verifyApiResponseCode(newResponse, 200);
+                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
+                                cy.wait(waitTime).then(() => {
+                                    pollCheck(retries + 1, waitTime + 1000);
+                                });
+                            } else {
+                                cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
+                                expect(newResponse.body.data.status).to.eq('eligible');
+                                expect(newResponse.body.data.tier).to.eq('expanded');
+                            }
+                        });
+                    });
+                };
+                pollCheck();
+            });
+        });
+    });
+
+    it('Verify 200 Success response is returned with valid guid for FSM tiered targeted', () => {
+        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+            const requestBody = validFSMTieredTargeted();
+            cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
+                cy.verifyApiResponseCode(response, 202);
+                cy.extractGuid(response);
+
+                const pollCheck = (retries = 0, waitTime = 2000) => {
+                    cy.get('@Guid').then((Guid) => {
+                        cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
+                            cy.verifyApiResponseCode(newResponse, 200);
+                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
+                                cy.wait(waitTime).then(() => {
+                                    pollCheck(retries + 1, waitTime + 1000);
+                                });
+                            } else {
+                                cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
+                                expect(newResponse.body.data.status).to.eq('eligible');
+                                expect(newResponse.body.data.tier).to.eq('targeted');
+                            }
+                        });
+                    });
+                };
+                pollCheck();
+            });
+        });
+    });
 
     
     it('Verify 200 Success response is returned with valid guid Working Families notFound', () => {

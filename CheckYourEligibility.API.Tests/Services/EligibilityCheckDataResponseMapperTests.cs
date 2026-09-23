@@ -65,8 +65,10 @@ public class EligibilityCheckDataResponseMapperTests
         result.Should().BeOfType<CheckEligibilityItem>();
     }
 
-    [Test]
-    public void MapCheckDataToResponseStandard_Maps_All_Fields()
+    [TestCase(null)]
+    [TestCase(EligibilityTier.targeted)]
+    [TestCase(EligibilityTier.expanded)]
+    public void MapCheckDataToResponseStandard_Maps_All_Fields(EligibilityTier? tier)
     {
         var request = new CheckProcessData
         {
@@ -86,12 +88,13 @@ public class EligibilityCheckDataResponseMapperTests
         {
             Type = CheckEligibilityType.FreeSchoolMeals,
             Status = CheckEligibilityStatus.eligible,
+            Tier = tier,
             Created = DateTime.UtcNow,
             CheckData = JsonConvert.SerializeObject(request)
         };
 
         CheckEligibilityItem result = (CheckEligibilityItem)_sut.MapCheckDataToResponse(check);
-
+        result.Tier.Should().Be(tier == null ? null : tier.ToString());
         result.Status.Should().Be("eligible");
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("SMITH");

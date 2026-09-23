@@ -47,6 +47,30 @@ export function validHMRCRequestBody() {
     },
   };
 }
+export function validFSMTieredExpanded() {
+  return {
+    data: {
+      nationalInsuranceNumber: "NE123456C",
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
+      dateOfBirth: "2001-01-01",
+      nationalAsylumSeekerServiceNumber: "",
+    },
+  };
+}
+export function validFSMTieredTargeted() {
+  return {
+    data: {
+      nationalInsuranceNumber: "NA123456C",
+      //lastName: Cypress.env("lastName"),
+      lastName: "TESTER",
+      dateOfBirth: "2001-01-01",
+      nationalAsylumSeekerServiceNumber: "",
+    },
+  };
+}
+
+
 
 export function invalidHMRCRequestBody() {
   return {

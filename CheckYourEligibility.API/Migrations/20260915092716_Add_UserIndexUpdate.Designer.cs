@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    partial class EligibilityCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20260915092716_Add_UserIndexUpdate")]
+    partial class Add_UserIndexUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1120,17 +1123,12 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("ValidityStartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("WorkingFamiliesEventSummaryID")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("FosterChildId");
 
                     b.HasIndex("EligibilityCode")
                         .IsUnique();
 
                     b.HasIndex("FosterCarerId");
-
-                    b.HasIndex("WorkingFamiliesEventSummaryID");
 
                     b.ToTable("FosterChildren");
                 });
@@ -1316,13 +1314,7 @@ namespace CheckYourEligibility.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", "eventSummary")
-                        .WithMany()
-                        .HasForeignKey("WorkingFamiliesEventSummaryID");
-
                     b.Navigation("FosterCarer");
-
-                    b.Navigation("eventSummary");
                 });
 
             modelBuilder.Entity("UserRole", b =>
