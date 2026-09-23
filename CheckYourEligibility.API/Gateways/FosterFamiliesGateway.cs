@@ -1,10 +1,10 @@
-using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
+using CheckYourEligibility.API.Boundary.Responses;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {

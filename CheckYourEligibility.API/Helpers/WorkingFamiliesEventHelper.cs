@@ -1,5 +1,4 @@
 using CheckYourEligibility.API.Domain;
-using System.Threading.Tasks;
 
 
 public static class WorkingFamiliesEventHelper
@@ -51,8 +50,6 @@ public static class WorkingFamiliesEventHelper
         eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
         eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
         eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
-
-
 
         if (!isContiguous)
         {
