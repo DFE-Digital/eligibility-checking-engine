@@ -26,11 +26,19 @@ namespace CheckYourEligibility.API.Boundary.Responses
         // Child
         public Guid FosterChildId { get; set; }
 
+        [Obsolete("To be removed in future - use ChildFirstName and ChildLastName")]
         public string ChildFullName { get; set; }
+
+        public string ChildFirstName { get; set; }
+
+        public string ChildLastName { get; set; }
 
         public DateTime ChildDateOfBirth { get; set; }
 
+        [Obsolete("To be removed in future - use ChildPostCode")]
         public string PostCode { get; set; }
+
+        public string ChildPostCode { get; set; }
 
 
         // Foster Family

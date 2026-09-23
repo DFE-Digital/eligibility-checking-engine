@@ -29,7 +29,7 @@ public class GetFosterChildUseCaseTests
     public async Task Execute_Should_Throw_When_Id_Is_Empty()
     {
         // Arrange
-        
+
         // Act
         var act = () => _sut.Execute(
             Guid.Empty,
@@ -76,7 +76,8 @@ public class GetFosterChildUseCaseTests
         var expected = new FosterChildResponse
         {
             FosterChildId = id,
-            ChildFullName = "Child One",
+            ChildFirstName = "Child",
+            ChildLastName = "One",
             ChildDateOfBirth = DateTime.UtcNow
         };
 

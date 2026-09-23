@@ -313,7 +313,8 @@ public class FosterFamilyControllerTests
         var response = new FosterChildResponse
         {
             FosterChildId = id,
-            ChildFullName = "Tom Smith"
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith"
         };
 
         _mockGetFosterChild
@@ -413,7 +414,8 @@ public class FosterFamilyControllerTests
 
         var response = new FosterChildResponse
         {
-            ChildFullName = "Tom Smith",
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith",
             EligibilityCode = "ABC123",
         };
 
@@ -615,7 +617,8 @@ public class FosterFamilyControllerTests
         var response = new FosterChildResponse
         {
             FosterChildId = fosterChildId,
-            ChildFullName = "Tom Smith"
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith"
         };
 
         _mockUpdateFosterChild
