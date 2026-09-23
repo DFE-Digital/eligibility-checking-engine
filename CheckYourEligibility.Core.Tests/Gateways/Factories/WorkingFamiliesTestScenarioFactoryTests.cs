@@ -1,5 +1,4 @@
 using CheckYourEligibility.Core.Domain;
-using CheckYourEligibility.Core.Gateways;
 using CheckYourEligibility.Core.Gateways.Factories;
 using CheckYourEligibility.Core.Gateways.Factories.Helper;
 using CheckYourEligibility.Core.Helpers;
