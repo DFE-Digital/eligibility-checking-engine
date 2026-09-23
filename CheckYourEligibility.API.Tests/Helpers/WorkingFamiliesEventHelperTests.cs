@@ -231,14 +231,15 @@ public class WorkingFamiliesEventHelperTests
         Assert.That(eventSummary.DiscretionaryValidityStartDate, Is.EqualTo(eventSummary.DiscretionaryValidityStartDate));
     }
 
-    [Test]
-    public void MapWorkingFamiliesEventToNewSummaryRecord_CreatesSummaryFromIncomingEvent()
+    [TestCase("Casey")]
+    [TestCase("Casey-Test")]
+    public void MapWorkingFamiliesEventToNewSummaryRecord_CreatesSummaryFromIncomingEvent(string childFirstName)
     {
         var incomingEvent = new WorkingFamiliesEvent
         {
             EligibilityCode = "70100000000",
             ChildDateOfBirth = new DateTime(2022, 6, 7),
-            ChildFirstName = "Casey",
+            ChildFirstName = childFirstName,
             ParentNationalInsuranceNumber = "AB123456C",
             PartnerNationalInsuranceNumber = "CD654321E",
             ChildPostCode = "AB1 2CD",
@@ -254,11 +255,11 @@ public class WorkingFamiliesEventHelperTests
         Assert.That(result.WorkingFamiliesEventSummaryID, Is.Not.Empty);
         Assert.That(result.EligibilityCode, Is.EqualTo("70100000000"));
         Assert.That(result.ChildDateOfBirth, Is.EqualTo(new DateTime(2022, 6, 7)));
-        Assert.That(result.ChildFirstName, Is.EqualTo("Casey"));
+        Assert.That(result.ChildFirstName, Is.EqualTo(childFirstName));
         Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
         Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("CD654321E"));
         Assert.That(result.ChildPostCode, Is.EqualTo("AB1 2CD"));
-        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("Casey"));
+        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("casey"));
         Assert.That(result.FirstCheckDate, Is.Null);
         Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
         Assert.That(result.HasCodeBeenCheckedByOwningLA, Is.False);
