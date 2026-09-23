@@ -1,8 +1,8 @@
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
-using CheckYourEligibility.API.Helpers;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Enums.WorkingFamilies;
+using CheckYourEligibility.Core.Helpers;
 
-namespace CheckYourEligibility.API.UseCases;
+namespace CheckYourEligibility.Core.UseCases;
 
 public interface IPreviewFosterFamilyCodeUseCase
 {

@@ -1,4 +1,4 @@
-using CheckYourEligibility.Core.Boundary.Responses.Internal;
+using CheckYourEligibility.Core.Boundary.Responses;
 
 public class FosterFamilyCodePreviewResponse
 {

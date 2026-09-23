@@ -1,4 +1,5 @@
-﻿using CheckYourEligibility.Core.Boundary.Responses.Internal;
+﻿using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses.Internal;
 using CheckYourEligibility.Core.Domain.Enums.WorkingFamilies;
 
 namespace CheckYourEligibility.Core.Helpers
