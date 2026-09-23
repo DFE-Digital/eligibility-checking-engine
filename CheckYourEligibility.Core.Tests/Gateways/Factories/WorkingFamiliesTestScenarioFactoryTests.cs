@@ -9,7 +9,7 @@ namespace CheckYourEligibility.Core.Tests.Gateways.Factories;
 public class WorkingFamiliesTestScenarioFactoryTests
 {
     private static readonly DateTime CheckDate = new(2026, 9, 7);
-    private static readonly WorkingFamiliesCheckHelper.Term CurrentTerm =
+    private static readonly Term CurrentTerm =
         new(Domain.Enums.WorkingFamilies.TermName.Autumn, new DateTime(2026, 9, 1));
 
     private readonly TestDataConfiguration _configuration = new();
@@ -245,7 +245,7 @@ public class WorkingFamiliesTestScenarioFactoryTests
         NationalInsuranceNumber = nino
     };
 
-    private static DateTime GetCurrentTermEndDate(WorkingFamiliesCheckHelper.Term currentTerm) => currentTerm.Name switch
+    private static DateTime GetCurrentTermEndDate(Term currentTerm) => currentTerm.Name switch
     {
         Domain.Enums.WorkingFamilies.TermName.Spring => new DateTime(currentTerm.StartDate.Year, 3, 31),
         Domain.Enums.WorkingFamilies.TermName.Summer => new DateTime(currentTerm.StartDate.Year, 8, 31),

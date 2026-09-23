@@ -11,10 +11,11 @@ namespace CheckYourEligibility.Core.Tests.Helpers
 
         [TestCase("2026-01-02", true)]
         [TestCase("2024-01-02", false)]
-        public void IsChildTooYoung_expected_result(string dob , bool ischildTooYoung) {
+        public void IsChildTooYoung_expected_result(string dob, bool ischildTooYoung)
+        {
 
-            var checkDate = new DateTime(2026,9, 9);
-            var result = WorkingFamiliesCheckHelper.ChildIsTooYoung(DateTime.Parse(dob),checkDate);
+            var checkDate = new DateTime(2026, 9, 9);
+            var result = WorkingFamiliesCheckHelper.ChildIsTooYoung(DateTime.Parse(dob), checkDate);
 
             result.Should().Be(ischildTooYoung);
         }
@@ -47,8 +48,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
             string gracePeriodEndDate,
             string validityStartDate,
             string childDob,
-            TermName expectedCurrentTerm,
-            TermName expectedNextTerm)
+            Term expectedCurrentTerm,
+            Term expectedNextTerm)
         {
             // Act
             var result = WorkingFamiliesCheckHelper.SetTermValidity(
@@ -58,8 +59,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 childDob);
 
             // Assert
-            result.Current.Should().Be(expectedCurrentTerm);
-            result.Next.Should().Be(expectedNextTerm);
+            result.Current.Name.Should().Be(expectedCurrentTerm.Name);
+            result.Next.Name.Should().Be(expectedNextTerm.Name);
         }
 
         [TestCaseSource(nameof(SetReconfirmationPropertiesCases))]
@@ -87,6 +88,13 @@ namespace CheckYourEligibility.Core.Tests.Helpers
         /// Term validity test cases
         /// </summary>
         /// <returns></returns>
+        
+        private static Term Term_Summer = new Term(TermName.Summer, DateTime.Now.Date);
+        
+        private static Term Term_Spring = new Term(TermName.Spring, DateTime.Now.Date);
+        
+        private static Term Term_Autumn = new Term(TermName.Autumn, DateTime.Now.Date);
+
         private static IEnumerable<TestCaseData> SetTermValidityCases()
         {
             yield return new TestCaseData(
@@ -94,17 +102,17 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2025-12-31",                 // GPED
                 "2024-01-01",                 // VSD
                 "2018-01-01",                 // DOB - too old
-                TermName.None,
-                TermName.None).SetArgDisplayNames("None_When_Child_Too_Old");
-               
+                Term.None,
+                Term.None).SetArgDisplayNames("None_When_Child_Too_Old");
+
 
             yield return new TestCaseData(
                 new DateTime(2025, 10, 1),
                 "2025-01-01",                 // GPED expired
                 "2024-01-01",
                 "2023-01-01",
-                TermName.None,
-                TermName.None)
+                Term.None,
+                Term.None)
                 .SetArgDisplayNames("None_When_Grace_Period_Expired");
             //
             yield return new TestCaseData(
@@ -112,8 +120,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2025-12-31",
                 "2025-01-20",                 // VSD within current term
                 "2023-01-01",
-                TermName.None,
-                TermName.Summer)
+                Term.None,
+                Term_Summer)
                 .SetArgDisplayNames("Next_Term_When_VSD_In_Current_Term");
 
             yield return new TestCaseData(
@@ -121,8 +129,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2026-12-31",                 // GPED beyond Autumn start
                 "2026-01-01",
                 "2023-01-01",
-                TermName.Summer,
-                TermName.Autumn)
+                Term_Summer,
+                Term_Autumn)
                 .SetArgDisplayNames("Current_And_Next_Term");
 
             yield return new TestCaseData(
@@ -130,8 +138,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2026-08-31",                 // GPED before Autumn start
                 "2024-01-01",
                 "2024-01-01",
-                TermName.Summer,
-                TermName.None)
+                Term_Summer,
+                Term.None)
                 .SetArgDisplayNames("Current_Term_Only");
 
             yield return new TestCaseData(
@@ -139,8 +147,8 @@ namespace CheckYourEligibility.Core.Tests.Helpers
               "invalid",
               "invalid",
               "invalid",
-              TermName.None,
-              TermName.None)
+              Term.None,
+              Term.None)
               .SetArgDisplayNames("Invalid_Dates");
         }
         /// <summary>
@@ -159,9 +167,7 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2018-01-01",                       // Child DOB
                 new ReconfirmationProperties()
                 {
-                    Status = ReconfirmationStatus.ChildTooOld,
-                    StartDate = null,
-                    EndDate = null
+                    Status = ReconfirmationStatus.ChildTooOld
                 })
                 .SetArgDisplayNames("ChildTooOld");
 
@@ -173,9 +179,7 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "2022-01-01",
                   new ReconfirmationProperties()
                   {
-                      Status = ReconfirmationStatus.NotApplicable,
-                      StartDate = null,
-                      EndDate = null
+                      Status = ReconfirmationStatus.NotApplicable
                   })
                 .SetArgDisplayNames("NotApplicable_For_Temporary_Code");
 
@@ -185,10 +189,11 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 new DateTime(2025, 11, 1),
                 EligibilityCodeType.Standard,
                 "2022-01-01",
-                new ReconfirmationProperties() { 
-                    Status = ReconfirmationStatus.NotDueYet, 
-                    StartDate = "2025-12-03",
-                    EndDate = "2025-12-31"
+                new ReconfirmationProperties()
+                {
+                    Status = ReconfirmationStatus.NotDueYet,
+                    StartDate = DateTime.Parse("2025-12-03"),
+                    EndDate = DateTime.Parse("2025-12-31")
                 })
                 .SetArgDisplayNames("NotDueYet");
 
@@ -198,10 +203,12 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 new DateTime(2025, 12, 10),
                 EligibilityCodeType.Standard,
                 "2022-01-01",
-                new ReconfirmationProperties() {
-                    Status = ReconfirmationStatus.Due, 
-                    StartDate = "2025-12-03",
-                    EndDate = "2025-12-31" })
+                new ReconfirmationProperties()
+                {
+                    Status = ReconfirmationStatus.Due,
+                    StartDate = DateTime.Parse("2025-12-03"),
+                    EndDate = DateTime.Parse("2025-12-31")
+                })
                 .SetArgDisplayNames("Due");
 
             yield return new TestCaseData(
@@ -210,10 +217,12 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 new DateTime(2026, 1, 10),
                 EligibilityCodeType.Standard,
                 "2022-01-01",
-                new ReconfirmationProperties() { 
-                    Status = ReconfirmationStatus.Overdue, 
-                    StartDate = "2025-12-03", 
-                    EndDate = "2025-12-31" })
+                new ReconfirmationProperties()
+                {
+                    Status = ReconfirmationStatus.Overdue,
+                    StartDate = DateTime.Parse("2025-12-03"),
+                    EndDate = DateTime.Parse("2025-12-31")
+                })
                 .SetArgDisplayNames("Overdue");
             yield return new TestCaseData(
                 "invalid",
@@ -223,9 +232,7 @@ namespace CheckYourEligibility.Core.Tests.Helpers
                 "invalid",
                 new ReconfirmationProperties
                 {
-                    Status = ReconfirmationStatus.NotApplicable,
-                    StartDate = null,
-                    EndDate = null
+                    Status = ReconfirmationStatus.NotApplicable
                 })
                 .SetArgDisplayNames("Invalid_Dates");
         }

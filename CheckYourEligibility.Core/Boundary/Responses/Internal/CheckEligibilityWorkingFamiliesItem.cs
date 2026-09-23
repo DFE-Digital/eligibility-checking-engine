@@ -23,25 +23,4 @@ namespace CheckYourEligibility.Core.Boundary.Responses.Internal
         public bool? ChildTooYoung { get; set; }
     }
 
-    public class TermValidity { 
-    
-        public TermName? Current {get;set;} 
-        public TermName? Next { get; set; }
-
-        public TermValidity(TermName? current, TermName? next )
-        {
-            Current = current ?? TermName.None;
-            Next = next ?? TermName.None;
-        }
-    }
-
-    public class ReconfirmationProperties {
-
-        public string? StartDate { get; set; }
-
-        public string? EndDate { get; set; }
-
-        public ReconfirmationStatus Status {get;set;}
-      
-    }
 }

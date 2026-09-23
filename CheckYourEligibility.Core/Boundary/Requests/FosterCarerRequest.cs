@@ -13,4 +13,5 @@ public class FosterCarerRequest
         set => _carerNationalInsuranceNumber =
             value?.ToUpper().Replace(" ", string.Empty);
     }
+    public bool HasPartner { get; set; }
 }

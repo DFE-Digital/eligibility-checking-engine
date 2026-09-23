@@ -8,7 +8,7 @@ namespace CheckYourEligibility.Core.UseCases;
 
 public interface ICreateFosterChildUseCase
 {
-    Task<FosterChildCreatedResponse> Execute(FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate);
+    Task<FosterChildResponse> Execute(FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate);
 }
 
 public class CreateFosterChildUseCase : ICreateFosterChildUseCase
@@ -20,7 +20,7 @@ public class CreateFosterChildUseCase : ICreateFosterChildUseCase
         _gateway = gateway;
     }
 
-    public async Task<FosterChildCreatedResponse> Execute(FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
+    public async Task<FosterChildResponse> Execute(FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
     {
 
         if (fosterCarerId == Guid.Empty) throw new ValidationException(FosterFamilyValidationMessages.FosterCarerId);

@@ -187,6 +187,7 @@ builder.Services.AddScoped<IRestoreArchivedApplicationStatusUseCase, RestoreArch
 builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibilityBulkCheckUseCase>();
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
+builder.Services.AddScoped<IPreviewFosterFamilyCodeUseCase, PreviewFosterFamilyCodeUseCase>();
 
 builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
 builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
