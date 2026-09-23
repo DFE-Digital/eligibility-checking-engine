@@ -1,6 +1,5 @@
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
@@ -42,12 +41,21 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<UpsertWorkingFamiliesEventUseCase>>(MockBehavior.Loose);
         _sut = new UpsertWorkingFamiliesEventUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(It.IsAny<string>()))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(It.IsAny<string>()))
+            .ReturnsAsync(0);
+        _mockGateway
+            .Setup(g => g.CreateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()))
+            .Returns(Task.CompletedTask);
     }
 
     [TearDown]
     public new void Teardown()
     {
-        _mockGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
     }
 
@@ -57,6 +65,19 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
             .Setup(g => g.GetOverlappingEventsByDern(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ReturnsAsync(new List<WorkingFamiliesEvent>());
+    }
+
+    private void SetupNoSummaryRecord()
+    {
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(ValidDern))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(ValidDern))
+            .ReturnsAsync(0);
+        _mockGateway
+            .Setup(g => g.CreateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()))
+            .Returns(Task.CompletedTask);
     }
 
     [Test]
@@ -85,6 +106,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
+        SetupNoSummaryRecord();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
 
@@ -97,6 +119,120 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         result.EligibilityCode.Should().Be(ValidDern);
         result.IsDeleted.Should().BeFalse();
         result.DeletedDateTime.Should().BeNull();
+    }
+
+    [Test]
+    public async Task Execute_ShouldCreateSummaryRecord_WhenNoExistingSummaryExists()
+    {
+        // Arrange
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
+        SetupNoSummaryRecord();
+        _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
+            .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
+
+        // Act
+        var result = await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockGateway.Verify(g => g.CreateWorkingFamiliesSummaryRecordAsync(
+            It.Is<WorkingFamiliesEventSummary>(summary =>
+                summary.EligibilityCode == ValidDern &&
+                summary.LatestSubmissionDate == ValidRequest.EligibilityEvent!.SubmissionDate &&
+                summary.ValidityStartDate == ValidRequest.EligibilityEvent.ValidityStartDate &&
+                summary.ValidityEndDate == ValidRequest.EligibilityEvent.ValidityEndDate)),
+            Times.Once);
+        _mockGateway.Verify(g => g.UpdateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_ShouldUpdateSummaryRecord_WhenSummaryAlreadyExists()
+    {
+        // Arrange
+        var summary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = "summary-123",
+            EligibilityCode = ValidDern,
+            ValidityEndDate = new DateTime(2026, 1, 10),
+            GracePeriodEndDate = new DateTime(2026, 3, 31),
+            ChildFirstName = "Previous",
+            ChildFirstNameTruncated = "previous",
+            ChildPostCode = "OLD 1AA",
+            ParentNationalInsuranceNumber = "ZZ000000Z",
+            LastUpdatedDate = new DateTime(2026, 1, 15)
+        };
+
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(ValidDern))
+            .ReturnsAsync(summary);
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(ValidDern))
+            .ReturnsAsync(1);
+        _mockGateway
+            .Setup(g => g.UpdateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()))
+            .Returns(Task.CompletedTask);
+        _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
+            .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
+
+        // Act
+        var result = await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockGateway.Verify(g => g.UpdateWorkingFamiliesSummaryRecordAsync(
+            It.Is<WorkingFamiliesEventSummary>(s =>
+                s.EligibilityCode == ValidDern &&
+                s.WorkingFamiliesEventSummaryID == summary.WorkingFamiliesEventSummaryID &&
+                s.ChildFirstName == "Charles" &&
+                s.ChildFirstNameTruncated == "charles" &&
+                s.ChildPostCode == "A11 1AA" &&
+                s.ParentNationalInsuranceNumber == "AA123456A")),
+            Times.Once);
+        _mockGateway.Verify(g => g.CreateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_ShouldLogErrorAndRethrow_WhenSummaryUpdateFails()
+    {
+        // Arrange
+        var summary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = "summary-456",
+            EligibilityCode = ValidDern,
+            ValidityEndDate = new DateTime(2026, 1, 10),
+            GracePeriodEndDate = new DateTime(2026, 3, 31)
+        };
+
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(ValidDern))
+            .ReturnsAsync(summary);
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(ValidDern))
+            .ReturnsAsync(1);
+        _mockGateway
+            .Setup(g => g.UpdateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()))
+            .ThrowsAsync(new InvalidOperationException("summary failed"));
+        _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
+            .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
+
+        // Act
+        Func<Task> act = async () => await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<InvalidOperationException>().WithMessage("summary failed");
+        _mockLogger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) => state != null && state.ToString()!.Contains("UpsertWorkingFamiliesSummaryRecord")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Once);
     }
 
     [Test]
@@ -212,6 +348,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
+        SetupNoSummaryRecord();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
 
@@ -244,6 +381,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         };
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
+        SetupNoSummaryRecord();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
 
@@ -263,6 +401,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         // Arrange
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
+        SetupNoSummaryRecord();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
 
@@ -355,6 +494,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
                 ValidDern, HmrcId,
                 new DateTime(2026, 1, 21), new DateTime(2026, 4, 23)))
             .ReturnsAsync(new List<WorkingFamiliesEvent>());
+        SetupNoSummaryRecord();
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
         // Act

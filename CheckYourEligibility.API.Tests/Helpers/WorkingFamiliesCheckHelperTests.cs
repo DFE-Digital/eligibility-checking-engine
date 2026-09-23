@@ -1,5 +1,4 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;

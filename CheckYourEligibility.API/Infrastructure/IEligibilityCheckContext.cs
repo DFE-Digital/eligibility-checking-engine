@@ -44,4 +44,5 @@ public interface IEligibilityCheckContext
     void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data);
     void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data);
     void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data);
+    void BulkInsertOrUpdate_WorkingFamiliesEventSummary(IEnumerable<WorkingFamiliesEventSummary> data);
 }

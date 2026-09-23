@@ -247,7 +247,7 @@ public class AdministrationGatewayTests : TestBase.TestBase
         var data = _fixture.CreateMany<WorkingFamiliesEvent>();
 
         // Act
-        _sut.ImportWfHMRCData(data);
+        _sut.BulkImportWorkingFamiliesEventHMRCData(data);
 
         // Assert
         Assert.Pass();
