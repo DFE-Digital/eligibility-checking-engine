@@ -72,7 +72,7 @@ public static class WorkingFamiliesEventHelper
             ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
             PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
             ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
-            ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName, // what is the point of this?
+            ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim(),
             FirstEventDate = today,
             HasCodeBeenCheckedByOwningLA = false,
             LastUpdatedDate = today,
