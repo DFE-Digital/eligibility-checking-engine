@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Domain.Validation;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -30,6 +31,15 @@ public class SearchFosterFamiliesUseCase : ISearchFosterFamiliesUseCase
         if(request.PageSize <= 0 || request.PageSize > 10)
         {
             throw new ValidationException(FosterFamilyValidationMessages.InvalidPageSize);
+        }
+
+        if (!string.IsNullOrEmpty(request.NINOFilter))
+        {
+            // If NINO filter is supplied then validate the provide NINO before using it to search
+            if (!DataValidation.BeAValidNi(request.NINOFilter))
+            {
+                throw new ValidationException(FosterFamilyValidationMessages.InvalidNINO);
+            }
         }
 
         var response = await _gateway.SearchFosterFamilies(localAuthorityId, request);

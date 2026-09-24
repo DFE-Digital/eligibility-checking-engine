@@ -9,4 +9,5 @@ public static class FosterFamilyValidationMessages
     public const string NoLocalAuthorityScopeFound = "No local authority scope found";
     public const string InvalidPageNumber = "Invalid page number";
     public const string InvalidPageSize = "Invalid page size";
+    public const string InvalidNINO = "Invalid NINO provided";
 }
