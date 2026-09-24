@@ -828,9 +828,10 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         var result = await _sut.GetFosterChild(fosterChildId, 0, true);
 
         // Assert
-        result.ChildFullName.Should().Be("Tom Smith");
+        result.ChildFirstName.Should().Be("Tom");
+        result.ChildLastName.Should().Be("Smith");
         result.ChildDateOfBirth.Should().Be(new DateTime(2022, 1, 1));
-        result.PostCode.Should().Be("NNU 1AE");
+        result.ChildPostCode.Should().Be("NNU 1AE");
     }
 
     [Test]
@@ -996,7 +997,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             DateTime.UtcNow);
 
         // Assert
-        result.ChildFullName.Should().Be("Sam Jones");
+        result.ChildFirstName.Should().Be("Sam");
+        result.ChildLastName.Should().Be("Jones");
         result.EligibilityCode.Should().NotBeNullOrWhiteSpace();
     }
 
@@ -1168,7 +1170,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             updateRequest);
 
         // Assert
-        result.ChildFullName.Should().Be("Sam Jones");
+        result.ChildFirstName.Should().Be("Sam");
+        result.ChildLastName.Should().Be("Jones");
     }
 
     [Test]

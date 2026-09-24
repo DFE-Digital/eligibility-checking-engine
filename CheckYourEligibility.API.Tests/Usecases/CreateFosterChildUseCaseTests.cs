@@ -145,7 +145,8 @@ public class CreateFosterChildUseCaseTests
 
         var expected = new FosterChildResponse
         {
-            ChildFullName = "Child One",
+            ChildFirstName = "Child",
+            ChildLastName = "One",
             EligibilityCode = "X1",
             ValidityStartDate = DateTime.UtcNow,
             GracePeriodEndDate = DateTime.UtcNow
@@ -186,10 +187,11 @@ public class CreateFosterChildUseCaseTests
 
         var expected = new FosterChildResponse
         {
-            ChildFullName = "Child One",
+            ChildFirstName = "Child",
+            ChildLastName = "One",
             EligibilityCode = "X1",
             FosterCarerId = carerId,
-            PostCode = req.ChildPostCode
+            ChildPostCode = req.ChildPostCode
         };
 
         _mockGateway
