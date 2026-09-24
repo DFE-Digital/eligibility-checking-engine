@@ -735,14 +735,16 @@ public class FosterFamilyControllerTests
             .Setup(x => x.Execute(
                 It.Is<FosterFamiliesSearchRequest>(r =>
                     r.PageNumber == 1 &&
-                    r.PageSize == 10),
+                    r.PageSize == 10 &&
+                    r.NINOFilter == ""),
                 201))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchFosterFamilies(
             1,
-            10);
+            10,
+            "");
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -782,14 +784,16 @@ public class FosterFamilyControllerTests
             .Setup(x => x.Execute(
                 It.Is<FosterFamiliesSearchRequest>(r =>
                     r.PageNumber == 1 &&
-                    r.PageSize == 10),
+                    r.PageSize == 10 &&
+                    r.NINOFilter == ""),
                 201))
             .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchFosterFamilies(
             1,
-            10);
+            10,
+            "");
 
         // Assert
         var okResult = (OkObjectResult)result;

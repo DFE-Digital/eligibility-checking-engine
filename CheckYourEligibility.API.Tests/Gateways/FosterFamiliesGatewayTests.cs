@@ -598,6 +598,32 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task SearchFosterFamilies_Should_Filter_By_Carer_Or_Partner_Nino()
+    {
+        // Arrange
+        var request = BuildValidRequest();
+        await _sut.CreateFosterFamily(request);
+
+        var otherRequest = BuildValidRequest();
+        otherRequest.FosterCarer.CarerNationalInsuranceNumber = "QQ123456Q";
+        await _sut.CreateFosterFamily(otherRequest);
+
+        // Act
+        var result = await _sut.SearchFosterFamilies(
+            0, new FosterFamiliesSearchRequest
+            {
+                PageNumber = 1,
+                PageSize = 10,
+                NINOFilter = request.FosterCarer.CarerNationalInsuranceNumber
+            });
+
+        // Assert
+        result.TotalNumberOfRecords.Should().Be(1);
+        result.Data.Should().HaveCount(1);
+        result.Data.Single().CarerName.Should().Be("John Smith");
+    }
+
+    [Test]
     public async Task SearchFosterFamilies_Should_Return_Total_Record_Count()
     {
         // Arrange
