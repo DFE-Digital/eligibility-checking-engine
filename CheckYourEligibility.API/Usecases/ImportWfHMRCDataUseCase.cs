@@ -1,12 +1,12 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
-using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -34,8 +34,10 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
         List<WorkingFamiliesEvent> DataLoad = new();
         if (file == null || (file.ContentType.ToLower() != "text/xml" && !file.FileName.EndsWith(".xlsm")))
             throw new InvalidDataException($"{Admin.XlsmfileRequired}");
-            
+
         var validator = new WorkingFamiliesEventImportValidator();
+        var safeErrorMessage = "Invalid file content. Check the file format and values.";
+
         try
         {
             using var fileStream = file.OpenReadStream();
@@ -69,16 +71,30 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                 }
                 var wfEvent = WorkingFamiliesEventHelper.ParseWorkingFamiliesEvent(eventProps, columnHeaders);
                 var validationResults = validator.Validate(wfEvent);
-                if (!validationResults.IsValid) throw new ValidationException($"On row {row.RowIndex}: {validationResults.ToString().ReplaceLineEndings(", ")}");
+                if (!validationResults.IsValid)
+                {
+                    safeErrorMessage =
+                        $"On row {row.RowIndex}: {validationResults.ToString().ReplaceLineEndings(", ")}";
+                    throw new ValidationException(safeErrorMessage);
+                }
+
+                wfEvent.ParentNationalInsuranceNumber =
+                    NinoValidation.Normalize(wfEvent.ParentNationalInsuranceNumber);
                 DataLoad.Add(wfEvent);
             }
-            if (DataLoad == null || DataLoad.Count == 0) throw new InvalidDataException("Invalid file no content.");
+            if (DataLoad.Count == 0)
+            {
+                safeErrorMessage = "Invalid file no content.";
+                throw new InvalidDataException(safeErrorMessage);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError("ImportWfHMRCData", ex);
-            throw new InvalidDataException(
-                $"{file.FileName} - {JsonConvert.SerializeObject(new WorkingFamiliesEvent())} :- {ex.Message}, {ex.InnerException?.Message}");
+            _logger.LogError(
+                "Working Families import failed. Error type: {ErrorType}",
+                ex.GetType().Name);
+
+            throw new InvalidDataException(safeErrorMessage);
         }
 
         await _gateway.ImportWfHMRCData(DataLoad);

@@ -5,10 +5,10 @@ public class FosterCarerRequest
     public DateTime CarerDateOfBirth { get; set; }
     public int? LocalAuthorityID { get; set; }
     private string? _carerNationalInsuranceNumber;
+
     public string? CarerNationalInsuranceNumber
     {
         get => _carerNationalInsuranceNumber;
-        set => _carerNationalInsuranceNumber =
-            value?.ToUpper().Replace(" ", string.Empty);
+        set => _carerNationalInsuranceNumber = value;
     }
 }

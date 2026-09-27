@@ -27,6 +27,7 @@ public class FosterFamilyControllerTests
     private Mock<IUpdateFosterChildUseCase> _mockUpdateFosterChild = null!;
     private Mock<IDeleteFosterChildUseCase> _mockDeleteFosterChild = null!;
     private Mock<IAudit> _mockAudit = null!;
+    private Mock<ILogger<FosterFamilyController>> _mockLogger = null!;
 
     private IConfigurationRoot _configuration = null!;
     private FosterFamilyController _sut = null!;
@@ -45,18 +46,19 @@ public class FosterFamilyControllerTests
         _mockUpdateFosterChild = new Mock<IUpdateFosterChildUseCase>(MockBehavior.Strict);
         _mockDeleteFosterChild = new Mock<IDeleteFosterChildUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
+        _mockLogger = new Mock<ILogger<FosterFamilyController>>();
 
         var configData = new Dictionary<string, string?>
-        {
-            { "Jwt:Scopes:local_authority", "local_authority" }
-        };
+            {
+                { "Jwt:Scopes:local_authority", "local_authority" }
+            };
 
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configData)
             .Build();
 
         _sut = new FosterFamilyController(
-            Mock.Of<ILogger<FosterFamilyController>>(),
+            _mockLogger.Object,
             _configuration,
             _mockGetFosterFamily.Object,
             _mockCreateFosterFamily.Object,
@@ -195,6 +197,77 @@ public class FosterFamilyControllerTests
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task SaveFosterFamily_Should_Not_Expose_Unexpected_Error_Details(
+    bool update)
+    {
+        const string privateValue = "PRIVATE-FOSTER-VALUE-3644";
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var sourceException = new Exception(
+            $"Source error containing {privateValue}",
+            new Exception($"Inner error containing {privateValue}"));
+
+        ActionResult result;
+
+        if (update)
+        {
+            var id = Guid.NewGuid();
+            var request = new UpdateFosterCarerRequest();
+
+            _mockUpdateFosterCarer
+                .Setup(x => x.Execute(id, 201, request))
+                .ThrowsAsync(sourceException);
+
+            result = await _sut.UpdateFosterCarer(id, request);
+        }
+        else
+        {
+            var request = new FosterFamilyRequest();
+
+            _mockCreateFosterFamily
+                .Setup(x => x.Execute(request, 201))
+                .ThrowsAsync(sourceException);
+
+            result = await _sut.CreateFosterFamily(request);
+        }
+
+        var badRequest = result.Should()
+            .BeOfType<BadRequestObjectResult>().Subject;
+
+        var response = badRequest.Value.Should()
+            .BeOfType<ErrorResponse>().Subject;
+
+        response.Errors.Should().ContainSingle();
+        response.Errors.First().Title.Should().NotBeNullOrWhiteSpace();
+
+        System.Text.Json.JsonSerializer.Serialize(response)
+            .Should().NotContain(privateValue);
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+
+        var logCall = logCalls.Single();
+        logCall.Arguments[3].Should().BeNull(
+            "the original exception can contain personal data");
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object?>>)logCall.Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+
+        logCall.Arguments[2].ToString()
+            .Should().NotContain(privateValue);
     }
 
     [Test]

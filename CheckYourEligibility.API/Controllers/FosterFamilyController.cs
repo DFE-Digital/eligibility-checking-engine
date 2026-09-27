@@ -128,8 +128,21 @@ public class FosterFamilyController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating foster family");
-           return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            _logger.LogError(
+                "Error creating foster family. Error type: {ErrorType}",
+                ex.GetType().Name);
+
+            return BadRequest(new ErrorResponse
+            {
+                Errors =
+                [
+                    new Error
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "An unexpected error occurred while creating the foster family."
+            }
+                ]
+            });
         }
     }
 
@@ -164,8 +177,21 @@ public class FosterFamilyController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating foster carer");
-            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+            _logger.LogError(
+                "Error updating foster carer. Error type: {ErrorType}",
+                ex.GetType().Name);
+
+            return BadRequest(new ErrorResponse
+            {
+                Errors =
+                [
+                    new Error
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "An unexpected error occurred while updating the foster carer."
+            }
+                ]
+            });
         }
     }
 

@@ -8,17 +8,20 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 {
     // Set the default type to FreeSchoolMeals instead of None
     protected CheckEligibilityType baseType = CheckEligibilityType.FreeSchoolMeals;
+
     private string? nationalInsuranceNumber;
     private string? lastName;
     //public int? Sequence { get; set; }
 
     public string? DateOfBirth { get; set; }
     public string? FirstName { get; set; }
+
     public string? LastName
     {
         get => lastName;
         set => lastName = value == null ? null : value.Trim().ToUpperInvariant();
     }
+
     public string? ChildFirstName { get; set; }
     public string? ChildLastName { get; set; }
     public string? ChildDateOfBirth { get; set; }
@@ -40,11 +43,8 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     public string? NationalInsuranceNumber
     {
         get => nationalInsuranceNumber;
-        set => nationalInsuranceNumber = value == null
-            ? null
-            : value.Replace(" ", string.Empty).Trim();
+        set => nationalInsuranceNumber = value;
     }
-
 }
 
 public interface IEligibilityServiceType
@@ -52,7 +52,8 @@ public interface IEligibilityServiceType
     public CheckEligibilityType Type { get; set; }
 }
 
-public class CheckMetaData {
+public class CheckMetaData
+{
     /// <summary>
     /// Source of check
     /// </summary>
@@ -62,6 +63,7 @@ public class CheckMetaData {
     /// API username or portal user email address
     /// </summary>
     public string? UserName { get; set; }
+
     /// <summary>
     /// ID of Organisation if found in scope
     /// else OrganisationID = 0
@@ -76,6 +78,7 @@ public class CheckMetaData {
     /// </summary>
     public string? OrganisationType { get; set; }
 }
+
 public class CheckEligibilityRequestBulkBase
 {
     public string? Filename { get; set; }
@@ -89,6 +92,7 @@ public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 }
+
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestBulkData : CheckEligibilityRequestData
 {
@@ -102,14 +106,13 @@ public class CheckEligibilityRequestBulk
     public CheckEligibilityRequestBulkBase? Meta { get; set; }
 }
 
-#endregion
+#endregion FreeSchoolMeals,  EarlyYearPupilPremium, TwoYearOffer type
 
 #region Working Families
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class CheckEligibilityRequestWorkingFamiliesData : CheckEligibilityRequestDataBase
 {
-
     public string? EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
     public string? DiscretionaryValidityStartDate { get; set; }
@@ -131,7 +134,7 @@ public class CheckEligibilityRequestWorkingFamiliesBulkData : CheckEligibilityRe
     public int? Order { get; set; }
 }
 
-#endregion
+#endregion Working Families
 
 public class CheckEligibilityRequest<T> where T : IEligibilityServiceType
 {

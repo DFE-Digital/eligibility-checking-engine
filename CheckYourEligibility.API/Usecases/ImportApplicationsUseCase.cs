@@ -4,6 +4,8 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Validation;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Gateways.CsvImport;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CsvHelper;
@@ -116,9 +118,16 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error parsing file");
-            response.Message = $"Error parsing {(isCSV ? "CSV" : "JSON")} file";
-            response.Errors.Add($"Error parsing {(isCSV ? "CSV" : "JSON")} file: {ex.Message}");
+            var fileFormat = isCSV ? "CSV" : "JSON";
+
+            _logger.LogError(
+                "Application import failed while parsing {FileFormat}. Error type: {ErrorType}",
+                fileFormat,
+                ex.GetType().Name);
+
+            response.Message = $"Error parsing {fileFormat} file";
+            response.Errors.Add(
+                $"Error parsing {fileFormat} file: Check the file format and values.");
             return response;
         }
 
@@ -229,7 +238,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
                     ParentFirstName = row.ParentFirstName,
                     ParentLastName = row.ParentSurname,
                     ParentDateOfBirth = validationResult.ParentDateOfBirth!.Value,
-                    ParentNationalInsuranceNumber = row.ParentNino,
+                    ParentNationalInsuranceNumber = NinoValidation.Normalize(row.ParentNino),
                     ParentEmail = row.ParentEmail,
                     ChildFirstName = row.ChildFirstName,
                     ChildLastName = row.ChildSurname,
@@ -251,9 +260,14 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error processing row {rowNum}");
+                _logger.LogError(
+                    "Application import failed processing row {RowNumber}. Error type: {ErrorType}",
+                    rowNum,
+                    ex.GetType().Name);
+
                 response.FailedImports++;
-                response.Errors.Add($"Row {rowNum}: Error processing record - {ex.Message}");
+                response.Errors.Add(
+                    $"Row {rowNum}: Error processing record. Check the supplied values.");
             }
         }
 
@@ -266,10 +280,13 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during bulk import");
+                _logger.LogError(
+                    "Application bulk database import failed. Error type: {ErrorType}",
+                    ex.GetType().Name);
+
                 response.Message = "Import failed - error during bulk database operation.";
-                response.Errors.Add($"Error during bulk import: {ex.Message}");
-                // Reset counters since the import failed
+                response.Errors.Add("Error during bulk import. Contact support.");
+
                 response.FailedImports = importData.Count;
                 response.SuccessfulImports = 0;
                 return response;
@@ -399,6 +416,11 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         {
             result.IsValid = false;
             result.ErrorMessages.Add("Parent NINO is required");
+        }
+        else if (!NinoValidation.IsValidInput(row.ParentNino))
+        {
+            result.IsValid = false;
+            result.ErrorMessages.Add(ValidationMessages.NI);
         }
 
         if (string.IsNullOrWhiteSpace(row.ChildFirstName))

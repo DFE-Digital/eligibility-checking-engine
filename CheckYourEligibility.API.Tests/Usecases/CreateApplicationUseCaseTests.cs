@@ -53,17 +53,17 @@ public class CreateApplicationUseCaseTests
     private ApplicationRequest _validApplicationRequest = null!;
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_Model_Is_Null()
+    public async Task Execute_Should_Throw_ValidationException_When_Model_Is_Null()
     {
         // Act
         Func<Task> act = async () => await _sut.Execute(null!, _allowedLocalAuthorityIds);
 
         // Assert
-        act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, data is required");
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, data is required");
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_ModelData_Is_Null()
+    public async Task Execute_Should_Throw_ValidationException_When_ModelData_Is_Null()
     {
         // Arrange
         var model = new ApplicationRequest { Data = null };
@@ -72,11 +72,11 @@ public class CreateApplicationUseCaseTests
         Func<Task> act = async () => await _sut.Execute(model, _allowedLocalAuthorityIds);
 
         // Assert
-        act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, data is required");
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, data is required");
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_ModelData_Type_Is_None()
+    public async Task Execute_Should_Throw_ValidationException_When_ModelData_Type_Is_None()
     {
         // Arrange
         var model = _fixture.Build<ApplicationRequest>()
@@ -89,26 +89,25 @@ public class CreateApplicationUseCaseTests
         Func<Task> act = async () => await _sut.Execute(model, _allowedLocalAuthorityIds);
 
         // Assert
-        act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, Valid Type is required: None");
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("Invalid request, Valid Type is required: None");
     }
 
     [Test]
-    public void Execute_Should_Throw_ValidationException_When_ApplicationRequestValidator_Fails()
+    public async Task Execute_Should_Throw_ValidationException_When_ApplicationRequestValidator_Fails()
     {
-        // Arrange
-        // Create an application with invalid data that will trigger the ApplicationRequestValidator
-        var model = _fixture.Build<ApplicationRequest>()
-            .With(x => x.Data, _fixture.Build<ApplicationRequestData>()
-                .With(d => d.Type, CheckEligibilityType.FreeSchoolMeals)
-                .With(d => d.ParentNationalInsuranceNumber, "invalid-format") // Invalid NI number format
-                .Create())
-            .Create();
+        const string submittedNino = "bg-12.34/56c";
+        var model = _validApplicationRequest;
+        model.Data!.ParentNationalInsuranceNumber = submittedNino;
 
-        // Act
-        Func<Task> act = async () => await _sut.Execute(model, _allowedLocalAuthorityIds);
+        Func<Task> act = () => _sut.Execute(model, _allowedLocalAuthorityIds);
 
-        // Assert
-        act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<ValidationException>();
+        model.Data.ParentNationalInsuranceNumber.Should().Be(submittedNino);
+
+        _mockApplicationGateway.Verify(
+            g => g.GetLocalAuthorityIdForEstablishment(It.IsAny<int>()), Times.Never);
+        _mockApplicationGateway.Verify(
+            g => g.PostApplication(It.IsAny<ApplicationRequestData>()), Times.Never);
     }
 
     [Test]
@@ -119,9 +118,15 @@ public class CreateApplicationUseCaseTests
         var response = _fixture.Create<ApplicationResponse>();
         var localAuthorityId = 1; // This matches an allowed authority
 
+        model.Data!.ParentNationalInsuranceNumber = "ns-73.83/56d";
+
         _mockApplicationGateway.Setup(s => s.GetLocalAuthorityIdForEstablishment(model.Data!.Establishment))
             .ReturnsAsync(localAuthorityId);
-        _mockApplicationGateway.Setup(s => s.PostApplication(model.Data!)).ReturnsAsync(response);
+        _mockApplicationGateway
+            .Setup(s => s.PostApplication(model.Data!))
+            .Callback<ApplicationRequestData>(data =>
+                data.ParentNationalInsuranceNumber.Should().Be("NS738356D"))
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.Execute(model, _allowedLocalAuthorityIds);
@@ -156,7 +161,7 @@ public class CreateApplicationUseCaseTests
     }
 
     [Test]
-    public void Execute_Should_Throw_UnauthorizedAccessException_When_LocalAuthority_Not_Allowed()
+    public async Task Execute_Should_Throw_UnauthorizedAccessException_When_LocalAuthority_Not_Allowed()
     {
         // Arrange
         var model = _validApplicationRequest;
@@ -170,12 +175,12 @@ public class CreateApplicationUseCaseTests
         Func<Task> act = async () => await _sut.Execute(model, restrictedAuthorities);
 
         // Assert
-        act.Should().ThrowAsync<UnauthorizedAccessException>()
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("You do not have permission to create applications for this establishment's local authority");
     }
 
     [Test]
-    public void Execute_Should_Throw_Exception_When_PostApplication_Returns_Null()
+    public async Task Execute_Should_Throw_Exception_When_PostApplication_Returns_Null()
     {
         // Arrange
         var model = _validApplicationRequest;
@@ -189,6 +194,6 @@ public class CreateApplicationUseCaseTests
         Func<Task> act = async () => await _sut.Execute(model, _allowedLocalAuthorityIds);
 
         // Assert
-        act.Should().ThrowAsync<Exception>().WithMessage("Failed to create application");
+        await act.Should().ThrowAsync<Exception>().WithMessage("Failed to create application");
     }
 }
