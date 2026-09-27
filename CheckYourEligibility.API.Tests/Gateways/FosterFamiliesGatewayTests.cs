@@ -3,6 +3,7 @@ using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -140,6 +141,68 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #endregion
 
     #region Create Foster Family
+
+    [Test]
+    public async Task CreateFosterFamily_Should_Not_Log_Database_Error_Details()
+    {
+        const string privateValue = "PRIVATE-FOSTER-GATEWAY-3644";
+        var sourceException = new DbUpdateException(
+            $"Database error containing {privateValue}",
+            new InvalidOperationException($"Inner error containing {privateValue}"));
+
+        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(x => x.Ignore(
+                InMemoryEventId.TransactionIgnoredWarning))
+            .AddInterceptors(new FailWorkingFamiliesEventSaveInterceptor(sourceException))
+            .Options;
+
+        await using var context = new EligibilityCheckContext(options);
+
+        context.EligibilityCodeRanges.Add(new EligibilityCodeRange
+        {
+            EligibilityCodeRangeId = 1,
+            Name = EligibilityCodeType.Foster,
+            StartRange = 40000000001,
+            EndRange = 49999999999,
+            NextAvailableCode = 40000000001
+        });
+        await context.SaveChangesAsync();
+
+        var logger = new Mock<ILogger<FosterFamiliesGateway>>();
+        var gateway = new FosterFamiliesGateway(context, logger.Object);
+
+        Func<Task> act = () => gateway.CreateFosterFamily(BuildValidRequest());
+
+        var thrown = await act.Should().ThrowAsync<DbUpdateException>();
+        thrown.Which.Should().BeSameAs(sourceException);
+
+        var logCalls = logger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle(
+            invocation => (LogLevel)invocation.Arguments[0] == LogLevel.Error);
+
+        foreach (var logCall in logCalls)
+        {
+            // ILogger.Log argument 3 holds the exception object.
+            logCall.Arguments[3].Should().BeNull(
+                "the original exception may contain submitted personal data");
+
+            var state = (IEnumerable<KeyValuePair<string, object?>>)
+                logCall.Arguments[2];
+
+            foreach (var entry in state)
+            {
+                (entry.Value?.ToString() ?? string.Empty)
+                    .Should().NotContain(privateValue);
+            }
+
+            (logCall.Arguments[2].ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+    }
 
     [Test]
     public async Task CreateFosterFamily_Should_Return_Created_Response()
@@ -1309,6 +1372,35 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #endregion
 
     #region helpers
+
+    private sealed class FailWorkingFamiliesEventSaveInterceptor
+    : SaveChangesInterceptor
+    {
+        private readonly Exception _exception;
+
+        public FailWorkingFamiliesEventSaveInterceptor(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var savingNewEvent = eventData.Context?.ChangeTracker
+                .Entries<CheckYourEligibility.API.Domain.WorkingFamiliesEvent>()
+                .Any(entry => entry.State == EntityState.Added) == true;
+
+            if (savingNewEvent)
+            {
+                throw _exception;
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
     private static FosterFamilyRequest BuildValidRequest()
     {
         return new FosterFamilyRequest

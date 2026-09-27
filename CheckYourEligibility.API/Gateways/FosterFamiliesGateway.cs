@@ -152,7 +152,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating foster family");
+            _logger.LogError(
+                "Error creating foster family. Error type: {ErrorType}",
+                ex.GetType().Name);
 
             await transaction.RollbackAsync();
 
