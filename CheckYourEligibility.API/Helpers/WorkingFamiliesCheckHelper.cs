@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 
 namespace CheckYourEligibility.API.Helpers
@@ -138,7 +139,9 @@ namespace CheckYourEligibility.API.Helpers
 
         }
 
-
+        // Spring - 1st of Jan - 31st of March(89-90 days)
+        // Summer - 1st of Apr - 31st of Aug(153 days)
+        // Autumn - 1st of Sept - 31st of Dec(122 days)
         public static (Term Current, Term Next) GetTerms(DateTime date)
         {
             int year = date.Year;
@@ -146,22 +149,22 @@ namespace CheckYourEligibility.API.Helpers
             if (date >= new DateTime(year, 9, 1))
             {
                 return (
-                    new Term(TermName.Autumn, new DateTime(year, 9, 1)),
-                    new Term(TermName.Spring, new DateTime(year + 1, 1, 1))
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1), new DateTime(year, 12, 31)),
+                    new Term(TermName.Spring, new DateTime(year + 1, 1, 1), new DateTime(year + 1, 3, 31))
                 );
             }
 
             if (date >= new DateTime(year, 4, 1))
             {
                 return (
-                    new Term(TermName.Summer, new DateTime(year, 4, 1)),
-                    new Term(TermName.Autumn, new DateTime(year, 9, 1))
+                    new Term(TermName.Summer, new DateTime(year, 4, 1), new DateTime(year, 8, 31)),
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1), new DateTime(year, 12, 31))
                 );
             }
 
             return (
-                new Term(TermName.Spring, new DateTime(year, 1, 1)),
-                new Term(TermName.Summer, new DateTime(year, 4, 1))
+                new Term(TermName.Spring, new DateTime(year, 1, 1), new DateTime(year, 3, 31)),
+                new Term(TermName.Summer, new DateTime(year, 4, 1), new DateTime(year, 8, 31))
             );
         }
         /// <summary>
@@ -176,7 +179,52 @@ namespace CheckYourEligibility.API.Helpers
             var (currentTerm, _) = GetTerms(checkDate);
             return nineMonthsOld > currentTerm.StartDate;
         }
+        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate) {
+            var currentTerm = GetTerms(DateTime.UtcNow.Date).Current;
+            if (validityStartDate >= currentTerm.StartDate && validityEndDdate <= currentTerm.EndDate) {
+               
+                return false;
+            }
+                return true; 
+        }
+        /// <summary>
+        /// Determines whether a Working Families code is eligible based on the source
+        /// of the request and the applicable validity periods.
+        /// Internal site requests ("childcare-admin") use the validity end date when
+        /// GracePeriodEndDateApplied is FALSE, else it uses the grace period end date.
+        /// All other requests use the grace period end date to determine eligibility.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="discretionaryValidityStartDate"></param>
+        /// <param name="validityEndDate"></param>
+        /// <param name="gracePeriodEnDate"></param>
+        /// <param name="GracePeriodEndDateApplied"></param>
+        /// <returns></returns>
+        public static CheckEligibilityStatus DetermineWorkingFamiliesCodeEligibility(string source, DateTime discretionaryValidityStartDate, DateTime validityEndDate, DateTime? gracePeriodEnDate, bool GracePeriodEndDateApplied) {
 
+            DateTime today  = DateTime.UtcNow.Date;
+
+            switch (source) {
+                //internal site
+                case "childcare-admin":
+                    if (GracePeriodEndDateApplied)
+                    {
+                        goto default;
+                    }
+                    if (today >= discretionaryValidityStartDate && today <= validityEndDate) { 
+                        return CheckEligibilityStatus.eligible;  
+                    }
+                    else return CheckEligibilityStatus.notEligible;
+                //client site
+                default:
+
+                    if (today >= discretionaryValidityStartDate && today <= gracePeriodEnDate)
+                    {
+                        return CheckEligibilityStatus.eligible;
+                    }
+                    else return CheckEligibilityStatus.notEligible;
+            }
+        }
         #region Private
         /// <summary>
         /// Calculates if checkDate is on/after the start of this term => child is too old

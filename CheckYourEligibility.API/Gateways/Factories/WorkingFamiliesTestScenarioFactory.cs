@@ -10,9 +10,9 @@ namespace CheckYourEligibility.API.Gateways.Factories
     public interface IWorkingFamiliesTestScenarioFactory
     {
         bool IsTestCase(string eligibilityCode);
-        WorkingFamiliesEvent? GenerateTestScenarioClientSide(CheckProcessData checkData);
+        WorkingFamiliesEventSummary? GenerateTestScenarioClientSide(CheckProcessData checkData);
 
-        WorkingFamiliesEvent? GenerateTestScenarioInternalSide(CheckProcessData checkData, DateTime checkDate);
+        WorkingFamiliesEventSummary? GenerateTestScenarioInternalSide(CheckProcessData checkData, DateTime checkDate);
 
     }
     public class WorkingFamiliesTestScenarioFactory : IWorkingFamiliesTestScenarioFactory
@@ -42,13 +42,13 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// If code starts with 905 it will generate an event record that must return Error
         /// </summary>
         /// 
-        public WorkingFamiliesEvent? GenerateTestScenarioClientSide(CheckProcessData checkData)
+        public WorkingFamiliesEventSummary? GenerateTestScenarioClientSide(CheckProcessData checkData)
         {
             if (string.IsNullOrEmpty(checkData.EligibilityCode))
                 return null;
 
             var eligibilityCode = checkData.EligibilityCode;
-            var wfEvent = new WorkingFamiliesEvent();
+            var wfEvent = new WorkingFamiliesEventSummary();
 
             // Parse date offsets from eligibility code (positions 3-7)
             int.TryParse(eligibilityCode.Substring(3, 2), out var vsdOffset);
@@ -84,9 +84,9 @@ namespace CheckYourEligibility.API.Gateways.Factories
 
             return wfEvent;
         }
-        public WorkingFamiliesEvent? GenerateTestScenarioInternalSide(CheckProcessData checkData, DateTime checkDate)
+        public WorkingFamiliesEventSummary? GenerateTestScenarioInternalSide(CheckProcessData checkData, DateTime checkDate)
         {
-            WorkingFamiliesEvent wfEvent = null;
+            WorkingFamiliesEventSummary wfEvent = null;
             // Get terms
             var terms = GetTerms(checkDate);
 
@@ -156,12 +156,12 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
         /// <returns>Returns a working families event that is valid for the current term only</returns>
-        private WorkingFamiliesEvent CreateValidThisTermOnly(
+        private WorkingFamiliesEventSummary CreateValidThisTermOnly(
             Term currentTerm,
             DateTime checkDate,
             string nino)
         {
-            var wfEvent = new WorkingFamiliesEvent();
+            var wfEvent = new WorkingFamiliesEventSummary();
 
             // VSD must be before the start of the current term
             wfEvent.ValidityStartDate =
@@ -222,10 +222,10 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="checkDate"></param>
         /// <returns>Returns a working families event that is valid for the current and next term</returns>
         /// <exception cref="NotImplementedException"></exception>
-        private WorkingFamiliesEvent CreateValidCurrentAndNextTerm(Term currentTerm, DateTime checkDate)
+        private WorkingFamiliesEventSummary CreateValidCurrentAndNextTerm(Term currentTerm, DateTime checkDate)
         {
 
-            WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+            WorkingFamiliesEventSummary wfEvent = new WorkingFamiliesEventSummary();
             // VSD must be before the start of the current term
             // Generates a random date between the start of the reconfirmation window and the start of the current term.
             wfEvent.ValidityStartDate = RandomDateGenerator(currentTerm.StartDate.AddDays(-28), currentTerm.StartDate.AddDays(-1));
@@ -250,10 +250,10 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// </summary>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private WorkingFamiliesEvent CreateExpiredReconfirmationOverDue(DateTime checkDate)
+        private WorkingFamiliesEventSummary CreateExpiredReconfirmationOverDue(DateTime checkDate)
         {
             int year = checkDate.Year;
-            WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+            WorkingFamiliesEventSummary wfEvent = new WorkingFamiliesEventSummary();
 
             // Check date = 1 Jan - 10 Feb 
             if (checkDate >= new DateTime(year, 1, 1) && checkDate <= new DateTime(year, 2, 10))
@@ -309,9 +309,9 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private WorkingFamiliesEvent CreateValidCannotBeUsedYet(Term currentTerm, DateTime checkDate)
+        private WorkingFamiliesEventSummary CreateValidCannotBeUsedYet(Term currentTerm, DateTime checkDate)
         {
-            WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+            WorkingFamiliesEventSummary wfEvent = new WorkingFamiliesEventSummary();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(15);
             wfEvent.ValidityEndDate = checkDate.AddMonths(3);
             wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
@@ -326,20 +326,20 @@ namespace CheckYourEligibility.API.Gateways.Factories
         /// <param name="currentTerm"></param>
         /// <param name="checkDate"></param>
         /// <returns></returns>
-        private WorkingFamiliesEvent CreateInGracePeriod(Term currentTerm, DateTime checkDate)
+        private WorkingFamiliesEventSummary CreateInGracePeriod(Term currentTerm, DateTime checkDate)
         {
 
-            WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+            WorkingFamiliesEventSummary wfEvent = new WorkingFamiliesEventSummary();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(-1);
             wfEvent.ValidityEndDate = checkDate.AddDays(-1);
             wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
             return wfEvent;
 
         }
-        private WorkingFamiliesEvent CreateEligibleScenario(int vsdOffset, int vedOffset, int gpedOffset)
+        private WorkingFamiliesEventSummary CreateEligibleScenario(int vsdOffset, int vedOffset, int gpedOffset)
         {
             var today = DateTime.Today;
-            return new WorkingFamiliesEvent
+            return new WorkingFamiliesEventSummary
             {
                 ValidityStartDate = today.AddDays(-vsdOffset),
                 ValidityEndDate = today.AddDays(vedOffset),
@@ -347,10 +347,10 @@ namespace CheckYourEligibility.API.Gateways.Factories
             };
         }
 
-        private WorkingFamiliesEvent CreateInGracePeriod(int vsdOffset, int vedOffset, int gpedOffset)
+        private WorkingFamiliesEventSummary CreateInGracePeriod(int vsdOffset, int vedOffset, int gpedOffset)
         {
             var today = DateTime.Today;
-            return new WorkingFamiliesEvent
+            return new WorkingFamiliesEventSummary
             {
                 ValidityEndDate = today.AddDays(-vedOffset),
                 ValidityStartDate = today.AddDays(-vedOffset).AddDays(-vsdOffset),
@@ -358,10 +358,10 @@ namespace CheckYourEligibility.API.Gateways.Factories
             };
         }
 
-        private WorkingFamiliesEvent CreateNotYetEligible(int vsdOffset, int vedOffset, int gpedOffset)
+        private WorkingFamiliesEventSummary CreateNotYetEligible(int vsdOffset, int vedOffset, int gpedOffset)
         {
             var today = DateTime.Today;
-            return new WorkingFamiliesEvent
+            return new WorkingFamiliesEventSummary
             {
                 ValidityStartDate = today.AddDays(vsdOffset),
                 ValidityEndDate = today.AddDays(vsdOffset).AddDays(vedOffset),
@@ -369,10 +369,10 @@ namespace CheckYourEligibility.API.Gateways.Factories
             };
         }
 
-        private WorkingFamiliesEvent CreateExpired(int vsdOffset, int vedOffset, int gpedOffset)
+        private WorkingFamiliesEventSummary CreateExpired(int vsdOffset, int vedOffset, int gpedOffset)
         {
             var today = DateTime.Today;
-            return new WorkingFamiliesEvent
+            return new WorkingFamiliesEventSummary
             {
                 GracePeriodEndDate = today.AddDays(-gpedOffset),
                 ValidityEndDate = today.AddDays(-gpedOffset).AddDays(-vedOffset),
@@ -380,10 +380,9 @@ namespace CheckYourEligibility.API.Gateways.Factories
             };
         }
 
-        private void PopulateCommonFields(WorkingFamiliesEvent wfEvent, CheckProcessData checkData)
+        private void PopulateCommonFields(WorkingFamiliesEventSummary wfEvent, CheckProcessData checkData)
         {
             wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
-            wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
             wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
             wfEvent.EligibilityCode = checkData.EligibilityCode;
         }

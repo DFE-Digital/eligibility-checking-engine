@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Helpers;
 
 
 public static class WorkingFamiliesEventHelper
@@ -50,6 +51,7 @@ public static class WorkingFamiliesEventHelper
         eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
         eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
         eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
+        eventSummary.GracePeriodEndDateApplied = true;
 
         if (!isContiguous)
         {
@@ -63,6 +65,7 @@ public static class WorkingFamiliesEventHelper
     public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent) {
 
         DateTime today = DateTime.UtcNow.Date;
+        var currentTerm = WorkingFamiliesCheckHelper.GetTerms(today).Current;
         WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
         {
             WorkingFamiliesEventSummaryID = Guid.NewGuid().ToString(),
@@ -81,9 +84,11 @@ public static class WorkingFamiliesEventHelper
             GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate,
             DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
             ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
-            ValidityEndDate = workingFamiliesEvent.ValidityEndDate
-        };
-        return newEventSummary;
+            ValidityEndDate = workingFamiliesEvent.ValidityEndDate,
+            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.ValidityStartDate, workingFamiliesEvent.ValidityEndDate)
+            
+        };       
+            return newEventSummary;
 
     }
 
@@ -189,9 +194,7 @@ public static class WorkingFamiliesEventHelper
     /// <param name="historicEventRecordCount"></param>
     /// <returns></returns>
     public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
-
-       
-
+      
         //if older events found (summary record is not null), initiate contiguous logic
         if (summaryRecord != null)
         {                    

@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;
@@ -32,6 +33,26 @@ namespace CheckYourEligibility.API.Tests.Helpers
             // Assert
             result.Should().Be(dvsdIsApplied);
         }
+
+        [TestCaseSource(nameof(DetermineWorkingFamiliesCodeEligibilityCases))]
+        public void DetermineWorkingFamiliesCodeEligibility_expected_status(
+            string source,
+            DateTime discretionaryValidityStartDate,
+            DateTime validityEndDate,
+            DateTime? gracePeriodEndDate,
+            bool gracePeriodEndDateApplied,
+            CheckEligibilityStatus expectedStatus)
+        {
+            var result = WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(
+                source,
+                discretionaryValidityStartDate,
+                validityEndDate,
+                gracePeriodEndDate,
+                gracePeriodEndDateApplied);
+
+            result.Should().Be(expectedStatus);
+        }
+
         [TestCase("123456789", EligibilityCodeType.Temporary)]
         [TestCase("423456789", EligibilityCodeType.Foster)]
         [TestCase("523456789", EligibilityCodeType.Standard)]
@@ -89,11 +110,70 @@ namespace CheckYourEligibility.API.Tests.Helpers
         /// </summary>
         /// <returns></returns>
         
-        private static Term Term_Summer = new Term(TermName.Summer, DateTime.Now.Date);
-        
-        private static Term Term_Spring = new Term(TermName.Spring, DateTime.Now.Date);
-        
-        private static Term Term_Autumn = new Term(TermName.Autumn, DateTime.Now.Date);
+        private static Term Term_Summer = new Term(TermName.Summer, new DateTime(DateTime.Now.Year, 4, 1), new DateTime(DateTime.Now.Year, 8, 31));
+
+        private static Term Term_Spring = new Term(TermName.Spring, new DateTime(DateTime.Now.Year, 1, 1), new DateTime(DateTime.Now.Year, 3, 31));
+
+        private static Term Term_Autumn = new Term(TermName.Autumn, new DateTime(DateTime.Now.Year, 9, 1), new DateTime(DateTime.Now.Year, 12, 31));
+
+        private static IEnumerable<TestCaseData> DetermineWorkingFamiliesCodeEligibilityCases()
+        {
+            var today = DateTime.UtcNow.Date;
+
+            yield return new TestCaseData(
+                "childcare-admin",
+                today.AddDays(-1),
+                today,
+                today.AddDays(-1),
+                false,
+                CheckEligibilityStatus.eligible)
+                .SetArgDisplayNames("InternalSite_Uses_ValidityEndDate_When_GracePeriodNotApplied");
+
+            yield return new TestCaseData(
+                "childcare-admin",
+                today.AddDays(-1),
+                today.AddDays(-1),
+                today.AddDays(1),
+                false,
+                CheckEligibilityStatus.notEligible)
+                .SetArgDisplayNames("InternalSite_IsNotEligible_After_ValidityEndDate");
+
+            yield return new TestCaseData(
+                "childcare-admin",
+                today.AddDays(-1),
+                today.AddDays(-1),
+                today,
+                true,
+                CheckEligibilityStatus.eligible)
+                .SetArgDisplayNames("InternalSite_Uses_GracePeriod_When_Applied");
+
+            yield return new TestCaseData(
+                "client",
+                today.AddDays(-1),
+                today.AddDays(-1),
+                today,
+                false,
+                CheckEligibilityStatus.eligible)
+                .SetArgDisplayNames("ClientSite_Uses_GracePeriodEndDate");
+
+            yield return new TestCaseData(
+                "client",
+                today.AddDays(1),
+                today.AddDays(2),
+                today.AddDays(3),
+                false,
+                CheckEligibilityStatus.notEligible)
+                .SetArgDisplayNames("NotEligible_Before_DiscretionaryValidityStartDate");
+
+            yield return new TestCaseData(
+                "client",
+                today.AddDays(-1),
+                today.AddDays(1),
+                null,
+                false,
+                CheckEligibilityStatus.notEligible)
+                .SetArgDisplayNames("NotEligible_When_GracePeriodEndDate_IsMissing");
+        }
 
         private static IEnumerable<TestCaseData> SetTermValidityCases()
         {
