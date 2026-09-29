@@ -35,7 +35,74 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
+    /// <summary>
+    /// Maps dates from the newest event to a summary record.
+    /// </summary>
+    /// <param name="workingFamiliesEvent"></param>
+    /// <param name="isContiguous">
+    /// if True - it will also map FirstEventDate, LastCheckDate, FirstCheckDate, DVSD, VSD</param>
+    /// <returns></returns>
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false) {
+        
+        DateTime today = DateTime.UtcNow.Date;
 
+        eventSummary.LastUpdatedDate = today;
+        eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
+        eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
+        eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
+
+        if (!isContiguous)
+        {
+            eventSummary.FirstEventDate = today;     
+            eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
+            eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
+
+        }
+        return eventSummary;
+    }
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent) {
+
+        DateTime today = DateTime.UtcNow.Date;
+        WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
+        {
+            WorkingFamiliesEventSummaryID = Guid.NewGuid().ToString(),
+            EligibilityCode = workingFamiliesEvent.EligibilityCode,
+            ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,
+            ChildFirstName = workingFamiliesEvent.ChildFirstName,
+            ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
+            PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
+            ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
+            ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim(),
+            FirstEventDate = today,
+            HasCodeBeenCheckedByOwningLA = false,
+            LastUpdatedDate = today,
+            LatestSubmissionDate = workingFamiliesEvent.SubmissionDate,
+            OwningLocalAuthorityId = null, //how do we get this information ?
+            GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate,
+            DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
+            ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
+            ValidityEndDate = workingFamiliesEvent.ValidityEndDate
+        };
+        return newEventSummary;
+
+    }
+
+    /// <summary>
+    /// Map personal data to the summary record from its event record
+    /// </summary>
+    /// <param name="workingFamiliesEvent"></param>
+    /// <returns></returns>
+    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent) {
+
+        eventSummary.ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth;
+        eventSummary.ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber;
+        eventSummary.PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber;
+        eventSummary.ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty;
+        eventSummary.ChildFirstName = workingFamiliesEvent.ChildFirstName;
+        eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
+       
+        return eventSummary;
+    }
 
     public static WorkingFamiliesEvent ParseWorkingFamiliesEvent(List<string> eventProps, List<string> columnHeaders)
     {
@@ -112,5 +179,40 @@ public static class WorkingFamiliesEventHelper
         // Else use VSD
         return validityStartDate;
     }
+    /// <summary>
+    /// Determines if the contiguity of an event is broken:
+    /// If only one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent VED
+    /// or if more than one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent GPED
+    /// </summary>
+    /// <param name="incomingEvent"></param>
+    /// <param name="summaryRecord"></param>
+    /// <param name="historicEventRecordCount"></param>
+    /// <returns></returns>
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
 
+       
+
+        //if older events found (summary record is not null), initiate contiguous logic
+        if (summaryRecord != null)
+        {                    
+
+            // if contiguous chain is broken
+            if ((historicEventRecordCount == 1 && incomingEvent.ValidityStartDate > summaryRecord.ValidityEndDate) ||
+                (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate))
+            {
+               return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
+            }
+            // continue the chain
+            else
+            {
+                return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: true);
+            }
+        }
+        // if no summary event record found, map a new summary record from the incoming event.
+        else
+        {
+           WorkingFamiliesEventSummary eventSummaryRecord = new();
+          return  eventSummaryRecord = MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+        }
+    }
 }

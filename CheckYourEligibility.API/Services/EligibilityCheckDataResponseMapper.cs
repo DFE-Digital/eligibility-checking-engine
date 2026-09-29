@@ -95,7 +95,6 @@ namespace CheckYourEligibility.API.Services
             item.ChildSchoolURN = checkData.ChildSchoolURN;
             item.EligibilityEndDate = checkData.EligibilityEndDate;
             item.EmailAddress = checkData.EmailAddress;
-
             if (eligibilityCheck.BulkCheckID != null)
                 item.EligibilityCheckID = eligibilityCheck.EligibilityCheckID;
 

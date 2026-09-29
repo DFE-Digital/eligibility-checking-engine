@@ -29,8 +29,7 @@ describe("Create Foster Child - happy paths", () => {
           token,
         ).then((createChildResponse) => {
           expect(createChildResponse.status).to.eq(201);
-
-          expect(createChildResponse.body.childName).to.eq("Sam Jones");
+          expect(createChildResponse.body.fosterCarerId).to.eq(fosterCarerId);
 
           // Get family including children
           cy.apiRequest(

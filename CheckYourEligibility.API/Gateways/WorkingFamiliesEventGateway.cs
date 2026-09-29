@@ -23,6 +23,7 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
     }
 
     /// <inheritdoc />
+   /// This method is strictly used for syncing WF event data between ECS and ECE
     public async Task<WorkingFamiliesEvent> UpsertWorkingFamiliesEvent(WorkingFamiliesEvent data)
     {
         var existing = await _db.WorkingFamiliesEvents
@@ -64,6 +65,7 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
     }
 
     /// <inheritdoc />
+   /// This method is strictly used for syncing WF event data between ECS and ECE
     public async Task<List<WorkingFamiliesEvent>> GetOverlappingEventsByDern(
         string dern, string excludeHmrcId, DateTime validityStart, DateTime validityEnd)
     {
@@ -77,7 +79,7 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
     }
 
     /// <inheritdoc />
-    public async Task<bool> DeleteWorkingFamiliesEvent(string hmrcId)
+    public async Task<bool> DeleteWorkingFamiliesEventByHmrcId(string hmrcId)
     {
         var existing = await _db.WorkingFamiliesEvents
             .FirstOrDefaultAsync(x => x.HMRCEligibilityEventId == hmrcId && !x.IsDeleted);
@@ -90,4 +92,56 @@ public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
         await _db.SaveChangesAsync();
         return true;
     }
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEvent?> GetLatestWorkingFamiliesEventByEligibilityCode(string eligibilityCode) {
+
+        var wfEvent = await _db.WorkingFamiliesEvents.FirstOrDefaultAsync(x =>
+            x.EligibilityCode == eligibilityCode && x.IsDeleted == false);
+        return wfEvent;
+    }
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEventSummary?> GetWorkingFamiliesEventSummaryRecordByEligibilityCode(string eligibilityCode)
+    {
+
+        var eventSummary = await _db.WorkingFamiliesEventSummaries.FirstOrDefaultAsync(x =>
+            x.EligibilityCode == eligibilityCode);
+
+        return eventSummary;
+    }
+    /// <inheritdoc />
+    public async Task<int> GetWorkingFamiliesEventsCount(string eligibilityCode) {
+        
+        return await _db.WorkingFamiliesEvents.CountAsync(x=> x.EligibilityCode == eligibilityCode && x.IsDeleted == false);
+          
+    }
+
+    public async Task CreateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    {
+
+        await _db.WorkingFamiliesEventSummaries.AddAsync(record);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    {
+
+        _db.WorkingFamiliesEventSummaries.Update(record);
+        await _db.SaveChangesAsync();
+
+    }
+
+    public async Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData)
+    {
+
+        // Insert or update the summary records for the incoming events
+        _db.BulkInsertOrUpdate_WorkingFamiliesEventSummary(summaryData);
+    }
+
+    //Placeholder for future soft deletion
+    //public async Task DeleteWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    //{
+
+    //    _db.WorkingFamiliesEventSummaries.ExecuteUpdateAsync(setters => setters.SetProperty(eventSummary => eventSummary.IsDeleted, true));       
+
+    //}
 }

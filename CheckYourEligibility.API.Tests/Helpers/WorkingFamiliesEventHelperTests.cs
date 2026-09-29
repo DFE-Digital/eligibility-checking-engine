@@ -156,4 +156,275 @@ public class WorkingFamiliesEventHelperTests
 
         Assert.That(result, Is.EqualTo(validityStartDate));
     }
+
+    [Test]
+    public void MapWorkingFamiliesEventUpdateDatesToSummaryRecord_WhenNotContiguous_ResetsFirstEventDateAndDates()
+    {
+        var eventSummary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = "summary-1",
+            EligibilityCode = "70100000000",
+            ValidityEndDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = new DateTime(2026, 12, 31),
+            FirstEventDate = new DateTime(2026, 1, 10),
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2)
+        };
+
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            SubmissionDate = new DateTime(2026, 8, 15),
+            ValidityStartDate = new DateTime(2026, 9, 3),
+            ValidityEndDate = new DateTime(2026, 12, 3),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
+            GracePeriodEndDate = new DateTime(2027, 3, 31)
+        };
+
+        var before = DateTime.UtcNow.Date;
+        var result = WorkingFamiliesEventHelper.MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, eventSummary, false);
+        var after = DateTime.UtcNow.Date;
+
+        Assert.That(result, Is.SameAs(eventSummary));
+        Assert.That(eventSummary.LastUpdatedDate, Is.InRange(before, after));
+        Assert.That(eventSummary.LatestSubmissionDate, Is.EqualTo(new DateTime(2026, 8, 15)));
+        Assert.That(eventSummary.ValidityEndDate, Is.EqualTo(new DateTime(2026, 12, 3)));
+        Assert.That(eventSummary.GracePeriodEndDate, Is.EqualTo(new DateTime(2027, 3, 31)));
+        Assert.That(eventSummary.FirstEventDate, Is.InRange(before, after));
+        Assert.That(eventSummary.ValidityStartDate, Is.EqualTo(new DateTime(2026, 9, 3)));
+        Assert.That(eventSummary.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 31)));
+    }
+
+    [Test]
+    public void MapWorkingFamiliesEventUpdateDatesToSummaryRecord_WhenContiguous_KeepsOriginalSummaryDates()
+    {
+        var eventSummary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = "summary-2",
+            EligibilityCode = "70100000000",
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            ValidityEndDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = new DateTime(2026, 12, 31),
+            FirstEventDate = new DateTime(2026, 1, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2)
+        };
+
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            SubmissionDate = new DateTime(2026, 7, 2),
+            ValidityStartDate = new DateTime(2026, 7, 1),
+            ValidityEndDate = new DateTime(2026, 12, 31),
+            DiscretionaryValidityStartDate = new DateTime(2026, 7, 1),
+            GracePeriodEndDate = new DateTime(2027, 3, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, eventSummary, true);
+
+        Assert.That(result, Is.SameAs(eventSummary));
+        Assert.That(eventSummary.LastUpdatedDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(eventSummary.LatestSubmissionDate,  Is.EqualTo(incomingEvent.SubmissionDate));
+        Assert.That(eventSummary.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(eventSummary.GracePeriodEndDate, Is.EqualTo(incomingEvent.GracePeriodEndDate));
+        Assert.That(eventSummary.FirstEventDate, Is.EqualTo(eventSummary.FirstEventDate));
+        Assert.That(eventSummary.ValidityStartDate, Is.EqualTo(eventSummary.ValidityStartDate));
+        Assert.That(eventSummary.DiscretionaryValidityStartDate, Is.EqualTo(eventSummary.DiscretionaryValidityStartDate));
+    }
+
+    [TestCase("Casey")]
+    [TestCase("Casey-Test")]
+    public void MapWorkingFamiliesEventToNewSummaryRecord_CreatesSummaryFromIncomingEvent(string childFirstName)
+    {
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            ChildDateOfBirth = new DateTime(2022, 6, 7),
+            ChildFirstName = childFirstName,
+            ParentNationalInsuranceNumber = "AB123456C",
+            PartnerNationalInsuranceNumber = "CD654321E",
+            ChildPostCode = "AB1 2CD",
+            SubmissionDate = new DateTime(2026, 8, 20),
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 11, 20),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
+            GracePeriodEndDate = new DateTime(2027, 3, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+
+        Assert.That(result.WorkingFamiliesEventSummaryID, Is.Not.Empty);
+        Assert.That(result.EligibilityCode, Is.EqualTo("70100000000"));
+        Assert.That(result.ChildDateOfBirth, Is.EqualTo(new DateTime(2022, 6, 7)));
+        Assert.That(result.ChildFirstName, Is.EqualTo(childFirstName));
+        Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
+        Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("CD654321E"));
+        Assert.That(result.ChildPostCode, Is.EqualTo("AB1 2CD"));
+        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("casey"));
+        Assert.That(result.FirstCheckDate, Is.Null);
+        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.HasCodeBeenCheckedByOwningLA, Is.False);
+        Assert.That(result.LastCheckDate, Is.Null);
+        Assert.That(result.LastUpdatedDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(new DateTime(2027, 3, 31)));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(new DateTime(2026, 11, 20)));
+    }
+
+    [TestCase("Test-Beta")]
+    [TestCase("Test")]
+    public void MapPIWorkingFamilySummaryFromWorkingFamilyEvent_MapsPersonalDataAndNullSafePostcode(string childFirstName)
+    {
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            ChildDateOfBirth = new DateTime(2022, 6, 7),
+            ChildFirstName = childFirstName,
+            ParentNationalInsuranceNumber = "AB123456C",
+            PartnerNationalInsuranceNumber = "CD654321E",
+            ChildPostCode = "NT4 9TS",
+        };
+        var summaryRecord = new WorkingFamiliesEventSummary();
+        var result = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(summaryRecord,incomingEvent);
+
+        Assert.That(result.ChildDateOfBirth, Is.EqualTo(new DateTime(2022, 6, 7)));
+        Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
+        Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("CD654321E"));
+        Assert.That(result.ChildPostCode, Is.EqualTo("NT4 9TS"));
+        Assert.That(result.ChildFirstName, Is.EqualTo(childFirstName));
+        Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("test"));
+    }
+
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenNoSummaryRecord_CreatesNewSummary()
+    {
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            ChildDateOfBirth = new DateTime(2022, 6, 7),
+            ChildFirstName = "Casey",
+            ParentNationalInsuranceNumber = "AB123456C",
+            ChildPostCode = "AB1 2CD",
+            SubmissionDate = new DateTime(2026, 8, 20),
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 11, 20),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
+            GracePeriodEndDate = new DateTime(2027, 3, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, null, 0);
+
+        Assert.That(result.EligibilityCode, Is.EqualTo(incomingEvent.EligibilityCode));
+        Assert.That(result.ChildFirstName, Is.EqualTo(incomingEvent.ChildFirstName));
+        Assert.That(result.ChildDateOfBirth, Is.EqualTo(incomingEvent.ChildDateOfBirth));
+        Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo(incomingEvent.ParentNationalInsuranceNumber));
+        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(incomingEvent.GracePeriodEndDate));
+
+    }
+
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSingleHistoricEventBreaksAfterPreviousValidityEnd_ShouldBreakChain()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "70100000000",
+            ValidityEndDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = new DateTime(2026, 8, 31),
+            FirstEventDate = new DateTime(2026, 1, 10),
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
+            LatestSubmissionDate = new DateTime(2026, 6, 15)
+        };
+
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            SubmissionDate = new DateTime(2026, 9, 10),
+            ValidityStartDate = new DateTime(2026, 9, 1),
+            ValidityEndDate = new DateTime(2026, 12, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 9, 1),
+            GracePeriodEndDate = new DateTime(2026, 12, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
+
+        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
+    }
+
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenHistoricEventsExistAndNewEventStartsAfterGracePeriod_ShouldBreakChain()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "70100000000",
+            ValidityEndDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = new DateTime(2026, 8, 31),
+            FirstEventDate = new DateTime(2026, 1, 10),
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
+            LatestSubmissionDate = new DateTime(2026, 6, 15)
+        };
+
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            SubmissionDate = new DateTime(2026, 9, 10),
+            ValidityStartDate = new DateTime(2026, 9, 1),
+            ValidityEndDate = new DateTime(2026, 12, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 9, 1),
+            GracePeriodEndDate = new DateTime(2026, 12, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
+
+        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
+    }
+
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenChainIsContiguous_UsesExistingSummary()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "70100000000",
+            ValidityEndDate = new DateTime(2026, 7, 31),
+            GracePeriodEndDate = new DateTime(2026, 12, 31),
+            FirstEventDate = new DateTime(2026, 1, 10),
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
+            LatestSubmissionDate = new DateTime(2026, 7, 10)
+        };
+
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "70100000000",
+            SubmissionDate = new DateTime(2026, 8, 10),
+            ValidityStartDate = new DateTime(2026, 8, 1),
+            ValidityEndDate = new DateTime(2026, 11, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 1),
+            GracePeriodEndDate = new DateTime(2027, 3, 31)
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
+
+        Assert.That(result, Is.SameAs(summary));
+        Assert.That(result.LastUpdatedDate, Is.EqualTo(DateTime.UtcNow.Date));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(summary.ValidityStartDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(summary.DiscretionaryValidityStartDate));
+        Assert.That(result.FirstEventDate, Is.EqualTo(summary.FirstEventDate));
+    }
 }

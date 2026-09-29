@@ -1,5 +1,6 @@
 using FluentValidation;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Boundary.Responses;
 
 namespace CheckYourEligibility.API.UseCases;
 

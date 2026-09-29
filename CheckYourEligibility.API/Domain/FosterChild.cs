@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -14,9 +15,8 @@ public class FosterChild
     public DateTime ValidityStartDate { get; set; }
     public DateTime ValidityEndDate { get; set; }
     public DateTime SubmissionDate { get; set; }
-
-    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";
-    
+ 
+    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";   
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
@@ -25,4 +25,6 @@ public class FosterChild
 
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; } = null!;
 
+    public string? WorkingFamiliesEventSummaryID { get; set; }
+    public virtual WorkingFamiliesEventSummary eventSummary { get; set; }
 }

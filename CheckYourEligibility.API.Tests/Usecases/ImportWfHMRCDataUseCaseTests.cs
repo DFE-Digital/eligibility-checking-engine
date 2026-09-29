@@ -1,6 +1,4 @@
-using AutoFixture;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using DocumentFormat.OpenXml.Packaging;
@@ -20,6 +18,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
     private Mock<IAdministration> _mockGateway;
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ILogger<ImportWfHMRCDataUseCase>> _mockLogger;
+    private Mock<IWorkingFamiliesEvent> _mockWorkingFamiliesEventGateway;
     private ImportWfHMRCDataUseCase _sut;
 
     [SetUp]
@@ -28,7 +27,9 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         _mockGateway = new Mock<IAdministration>(MockBehavior.Strict);
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<ImportWfHMRCDataUseCase>>(MockBehavior.Loose);
-        _sut = new ImportWfHMRCDataUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockLogger.Object);
+        _mockWorkingFamiliesEventGateway = new Mock<IWorkingFamiliesEvent>(MockBehavior.Strict);
+
+        _sut = new ImportWfHMRCDataUseCase(_mockGateway.Object, _mockAuditGateway.Object, _mockWorkingFamiliesEventGateway.Object, _mockLogger.Object);
     }
 
     [TearDown]
@@ -36,6 +37,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
     {
         _mockGateway.VerifyAll();
         _mockAuditGateway.VerifyAll();
+        _mockWorkingFamiliesEventGateway.VerifyAll();
     }
 
     [Test]
@@ -92,7 +94,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Execute_Should_Process_Xlsm_File_And_Call_ImportWfHMRCData()
+    public async Task Execute_Should_Process_Xlsm_File_And_Call_BulkImportWorkingFamiliesEventHMRCData_BulkImportWorkingFamiliesEventSummaryRecords()
     {
         // Arrange
         var fileMock = new Mock<IFormFile>();
@@ -102,17 +104,46 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         fileMock.Setup(f => f.OpenReadStream())
             .Returns(stream);
 
-        _mockGateway.Setup(s => s.ImportWfHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
+        _mockWorkingFamiliesEventGateway
+            .Setup(s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode("50173110190"))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+        _mockWorkingFamiliesEventGateway
+            .Setup(s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode("50173110191"))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+        _mockWorkingFamiliesEventGateway
+            .Setup(s => s.GetWorkingFamiliesEventsCount("50173110190"))
+            .ReturnsAsync(0);
+        _mockWorkingFamiliesEventGateway
+            .Setup(s => s.GetWorkingFamiliesEventsCount("50173110191"))
+            .ReturnsAsync(0);
+
+        _mockGateway.Setup(s => s.BulkImportWorkingFamiliesEventHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
+        _mockWorkingFamiliesEventGateway.Setup(s=> s.BulkImportWorkingFamiliesEventSummaryRecords(It.IsAny<List<WorkingFamiliesEventSummary>>())).Returns(Task.CompletedTask);
 
         // Act
         await _sut.Execute(fileMock.Object);
 
         // Assert
         _mockGateway.Verify(
-            s => s.ImportWfHMRCData(It.Is<List<WorkingFamiliesEvent>>(
-                list => list.Count == 2
-                        && list[0].EligibilityCode == "50173110190"
-                        && list[1].EligibilityCode == "50173110191")), Times.Once);
+            s => s.BulkImportWorkingFamiliesEventHMRCData(
+                It.Is<List<WorkingFamiliesEvent>>(list =>
+                    list.Count == 2
+                    && list[0].EligibilityCode == "50173110190"
+                    && list[1].EligibilityCode == "50173110191")),
+            Times.Once);
+        _mockWorkingFamiliesEventGateway.Verify(
+           s => s.BulkImportWorkingFamiliesEventSummaryRecords(
+               It.Is<List<WorkingFamiliesEventSummary>>(list =>
+                   list.Count == 2
+                   && list[0].EligibilityCode == "50173110190"
+                   && list[1].EligibilityCode == "50173110191")),
+           Times.Once);
+        _mockWorkingFamiliesEventGateway.Verify(
+            s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(It.IsAny<string>()),
+            Times.Exactly(2));
+        _mockWorkingFamiliesEventGateway.Verify(
+            s => s.GetWorkingFamiliesEventsCount(It.IsAny<string>()),
+            Times.Exactly(2));
     }
 
     [Test]

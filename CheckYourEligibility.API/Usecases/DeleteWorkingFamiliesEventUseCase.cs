@@ -26,7 +26,7 @@ public class DeleteWorkingFamiliesEventUseCase : IDeleteWorkingFamiliesEventUseC
         if (string.IsNullOrWhiteSpace(hmrcId))
             throw new ArgumentNullException(nameof(hmrcId), "HMRC eligibility event id must not be empty");
 
-        var deleted = await _gateway.DeleteWorkingFamiliesEvent(hmrcId);
+        var deleted = await _gateway.DeleteWorkingFamiliesEventByHmrcId(hmrcId);
 
         if (deleted)
         {

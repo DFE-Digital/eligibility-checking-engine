@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.API.UseCases;

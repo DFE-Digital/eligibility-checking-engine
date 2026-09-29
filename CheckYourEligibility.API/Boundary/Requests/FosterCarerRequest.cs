@@ -11,4 +11,5 @@ public class FosterCarerRequest
         get => _carerNationalInsuranceNumber;
         set => _carerNationalInsuranceNumber = value;
     }
+    public bool HasPartner { get; set; }
 }

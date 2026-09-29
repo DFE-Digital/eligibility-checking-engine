@@ -1,6 +1,5 @@
 ﻿using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Requests.DWP;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
@@ -8,7 +7,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
-using CheckYourEligibility.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -134,7 +132,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
-        //TODO: This should probably be its own adapter
+        
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var wfRecords = await context.WorkingFamiliesEvents.Where(x =>

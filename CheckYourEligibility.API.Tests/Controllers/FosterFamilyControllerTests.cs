@@ -18,6 +18,7 @@ public class FosterFamilyControllerTests
 {
     private Mock<IGetFosterFamilyUseCase> _mockGetFosterFamily = null!;
     private Mock<ICreateFosterFamilyUseCase> _mockCreateFosterFamily = null!;
+    private Mock<IPreviewFosterFamilyCodeUseCase> _mockPreviewFosterFamily = null!;
     private Mock<IUpdateFosterCarerUseCase> _mockUpdateFosterCarer = null!;
     private Mock<IDeleteFosterCarerUseCase> _mockDeleteFosterCarer = null!;
     private Mock<IDeleteFosterPartnerUseCase> _mockDeleteFosterPartner = null!;
@@ -37,6 +38,7 @@ public class FosterFamilyControllerTests
     {
         _mockGetFosterFamily = new Mock<IGetFosterFamilyUseCase>(MockBehavior.Strict);
         _mockCreateFosterFamily = new Mock<ICreateFosterFamilyUseCase>(MockBehavior.Strict);
+        _mockPreviewFosterFamily = new Mock<IPreviewFosterFamilyCodeUseCase>(MockBehavior.Strict);
         _mockUpdateFosterCarer = new Mock<IUpdateFosterCarerUseCase>(MockBehavior.Strict);
         _mockDeleteFosterCarer = new Mock<IDeleteFosterCarerUseCase>(MockBehavior.Strict);
         _mockDeleteFosterPartner = new Mock<IDeleteFosterPartnerUseCase>(MockBehavior.Strict);
@@ -62,6 +64,7 @@ public class FosterFamilyControllerTests
             _configuration,
             _mockGetFosterFamily.Object,
             _mockCreateFosterFamily.Object,
+            _mockPreviewFosterFamily.Object,
             _mockUpdateFosterCarer.Object,
             _mockDeleteFosterCarer.Object,
             _mockDeleteFosterPartner.Object,
@@ -78,6 +81,7 @@ public class FosterFamilyControllerTests
     {
         _mockGetFosterFamily.VerifyAll();
         _mockCreateFosterFamily.VerifyAll();
+        _mockPreviewFosterFamily.VerifyAll();
         _mockUpdateFosterCarer.VerifyAll();
         _mockDeleteFosterCarer.VerifyAll();
         _mockDeleteFosterPartner.VerifyAll();
@@ -142,7 +146,7 @@ public class FosterFamilyControllerTests
         // Act
         var result = await _sut.GetFosterFamily(
             id,
-            true);  
+            true);
 
         // Assert
         result.Should().BeOfType<ObjectResult>();
@@ -185,7 +189,7 @@ public class FosterFamilyControllerTests
 
         _mockGetFosterFamily
             .Setup(x => x.Execute(
-                id, 
+                id,
                 201,
                 false))
             .ThrowsAsync(new NotFoundException());
@@ -284,7 +288,8 @@ public class FosterFamilyControllerTests
 
         var response = new FosterFamilyCreatedResponse
         {
-            ChildName = "Tom Smith"
+            FosterCarerId = Guid.NewGuid(),
+            FosterChildId = Guid.NewGuid()
         };
 
         _mockCreateFosterFamily
@@ -381,7 +386,8 @@ public class FosterFamilyControllerTests
         var response = new FosterChildResponse
         {
             FosterChildId = id,
-            ChildFullName = "Tom Smith"
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith"
         };
 
         _mockGetFosterChild
@@ -479,11 +485,11 @@ public class FosterFamilyControllerTests
             ChildPostCode = "AB1 2CD"
         };
 
-        var response = new FosterChildCreatedResponse
+        var response = new FosterChildResponse
         {
-            ChildName = "Tom Smith",
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith",
             EligibilityCode = "ABC123",
-            Status = "Active"
         };
 
         _mockCreateFosterChild
@@ -684,7 +690,8 @@ public class FosterFamilyControllerTests
         var response = new FosterChildResponse
         {
             FosterChildId = fosterChildId,
-            ChildFullName = "Tom Smith"
+            ChildFirstName = "Tom",
+            ChildLastName = "Smith"
         };
 
         _mockUpdateFosterChild

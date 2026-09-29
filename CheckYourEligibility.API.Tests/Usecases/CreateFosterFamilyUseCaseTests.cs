@@ -1,3 +1,4 @@
+using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Moq;
@@ -92,11 +93,8 @@ public class CreateFosterFamilyUseCaseTests
 
         var expected = new FosterFamilyCreatedResponse
         {
-            ChildName = "Child One",
-            EligibilityCode = "X1",
-            Status = "Active",
-            EligibilityConfirmed = DateTime.UtcNow,
-            GracePeriodEndDate = DateTime.UtcNow.AddMonths(3)
+            FosterCarerId = Guid.NewGuid(),
+            FosterChildId = Guid.NewGuid()
         };
 
         _mockGateway
@@ -122,9 +120,8 @@ public class CreateFosterFamilyUseCaseTests
 
         var expected = new FosterFamilyCreatedResponse
         {
-            ChildName = "Child One",
-            EligibilityCode = "X1",
-            Status = "Active"
+            FosterCarerId = Guid.NewGuid(),
+            FosterChildId = Guid.NewGuid()
         };
 
         _mockGateway

@@ -1,20 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Domain.Validation;
+using CheckYourEligibility.API.Boundary.Responses;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface ICreateFosterFamilyUseCase
 {
-    Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request,int localAuthorityId);
+    Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, int localAuthorityId);
 }
 
 public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
 {
     private readonly IFosterFamilies _gateway;
 
-    public CreateFosterFamilyUseCase(
-        IFosterFamilies gateway)
+    public CreateFosterFamilyUseCase(IFosterFamilies gateway)
     {
         _gateway = gateway;
     }
