@@ -88,7 +88,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         fileMock.Verify(f => f.OpenReadStream(), Times.Once);
 
         _mockGateway.Verify(
-            g => g.ImportWfHMRCData(
+            g => g.BulkImportWorkingFamiliesEventHMRCData(
                 It.IsAny<IEnumerable<WorkingFamiliesEvent>>()),
             Times.Never);
     }
@@ -172,7 +172,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         exception.Which.Message.Should().Be(expectedMessage);
 
         _mockGateway.Verify(
-            g => g.ImportWfHMRCData(
+            g => g.BulkImportWorkingFamiliesEventHMRCData(
                 It.IsAny<IEnumerable<WorkingFamiliesEvent>>()),
             Times.Never);
     }
@@ -220,7 +220,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
         exception.Which.Message.Should().Be("Invalid file no content.");
 
         _mockGateway.Verify(
-            g => g.ImportWfHMRCData(
+            g => g.BulkImportWorkingFamiliesEventHMRCData(
                 It.IsAny<IEnumerable<WorkingFamiliesEvent>>()),
             Times.Never);
     }
@@ -273,7 +273,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
             "Working Families import failed. Error type: InvalidDataException");
 
         _mockGateway.Verify(
-            g => g.ImportWfHMRCData(
+            g => g.BulkImportWorkingFamiliesEventHMRCData(
                 It.IsAny<IEnumerable<WorkingFamiliesEvent>>()),
             Times.Never);
     }
