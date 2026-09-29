@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
@@ -104,6 +105,188 @@ namespace CheckYourEligibility.API.Tests.Helpers
             // Assert
             result.Status.Should().Be(properties.Status);
         }
+
+        private static readonly DateTime ContiguousChainEvaluationDate = new(2026, 9, 29);
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_singleEventWithinCurrentTerm_returnsEventWithoutApplyingGracePeriod()
+        {
+            var eventRecord = CreateEvent(
+                new DateTime(2026, 9, 2),
+                new DateTime(2026, 9, 3),
+                new DateTime(2026, 9, 2),
+                new DateTime(2026, 9, 3));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
+
+            result.Should().BeSameAs(eventRecord);
+            gracePeriodEndDateApplied.Should().BeFalse();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_singleEventOutsideCurrentTerm_appliesGracePeriod()
+        {
+            var eventRecord = CreateEvent(
+                new DateTime(2026, 8, 30),
+                new DateTime(2026, 8, 31),
+                new DateTime(2026, 8, 30),
+                new DateTime(2026, 8, 31));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
+
+            result.Should().BeSameAs(eventRecord);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_twoEventsSeparatedByValidityEnd_returnsLatestEventUnchanged()
+        {
+            var latestEvent = CreateEvent(
+                new DateTime(2026, 7, 1),
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 7, 1),
+                new DateTime(2026, 7, 10));
+            var historicEvent = CreateEvent(
+                new DateTime(2026, 6, 10),
+                new DateTime(2026, 6, 30),
+                new DateTime(2026, 6, 10),
+                new DateTime(2026, 7, 2));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_twoContiguousEvents_returnsEarliestStartDates()
+        {
+            var latestEvent = CreateEvent(
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10));
+            var historicEvent = CreateEvent(
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 25),
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 26));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(historicEvent.ValidityStartDate);
+            result.ValidityEndDate.Should().Be(latestEvent.ValidityEndDate);
+            result.GracePeriodEndDate.Should().Be(latestEvent.GracePeriodEndDate);
+            result.DiscretionaryValidityStartDate.Should().Be(historicEvent.DiscretionaryValidityStartDate);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_multipleEventsSeparatedByGracePeriod_returnsLatestEventUnchanged()
+        {
+            var latestEvent = CreateEvent(
+                new DateTime(2026, 7, 1),
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 7, 1),
+                new DateTime(2026, 7, 10));
+            var historicEvent = CreateEvent(
+                new DateTime(2026, 6, 10),
+                new DateTime(2026, 6, 20),
+                new DateTime(2026, 6, 10),
+                new DateTime(2026, 6, 30));
+            var earlierEvent = CreateEvent(
+                new DateTime(2026, 5, 10),
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 5, 10),
+                new DateTime(2026, 5, 25));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent, earlierEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_chainBreakAfterContiguousPair_returnsStartOfContiguousBlock()
+        {
+            var latestEvent = CreateEvent(
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10));
+            var contiguousEvent = CreateEvent(
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 25),
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 26));
+            var earlierEvent = CreateEvent(
+                new DateTime(2026, 4, 10),
+                new DateTime(2026, 4, 20),
+                new DateTime(2026, 4, 10),
+                new DateTime(2026, 5, 1));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, contiguousEvent, earlierEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(contiguousEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(contiguousEvent.DiscretionaryValidityStartDate);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_allEventsContiguous_returnsEarliestStartDates()
+        {
+            var latestEvent = CreateEvent(
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 6, 24),
+                new DateTime(2026, 7, 10));
+            var middleEvent = CreateEvent(
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 25),
+                new DateTime(2026, 5, 20),
+                new DateTime(2026, 6, 26));
+            var earliestEvent = CreateEvent(
+                new DateTime(2026, 4, 10),
+                new DateTime(2026, 5, 21),
+                new DateTime(2026, 4, 10),
+                new DateTime(2026, 5, 22));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, middleEvent, earliestEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(earliestEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(earliestEvent.DiscretionaryValidityStartDate);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        private static WorkingFamiliesEvent CreateEvent(
+            DateTime validityStartDate,
+            DateTime validityEndDate,
+            DateTime discretionaryValidityStartDate,
+            DateTime gracePeriodEndDate)
+        {
+            return new WorkingFamiliesEvent
+            {
+                ValidityStartDate = validityStartDate,
+                ValidityEndDate = validityEndDate,
+                DiscretionaryValidityStartDate = discretionaryValidityStartDate,
+                GracePeriodEndDate = gracePeriodEndDate
+            };
+        }
+
         #region Test Cases
         /// <summary>
         /// Term validity test cases

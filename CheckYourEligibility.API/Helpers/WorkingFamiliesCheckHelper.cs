@@ -208,7 +208,6 @@ namespace CheckYourEligibility.API.Helpers
         public static (WorkingFamiliesEvent,bool) CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords) {
 
             var latestEvent = eventRecords.FirstOrDefault();
-            DateTime today = DateTime.UtcNow.Date;
             bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(latestEvent.ValidityStartDate, latestEvent.ValidityEndDate, eventRecords.Count);
             
             if (eventRecords.Count == 1) { 
