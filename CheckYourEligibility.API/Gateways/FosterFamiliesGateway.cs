@@ -242,39 +242,33 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.SaveChangesAsync();
     }
 
-    public async Task<FosterFamiliesSearchResponse> SearchFosterFamilies(
-    int localAuthorityId,
-    FosterFamiliesSearchRequest request)
+    public async Task<FosterFamiliesSearchResponse> SearchFosterFamilies(int localAuthorityId, FosterFamiliesSearchRequest request)
     {
         const int defaultPageSize = 10;
 
-        var pageNumber = request.PageNumber < 1
-            ? 1
-            : request.PageNumber;
+        var pageNumber = request.PageNumber < 1 ? 1 : request.PageNumber;
+        var pageSize = request.PageSize < 1 ? defaultPageSize : request.PageSize;
 
-        var pageSize = request.PageSize < 1
-            ? defaultPageSize
-            : request.PageSize;
-
-        var query = _db.FosterChildren
+        // Construct base query including optional NINO filter
+        var baseQuery = _db.FosterChildren
             .Include(x => x.FosterCarer)
-            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId)
-            .AsQueryable();
+            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId);
 
-        var totalRecords = await query.CountAsync();
-
-        var maxPage = totalRecords == 0
-            ? 1
-            : (int)Math.Ceiling(totalRecords / (double)pageSize);
-
-        if (pageNumber > maxPage)
+        if (!string.IsNullOrWhiteSpace(request.NINOFilter))
         {
-            pageNumber = maxPage;
+            var ninoFilter = request.NINOFilter.Trim();
+            baseQuery = baseQuery.Where(x =>
+                x.FosterCarer.NationalInsuranceNumber == ninoFilter ||
+                x.FosterCarer.PartnerNationalInsuranceNumber == ninoFilter);
         }
 
-        var results = await _db.FosterChildren
-            .Include(x => x.FosterCarer)
-            .Where(x => x.FosterCarer.LocalAuthorityID == localAuthorityId)
+        // Calculate record count and max pages
+        var totalRecords = await baseQuery.CountAsync();
+        var maxPage = totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
+        if (pageNumber > maxPage) { pageNumber = maxPage; }
+
+        // Generate result set
+        var results = await baseQuery
             .OrderByDescending(x => x.SubmissionDate)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
