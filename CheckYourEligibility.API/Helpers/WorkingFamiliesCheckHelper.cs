@@ -1,6 +1,8 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using System.Diagnostics.Tracing;
 
 namespace CheckYourEligibility.API.Helpers
 {
@@ -179,13 +181,70 @@ namespace CheckYourEligibility.API.Helpers
             var (currentTerm, _) = GetTerms(checkDate);
             return nineMonthsOld > currentTerm.StartDate;
         }
-        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate) {
+        /// <summary>
+        /// Determine if GPED is applied for a sole event.
+        /// </summary>
+        /// <param name="validityStartDate"></param>
+        /// <param name="validityEndDdate"></param>
+        /// <returns></returns>
+        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate, int eventCount) {
             var currentTerm = GetTerms(DateTime.UtcNow.Date).Current;
+
+            if (eventCount > 1) { return true; }
+
             if (validityStartDate >= currentTerm.StartDate && validityEndDdate <= currentTerm.EndDate) {
                
                 return false;
             }
                 return true; 
+        }
+
+        /// <summary>
+        /// Determines if the contiguity of an event is broken:
+        /// If only one event is found it - exist early and return event
+        /// If only two events are found and the reconfirmation(latest event VSD) has happened after the historicEvent VED
+        /// or if more than more events exist and the reconfirmation(latest event VSD) has happened after the historicEvent GPED
+        /// </summary>
+        public static (WorkingFamiliesEvent,bool) CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords) {
+
+            var latestEvent = eventRecords.FirstOrDefault();
+            DateTime today = DateTime.UtcNow.Date;
+            bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(latestEvent.ValidityStartDate, latestEvent.ValidityEndDate, eventRecords.Count);
+            
+            if (eventRecords.Count == 1) { 
+                
+                return (latestEvent, gracePeriodEndDateApplied);
+            }
+            
+            // chain broken
+            // earlier record is considerted expired
+            // return latest record
+            if ((eventRecords.Count == 2 && latestEvent.ValidityStartDate > eventRecords[1].ValidityEndDate) ||
+                latestEvent.ValidityStartDate > eventRecords[1].GracePeriodEndDate)
+            {
+
+                return (latestEvent, gracePeriodEndDateApplied);
+
+            }
+            else {
+
+                //Check for contiguous events and set VSD to earliest VSD of the current contiguous block
+                for (int i = 0; i < eventRecords.Count() - 1; i++)
+                {
+                    if (eventRecords[i].DiscretionaryValidityStartDate <= eventRecords[i + 1].GracePeriodEndDate)
+                    {
+                        latestEvent.DiscretionaryValidityStartDate = eventRecords[i + 1].DiscretionaryValidityStartDate;
+                        latestEvent.ValidityStartDate = eventRecords[i + 1].ValidityStartDate;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                return (latestEvent, gracePeriodEndDateApplied);
+
+            }
+
         }
         /// <summary>
         /// Determines whether a Working Families code is eligible based on the source
@@ -239,5 +298,7 @@ namespace CheckYourEligibility.API.Helpers
             return checkDate >= termAfterBirthday.StartDate;
         }
         #endregion
+
     }
+  
 }

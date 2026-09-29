@@ -130,9 +130,9 @@ public class CheckingEngineGateway : ICheckingEngine
     /// Logic to find a match in Working families events' table
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// </summary>
-    /// <param name="checkData"></param>
-    /// <returns></returns>
-    private async Task<WorkingFamiliesEventSummary?> Check_Working_Families_EventRecord(string dateOfBirth,
+    /// <returns>WorkingFamiliesEventSummary if event matched or null if no match is found</returns>
+    // NOTE: This method will be replacing Check_Working_Families_EventRecord method used for checks.
+    private async Task<WorkingFamiliesEventSummary?> Match_Working_Families_EventSummaryRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
@@ -143,9 +143,8 @@ public class CheckingEngineGateway : ICheckingEngine
             x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().FirstOrDefaultAsync();
 
         // If record is found retrieve the summary record
-        if (latestEventRecord != null) {
-
-
+        if (latestEventRecord != null)
+        {
             bool isMatch =
             (latestEventRecord.ParentNationalInsuranceNumber == nino || latestEventRecord.PartnerNationalInsuranceNumber == nino) &&
             (lastName == null || lastName == "" || latestEventRecord.ParentLastName.ToUpper() == lastName || latestEventRecord.PartnerLastName.ToUpper() == lastName) &&
@@ -159,7 +158,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 // Return null, status: notFound , for now
                 if (summaryRecord == null) return null;
 
-             
                 // If either ParentLastName or PartnerLastName or GPED is null;
                 // Initiate self healing process and populate the ParentLastName and PartnerLastName and GPED
                 if (summaryRecord.ParentLastName == null || summaryRecord.ParentLastName == null || summaryRecord.GracePeriodEndDate == null)
@@ -168,13 +166,40 @@ public class CheckingEngineGateway : ICheckingEngine
                     summaryRecord.PartnerLastName = latestEventRecord.PartnerLastName;
                     summaryRecord.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(latestEventRecord.ValidityEndDate);
                     await _workingFamiliesEventGateway.UpdateWorkingFamiliesSummaryRecordAsync(summaryRecord);
-                }                       
-                 return summaryRecord;
+                }
+                return summaryRecord;
             }
-        }    
+        }
         return null;
     }
+    private async Task<(WorkingFamiliesEvent?, bool)> Check_Working_Families_EventRecord(string dateOfBirth,
+       string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+    {
 
+        var context = dbContextFactory ?? _db;
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // Check if there is a match on the code
+        var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
+
+        if (wfRecords.Any())
+        {
+           var latestEvent = wfRecords.FirstOrDefault();
+
+            bool isMatch =
+            (latestEvent.ParentNationalInsuranceNumber == nino || latestEvent.PartnerNationalInsuranceNumber == nino) &&
+            (lastName == null || lastName == "" || latestEvent.ParentLastName.ToUpper() == lastName || latestEvent.PartnerLastName.ToUpper() == lastName) &&
+            latestEvent.ChildDateOfBirth == checkDob;
+            if (isMatch)
+            {
+                return WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(wfRecords);
+
+            }
+            
+        }
+        return (null, true);
+    }
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
@@ -187,7 +212,8 @@ public class CheckingEngineGateway : ICheckingEngine
     private async Task Process_WorkingFamilies_StandardCheck(EligibilityCheck? result, CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
         //TODO: This should be cleaned up
-        WorkingFamiliesEventSummary wfEvent = new WorkingFamiliesEventSummary();
+        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        bool isGracePeriodEndDateApplied = true;
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
@@ -240,7 +266,7 @@ public class CheckingEngineGateway : ICheckingEngine
         // Get event for ECE record
         else
         {
-             wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+             (wfEvent, isGracePeriodEndDateApplied) = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                 checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
 
             if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
@@ -253,7 +279,7 @@ public class CheckingEngineGateway : ICheckingEngine
         if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
         {
 
-           result.Status =  WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(result.Source, wfEvent.DiscretionaryValidityStartDate, wfEvent.ValidityEndDate, wfEvent.GracePeriodEndDate, true);
+           result.Status =  WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(result.Source, wfEvent.DiscretionaryValidityStartDate, wfEvent.ValidityEndDate, wfEvent.GracePeriodEndDate, isGracePeriodEndDateApplied);
 
         }
 
@@ -269,7 +295,7 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.DiscretionaryValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityStartDate = wfEvent.ValidityStartDate.ToString("yyyy-MM-dd");
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
-            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate?.ToString("yyyy-MM-dd");
+            wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
