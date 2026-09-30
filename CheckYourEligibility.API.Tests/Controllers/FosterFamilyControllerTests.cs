@@ -728,7 +728,7 @@ public class FosterFamilyControllerTests
         // Assert
         result.Should().BeOfType<ObjectResult>();
         var objectResult = (ObjectResult)result;
-        objectResult.StatusCode.Should().Be(StatusCodes.Status201Created);
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
         objectResult.Value.Should().BeSameAs(response);
     }
 
