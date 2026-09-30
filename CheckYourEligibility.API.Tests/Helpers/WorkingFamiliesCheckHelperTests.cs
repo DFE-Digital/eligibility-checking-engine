@@ -108,30 +108,31 @@ namespace CheckYourEligibility.API.Tests.Helpers
 
         private static readonly DateTime ContiguousChainEvaluationDate = new(2026, 9, 29);
 
+        /// <summary>Verifies a single event within the current term is returned without applying the grace period.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_singleEventWithinCurrentTerm_returnsEventWithoutApplyingGracePeriod()
         {
             var eventRecord = CreateEvent(
-                new DateTime(2026, 9, 2),
-                new DateTime(2026, 9, 3),
-                new DateTime(2026, 9, 2),
-                new DateTime(2026, 9, 3));
+                validityStartDate: new DateTime(2026, 9, 2),
+                validityEndDate: new DateTime(2026, 9, 3),
+                discretionaryValidityStartDate: new DateTime(2026, 9, 2));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
 
             result.Should().BeSameAs(eventRecord);
+            result.GracePeriodEndDate.Should().Be(new DateTime(2026, 12, 31));
             gracePeriodEndDateApplied.Should().BeFalse();
         }
 
+        /// <summary>Verifies a single event outside the current term has its grace period applied.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_singleEventOutsideCurrentTerm_appliesGracePeriod()
         {
             var eventRecord = CreateEvent(
-                new DateTime(2026, 8, 30),
-                new DateTime(2026, 8, 31),
-                new DateTime(2026, 8, 30),
-                new DateTime(2026, 8, 31));
+                validityStartDate: new DateTime(2026, 8, 30),
+                validityEndDate: new DateTime(2026, 8, 31),
+                discretionaryValidityStartDate: new DateTime(2026, 8, 30));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
@@ -140,42 +141,80 @@ namespace CheckYourEligibility.API.Tests.Helpers
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        /// <summary>Verifies a single event extending beyond the current term has its grace period applied.</summary>
         [Test]
-        public void CalculateContiguousChainForCodeFromEvents_twoEventsSeparatedByValidityEnd_returnsLatestEventUnchanged()
+        public void CalculateContiguousChainForCodeFromEvents_singleEventSpanningPastCurrentTerm_appliesGracePeriod()
+        {
+            var currentTerm = WorkingFamiliesCheckHelper.GetTerms(DateTime.UtcNow.Date).Current;
+            var eventRecord = CreateEvent(
+                validityStartDate: currentTerm.StartDate,
+                validityEndDate: currentTerm.EndDate.AddDays(1),
+                discretionaryValidityStartDate: currentTerm.StartDate);
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
+
+            result.Should().BeSameAs(eventRecord);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        /// <summary>Verifies a later submission after a same-term historic validity end breaks a two-event chain.</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_twoEventsSeparatedByValidityEnd_ShouldBreakChain()
         {
             var latestEvent = CreateEvent(
-                new DateTime(2026, 7, 1),
-                new DateTime(2026, 7, 10),
-                new DateTime(2026, 7, 1),
-                new DateTime(2026, 7, 10));
+                validityStartDate: new DateTime(2026, 6, 30),
+                validityEndDate: new DateTime(2026, 7, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 30),
+                submissionDate: new DateTime(2026, 7, 1));
             var historicEvent = CreateEvent(
-                new DateTime(2026, 6, 10),
-                new DateTime(2026, 6, 30),
-                new DateTime(2026, 6, 10),
-                new DateTime(2026, 7, 2));
+                validityStartDate: new DateTime(2026, 6, 10),
+                validityEndDate: new DateTime(2026, 6, 30),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 10));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
 
             result.Should().BeSameAs(latestEvent);
-            result.ValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
-            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            result.ValidityStartDate.Should().Be(latestEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(latestEvent.DiscretionaryValidityStartDate);
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        /// <summary>Verifies a later validity start alone does not break the chain when submission is not after historic VED.</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_submissionNotAfterValidityEnd_keepsChainWhenValidityStartIsAfter()
+        {
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 7, 1),
+                validityEndDate: new DateTime(2026, 10, 1),
+                discretionaryValidityStartDate: new DateTime(2026, 7, 1),
+                submissionDate: new DateTime(2026, 6, 30));
+            var historicEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 6, 10),
+                validityEndDate: new DateTime(2026, 6, 30),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 10));
+
+            var (result, _) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(historicEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(historicEvent.DiscretionaryValidityStartDate);
+        }
+
+        /// <summary>Verifies contiguous events retain the earliest validity and discretionary start dates.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_twoContiguousEvents_returnsEarliestStartDates()
         {
             var latestEvent = CreateEvent(
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10),
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10));
+                validityStartDate: new DateTime(2026, 6, 24),
+                validityEndDate: new DateTime(2026, 7, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 24));
             var historicEvent = CreateEvent(
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 25),
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 26));
+                validityStartDate: new DateTime(2026, 5, 20),
+                validityEndDate: new DateTime(2026, 6, 25),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 20));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
@@ -188,52 +227,70 @@ namespace CheckYourEligibility.API.Tests.Helpers
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        /// <summary>Verifies an event starting exactly on historic GPED is included in the contiguous chain.</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_contiguousAtGracePeriodBoundary_includesHistoricDates()
+        {
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 8, 31),
+                validityEndDate: new DateTime(2027, 1, 31),
+                discretionaryValidityStartDate: new DateTime(2026, 8, 31),
+                submissionDate: new DateTime(2026, 6, 24));
+            var historicEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 5, 20),
+                validityEndDate: new DateTime(2026, 6, 24),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 20));
+
+            var (result, _) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(historicEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(historicEvent.DiscretionaryValidityStartDate);
+        }
+
+        /// <summary>Verifies a latest event after historic GPED is returned without pulling in older dates.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_multipleEventsSeparatedByGracePeriod_returnsLatestEventUnchanged()
         {
             var latestEvent = CreateEvent(
-                new DateTime(2026, 7, 1),
-                new DateTime(2026, 7, 10),
-                new DateTime(2026, 7, 1),
-                new DateTime(2026, 7, 10));
+                validityStartDate: new DateTime(2027, 1, 1),
+                validityEndDate: new DateTime(2027, 4, 10),
+                discretionaryValidityStartDate: new DateTime(2027, 1, 1));
             var historicEvent = CreateEvent(
-                new DateTime(2026, 6, 10),
-                new DateTime(2026, 6, 20),
-                new DateTime(2026, 6, 10),
-                new DateTime(2026, 6, 30));
+                validityStartDate: new DateTime(2026, 6, 10),
+                validityEndDate: new DateTime(2026, 6, 20),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 10));
             var earlierEvent = CreateEvent(
-                new DateTime(2026, 5, 10),
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 5, 10),
-                new DateTime(2026, 5, 25));
+                validityStartDate: new DateTime(2026, 5, 10),
+                validityEndDate: new DateTime(2026, 5, 20),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 10));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent, earlierEvent]);
 
             result.Should().BeSameAs(latestEvent);
-            result.ValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
-            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 7, 1));
+            result.ValidityStartDate.Should().Be(new DateTime(2027, 1, 1));
+            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2027, 1, 1));
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        /// <summary>Verifies a chain break after a contiguous pair retains the start of that contiguous block.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_chainBreakAfterContiguousPair_returnsStartOfContiguousBlock()
         {
             var latestEvent = CreateEvent(
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10),
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10));
+                validityStartDate: new DateTime(2026, 6, 24),
+                validityEndDate: new DateTime(2026, 7, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 24));
             var contiguousEvent = CreateEvent(
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 25),
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 26));
+                validityStartDate: new DateTime(2026, 5, 20),
+                validityEndDate: new DateTime(2026, 6, 25),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 20));
             var earlierEvent = CreateEvent(
-                new DateTime(2026, 4, 10),
-                new DateTime(2026, 4, 20),
-                new DateTime(2026, 4, 10),
-                new DateTime(2026, 5, 1));
+                validityStartDate: new DateTime(2026, 2, 1),
+                validityEndDate: new DateTime(2026, 2, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 2, 1));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, contiguousEvent, earlierEvent]);
@@ -244,24 +301,48 @@ namespace CheckYourEligibility.API.Tests.Helpers
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        /// <summary>Verifies a non-contiguous first pair leaves the latest event's start dates unchanged.</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_firstPairIsNotContiguous_keepsLatestDates()
+        {
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 6, 15),
+                validityEndDate: new DateTime(2026, 7, 10),
+                discretionaryValidityStartDate: new DateTime(2027, 1, 1));
+            var historicEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 5, 1),
+                validityEndDate: new DateTime(2026, 6, 20),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 1));
+            var earlierEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 4, 1),
+                validityEndDate: new DateTime(2026, 5, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 4, 1));
+
+            var (result, gracePeriodEndDateApplied) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent, earlierEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(latestEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(latestEvent.DiscretionaryValidityStartDate);
+            gracePeriodEndDateApplied.Should().BeTrue();
+        }
+
+        /// <summary>Verifies an entirely contiguous event history uses the earliest event's start dates.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_allEventsContiguous_returnsEarliestStartDates()
         {
             var latestEvent = CreateEvent(
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10),
-                new DateTime(2026, 6, 24),
-                new DateTime(2026, 7, 10));
+                validityStartDate: new DateTime(2026, 6, 24),
+                validityEndDate: new DateTime(2026, 7, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 6, 24));
             var middleEvent = CreateEvent(
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 25),
-                new DateTime(2026, 5, 20),
-                new DateTime(2026, 6, 26));
+                validityStartDate: new DateTime(2026, 5, 20),
+                validityEndDate: new DateTime(2026, 6, 25),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 20));
             var earliestEvent = CreateEvent(
-                new DateTime(2026, 4, 10),
-                new DateTime(2026, 5, 21),
-                new DateTime(2026, 4, 10),
-                new DateTime(2026, 5, 22));
+                validityStartDate: new DateTime(2026, 4, 10),
+                validityEndDate: new DateTime(2026, 5, 21),
+                discretionaryValidityStartDate: new DateTime(2026, 4, 10));
 
             var (result, gracePeriodEndDateApplied) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, middleEvent, earliestEvent]);
@@ -276,14 +357,15 @@ namespace CheckYourEligibility.API.Tests.Helpers
             DateTime validityStartDate,
             DateTime validityEndDate,
             DateTime discretionaryValidityStartDate,
-            DateTime gracePeriodEndDate)
+            DateTime? submissionDate = null)
         {
             return new WorkingFamiliesEvent
             {
+                SubmissionDate = submissionDate ?? validityStartDate,
                 ValidityStartDate = validityStartDate,
                 ValidityEndDate = validityEndDate,
                 DiscretionaryValidityStartDate = discretionaryValidityStartDate,
-                GracePeriodEndDate = gracePeriodEndDate
+                GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(validityEndDate)
             };
         }
 

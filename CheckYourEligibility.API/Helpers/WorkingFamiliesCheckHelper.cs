@@ -202,8 +202,9 @@ namespace CheckYourEligibility.API.Helpers
         /// <summary>
         /// Determines if the contiguity of an event is broken:
         /// If only one event is found it - exist early and return event
-        /// If only two events are found and the reconfirmation(latest event VSD) has happened after the historicEvent VED
-        /// or if more than more events exist and the reconfirmation(latest event VSD) has happened after the historicEvent GPED
+        /// If only two events are found and the reconfirmation(latest event submission date) has happened after the historicEvent VED
+        /// and the earlier record VSD and VED fall within the same term (code has never been valid).
+        /// or if more than more events exist and the reconfirmation(latest event submission date) has happened after the historicEvent GPED
         /// </summary>
         public static (WorkingFamiliesEvent,bool) CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords) {
 
@@ -214,12 +215,17 @@ namespace CheckYourEligibility.API.Helpers
                 
                 return (latestEvent, gracePeriodEndDateApplied);
             }
-            
+
             // chain broken
             // earlier record is considerted expired
             // return latest record
-            if ((eventRecords.Count == 2 && latestEvent.ValidityStartDate > eventRecords[1].ValidityEndDate) ||
-                latestEvent.ValidityStartDate > eventRecords[1].GracePeriodEndDate)
+            var prevoiusEvent = eventRecords[1];
+            var historicalEventVSDTerm = GetTerms(prevoiusEvent.DiscretionaryValidityStartDate);
+            var historicalEventVEDTerm = GetTerms(prevoiusEvent.ValidityEndDate);
+
+            if ((eventRecords.Count == 2 && latestEvent.SubmissionDate > prevoiusEvent.ValidityEndDate &&
+                historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
+                latestEvent.ValidityStartDate > prevoiusEvent.GracePeriodEndDate)
             {
 
                 return (latestEvent, gracePeriodEndDateApplied);
