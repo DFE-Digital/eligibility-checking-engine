@@ -24,5 +24,7 @@ public interface IFosterFamilies
 
     Task<FosterChildResponse> UpdateFosterChild(Guid fosterChildId, int localAuthorityId, UpdateFosterChildRequest request);
 
+    Task<FosterChildResponse> ReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
+
     Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId);
 }

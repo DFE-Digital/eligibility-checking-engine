@@ -1,15 +1,37 @@
 public class FosterCarerRequest
 {
-    public string CarerFirstName { get; set; }
-    public string CarerLastName { get; set; }
-    public DateTime CarerDateOfBirth { get; set; }
-    public int? LocalAuthorityID { get; set; }
     private string? _carerNationalInsuranceNumber;
+
+    public string CarerFirstName { get; set; }
+
+    public string CarerLastName { get; set; }
+
+    public DateTime CarerDateOfBirth { get; set; }
+
+    public int? LocalAuthorityID { get; set; }
+
+    public bool HasPartner { get; set; }
+
+    public FosterCarerRequest()
+    {
+
+    }
+
+    public FosterCarerRequest(FosterCarer fosterCarer)
+    {
+        CarerFirstName = fosterCarer.FirstName;
+        CarerLastName = fosterCarer.LastName;
+        CarerDateOfBirth = fosterCarer.DateOfBirth;
+        CarerNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber;
+        LocalAuthorityID = fosterCarer.LocalAuthorityID;
+        HasPartner = fosterCarer.HasPartner;
+    }
+
     public string? CarerNationalInsuranceNumber
     {
         get => _carerNationalInsuranceNumber;
         set => _carerNationalInsuranceNumber =
             value?.ToUpper().Replace(" ", string.Empty);
     }
-    public bool HasPartner { get; set; }
+
 }

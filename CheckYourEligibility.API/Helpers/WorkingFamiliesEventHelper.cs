@@ -5,10 +5,8 @@ public static class WorkingFamiliesEventHelper
 {
     public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data, string eligibilityCode)
     {
-
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
         {
-
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eligibilityCode,
             ValidityStartDate = data.SubmissionDate,
@@ -30,7 +28,10 @@ public static class WorkingFamiliesEventHelper
             SubmissionDate = data.SubmissionDate,
 
             DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.SubmissionDate, data.SubmissionDate), // validity start date and submmission
-            GracePeriodEndDate = GetGracePeriodEndDate(data.SubmissionDate.AddMonths(3))
+            GracePeriodEndDate = GetGracePeriodEndDate(data.SubmissionDate.AddMonths(3)),
+
+            CreatedDateTime = DateTime.UtcNow,
+            EventDateTime = DateTime.UtcNow
         };
 
         return wfEvent;
@@ -42,8 +43,9 @@ public static class WorkingFamiliesEventHelper
     /// <param name="isContiguous">
     /// if True - it will also map FirstEventDate, LastCheckDate, FirstCheckDate, DVSD, VSD</param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false) {
-        
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false)
+    {
+
         DateTime today = DateTime.UtcNow.Date;
 
         eventSummary.LastUpdatedDate = today;
@@ -53,14 +55,15 @@ public static class WorkingFamiliesEventHelper
 
         if (!isContiguous)
         {
-            eventSummary.FirstEventDate = today;     
+            eventSummary.FirstEventDate = today;
             eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
             eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
 
         }
         return eventSummary;
     }
-    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent) {
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent)
+    {
 
         DateTime today = DateTime.UtcNow.Date;
         WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
@@ -92,7 +95,8 @@ public static class WorkingFamiliesEventHelper
     /// </summary>
     /// <param name="workingFamiliesEvent"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent) {
+    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent)
+    {
 
         eventSummary.ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth;
         eventSummary.ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber;
@@ -100,7 +104,7 @@ public static class WorkingFamiliesEventHelper
         eventSummary.ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty;
         eventSummary.ChildFirstName = workingFamiliesEvent.ChildFirstName;
         eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
-       
+
         return eventSummary;
     }
 
@@ -135,6 +139,7 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
+    
     //If VED => 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
     //If VED => 11 Feb and VED <= 26 May then GPED = 31-Aug 
     //If VED => 27 May and VED <= 31 August then GPED  = 31-Dec 
@@ -159,6 +164,7 @@ public static class WorkingFamiliesEventHelper
             return new DateTime(validityEndDate.Year, 3, 31);
         }
     }
+
     // if submitted date is before the current term, and the VSD is < 15 days from the start of the term
     public static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
     {
@@ -188,19 +194,17 @@ public static class WorkingFamiliesEventHelper
     /// <param name="summaryRecord"></param>
     /// <param name="historicEventRecordCount"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
-
-       
-
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount)
+    {
         //if older events found (summary record is not null), initiate contiguous logic
         if (summaryRecord != null)
-        {                    
+        {
 
             // if contiguous chain is broken
             if ((historicEventRecordCount == 1 && incomingEvent.ValidityStartDate > summaryRecord.ValidityEndDate) ||
                 (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate))
             {
-               return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
+                return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
             }
             // continue the chain
             else
@@ -211,8 +215,7 @@ public static class WorkingFamiliesEventHelper
         // if no summary event record found, map a new summary record from the incoming event.
         else
         {
-           WorkingFamiliesEventSummary eventSummaryRecord = new();
-          return  eventSummaryRecord = MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+            return MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
         }
     }
 }
