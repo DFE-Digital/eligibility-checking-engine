@@ -14,7 +14,7 @@ public class FosterFamiliesGateway : IFosterFamilies
     private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
 
     private ILogger _logger;
-    
+
     public FosterFamiliesGateway(
         IEligibilityCheckContext db,
         IWorkingFamiliesEvent workingFamiliesEventGateway,
@@ -126,8 +126,10 @@ public class FosterFamiliesGateway : IFosterFamilies
             var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
 
             fosterChild.EligibilityCode = eligibilityCode;
-            fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
-            fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
+
+            // Obsolete fields only set for compatibility
+            fosterChild.ValidityStartDate = newWorkingSummaryEvent.ValidityStartDate;
+            fosterChild.ValidityEndDate = newWorkingSummaryEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
             await _db.WorkingFamiliesEventSummaries.AddAsync(newWorkingSummaryEvent);
@@ -425,8 +427,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
         fosterChild.EligibilityCode = workingEvent.EligibilityCode;
         fosterChild.WorkingFamiliesEventSummaryID = newWorkingSummaryEvent.WorkingFamiliesEventSummaryID;
-        fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
-        fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
+
+        // Obsolete fields only set for compatibility
+        fosterChild.ValidityStartDate = newWorkingSummaryEvent.ValidityStartDate;
+        fosterChild.ValidityEndDate = newWorkingSummaryEvent.ValidityEndDate;
 
         await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
         await _db.WorkingFamiliesEventSummaries.AddAsync(newWorkingSummaryEvent);
@@ -494,9 +498,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
         existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
 
-        // Update foster child date fields
-        fosterChild.ValidityStartDate = newEvent.ValidityStartDate;
-        fosterChild.ValidityEndDate = newEvent.ValidityEndDate;
+        // Obsolete fields only set for compatibility
+        fosterChild.ValidityStartDate = existingSummaryRecord.ValidityStartDate;
+        fosterChild.ValidityEndDate = existingSummaryRecord.ValidityEndDate;
 
         // Save all changes
         await _db.SaveChangesAsync();

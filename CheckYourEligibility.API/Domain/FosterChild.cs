@@ -12,11 +12,15 @@ public class FosterChild
     public DateTime DateOfBirth { get; set; }
     public string PostCode { get; set; }
 
+    [Obsolete]
     public DateTime ValidityStartDate { get; set; }
+
+    [Obsolete]
     public DateTime ValidityEndDate { get; set; }
+
     public DateTime SubmissionDate { get; set; }
- 
-    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";   
+
+    [Column(TypeName = "varchar(50)")] public string Status { get; set; } = "Active";
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
 
