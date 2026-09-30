@@ -219,6 +219,7 @@ builder.Services.AddScoped<ISearchFosterFamiliesUseCase, SearchFosterFamiliesUse
 builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
 builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
 builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
+builder.Services.AddScoped<IReconfirmFosterChildUseCase, ReconfirmFosterChildUseCase>();
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
 builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
 
