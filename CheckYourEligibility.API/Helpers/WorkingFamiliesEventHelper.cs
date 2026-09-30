@@ -72,6 +72,8 @@ public static class WorkingFamiliesEventHelper
             EligibilityCode = workingFamiliesEvent.EligibilityCode,
             ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,
             ChildFirstName = workingFamiliesEvent.ChildFirstName,
+            ParentLastName = workingFamiliesEvent.ParentLastName,
+            PartnerLastName = workingFamiliesEvent.PartnerLastName,
             ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
             PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
             ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
@@ -104,6 +106,8 @@ public static class WorkingFamiliesEventHelper
         eventSummary.PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber;
         eventSummary.ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty;
         eventSummary.ChildFirstName = workingFamiliesEvent.ChildFirstName;
+        eventSummary.ParentLastName = workingFamiliesEvent.ParentLastName;
+        eventSummary.PartnerLastName = workingFamiliesEvent.PartnerLastName;
         eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
        
         return eventSummary;
