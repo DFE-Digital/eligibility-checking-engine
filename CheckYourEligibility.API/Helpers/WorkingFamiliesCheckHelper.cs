@@ -225,7 +225,7 @@ namespace CheckYourEligibility.API.Helpers
 
             if ((eventRecords.Count == 2 && latestEvent.SubmissionDate > prevoiusEvent.ValidityEndDate &&
                 historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
-                latestEvent.ValidityStartDate > prevoiusEvent.GracePeriodEndDate)
+                latestEvent.DiscretionaryValidityStartDate > prevoiusEvent.GracePeriodEndDate)
             {
 
                 return (latestEvent, gracePeriodEndDateApplied);

@@ -210,7 +210,7 @@ public static class WorkingFamiliesEventHelper
             // if contiguous chain is broken
             if ((historicEventRecordCount == 1 &&  incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate 
                 && historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
-                (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate))
+                (incomingEvent.DiscretionaryValidityStartDate > summaryRecord.GracePeriodEndDate))
             {
                return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
             }
