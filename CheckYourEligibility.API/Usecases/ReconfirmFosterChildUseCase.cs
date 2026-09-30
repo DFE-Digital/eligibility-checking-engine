@@ -1,6 +1,5 @@
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
-using CheckYourEligibility.API.Helpers;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.UseCases;
 

@@ -1,30 +1,37 @@
 using CheckYourEligibility.API.Boundary.Responses;
 
-public interface IFosterFamilies
+namespace CheckYourEligibility.API.Gateways.Interfaces
 {
-    //FosterCarer
+    public interface IFosterFamilies
+    {
+        //FosterCarer
 
-    Task<FosterFamilyResponse> GetFosterFamily(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false);
+        Task<FosterFamilyResponse> GetFosterFamily(Guid fosterCarerId, int localAuthorityId, bool includeChildren = false);
 
-    Task<FosterFamilyCreatedResponse> CreateFosterFamily(FosterFamilyRequest request);
+        Task<FosterFamilyCreatedResponse> CreateFosterFamily(FosterFamilyRequest request);
 
-    Task UpdateFosterCarer(Guid fosterCarerId, int localAuthorityId, UpdateFosterCarerRequest request);
+        Task<FosterCarer> GetFosterCarer(Guid fosterCarerId, int localAuthorityId);
 
-    Task DeleteFosterCarer(Guid fosterCarerId, int localAuthorityId);
+        Task UpdateFosterCarer(Guid fosterCarerId, int localAuthorityId, UpdateFosterCarerRequest request);
 
-    Task DeleteFosterPartner(Guid fosterCarerId, int localAuthorityId);
+        Task DeleteFosterCarer(Guid fosterCarerId, int localAuthorityId);
 
-    Task<FosterFamiliesSearchResponse> SearchFosterFamilies(int localAuthorityId, FosterFamiliesSearchRequest request);
+        Task DeleteFosterPartner(Guid fosterCarerId, int localAuthorityId);
 
-    // FosterChild
+        Task<FosterFamiliesSearchResponse> SearchFosterFamilies(int localAuthorityId, FosterFamiliesSearchRequest request);
 
-    Task<FosterChildResponse?> GetFosterChild(Guid fosterChildId, int localAuthorityId, bool includeFosterCarer = false);
+        // FosterChild
 
-    Task<FosterChildResponse> CreateFosterChild(FosterChildRequest request, int localAutorityId, Guid fosterCarerId, DateTime submissionDate);
+        Task<FosterChildResponse> GetFosterChild(Guid fosterChildId, int localAuthorityId, bool includeFosterCarer = false);
 
-    Task<FosterChildResponse> UpdateFosterChild(Guid fosterChildId, int localAuthorityId, UpdateFosterChildRequest request);
+        Task<FosterChildResponse> CreateFosterChild(FosterChildRequest request, int localAutorityId, Guid fosterCarerId, DateTime submissionDate);
 
-    Task<FosterChildResponse> ReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
+        Task<FosterChildResponse> UpdateFosterChild(Guid fosterChildId, int localAuthorityId, UpdateFosterChildRequest request);
 
-    Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId);
+        Task<FosterChildResponse> ReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
+
+        Task<FosterChildReconfirmPreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
+
+        Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId);
+    }
 }

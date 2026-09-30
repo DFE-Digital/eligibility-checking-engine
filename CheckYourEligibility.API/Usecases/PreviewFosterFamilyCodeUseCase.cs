@@ -1,6 +1,7 @@
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace CheckYourEligibility.API.UseCases;
 
@@ -26,7 +27,12 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
 
         request.FosterCarer.LocalAuthorityID = localAuthorityId;
 
-        var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "PREVIEW");
+        var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
+            FosterFamiliesHelper.BuildFosterChild(request.FosterChild, request.SubmissionDate, Guid.Empty),
+            "PREVIEW",
+            request.SubmissionDate
+        );
 
         // Term validity
         var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(

@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Helpers;
 
 namespace CheckYourEligibility.API.Tests.Helpers;
 
@@ -34,7 +35,12 @@ public class WorkingFamiliesEventHelperTests
             }
         };
 
-        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "12345678901");
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
+            FosterFamiliesHelper.BuildFosterChild(request.FosterChild, submissionDate, Guid.Empty),
+            "12345678901",
+            submissionDate
+        );
 
         Assert.That(result.WorkingFamiliesEventID, Is.Not.Empty);
         Assert.That(result.EligibilityCode, Is.EqualTo("12345678901"));
@@ -60,14 +66,12 @@ public class WorkingFamiliesEventHelperTests
     [Test]
     public void ParseWorkingFamilyFromFosterFamily_WithoutPartner_UsesEmptyPartnerStrings()
     {
-        var request = new FosterFamilyRequest
-        {
-            SubmissionDate = new DateTime(2026, 1, 10),
-            FosterCarer = new FosterCarerRequest(),
-            FosterChild = new FosterChildRequest()
-        };
-
-        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "code");
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            new FosterCarer(), 
+            new FosterChild(), 
+            "code",
+            new DateTime(2026, 1, 10)
+        );
 
         Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo(string.Empty));
         Assert.That(result.PartnerFirstName, Is.EqualTo(string.Empty));

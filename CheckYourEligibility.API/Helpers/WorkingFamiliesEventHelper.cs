@@ -3,32 +3,37 @@ using CheckYourEligibility.API.Domain;
 
 public static class WorkingFamiliesEventHelper
 {
-    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data, string eligibilityCode)
+
+    public static WorkingFamiliesEvent ParseWorkingFamilyEventFromFosterFamily(
+        FosterCarer fosterCarer,
+        FosterChild fosterChild,
+        string eligibilityCode,
+        DateTime submissionDate)
     {
-        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
+        WorkingFamiliesEvent wfEvent = new()
         {
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eligibilityCode,
-            ValidityStartDate = data.SubmissionDate,
-            ValidityEndDate = data.SubmissionDate.AddMonths(3),
+            ValidityStartDate = submissionDate,
+            ValidityEndDate = submissionDate.AddMonths(3),
 
-            ParentNationalInsuranceNumber = data.FosterCarer.CarerNationalInsuranceNumber,
-            ParentFirstName = data.FosterCarer.CarerFirstName,
-            ParentLastName = data.FosterCarer.CarerLastName,
-            ParentDateOfBirth = data.FosterCarer.CarerDateOfBirth,
-            PartnerNationalInsuranceNumber = data.Partner?.PartnerNationalInsuranceNumber ?? string.Empty,
-            PartnerFirstName = data.Partner?.PartnerFirstName ?? string.Empty,
-            PartnerLastName = data.Partner?.PartnerLastName ?? string.Empty,
-            PartnerDateOfBirth = data.Partner?.PartnerDateOfBirth,
+            ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber,
+            ParentFirstName = fosterCarer.FirstName,
+            ParentLastName = fosterCarer.LastName,
+            ParentDateOfBirth = fosterCarer.DateOfBirth,
+            PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber ?? string.Empty,
+            PartnerFirstName = fosterCarer.PartnerFirstName ?? string.Empty,
+            PartnerLastName = fosterCarer.PartnerLastName ?? string.Empty,
+            PartnerDateOfBirth = fosterCarer.PartnerDateOfBirth,
 
-            ChildFirstName = data.FosterChild.ChildFirstName,
-            ChildLastName = data.FosterChild.ChildLastName,
-            ChildPostCode = data.FosterChild.ChildPostCode,
-            ChildDateOfBirth = data.FosterChild.ChildDateOfBirth,
-            SubmissionDate = data.SubmissionDate,
+            ChildFirstName = fosterChild.FirstName,
+            ChildLastName = fosterChild.LastName,
+            ChildPostCode = fosterChild.PostCode,
+            ChildDateOfBirth = fosterChild.DateOfBirth,
+            SubmissionDate = submissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.SubmissionDate, data.SubmissionDate), // validity start date and submmission
-            GracePeriodEndDate = GetGracePeriodEndDate(data.SubmissionDate.AddMonths(3)),
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(submissionDate, submissionDate), // validity start date and submmission
+            GracePeriodEndDate = GetGracePeriodEndDate(submissionDate.AddMonths(3)),
 
             CreatedDateTime = DateTime.UtcNow,
             EventDateTime = DateTime.UtcNow
@@ -139,7 +144,7 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
-    
+
     //If VED => 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
     //If VED => 11 Feb and VED <= 26 May then GPED = 31-Aug 
     //If VED => 27 May and VED <= 31 August then GPED  = 31-Dec 

@@ -31,6 +31,7 @@ public class FosterFamilyController : BaseController
     private readonly ICreateFosterChildUseCase _createFosterChild;
     private readonly IUpdateFosterChildUseCase _updateFosterChild;
     private readonly IReconfirmFosterChildUseCase _reconfirmFosterChild;
+    private readonly IPreviewReconfirmFosterChildUseCase _previewReconfirmFosterChild;
     private readonly IDeleteFosterChildUseCase _deleteFosterChild;
 
     public FosterFamilyController(
@@ -47,6 +48,7 @@ public class FosterFamilyController : BaseController
         ICreateFosterChildUseCase createFosterChild,
         IUpdateFosterChildUseCase updateFosterChild,
         IReconfirmFosterChildUseCase reconfirmFosterChild,
+        IPreviewReconfirmFosterChildUseCase previewReconfirmFosterChild,
         IDeleteFosterChildUseCase deleteFosterChild,
         IAudit audit
     ) : base(audit)
@@ -474,6 +476,46 @@ public class FosterFamilyController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error reconfirming foster child");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+    }
+
+    [ProducesResponseType(typeof(FosterChildReconfirmPreviewResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPost("/foster-child/{fosterChildId}/preview-reconfirm")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> PreviewReconfirmFosterChild(Guid fosterChildId, [FromBody] FosterChildReconfirmRequest model)
+    {
+        try
+        {
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+            var response = await _previewReconfirmFosterChild.Execute(fosterChildId, model, localAuthorityId.Value);
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
+        }
+        catch (ArgumentNullException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating preview for reconfirming foster child");
             return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
         }
     }

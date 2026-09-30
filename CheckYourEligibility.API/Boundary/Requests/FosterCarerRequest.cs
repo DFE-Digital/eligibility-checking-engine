@@ -1,3 +1,5 @@
+using CheckYourEligibility.API.Boundary.Responses;
+
 public class FosterCarerRequest
 {
     private string? _carerNationalInsuranceNumber;
@@ -23,6 +25,16 @@ public class FosterCarerRequest
         CarerLastName = fosterCarer.LastName;
         CarerDateOfBirth = fosterCarer.DateOfBirth;
         CarerNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber;
+        LocalAuthorityID = fosterCarer.LocalAuthorityID;
+        HasPartner = fosterCarer.HasPartner;
+    }
+
+    public FosterCarerRequest(FosterFamilyResponse fosterCarer)
+    {
+        CarerFirstName = fosterCarer.CarerFirstName;
+        CarerLastName = fosterCarer.CarerLastName;
+        CarerDateOfBirth = fosterCarer.CarerDateOfBirth;
+        CarerNationalInsuranceNumber = fosterCarer.CarerNationalInsuranceNumber;
         LocalAuthorityID = fosterCarer.LocalAuthorityID;
         HasPartner = fosterCarer.HasPartner;
     }

@@ -1,3 +1,5 @@
+using CheckYourEligibility.API.Boundary.Responses;
+
 public class FosterChildRequest
 {
 
@@ -12,6 +14,14 @@ public class FosterChildRequest
         ChildLastName = fosterChild.LastName;
         ChildDateOfBirth = fosterChild.DateOfBirth;
         ChildPostCode = fosterChild.PostCode;
+    }
+
+    public FosterChildRequest(FosterChildResponse fosterChild)
+    {
+        ChildFirstName = fosterChild.ChildFirstName;
+        ChildLastName = fosterChild.ChildLastName;
+        ChildDateOfBirth = fosterChild.ChildDateOfBirth;
+        ChildPostCode = fosterChild.ChildPostCode;
     }
 
     public string ChildFirstName { get; set; }

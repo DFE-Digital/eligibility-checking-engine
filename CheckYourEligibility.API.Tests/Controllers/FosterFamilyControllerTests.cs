@@ -27,6 +27,7 @@ public class FosterFamilyControllerTests
     private Mock<ICreateFosterChildUseCase> _mockCreateFosterChild = null!;
     private Mock<IUpdateFosterChildUseCase> _mockUpdateFosterChild = null!;
     private Mock<IReconfirmFosterChildUseCase> _mockReconfirmFosterChild = null!;
+    private Mock<IPreviewReconfirmFosterChildUseCase> _mockPreviewReconfirmFosterChild = null!;
     private Mock<IDeleteFosterChildUseCase> _mockDeleteFosterChild = null!;
     private Mock<IAudit> _mockAudit = null!;
 
@@ -47,6 +48,7 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild = new Mock<ICreateFosterChildUseCase>(MockBehavior.Strict);
         _mockUpdateFosterChild = new Mock<IUpdateFosterChildUseCase>(MockBehavior.Strict);
         _mockReconfirmFosterChild = new Mock<IReconfirmFosterChildUseCase>(MockBehavior.Strict);
+        _mockPreviewReconfirmFosterChild = new Mock<IPreviewReconfirmFosterChildUseCase>(MockBehavior.Strict);
         _mockDeleteFosterChild = new Mock<IDeleteFosterChildUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
 
@@ -73,6 +75,7 @@ public class FosterFamilyControllerTests
             _mockCreateFosterChild.Object,
             _mockUpdateFosterChild.Object,
             _mockReconfirmFosterChild.Object,
+            _mockPreviewReconfirmFosterChild.Object,
             _mockDeleteFosterChild.Object,
             _mockAudit.Object);
     }
@@ -91,6 +94,7 @@ public class FosterFamilyControllerTests
         _mockCreateFosterChild.VerifyAll();
         _mockUpdateFosterChild.VerifyAll();
         _mockReconfirmFosterChild.VerifyAll();
+        _mockPreviewReconfirmFosterChild.VerifyAll();
         _mockDeleteFosterChild.VerifyAll();
     }
 
