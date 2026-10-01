@@ -68,6 +68,7 @@ public class FosterFamilyController : BaseController
         _createFosterChild = createFosterChild;
         _updateFosterChild = updateFosterChild;
         _reconfirmFosterChild = reconfirmFosterChild;
+        _previewReconfirmFosterChild = previewReconfirmFosterChild;
         _deleteFosterChild = deleteFosterChild;
     }
 
@@ -442,7 +443,7 @@ public class FosterFamilyController : BaseController
     [ProducesResponseType(typeof(FosterChildResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/foster-child/{fosterChildId}/reconfirm")]
+    [HttpPost("/foster-family/child/{fosterChildId}/reconfirm")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> ReconfirmFosterChild(Guid fosterChildId, [FromBody] FosterChildReconfirmRequest model)
     {
@@ -483,7 +484,7 @@ public class FosterFamilyController : BaseController
     [ProducesResponseType(typeof(FosterCodePreviewResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
-    [HttpPost("/foster-child/{fosterChildId}/preview-reconfirm")]
+    [HttpPost("/foster-family/child/{fosterChildId}/preview-reconfirm")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> PreviewReconfirmFosterChild(Guid fosterChildId, [FromBody] FosterChildReconfirmRequest model)
     {

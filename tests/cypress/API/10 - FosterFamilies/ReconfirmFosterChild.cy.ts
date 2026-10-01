@@ -15,7 +15,7 @@ describe("Reconfirm Foster Child - happy paths", () => {
       cy.apiRequest("POST", "/foster-family", validFosterFamilyRequestBody(), token)
         .then((createFamilyResponse) => {
           const fosterCarerId = createFamilyResponse.body.fosterCarerId;
-
+          
           // Get family including children
           cy.apiRequest("GET", `/foster-family/${fosterCarerId}?includeChildren=true`, null, token)
             .then((familyResponse) => {
@@ -25,7 +25,7 @@ describe("Reconfirm Foster Child - happy paths", () => {
               const child = familyResponse.body.fosterChildren[0];
               expect(child).to.exist;
 
-              cy.apiRequest("POST", `/foster-child/${child.fosterChildId}/reconfirm`, validFosterChildReconfirmBody(), token)
+              cy.apiRequest("POST", `/foster-family/child/${child.fosterChildId}/reconfirm`, validFosterChildReconfirmBody(), token)
                 .then((reconfirmResponse) => {
                   expect(reconfirmResponse.status).to.eq(200);
 
