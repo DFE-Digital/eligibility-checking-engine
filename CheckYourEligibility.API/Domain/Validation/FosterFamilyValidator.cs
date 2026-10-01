@@ -103,3 +103,18 @@ public class FosterChildRequestValidator
             .WithMessage("Child PostCode is required");
     }
 }
+
+public class FosterChildReconfirmRequestValidator
+    : AbstractValidator<FosterChildReconfirmRequest>
+{
+    public FosterChildReconfirmRequestValidator()
+    {
+        RuleFor(x => x.EligibilityCode)
+            .NotEmpty()
+            .WithMessage(ValidationMessages.EligibilityCode);
+
+        RuleFor(x => x.SubmissionDate)
+            .NotEmpty()
+            .WithMessage(ValidationMessages.SubmissionDate);
+    }
+}

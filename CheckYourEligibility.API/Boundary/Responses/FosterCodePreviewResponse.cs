@@ -1,8 +1,6 @@
-using CheckYourEligibility.API.Boundary.Responses.Internal;
-
 namespace CheckYourEligibility.API.Boundary.Responses
 {
-    public class FosterFamilyCodePreviewResponse
+    public class FosterCodePreviewResponse
     {
         public DateTime ValidityStartDate { get; init; }
 

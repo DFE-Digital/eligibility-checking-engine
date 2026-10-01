@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
