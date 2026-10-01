@@ -27,6 +27,8 @@ public class CheckProcessData
     public string? SubmissionDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
 
+    public bool? IsGracePeriodEndDateApplied { get; set; }
+
     public string? ClientIdentifier { get; set; }
     public int? Order { get; set; }
 

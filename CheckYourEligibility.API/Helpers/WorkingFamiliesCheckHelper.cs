@@ -2,7 +2,6 @@
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
-using System.Diagnostics.Tracing;
 
 namespace CheckYourEligibility.API.Helpers
 {
@@ -38,20 +37,20 @@ namespace CheckYourEligibility.API.Helpers
         /// <summary>
         /// Calculates the terms for which a code is valid.
         /// Returns:
-        /// - [] when the child is too old or the code has expired.
+        /// - [] when the child is too old or the code has expired, or GPED is not applied(only one event exists that has never been valid).
         /// - [NextTerm] when the child is too young or the VSD falls  within the current term.
         /// - [CurrentTerm, NextTerm] when the GPED  extends beyond the start of the next term.
         /// - [CurrentTerm] when GPED does not extend beyond the start of the next term,
         /// VSD is before the start of the current term,assuming child is correct age 
         /// </summary>
-        public static TermValidity SetTermValidity(DateTime checkDate, string gracePeriodEndDAte, string validityStartDate, string childDOB)
+        public static TermValidity SetTermValidity(DateTime checkDate, string gracePeriodEndDAte, string validityStartDate, string childDOB, bool isGracePeriodEndDateApplied)
         {
 
             if (DateTime.TryParse(gracePeriodEndDAte, out var gpd) && DateTime.TryParse(validityStartDate, out var vsd) && DateTime.TryParse(childDOB, out var dob))
             {
                 (Term current, Term next) = GetTerms(checkDate);
-
-                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd)
+             
+                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd || !isGracePeriodEndDateApplied)
                 {
                     return new TermValidity(Term.None, Term.None);
                 }
@@ -182,7 +181,7 @@ namespace CheckYourEligibility.API.Helpers
             return nineMonthsOld > currentTerm.StartDate;
         }
         /// <summary>
-        /// Determine if GPED is applied for a sole event.
+        /// Determine if GPED is applied
         /// </summary>
         /// <param name="validityStartDate"></param>
         /// <param name="validityEndDdate"></param>

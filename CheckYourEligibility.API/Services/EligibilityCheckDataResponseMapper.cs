@@ -3,6 +3,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Boundary.Responses.Internal;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
 using Newtonsoft.Json;
@@ -37,7 +38,7 @@ namespace CheckYourEligibility.API.Services
 
         public CheckEligibilityWorkingFamiliesItem MapCheckDataToResponseWorkingFamilies(EligibilityCheck eligibilityCheck, bool isInternal = false) {
 
-            var checkData = JsonConvert.DeserializeObject<CheckEligibilityRequestWorkingFamiliesBulkData>(eligibilityCheck.CheckData);
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(eligibilityCheck.CheckData);
 
             var item = new CheckEligibilityWorkingFamiliesItem();
 
@@ -59,6 +60,7 @@ namespace CheckYourEligibility.API.Services
             if (isInternal) {
                 item.ValidityStartDate = checkData.ValidityStartDate;
                 item.DiscretionaryValidityStartDate = checkData.DiscretionaryValidityStartDate;
+                item.IsGracePeriodEndDateApplied = checkData.IsGracePeriodEndDateApplied;
             }
                 
             if (eligibilityCheck.BulkCheckID != null)

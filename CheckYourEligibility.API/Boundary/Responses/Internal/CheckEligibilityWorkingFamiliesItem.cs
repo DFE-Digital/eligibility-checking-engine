@@ -12,6 +12,7 @@ namespace CheckYourEligibility.API.Boundary.Responses.Internal
         public ReconfirmationProperties? ReconfirmationProperties { get; set; }
 
         public bool? IsDiscretionaryValidityStartDateApplied { get; set; }
+        public bool? IsGracePeriodEndDateApplied { get; set; }
 
         public EligibilityCodeType? EligibilityCodeType {get;set;}
         public string? ValidityStartDate { get; set; }

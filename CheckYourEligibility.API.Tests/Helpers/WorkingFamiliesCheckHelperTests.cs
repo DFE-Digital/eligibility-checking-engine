@@ -35,6 +35,19 @@ namespace CheckYourEligibility.API.Tests.Helpers
             result.Should().Be(dvsdIsApplied);
         }
 
+        [TestCase(2026, 1, 15, TermName.Spring, TermName.Summer)]
+        [TestCase(2026, 4, 1, TermName.Summer, TermName.Autumn)]
+        [TestCase(2026, 9, 1, TermName.Autumn, TermName.Spring)]
+        public void GetTerms_expected_result(int year, int month, int day, TermName expectedCurrent, TermName expectedNext)
+        {
+            var date = new DateTime(year, month, day);
+
+            var (current, next) = WorkingFamiliesCheckHelper.GetTerms(date);
+
+            current.Name.Should().Be(expectedCurrent);
+            next.Name.Should().Be(expectedNext);
+        }
+
         [TestCaseSource(nameof(DetermineWorkingFamiliesCodeEligibilityCases))]
         public void DetermineWorkingFamiliesCodeEligibility_expected_status(
             string source,
@@ -78,7 +91,7 @@ namespace CheckYourEligibility.API.Tests.Helpers
                 checkDate,
                 gracePeriodEndDate,
                 validityStartDate,
-                childDob);
+                childDob, true);
 
             // Assert
             result.Current.Name.Should().Be(expectedCurrentTerm.Name);

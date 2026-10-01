@@ -297,6 +297,7 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
+            wfCheckData.IsGracePeriodEndDateApplied = isGracePeriodEndDateApplied;
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
             context.CheckEligibilities.Update(result);
