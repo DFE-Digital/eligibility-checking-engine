@@ -30,7 +30,7 @@ namespace CheckYourEligibility.API.Gateways.Interfaces
 
         Task<FosterChildResponse> ReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
 
-        Task<FosterChildReconfirmPreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
+        Task<FosterCodePreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate);
 
         Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId);
     }

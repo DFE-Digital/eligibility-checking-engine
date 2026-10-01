@@ -5,7 +5,7 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IPreviewReconfirmFosterChildUseCase
 {
-    Task<FosterChildReconfirmPreviewResponse> Execute(Guid fosterChildId, FosterChildReconfirmRequest request, int localAuthorityId);
+    Task<FosterCodePreviewResponse> Execute(Guid fosterChildId, FosterChildReconfirmRequest request, int localAuthorityId);
 }
 
 public class PreviewReconfirmFosterChildUseCase : IPreviewReconfirmFosterChildUseCase
@@ -17,7 +17,7 @@ public class PreviewReconfirmFosterChildUseCase : IPreviewReconfirmFosterChildUs
         _gateway = gateway;
     }
 
-    public async Task<FosterChildReconfirmPreviewResponse> Execute(Guid fosterChildId, FosterChildReconfirmRequest request, int localAuthorityId)
+    public async Task<FosterCodePreviewResponse> Execute(Guid fosterChildId, FosterChildReconfirmRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
 

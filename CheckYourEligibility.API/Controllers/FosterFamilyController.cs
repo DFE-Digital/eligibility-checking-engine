@@ -141,7 +141,7 @@ public class FosterFamilyController : BaseController
         }
     }
 
-    [ProducesResponseType(typeof(FosterFamilyCodePreviewResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(FosterCodePreviewResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-family/preview")]
@@ -480,7 +480,7 @@ public class FosterFamilyController : BaseController
         }
     }
 
-    [ProducesResponseType(typeof(FosterChildReconfirmPreviewResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(FosterCodePreviewResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpPost("/foster-child/{fosterChildId}/preview-reconfirm")]

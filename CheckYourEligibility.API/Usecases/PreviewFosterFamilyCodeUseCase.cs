@@ -7,13 +7,13 @@ namespace CheckYourEligibility.API.UseCases;
 
 public interface IPreviewFosterFamilyCodeUseCase
 {
-    Task<FosterFamilyCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId);
+    Task<FosterCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId);
 }
 
 public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
 {
 
-    public async Task<FosterFamilyCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
+    public async Task<FosterCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -50,7 +50,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             request.FosterChild.ChildDateOfBirth.ToString());
 
         // Placeholder for actual eligibility code preview logic
-        var response = new FosterFamilyCodePreviewResponse
+        var response = new FosterCodePreviewResponse
         {
             ValidityStartDate = workingEvent.ValidityStartDate,
             ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,

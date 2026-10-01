@@ -515,7 +515,7 @@ public class FosterFamiliesGateway : IFosterFamilies
     }
 
 
-    public async Task<FosterChildReconfirmPreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate)
+    public async Task<FosterCodePreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate)
     {
         // Get foster child record
         var fosterChild = await _db.FosterChildren.Include(x => x.FosterCarer).SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
@@ -556,10 +556,9 @@ public class FosterFamiliesGateway : IFosterFamilies
             fosterChild.DateOfBirth.ToString());
 
         // Generate response
-        FosterChildReconfirmPreviewResponse response = new()
+        FosterCodePreviewResponse response = new()
         {
             ValidityStartDate = existingSummaryRecord.ValidityStartDate,
-            ChildFullName = fosterChild.FirstName + " " + fosterChild.LastName,
             ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,
             ReconfirmBetweenStart = reconfirmation.StartDate,
             ReconfirmBetweenEnd = reconfirmation.EndDate,
