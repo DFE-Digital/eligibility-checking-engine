@@ -1,4 +1,6 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 
 namespace CheckYourEligibility.API.Helpers
@@ -35,20 +37,20 @@ namespace CheckYourEligibility.API.Helpers
         /// <summary>
         /// Calculates the terms for which a code is valid.
         /// Returns:
-        /// - [] when the child is too old or the code has expired.
+        /// - [] when the child is too old or the code has expired, or GPED is not applied(only one event exists that has never been valid).
         /// - [NextTerm] when the child is too young or the VSD falls  within the current term.
         /// - [CurrentTerm, NextTerm] when the GPED  extends beyond the start of the next term.
         /// - [CurrentTerm] when GPED does not extend beyond the start of the next term,
         /// VSD is before the start of the current term,assuming child is correct age 
         /// </summary>
-        public static TermValidity SetTermValidity(DateTime checkDate, string gracePeriodEndDAte, string validityStartDate, string childDOB)
+        public static TermValidity SetTermValidity(DateTime checkDate, string gracePeriodEndDAte, string validityStartDate, string childDOB, bool isGracePeriodEndDateApplied)
         {
 
             if (DateTime.TryParse(gracePeriodEndDAte, out var gpd) && DateTime.TryParse(validityStartDate, out var vsd) && DateTime.TryParse(childDOB, out var dob))
             {
                 (Term current, Term next) = GetTerms(checkDate);
-
-                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd)
+             
+                if (ChildIsTooOld(dob, checkDate) || checkDate > gpd || !isGracePeriodEndDateApplied)
                 {
                     return new TermValidity(Term.None, Term.None);
                 }
@@ -138,7 +140,9 @@ namespace CheckYourEligibility.API.Helpers
 
         }
 
-
+        // Spring - 1st of Jan - 31st of March(89-90 days)
+        // Summer - 1st of Apr - 31st of Aug(153 days)
+        // Autumn - 1st of Sept - 31st of Dec(122 days)
         public static (Term Current, Term Next) GetTerms(DateTime date)
         {
             int year = date.Year;
@@ -146,22 +150,22 @@ namespace CheckYourEligibility.API.Helpers
             if (date >= new DateTime(year, 9, 1))
             {
                 return (
-                    new Term(TermName.Autumn, new DateTime(year, 9, 1)),
-                    new Term(TermName.Spring, new DateTime(year + 1, 1, 1))
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1), new DateTime(year, 12, 31)),
+                    new Term(TermName.Spring, new DateTime(year + 1, 1, 1), new DateTime(year + 1, 3, 31))
                 );
             }
 
             if (date >= new DateTime(year, 4, 1))
             {
                 return (
-                    new Term(TermName.Summer, new DateTime(year, 4, 1)),
-                    new Term(TermName.Autumn, new DateTime(year, 9, 1))
+                    new Term(TermName.Summer, new DateTime(year, 4, 1), new DateTime(year, 8, 31)),
+                    new Term(TermName.Autumn, new DateTime(year, 9, 1), new DateTime(year, 12, 31))
                 );
             }
 
             return (
-                new Term(TermName.Spring, new DateTime(year, 1, 1)),
-                new Term(TermName.Summer, new DateTime(year, 4, 1))
+                new Term(TermName.Spring, new DateTime(year, 1, 1), new DateTime(year, 3, 31)),
+                new Term(TermName.Summer, new DateTime(year, 4, 1), new DateTime(year, 8, 31))
             );
         }
         /// <summary>
@@ -176,7 +180,124 @@ namespace CheckYourEligibility.API.Helpers
             var (currentTerm, _) = GetTerms(checkDate);
             return nineMonthsOld > currentTerm.StartDate;
         }
+        /// <summary>
+        /// Determine if GPED is applied
+        /// </summary>
+        /// <param name="validityStartDate"></param>
+        /// <param name="validityEndDdate"></param>
+        /// <returns></returns>
+        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate, int eventCount) {
 
+            var firstEventVSDTerm = GetTerms(validityStartDate).Current.Name;
+
+            var firstEventVEDTerm = GetTerms(validityEndDdate).Current.Name;
+
+            if (eventCount == 1 && firstEventVSDTerm == firstEventVEDTerm) {
+               
+                return false;
+            }
+                return true; 
+        }
+
+        /// <summary>
+        /// Determines if the contiguity of an event is broken:
+        /// If only one event is found it - exit early and return event
+        /// If only two events are found and the reconfirmation(latest event submission date) has happened after the historicEvent VED
+        /// and the earlier record VSD and VED fall within the same term (code has never been valid).
+        /// or if more than more events exist and the reconfirmation(latest event submission date) has happened after the historicEvent GPED
+        /// </summary>
+        public static (WorkingFamiliesEvent Event, bool GracePeriodEndDateApplied)
+       CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords)
+        {
+            var latestEvent = eventRecords.First();
+
+            bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(
+                    latestEvent.DiscretionaryValidityStartDate,
+                    latestEvent.ValidityEndDate,
+                    eventRecords.Count);
+
+            if (eventRecords.Count == 1)
+            {
+                return (latestEvent, gracePeriodEndDateApplied);
+            }
+
+            bool chainBrokenOnSecondEvent = IsChainBrokenOnSecondEvent(eventRecords);
+
+            // If there are only 2 events and they are not contiguous, return latest
+            if (chainBrokenOnSecondEvent && eventRecords.Count == 2)
+            {
+                return (latestEvent, gracePeriodEndDateApplied);
+            }
+        
+            // Earliest event in the current contiguous block
+            var earliestContiguousEvent = latestEvent;
+
+            for (int i = 0; i < eventRecords.Count - 1; i++)
+            {
+                var newerEvent = eventRecords[i];
+                var olderEvent = eventRecords[i + 1];
+
+                // once the loop reaches the oldest events check for breakage
+                // do not include the oldest event in the current block if chain was broken on the second event
+                if (chainBrokenOnSecondEvent && i + 1 == eventRecords.Count - 1)
+                {
+                    break;
+                }
+
+                bool chainBroken = newerEvent.DiscretionaryValidityStartDate > olderEvent.GracePeriodEndDate;
+
+                if (chainBroken)
+                {
+                    break;
+                }
+
+                earliestContiguousEvent = olderEvent;
+            }
+
+            latestEvent.DiscretionaryValidityStartDate = earliestContiguousEvent.DiscretionaryValidityStartDate;
+
+            latestEvent.ValidityStartDate = earliestContiguousEvent.ValidityStartDate;
+
+            return (latestEvent, gracePeriodEndDateApplied);
+        }
+        /// <summary>
+        /// Determines whether a Working Families code is eligible based on the source
+        /// of the request and the applicable validity periods.
+        /// Internal site requests ("childcare-admin") use the validity end date when
+        /// GracePeriodEndDateApplied is FALSE, else it uses the grace period end date.
+        /// All other requests use the grace period end date to determine eligibility.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="discretionaryValidityStartDate"></param>
+        /// <param name="validityEndDate"></param>
+        /// <param name="gracePeriodEnDate"></param>
+        /// <param name="GracePeriodEndDateApplied"></param>
+        /// <returns></returns>
+        public static CheckEligibilityStatus DetermineWorkingFamiliesCodeEligibility(string source, DateTime discretionaryValidityStartDate, DateTime validityEndDate, DateTime? gracePeriodEnDate, bool GracePeriodEndDateApplied) {
+
+            DateTime today  = DateTime.UtcNow.Date;
+
+            switch (source) {
+                //internal site
+                case "childcare-admin":
+                    if (GracePeriodEndDateApplied)
+                    {
+                        goto default;
+                    }
+                    if (today >= discretionaryValidityStartDate && today <= validityEndDate) { 
+                        return CheckEligibilityStatus.eligible;  
+                    }
+                    else return CheckEligibilityStatus.notEligible;
+                //client site
+                default:
+
+                    if (today >= discretionaryValidityStartDate && today <= gracePeriodEnDate)
+                    {
+                        return CheckEligibilityStatus.eligible;
+                    }
+                    else return CheckEligibilityStatus.notEligible;
+            }
+        }
         #region Private
         /// <summary>
         /// Calculates if checkDate is on/after the start of this term => child is too old
@@ -190,6 +311,22 @@ namespace CheckYourEligibility.API.Helpers
             var (_, termAfterBirthday) = GetTerms(fifthBirthday);
             return checkDate >= termAfterBirthday.StartDate;
         }
+        private static bool IsChainBrokenOnSecondEvent(List<WorkingFamiliesEvent> eventRecords)
+        {
+            var firstRecordedEvent = eventRecords.Last();
+            var secondEvent = eventRecords[^2];
+
+            var firstEventVSDTerm =
+                GetTerms(firstRecordedEvent.DiscretionaryValidityStartDate);
+
+            var firstEventVEDTerm =
+                GetTerms(firstRecordedEvent.ValidityEndDate);
+
+            return (secondEvent.SubmissionDate > firstRecordedEvent.ValidityEndDate && firstEventVSDTerm.Current.Name == firstEventVEDTerm.Current.Name)
+                || secondEvent.DiscretionaryValidityStartDate > firstRecordedEvent.GracePeriodEndDate;
+        }
         #endregion
+
     }
+  
 }
