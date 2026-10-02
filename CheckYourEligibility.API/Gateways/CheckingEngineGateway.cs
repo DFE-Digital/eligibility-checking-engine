@@ -7,6 +7,7 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
+using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -196,7 +197,7 @@ public class CheckingEngineGateway : ICheckingEngine
             if (wfEvent == null)
             {
                 result.Status = CheckEligibilityStatus.notFound;
-            }           
+            }
         }
         // Get event for TEST record internal side
         else if (!string.IsNullOrEmpty(wfTestCodePrefix) && checkData.EligibilityCode.StartsWith("7"))
@@ -212,26 +213,12 @@ public class CheckingEngineGateway : ICheckingEngine
         // Get event for ECS record
         else if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
-            //To ensure correct LA ID is passed when using ECS for checks
-            string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
-            SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
-
-            result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
-
-            if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
-            {
-                wfEvent.EligibilityCode = checkData.EligibilityCode;
-                wfEvent.ParentLastName = checkData.LastName;  //Return value as submitted in request
-                wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
-                wfEvent.ValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
-                wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
-                wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
-            }
+            wfEvent = await Process_WorkingFamiliesCheckWithECS(result, checkData, wfEvent);
 
             source = ProcessEligibilityCheckSource.ECS;
 
             _logger.LogInformation($"Processing ECS WF check in {sw.ElapsedMilliseconds} ms");
-        }
+        }        
         // Get event for ECE record
         else
         {
@@ -261,6 +248,17 @@ public class CheckingEngineGateway : ICheckingEngine
             }
 
         }
+        if (_ecsAdapter.UseEcsforChecksWF == "validate")
+        {
+            // run a ECS check
+            string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+            var ecsResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
+            var ecsStatus = convertEcsResultStatus(ecsResult , CheckEligibilityType.WorkingFamilies);
+           
+                // record dual running event
+            
+
+        }
 
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
@@ -288,7 +286,26 @@ public class CheckingEngineGateway : ICheckingEngine
         await context.SaveChangesAsync();
 
     }
+    private async Task<WorkingFamiliesEvent> Process_WorkingFamiliesCheckWithECS(EligibilityCheck result, CheckProcessData checkData,WorkingFamiliesEvent wfEvent) {
+        //To ensure correct LA ID is passed when using ECS for checks
+        string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+        SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
 
+        result.Status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
+
+        if (result.Status != CheckEligibilityStatus.notFound && result.Status != CheckEligibilityStatus.error)
+        {
+            wfEvent.EligibilityCode = checkData.EligibilityCode;
+            wfEvent.ParentLastName = checkData.LastName;  //Return value as submitted in request
+            wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+            wfEvent.ValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+            wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
+        }
+
+        return wfEvent;
+
+    }
     private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
     {
 
