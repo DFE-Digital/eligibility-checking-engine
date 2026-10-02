@@ -118,12 +118,25 @@ namespace CheckYourEligibility.API.Tests.Helpers
             // Assert
             result.Status.Should().Be(properties.Status);
         }
-
-        private static readonly DateTime ContiguousChainEvaluationDate = new(2026, 9, 29);
-
-        /// <summary>Verifies a single event within the current term is returned without applying the grace period.</summary>
+        /// <summary>Verifies a single event within the the same term is returned without applying the grace period.</summary>
         [Test]
-        public void CalculateContiguousChainForCodeFromEvents_singleEventWithinCurrentTerm_returnsEventWithoutApplyingGracePeriod()
+        public void IsGracePeriodEndDateApplie_singleEventWithinTheSameTerm_returnsEventWithoutApplyingGracePeriod()
+        {
+            var currentTerm = WorkingFamiliesCheckHelper.GetTerms(DateTime.UtcNow.Date).Current;
+
+            var previousTerm =  WorkingFamiliesCheckHelper.GetTerms(currentTerm.StartDate.AddDays(-1)).Current;
+
+            var result = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(
+                validityStartDate: previousTerm.StartDate,
+                validityEndDdate: previousTerm.EndDate,
+                eventCount: 1);
+
+            result.Should().BeFalse();
+        }
+
+        /// <summary>Verifies a single event within the the same term is returned with gracePeriodEndDateApplied false but still returning the calculated date</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_singleEventWithinTheSameTerm_returnsEventWithoutApplyingGracePeriod()
         {
             var eventRecord = CreateEvent(
                 validityStartDate: new DateTime(2026, 9, 2),
@@ -138,22 +151,25 @@ namespace CheckYourEligibility.API.Tests.Helpers
             gracePeriodEndDateApplied.Should().BeFalse();
         }
 
-        /// <summary>Verifies a single event outside the current term has its grace period applied.</summary>
-        [Test]
-        public void CalculateContiguousChainForCodeFromEvents_singleEventOutsideCurrentTerm_appliesGracePeriod()
+        [TestCase(-1, -1)] // DVSD before term start, VED in current term
+        [TestCase(5, 1)]  // DVSD in current term, VED after term end
+        public void CalculateContiguousChainForCodeFromEvents_singleEventNotWithinTheSameTerm_GracePeriodScenarios( int dvsdOffsetFromTermStart, int vedOffset)
         {
+            var currentTerm = WorkingFamiliesCheckHelper.GetTerms(DateTime.UtcNow.Date).Current;
+
+            var dvsd = currentTerm.StartDate.AddDays(dvsdOffsetFromTermStart);
+
+            var ved = vedOffset < 0 ? currentTerm.EndDate.AddDays(vedOffset) : currentTerm.EndDate.AddDays(vedOffset);
+
             var eventRecord = CreateEvent(
-                validityStartDate: new DateTime(2026, 8, 30),
-                validityEndDate: new DateTime(2026, 8, 31),
-                discretionaryValidityStartDate: new DateTime(2026, 8, 30));
+                validityStartDate: dvsd,
+                validityEndDate: ved,
+                discretionaryValidityStartDate: dvsd);
 
-            var (result, gracePeriodEndDateApplied) =
-                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
+            var (_, gracePeriodApplied) = WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([eventRecord]);
 
-            result.Should().BeSameAs(eventRecord);
-            gracePeriodEndDateApplied.Should().BeTrue();
+            gracePeriodApplied.Should().BeTrue();
         }
-
         /// <summary>Verifies a single event extending beyond the current term has its grace period applied.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_singleEventSpanningPastCurrentTerm_appliesGracePeriod()
@@ -170,6 +186,35 @@ namespace CheckYourEligibility.API.Tests.Helpers
             result.Should().BeSameAs(eventRecord);
             gracePeriodEndDateApplied.Should().BeTrue();
         }
+        /// <summary>Verifies third event does not reconnect with previously borken chain</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_ThirdEventMustNotReconnectExcludedFirstEvent()
+        {
+
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 11, 10),
+                validityEndDate: new DateTime(2027, 2, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 11, 10),
+                submissionDate: new DateTime(2026, 11, 10));
+            var lateReconfirmation = CreateEvent(
+                validityStartDate: new DateTime(2026, 9, 2),
+                validityEndDate: new DateTime(2026, 12, 2),
+                discretionaryValidityStartDate: new DateTime(2026, 9, 2),
+                submissionDate: new DateTime(2026, 9, 2));
+            var firstEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 5, 1),
+                validityEndDate: new DateTime(2026, 7, 31),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 1),
+                submissionDate: new DateTime(2026, 5, 1));
+
+
+            var (result, _) = WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents( [latestEvent, lateReconfirmation, firstEvent]);
+
+       
+            result.ValidityStartDate.Should().Be(new DateTime(2026, 9, 2));
+            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 9, 2));
+        }
+
 
         /// <summary>Verifies a later submission after a same-term historic validity end breaks a two-event chain.</summary>
         [Test]
@@ -210,6 +255,33 @@ namespace CheckYourEligibility.API.Tests.Helpers
 
             var (result, _) =
                 WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent]);
+
+            result.Should().BeSameAs(latestEvent);
+            result.ValidityStartDate.Should().Be(historicEvent.ValidityStartDate);
+            result.DiscretionaryValidityStartDate.Should().Be(historicEvent.DiscretionaryValidityStartDate);
+        }
+
+        /// <summary>Verifies a same-term late reconfirmation starts a three-event chain at the second event.</summary>
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_lateReconfirmationBreakPreservedWithAdditionalEvent_keepsOriginalBreak()
+        {
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 9, 2),
+                validityEndDate: new DateTime(2026, 10, 1),
+                discretionaryValidityStartDate: new DateTime(2026, 8, 1),
+                submissionDate: new DateTime(2026, 10, 2));
+            var historicEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 5, 10),
+                validityEndDate: new DateTime(2026, 6, 28),
+                discretionaryValidityStartDate: new DateTime(2026, 5, 10),
+                submissionDate: new DateTime(2026, 6, 15));
+            var earlierEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 1, 1),
+                validityEndDate: new DateTime(2026, 1, 10),
+                discretionaryValidityStartDate: new DateTime(2026, 1, 1));
+
+            var (result, _) =
+                WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents([latestEvent, historicEvent, earlierEvent]);
 
             result.Should().BeSameAs(latestEvent);
             result.ValidityStartDate.Should().Be(historicEvent.ValidityStartDate);

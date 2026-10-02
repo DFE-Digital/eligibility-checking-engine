@@ -187,11 +187,12 @@ namespace CheckYourEligibility.API.Helpers
         /// <param name="validityEndDdate"></param>
         /// <returns></returns>
         public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate, int eventCount) {
-            var currentTerm = GetTerms(DateTime.UtcNow.Date).Current;
 
-            if (eventCount > 1) { return true; }
+            var firstEventVSDTerm = GetTerms(validityStartDate).Current.Name;
 
-            if (validityStartDate >= currentTerm.StartDate && validityEndDdate <= currentTerm.EndDate) {
+            var firstEventVEDTerm = GetTerms(validityEndDdate).Current.Name;
+
+            if (eventCount == 1 && firstEventVSDTerm == firstEventVEDTerm) {
                
                 return false;
             }
@@ -200,55 +201,56 @@ namespace CheckYourEligibility.API.Helpers
 
         /// <summary>
         /// Determines if the contiguity of an event is broken:
-        /// If only one event is found it - exist early and return event
+        /// If only one event is found it - exit early and return event
         /// If only two events are found and the reconfirmation(latest event submission date) has happened after the historicEvent VED
         /// and the earlier record VSD and VED fall within the same term (code has never been valid).
         /// or if more than more events exist and the reconfirmation(latest event submission date) has happened after the historicEvent GPED
         /// </summary>
-        public static (WorkingFamiliesEvent,bool) CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords) {
+        public static (WorkingFamiliesEvent Event, bool GracePeriodEndDateApplied)
+       CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords)
+        {
+            var latestEvent = eventRecords.First();
 
-            var latestEvent = eventRecords.FirstOrDefault();
-            bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(latestEvent.ValidityStartDate, latestEvent.ValidityEndDate, eventRecords.Count);
-            
-            if (eventRecords.Count == 1) { 
-                
-                return (latestEvent, gracePeriodEndDateApplied);
-            }
+            bool gracePeriodEndDateApplied =
+                isGracePeriodEndDateApplied(
+                    latestEvent.DiscretionaryValidityStartDate,
+                    latestEvent.ValidityEndDate,
+                    eventRecords.Count);
 
-            // chain broken
-            // earlier record is considerted expired
-            // return latest record
-            var prevoiusEvent = eventRecords[1];
-            var historicalEventVSDTerm = GetTerms(prevoiusEvent.DiscretionaryValidityStartDate);
-            var historicalEventVEDTerm = GetTerms(prevoiusEvent.ValidityEndDate);
-
-            if ((eventRecords.Count == 2 && latestEvent.SubmissionDate > prevoiusEvent.ValidityEndDate &&
-                historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
-                latestEvent.DiscretionaryValidityStartDate > prevoiusEvent.GracePeriodEndDate)
+            if (eventRecords.Count == 1)
             {
-
                 return (latestEvent, gracePeriodEndDateApplied);
-
             }
-            else {
 
-                //Check for contiguous events and set VSD to earliest VSD of the current contiguous block
-                for (int i = 0; i < eventRecords.Count() - 1; i++)
+            bool chainBrokenOnSecondEvent = IsChainBrokenOnSecondEvent(eventRecords);
+
+            // If there are only 2 events and they are not contiguous, return latest.
+            if (chainBrokenOnSecondEvent && eventRecords.Count == 2)
+            {
+                return (latestEvent, gracePeriodEndDateApplied);
+            }
+
+            int oldestIncludedIndex = chainBrokenOnSecondEvent
+                    ? eventRecords.Count - 2   // skip first historical event
+                    : eventRecords.Count - 1;  // include oldest event
+
+            var earliestContiguousEvent = eventRecords[oldestIncludedIndex];
+
+            for (int i = oldestIncludedIndex; i > 0; i--)
+            {
+                bool chainBroken = eventRecords[i - 1].DiscretionaryValidityStartDate > eventRecords[i].GracePeriodEndDate;
+
+                if (chainBroken)
                 {
-                    if (eventRecords[i].DiscretionaryValidityStartDate <= eventRecords[i + 1].GracePeriodEndDate)
-                    {
-                        latestEvent.DiscretionaryValidityStartDate = eventRecords[i + 1].DiscretionaryValidityStartDate;
-                        latestEvent.ValidityStartDate = eventRecords[i + 1].ValidityStartDate;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    earliestContiguousEvent = eventRecords[i - 1];
+                    break;
                 }
-                return (latestEvent, gracePeriodEndDateApplied);
-
             }
 
+            latestEvent.DiscretionaryValidityStartDate = earliestContiguousEvent.DiscretionaryValidityStartDate;
+            latestEvent.ValidityStartDate = earliestContiguousEvent.ValidityStartDate;
+
+            return (latestEvent, gracePeriodEndDateApplied);
         }
         /// <summary>
         /// Determines whether a Working Families code is eligible based on the source
@@ -300,6 +302,20 @@ namespace CheckYourEligibility.API.Helpers
             DateTime fifthBirthday = dateOfBirth.AddYears(5);
             var (_, termAfterBirthday) = GetTerms(fifthBirthday);
             return checkDate >= termAfterBirthday.StartDate;
+        }
+        private static bool IsChainBrokenOnSecondEvent(List<WorkingFamiliesEvent> eventRecords)
+        {
+            var firstRecordedEvent = eventRecords.Last();
+            var secondEvent = eventRecords[^2];
+
+            var firstEventVSDTerm =
+                GetTerms(firstRecordedEvent.DiscretionaryValidityStartDate);
+
+            var firstEventVEDTerm =
+                GetTerms(firstRecordedEvent.ValidityEndDate);
+
+            return (secondEvent.SubmissionDate > firstRecordedEvent.ValidityEndDate && firstEventVSDTerm.Current.Name == firstEventVEDTerm.Current.Name)
+                || secondEvent.DiscretionaryValidityStartDate > firstRecordedEvent.GracePeriodEndDate;
         }
         #endregion
 

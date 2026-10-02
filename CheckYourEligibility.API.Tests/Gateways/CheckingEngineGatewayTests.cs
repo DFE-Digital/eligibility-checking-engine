@@ -1244,7 +1244,40 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Assert
         status.Should().Be(CheckEligibilityStatus.eligible);
     }
+    [Test]
+    public async Task Given_SurnameMismatchAndNoPartner_Process_Should_Return_NotFound()
+    {
+        var item = CreateWorkingFamiliesCheck("50012345678");
+        var wfEvent = CreateWorkingFamiliesEvent(item);
 
+        wfEvent.ChildFirstName = "Alex";
+        wfEvent.ChildLastName = "Doe";
+        wfEvent.ParentFirstName = "Sam";
+
+        // Request surname is "smith"; the recorded parent is "DOE".
+        wfEvent.ParentLastName = "DOE";
+        wfEvent.PartnerLastName = null;
+        wfEvent.PartnerNationalInsuranceNumber = null;
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqEcsGateway
+            .Setup(x => x.UseEcsforChecksWF)
+            .Returns("false");
+
+        _moqAudit
+            .Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null))
+            .ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(
+            item.EligibilityCheckID);
+
+        status.Should().Be(
+            CheckEligibilityStatus.notFound);
+    }
     [Test]
     public async Task Given_Contiguous_WF_Events_Request_Should_Return_Earliest_VSD_single_event()
     {

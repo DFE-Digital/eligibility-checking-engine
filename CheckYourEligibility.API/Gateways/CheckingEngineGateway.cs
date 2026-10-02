@@ -186,11 +186,15 @@ public class CheckingEngineGateway : ICheckingEngine
         if (wfRecords.Any())
         {
            var latestEvent = wfRecords.FirstOrDefault();
+            bool surnameMatches = string.IsNullOrEmpty(lastName) ||
+                string.Equals(latestEvent.ParentLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(latestEvent.PartnerLastName) && 
+                string.Equals(latestEvent.PartnerLastName, lastName, StringComparison.OrdinalIgnoreCase));
 
-            bool isMatch =
-            (latestEvent.ParentNationalInsuranceNumber == nino || latestEvent.PartnerNationalInsuranceNumber == nino) &&
-            (lastName == null || lastName == "" || latestEvent.ParentLastName.ToUpper() == lastName || latestEvent.PartnerLastName.ToUpper() == lastName) &&
-            latestEvent.ChildDateOfBirth == checkDob;
+            bool isMatch = (latestEvent.ParentNationalInsuranceNumber == nino || 
+                latestEvent.PartnerNationalInsuranceNumber == nino) && 
+                surnameMatches && latestEvent.ChildDateOfBirth == checkDob;
+            
             if (isMatch)
             {
                 return WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(wfRecords);
