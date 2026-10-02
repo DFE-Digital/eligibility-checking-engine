@@ -312,6 +312,36 @@ namespace CheckYourEligibility.API.Tests.Helpers
             gracePeriodEndDateApplied.Should().BeTrue();
         }
 
+        [Test]
+        public void CalculateContiguousChainForCodeFromEvents_MultipleGaps_returnsEarliestEventOfTheLatestDetectedContiguousChain()
+        {
+            var firstEvent = CreateEvent(
+                validityStartDate: new DateTime(2025, 1, 2),
+                validityEndDate: new DateTime(2025, 4, 2),
+                discretionaryValidityStartDate: new DateTime(2025, 1, 2));
+
+            var secondEvent = CreateEvent(
+                validityStartDate: new DateTime(2025, 9, 2),
+                validityEndDate: new DateTime(2025, 12, 2),
+                discretionaryValidityStartDate: new DateTime(2025, 9, 2));
+
+            var thirdEvent = CreateEvent(
+                validityStartDate: new DateTime(2026, 4, 2),
+                validityEndDate: new DateTime(2026, 7, 2),
+                discretionaryValidityStartDate: new DateTime(2026, 4, 2));
+
+            var latestEvent = CreateEvent(
+                validityStartDate: new DateTime(2027, 1, 2),
+                validityEndDate: new DateTime(2027, 4, 2),
+                discretionaryValidityStartDate: new DateTime(2027, 1, 2));
+
+            var (result, _) = WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(
+                    [latestEvent, thirdEvent, secondEvent, firstEvent]);
+
+            result.ValidityStartDate.Should().Be(new DateTime(2027, 1, 2));
+            result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2027, 1, 2));
+        }
+
         /// <summary>Verifies an event starting exactly on historic GPED is included in the contiguous chain.</summary>
         [Test]
         public void CalculateContiguousChainForCodeFromEvents_contiguousAtGracePeriodBoundary_includesHistoricDates()

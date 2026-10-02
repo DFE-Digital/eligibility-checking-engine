@@ -211,8 +211,7 @@ namespace CheckYourEligibility.API.Helpers
         {
             var latestEvent = eventRecords.First();
 
-            bool gracePeriodEndDateApplied =
-                isGracePeriodEndDateApplied(
+            bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(
                     latestEvent.DiscretionaryValidityStartDate,
                     latestEvent.ValidityEndDate,
                     eventRecords.Count);
@@ -224,30 +223,39 @@ namespace CheckYourEligibility.API.Helpers
 
             bool chainBrokenOnSecondEvent = IsChainBrokenOnSecondEvent(eventRecords);
 
-            // If there are only 2 events and they are not contiguous, return latest.
+            // If there are only 2 events and they are not contiguous, return latest
             if (chainBrokenOnSecondEvent && eventRecords.Count == 2)
             {
                 return (latestEvent, gracePeriodEndDateApplied);
             }
+        
+            // Earliest event in the current contiguous block
+            var earliestContiguousEvent = latestEvent;
 
-            int oldestIncludedIndex = chainBrokenOnSecondEvent
-                    ? eventRecords.Count - 2   // skip first historical event
-                    : eventRecords.Count - 1;  // include oldest event
-
-            var earliestContiguousEvent = eventRecords[oldestIncludedIndex];
-
-            for (int i = oldestIncludedIndex; i > 0; i--)
+            for (int i = 0; i < eventRecords.Count - 1; i++)
             {
-                bool chainBroken = eventRecords[i - 1].DiscretionaryValidityStartDate > eventRecords[i].GracePeriodEndDate;
+                var newerEvent = eventRecords[i];
+                var olderEvent = eventRecords[i + 1];
+
+                // once the loop reaches the oldest events check for breakage
+                // do not include the oldest event in the current block if chain was broken on the second event
+                if (chainBrokenOnSecondEvent && i + 1 == eventRecords.Count - 1)
+                {
+                    break;
+                }
+
+                bool chainBroken = newerEvent.DiscretionaryValidityStartDate > olderEvent.GracePeriodEndDate;
 
                 if (chainBroken)
                 {
-                    earliestContiguousEvent = eventRecords[i - 1];
                     break;
                 }
+
+                earliestContiguousEvent = olderEvent;
             }
 
             latestEvent.DiscretionaryValidityStartDate = earliestContiguousEvent.DiscretionaryValidityStartDate;
+
             latestEvent.ValidityStartDate = earliestContiguousEvent.ValidityStartDate;
 
             return (latestEvent, gracePeriodEndDateApplied);
