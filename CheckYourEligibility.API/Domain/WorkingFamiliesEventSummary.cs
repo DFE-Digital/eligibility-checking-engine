@@ -40,13 +40,17 @@ public class WorkingFamiliesEventSummary
 
 	public DateTime? FirstEventDate { get; set; }
 
-	public DateTime? DiscretionaryValidityStartDate { get; set; }
+	public DateTime DiscretionaryValidityStartDate { get; set; }
 
 	public DateTime? LatestSubmissionDate { get; set; }
 
 	public int? FirstCheckLocalAuthorityId { get; set; }
 
 	public int? LastCheckLocalAuthorityId { get; set; }
+	
+	public bool GracePeriodEndDateApplied { get; set; }
+	public string? ParentLastName { get; set; }
+	public string? PartnerLastName { get; set; }
 
 	[Column(TypeName = "nvarchar(50)")] public string? Qualifier { get; set; }
 

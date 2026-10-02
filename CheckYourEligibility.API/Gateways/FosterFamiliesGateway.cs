@@ -372,7 +372,9 @@ public class FosterFamiliesGateway : IFosterFamilies
             checkDate,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
-            result.ChildDateOfBirth.ToString()
+            result.ChildDateOfBirth.ToString(),
+            isGracePeriodEndDateApplied:true
+            
         );
 
         // Calculate reconfirmation properties
