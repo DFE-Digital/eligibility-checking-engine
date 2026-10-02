@@ -7,7 +7,6 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Helpers;
-using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -32,6 +31,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
     private readonly IWorkingFamiliesTestScenarioFactory _workingFamiliesTestScenarioFactory;
     private readonly IStandardCheckTestScenarioFactory _standardCheckTestScenarioFactory;
+    private readonly IWorkingFamiliesDualRunningCheck _workingFamiliesDualRunningCheck;
     private string _groupId;
     private QueueClient _queueClientBulk;
     private QueueClient _queueClientStandard;
@@ -52,7 +52,8 @@ public class CheckingEngineGateway : ICheckingEngine
         IEligibilityPolicy eligibilityPolicy,
         IWorkingFamiliesTestScenarioFactory workingFamiliesTestScenarioFactory,
         IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory,
-        IWorkingFamiliesEvent workingFamiliesEventGateway)
+        IWorkingFamiliesEvent workingFamiliesEventGateway,
+        IWorkingFamiliesDualRunningCheck workingFamiliesDualRunningCheck,)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -65,6 +66,7 @@ public class CheckingEngineGateway : ICheckingEngine
         _workingFamiliesTestScenarioFactory = workingFamiliesTestScenarioFactory;
         _standardCheckTestScenarioFactory = standardCheckTestScenarioFactory;
         _workingFamiliesEventGateway = workingFamiliesEventGateway;
+        _workingFamiliesDualRunningCheck = workingFamiliesDualRunningCheck;
 
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
@@ -275,14 +277,41 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         if (_ecsAdapter.UseEcsforChecksWF == "validate")
         {
-            // run a ECS check
-            string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
-            var ecsResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
-            var ecsStatus = convertEcsResultStatus(ecsResult , CheckEligibilityType.WorkingFamilies);
-           
-                // record dual running event
-            
+            try
+            {
 
+                // run a ECS check and record result in the table
+                string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+                var ecsResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
+                string ecsStatus = convertEcsResultStatus(ecsResult, CheckEligibilityType.WorkingFamilies).ToString();
+                string eceStatus = result.Status.ToString();
+
+                WorkingFamiliesDualRunningCheck dualRunningCheck = new()
+                {
+
+                    Created = DateTime.UtcNow,
+                    EligibilityCheckID = result.EligibilityCheckID,
+                    ECSStatus = ecsStatus,
+                    ECSQualifier = ecsResult.Qualifier ?? null,
+                    ECEStatus = eceStatus,                  
+                    EligibilityCheck = result,
+                    EligibilityCode = checkData.EligibilityCode,
+                    isConflict = eceStatus == ecsStatus ? false : true
+
+                };
+                dualRunningCheck.ECEValidityDates = ""; // json data for dates
+                dualRunningCheck.ECSValidityDates = ""; //json data for dates
+
+                // record dual running event
+                await _workingFamiliesDualRunningCheck.Create(dualRunningCheck, dbContextFactory);
+
+            }
+            catch (Exception ex) {
+                _logger.LogError($"Action:WF Dual running,EligibilityCheckID: {result.EligibilityCheckID} ", ex);
+                throw;
+            }
+            
+            
         }
 
         // Create hash just with the check request data to match on post requests

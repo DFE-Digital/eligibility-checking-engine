@@ -48,13 +48,14 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
     public virtual DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
     public virtual DbSet<EligibilityPolicy> EligibilityPolicies { get; set; }
     public virtual DbSet<UserRole> UserRoles { get; set; }
+    public virtual DbSet<WorkingFamiliesDualRunningCheck> WorkingFamiliesDualRunningChecks { get; set; }
 
     public Task<int> SaveChangesAsync()
     {
 
         return base.SaveChangesAsync();
     }
-
+    
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return base.SaveChangesAsync();
@@ -384,6 +385,19 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         modelBuilder.Entity<WorkingFamiliesEventSummary>()
             .HasIndex(e => e.OwningLocalAuthorityId);
 
+        modelBuilder.Entity<WorkingFamiliesDualRunningCheck>()
+            .Property(e => e.EligibilityCode)
+            .HasColumnType("nchar(11)");
+
+        modelBuilder.Entity<WorkingFamiliesDualRunningCheck>()
+            .HasIndex(e => new { e.EligibilityCode, e.isConflict, e.Created }, "IX_WFDualRunningChecks_Code_Conflict_Created");
+
+        modelBuilder.Entity<WorkingFamiliesDualRunningCheck>()
+            .HasIndex(e => new { e.isConflict, e.Created }, "IX_WFDualRunningChecks_Conflict_Created");
+
+        modelBuilder.Entity<WorkingFamiliesDualRunningCheck>()
+            .HasIndex(e => e.Created, "IX_WFDualRunningChecks_Created");
+
 
         modelBuilder.Entity<EligibilityCheckReport>(b =>
         {
@@ -420,4 +434,3 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
 
     }
 }
-
