@@ -1,0 +1,42 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dotnet/dev-proxy/main/schemas/v0.24.0/mockresponseplugin.schema.json",
+    "mocks": [
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/MoqDWP/token",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 200,
+                "body": {
+                    "access_token": "mock-token",
+                    "expires_in": 3600,
+                    "token_type": "Bearer"
+                }
+            }
+        },
+        {
+            "request": {
+                "url": "https://fake-capi.dwp.gov.uk/v2/citizens/match",
+                "method": "POST"
+            },
+            "response": {
+                "statusCode": 422,
+                "body": {
+                    "errors": [
+                        {
+                            "code": "1006",
+                            "detail": "Further details required",
+                            "id": "1-9bf90753-a61c-4a37-8a16-2a76b3a8c242",
+                            "source": {
+                                "pointer": "/data/attributes/ninoFragment"
+                            },
+                            "status": "422",
+                            "title": "Unprocessable Content - The request was well-formed but was unable to be performed due to data error."
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
