@@ -4,6 +4,7 @@ using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -143,6 +144,68 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #region Create Foster Family
 
     [Test]
+    public async Task CreateFosterFamily_Should_Not_Log_Database_Error_Details()
+    {
+        const string privateValue = "PRIVATE-FOSTER-GATEWAY-3644";
+        var sourceException = new DbUpdateException(
+            $"Database error containing {privateValue}",
+            new InvalidOperationException($"Inner error containing {privateValue}"));
+
+        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(x => x.Ignore(
+                InMemoryEventId.TransactionIgnoredWarning))
+            .AddInterceptors(new FailWorkingFamiliesEventSaveInterceptor(sourceException))
+            .Options;
+
+        await using var context = new EligibilityCheckContext(options);
+
+        context.EligibilityCodeRanges.Add(new EligibilityCodeRange
+        {
+            EligibilityCodeRangeId = 1,
+            Name = EligibilityCodeType.Foster,
+            StartRange = 40000000001,
+            EndRange = 49999999999,
+            NextAvailableCode = 40000000001
+        });
+        await context.SaveChangesAsync();
+
+        var logger = new Mock<ILogger<FosterFamiliesGateway>>();
+        var gateway = new FosterFamiliesGateway(context, logger.Object);
+
+        Func<Task> act = () => gateway.CreateFosterFamily(BuildValidRequest());
+
+        var thrown = await act.Should().ThrowAsync<DbUpdateException>();
+        thrown.Which.Should().BeSameAs(sourceException);
+
+        var logCalls = logger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle(
+            invocation => (LogLevel)invocation.Arguments[0] == LogLevel.Error);
+
+        foreach (var logCall in logCalls)
+        {
+            // ILogger.Log argument 3 holds the exception object.
+            logCall.Arguments[3].Should().BeNull(
+                "the original exception may contain submitted personal data");
+
+            var state = (IEnumerable<KeyValuePair<string, object?>>)
+                logCall.Arguments[2];
+
+            foreach (var entry in state)
+            {
+                (entry.Value?.ToString() ?? string.Empty)
+                    .Should().NotContain(privateValue);
+            }
+
+            (logCall.Arguments[2].ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+    }
+
+    [Test]
     public async Task CreateFosterFamily_Should_Return_Created_Response()
     {
         // Arrange
@@ -253,19 +316,25 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     [Test]
     public async Task CreateFosterFamily_Should_Throw_ValidationException_When_Carer_Already_Exists()
     {
-        // Arrange
-        // When the LA already contains a family with SAME nino
         var request = BuildValidRequest();
+        request.FosterCarer.CarerNationalInsuranceNumber = "AA123456A";
 
         await _sut.CreateFosterFamily(request);
 
-        // Act
         Func<Task> act = () => _sut.CreateFosterFamily(request);
 
-        // Assert
-        await act.Should()
-            .ThrowAsync<ValidationException>()
-            .WithMessage($"*{request.FosterCarer.CarerNationalInsuranceNumber}*already exists*");
+        var exception = await act.Should()
+            .ThrowAsync<ValidationException>();
+
+        exception.Which.Message.Should().Be(
+            "A foster family with this National Insurance number already exists.");
+
+        exception.Which.ToString().Should()
+            .NotContain(request.FosterCarer.CarerNationalInsuranceNumber);
+
+        (await _fakeInMemoryDb.FosterCarers.CountAsync()).Should().Be(1);
+        (await _fakeInMemoryDb.FosterChildren.CountAsync()).Should().Be(1);
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(1);
     }
 
     #endregion
@@ -894,6 +963,50 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #region Create Foster Child
 
+    [TestCase("ab 12 34 56 c", "AB123456C")]
+    [TestCase("ab-12.34/56c", "AB-12.34/56C")]
+    public async Task CreateFosterChild_Should_Preserve_Existing_Event_Nino_Formatting(
+    string storedNino,
+    string expectedEventNino)
+    {
+        var fosterCarerId = Guid.NewGuid();
+
+        await _fakeInMemoryDb.FosterCarers.AddAsync(new FosterCarer
+        {
+            FosterCarerId = fosterCarerId,
+            LocalAuthorityID = 0,
+            FirstName = "John",
+            LastName = "Smith",
+            DateOfBirth = new DateTime(1980, 1, 1),
+            NationalInsuranceNumber = storedNino
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        var response = await _sut.CreateFosterChild(
+            request, 0, fosterCarerId, DateTime.UtcNow);
+
+        var workingEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == response.EligibilityCode);
+
+        workingEvent.ParentNationalInsuranceNumber
+            .Should().Be(expectedEventNino);
+
+        var storedCarer = await _fakeInMemoryDb.FosterCarers
+            .AsNoTracking()
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        storedCarer.NationalInsuranceNumber.Should().Be(storedNino);
+    }
+
     [Test]
     public async Task CreateFosterChild_Should_Create_FosterChild()
     {
@@ -1355,6 +1468,35 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #endregion
 
     #region helpers
+
+    private sealed class FailWorkingFamiliesEventSaveInterceptor
+    : SaveChangesInterceptor
+    {
+        private readonly Exception _exception;
+
+        public FailWorkingFamiliesEventSaveInterceptor(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var savingNewEvent = eventData.Context?.ChangeTracker
+                .Entries<CheckYourEligibility.API.Domain.WorkingFamiliesEvent>()
+                .Any(entry => entry.State == EntityState.Added) == true;
+
+            if (savingNewEvent)
+            {
+                throw _exception;
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
     private static FosterFamilyRequest BuildValidRequest()
     {
         return new FosterFamilyRequest

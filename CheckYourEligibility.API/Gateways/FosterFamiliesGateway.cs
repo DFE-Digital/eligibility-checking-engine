@@ -99,7 +99,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         {
             throw new ValidationException(
                 null,
-                $"A foster family with National Insurance number '{request.FosterCarer.CarerNationalInsuranceNumber}' already exists."
+                "A foster family with this National Insurance number already exists."
             );
         }
 
@@ -149,7 +149,9 @@ public class FosterFamiliesGateway : IFosterFamilies
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating foster family");
+            _logger.LogError(
+                "Error creating foster family. Error type: {ErrorType}",
+                ex.GetType().Name);
 
             await transaction.RollbackAsync();
 
@@ -424,7 +426,9 @@ public class FosterFamiliesGateway : IFosterFamilies
                       CarerFirstName = fosterCarer.FirstName,
                       CarerLastName = fosterCarer.LastName,
                       CarerDateOfBirth = fosterCarer.DateOfBirth,
-                      CarerNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber,
+                      // Preserve the historical event mapping for stored NINOs.
+                      CarerNationalInsuranceNumber =
+                          fosterCarer.NationalInsuranceNumber?.ToUpper().Replace(" ", string.Empty),
                   },
                   FosterChild = request,
                   SubmissionDate = submissionDate

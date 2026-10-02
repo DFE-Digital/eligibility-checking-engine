@@ -38,11 +38,11 @@ public class WorkingFamiliesEventHelperTests
 
         Assert.That(result.WorkingFamiliesEventID, Is.Not.Empty);
         Assert.That(result.EligibilityCode, Is.EqualTo("12345678901"));
-        Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
+        Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("ab 12 34 56 c"));
         Assert.That(result.ParentFirstName, Is.EqualTo("Alex"));
         Assert.That(result.ParentLastName, Is.EqualTo("Foster"));
         Assert.That(result.ParentDateOfBirth, Is.EqualTo(new DateTime(1980, 2, 3)));
-        Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("CD654321E"));
+        Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo("cd 65 43 21 e"));
         Assert.That(result.PartnerFirstName, Is.EqualTo("Pat"));
         Assert.That(result.PartnerLastName, Is.EqualTo("Foster"));
         Assert.That(result.PartnerDateOfBirth, Is.EqualTo(new DateTime(1982, 4, 5)));
