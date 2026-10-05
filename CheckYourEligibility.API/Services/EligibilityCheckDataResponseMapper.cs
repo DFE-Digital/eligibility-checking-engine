@@ -51,6 +51,7 @@ namespace CheckYourEligibility.API.Services
             // NOTE: once we remove hashing this conditional should be removed
             item.ValidityStartDate = checkData.DiscretionaryValidityStartDate ?? checkData.ValidityStartDate; 
             item.ValidityEndDate = checkData.ValidityEndDate;
+            item.ClientIdentifier = checkData?.ClientIdentifier;
             item.GracePeriodEndDate = checkData.GracePeriodEndDate;
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
             item.DateOfBirth = checkData.DateOfBirth;
