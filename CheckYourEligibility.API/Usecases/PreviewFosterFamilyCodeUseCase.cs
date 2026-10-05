@@ -31,6 +31,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
             FosterFamiliesHelper.BuildFosterChild(request.FosterChild, request.SubmissionDate, Guid.Empty),
             "PREVIEW",
+            request.SubmissionDate,
             request.SubmissionDate
         );
 

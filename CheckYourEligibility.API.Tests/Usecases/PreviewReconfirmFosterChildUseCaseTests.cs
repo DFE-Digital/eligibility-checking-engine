@@ -71,7 +71,7 @@ public class PreviewReconfirmFosterChildUseCaseTests
             ReconfirmBetweenStart = new DateTime(2026, 9, 15),
             ReconfirmBetweenEnd = new DateTime(2027, 1, 15),
             GracePeriodEndDate = new DateTime(2027, 3, 31),
-            ValidFromTerm = new Term(TermName.Autumn, new DateTime(2026, 9, 15))
+            ValidFromTerm = new Term(TermName.Autumn, new DateTime(DateTime.Now.Year, 9, 1), new DateTime(DateTime.Now.Year, 12, 31))
         };
 
         _mockGateway

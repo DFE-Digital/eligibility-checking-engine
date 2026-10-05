@@ -784,6 +784,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             ValidityEndDate = new DateTime(2026, 11, 20),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
             GracePeriodEndDate = new DateTime(2027, 3, 31),
+            GracePeriodEndDateApplied = true,
             ParentNationalInsuranceNumber = "AA123456A",
             ChildFirstName = "Tom-Boy",
             ChildFirstNameTruncated = "Tom",
@@ -1307,8 +1308,9 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Arrange
         var originalSubmissionDate = new DateTime(2025, 8, 26);
-        var expectedValidityStartDate = new DateTime(2026, 1, 15);
-        var expectedValidityEndDate = expectedValidityStartDate.AddMonths(3);
+        var reconfirmationDate = new DateTime(2026, 1, 15); 
+        var expectedValidityStartDate = originalSubmissionDate;
+        var expectedValidityEndDate = expectedValidityStartDate.AddMonths(6).AddDays(1);
         var expectedGPED = WorkingFamiliesEventHelper.GetGracePeriodEndDate(expectedValidityEndDate);
 
         await _sut.CreateFosterFamily(BuildValidRequest(originalSubmissionDate));
@@ -1323,7 +1325,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         );
 
         // Act
-        var reconfirmedResponse = await _sut.ReconfirmFosterChild(child.FosterChildId, 0, expectedValidityStartDate);
+        var reconfirmedResponse = await _sut.ReconfirmFosterChild(child.FosterChildId, 0, reconfirmationDate);
 
         // Assert
         var updatedChild = await _fakeInMemoryDb.FosterChildren.SingleAsync(x => x.FosterChildId == child.FosterChildId);

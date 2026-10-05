@@ -136,10 +136,13 @@ public class FosterFamiliesGateway : IFosterFamilies
         await using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
+            var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(request.SubmissionDate, null);
+
             var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
                 fosterCarer,
                 fosterChild,
                 eligibilityCode,
+                validityStartDate,
                 request.SubmissionDate
             );
             var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
@@ -431,11 +434,13 @@ public class FosterFamiliesGateway : IFosterFamilies
         fosterChild.EligibilityCode = eligibilityCode;
 
         // Create new wf event
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, null);
         var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
-             fosterCarer,
-             fosterChild,
-             eligibilityCode,
-             submissionDate
+            fosterCarer,
+            fosterChild,
+            eligibilityCode,
+            validityStartDate,
+            submissionDate
         );
         var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
         fosterChild.EligibilityCode = workingEvent.EligibilityCode;
@@ -491,17 +496,23 @@ public class FosterFamiliesGateway : IFosterFamilies
             throw new NotFoundException($"Foster child is not associated with selected local authority");
         }
 
+        // Get existing summary record
+        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
+
+        // Calculate the validity start date based on the submission date and existing summary record
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, existingSummaryRecord);
+        
         // Create new wf event
         var newEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
             fosterChild.FosterCarer,
             fosterChild,
             fosterChild.EligibilityCode,
+            validityStartDate,
             submissionDate
         );
         await _db.WorkingFamiliesEvents.AddAsync(newEvent);
 
         // Update summary record
-        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
         int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
         existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
 
@@ -529,16 +540,22 @@ public class FosterFamiliesGateway : IFosterFamilies
             throw new NotFoundException($"Foster child is not associated with selected local authority");
         }
 
+        // Get existing summary record
+        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
+
+        // Calculate the validity start date based on the submission date and existing summary record
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, existingSummaryRecord);
+
         // Create new wf event
         var newEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
             fosterChild.FosterCarer,
             fosterChild,
             fosterChild.EligibilityCode,
+            validityStartDate,
             submissionDate
         );
 
         // Create updated summary record
-        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
         int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
         existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
 

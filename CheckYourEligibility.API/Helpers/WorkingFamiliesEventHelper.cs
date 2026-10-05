@@ -9,14 +9,15 @@ public static class WorkingFamiliesEventHelper
         FosterCarer fosterCarer,
         FosterChild fosterChild,
         string eligibilityCode,
+        DateTime validityStartDate,
         DateTime submissionDate)
     {
         WorkingFamiliesEvent wfEvent = new()
         {
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eligibilityCode,
-            ValidityStartDate = submissionDate,
-            ValidityEndDate = submissionDate.AddMonths(3),
+            ValidityStartDate = validityStartDate,
+            ValidityEndDate = validityStartDate.AddMonths(3),
 
             ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber,
             ParentFirstName = fosterCarer.FirstName,
@@ -33,8 +34,8 @@ public static class WorkingFamiliesEventHelper
             ChildDateOfBirth = fosterChild.DateOfBirth,
             SubmissionDate = submissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(submissionDate, submissionDate), // validity start date and submmission
-            GracePeriodEndDate = GetGracePeriodEndDate(submissionDate.AddMonths(3)),
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(validityStartDate, submissionDate), // validity start date and submmission
+            GracePeriodEndDate = GetGracePeriodEndDate(validityStartDate.AddMonths(3)),
 
             CreatedDateTime = DateTime.UtcNow,
             EventDateTime = DateTime.UtcNow
@@ -234,6 +235,20 @@ public static class WorkingFamiliesEventHelper
         else
         {
             return MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+        }
+    }
+
+    public static DateTime CalculateValidityStartDate(DateTime submissionDate, WorkingFamiliesEventSummary? existingSummaryRecord)
+    {
+        if(existingSummaryRecord != null)
+        {
+            // If there is an existing summary record, the validity start date should be the day after the existing validity end date
+            return existingSummaryRecord.ValidityEndDate.AddDays(1);
+        }
+        else
+        {
+            // If there is no existing summary record, the validity start date should be the submission date
+            return submissionDate;
         }
     }
 }
