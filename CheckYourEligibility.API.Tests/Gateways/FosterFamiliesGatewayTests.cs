@@ -1308,13 +1308,14 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Arrange
         var originalSubmissionDate = new DateTime(2025, 8, 26);
-        var reconfirmationDate = new DateTime(2026, 1, 15); 
-        var expectedValidityStartDate = originalSubmissionDate;
-        var expectedValidityEndDate = expectedValidityStartDate.AddMonths(6).AddDays(1);
-        var expectedGPED = WorkingFamiliesEventHelper.GetGracePeriodEndDate(expectedValidityEndDate);
+        var reconfirmationDate = new DateTime(2025, 11, 24);
+        
+        var expectedSummaryValidityStartDate = originalSubmissionDate;
+        var expectedSummaryValidityEndDate = expectedSummaryValidityStartDate.AddMonths(6).AddDays(1);
+        var expectedGPED = WorkingFamiliesEventHelper.GetGracePeriodEndDate(expectedSummaryValidityEndDate);
 
         await _sut.CreateFosterFamily(BuildValidRequest(originalSubmissionDate));
-        var child = await _fakeInMemoryDb.FosterChildren.SingleAsync();
+        var child = await _fakeInMemoryDb.FosterChildren.Include(x => x.WorkingFamiliesEventSummary).SingleAsync();
 
         var existingEventCount = await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync(x => x.EligibilityCode == child.EligibilityCode);
         _mockWFEventGateway.Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(child.EligibilityCode)).ReturnsAsync(
@@ -1324,17 +1325,18 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync(x => x.EligibilityCode == child.EligibilityCode)
         );
 
+
         // Act
         var reconfirmedResponse = await _sut.ReconfirmFosterChild(child.FosterChildId, 0, reconfirmationDate);
 
         // Assert
         var updatedChild = await _fakeInMemoryDb.FosterChildren.SingleAsync(x => x.FosterChildId == child.FosterChildId);
-        var reconfirmationEvent = await _fakeInMemoryDb.WorkingFamiliesEvents.OrderByDescending(x => x.CreatedDateTime).FirstOrDefaultAsync(x => x.SubmissionDate == expectedValidityStartDate);
+        var reconfirmationEvent = await _fakeInMemoryDb.WorkingFamiliesEvents.OrderByDescending(x => x.CreatedDateTime).FirstOrDefaultAsync(x => x.SubmissionDate == reconfirmationDate);
 
         (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(existingEventCount + 1);
 
-        updatedChild.ValidityStartDate.Should().Be(expectedValidityStartDate);
-        updatedChild.ValidityEndDate.Should().Be(expectedValidityEndDate);
+        updatedChild.ValidityStartDate.Should().Be(expectedSummaryValidityStartDate);
+        updatedChild.ValidityEndDate.Should().Be(expectedSummaryValidityEndDate);
 
         reconfirmationEvent.EligibilityCode.Should().Be(child.EligibilityCode);
         reconfirmationEvent.ParentFirstName.Should().Be("John");
@@ -1348,9 +1350,10 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         reconfirmedResponse.FosterChildId.Should().Be(child.FosterChildId);
         reconfirmedResponse.EligibilityCode.Should().Be(child.EligibilityCode);
-        reconfirmedResponse.ValidityStartDate.Should().Be(expectedValidityStartDate);
-        reconfirmedResponse.ValidityEndDate.Should().Be(expectedValidityEndDate);
+        reconfirmedResponse.ValidityStartDate.Should().Be(expectedSummaryValidityStartDate);
+        reconfirmedResponse.ValidityEndDate.Should().Be(expectedSummaryValidityEndDate);
         reconfirmedResponse.GracePeriodEndDate.Should().Be(expectedGPED);
+        reconfirmedResponse.GracePeriodEndDateApplied.Should().BeTrue();
     }
 
     [Test]
