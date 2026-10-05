@@ -505,6 +505,13 @@ export function invalidUpdateFosterChildRequestBody() {
   };
 }
 
+export function validFosterChildReconfirmBody(){
+  return {
+    eligibilityCode: 10000000,
+    submissionDate: "2026-01-14"
+  }
+}
+
 export function updateFosterCarerRequestBody() {
   return {
     fosterCarerRequest: {

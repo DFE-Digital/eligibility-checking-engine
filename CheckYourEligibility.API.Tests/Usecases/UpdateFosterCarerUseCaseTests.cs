@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
 using Moq;
 

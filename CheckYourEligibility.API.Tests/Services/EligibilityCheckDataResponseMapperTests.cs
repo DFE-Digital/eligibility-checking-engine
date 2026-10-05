@@ -103,9 +103,9 @@ public class EligibilityCheckDataResponseMapperTests
         result.EmailAddress.Should().Be("test@test.com");
     }
 
-    [TestCase("2024-12-31", null)]
-    [TestCase("2025-01-01", "2024-12-31")]
-    public void MapCheckDataToResponseWorkingFamilies_ExternalMapping_MapsValidityStartDate(string vsd, string dvsd)
+    [TestCase("2024-12-31", null, null)]
+    [TestCase("2025-01-01", "2024-12-31", "CLIENT1")]
+    public void MapCheckDataToResponseWorkingFamilies_ExternalMapping_MapsValidityStartDate(string vsd, string dvsd, string? clientIdentifier)
     {
         var request = new CheckProcessData
         {
@@ -114,6 +114,7 @@ public class EligibilityCheckDataResponseMapperTests
             NationalInsuranceNumber = "AB123456C",
             ValidityStartDate = vsd,
             DiscretionaryValidityStartDate = dvsd,
+            ClientIdentifier = clientIdentifier,
             ValidityEndDate = "2025-12-31",
             GracePeriodEndDate = "2026-03-31",
             DateOfBirth = "1980-01-01"
@@ -135,6 +136,7 @@ public class EligibilityCheckDataResponseMapperTests
         result.ValidityStartDate.Should().Be(dvsd != null ? dvsd:vsd);
         result.ValidityEndDate.Should().Be("2025-12-31");
         result.GracePeriodEndDate.Should().Be("2026-03-31");
+        result.ClientIdentifier.Should().Be(clientIdentifier);
     }
 
     [Test]

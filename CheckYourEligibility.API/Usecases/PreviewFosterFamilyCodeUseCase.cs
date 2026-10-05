@@ -1,18 +1,19 @@
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Helpers;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace CheckYourEligibility.API.UseCases;
 
 public interface IPreviewFosterFamilyCodeUseCase
 {
-    Task<FosterFamilyCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId);
+    Task<FosterCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId);
 }
 
 public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
 {
 
-    public async Task<FosterFamilyCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
+    public async Task<FosterCodePreviewResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -26,14 +27,20 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
 
         request.FosterCarer.LocalAuthorityID = localAuthorityId;
 
-        var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "PREVIEW");
+        var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
+            FosterFamiliesHelper.BuildFosterChild(request.FosterChild, request.SubmissionDate, Guid.Empty),
+            "PREVIEW",
+            request.SubmissionDate,
+            request.SubmissionDate
+        );
 
         // Term validity
         var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(
             DateTime.Today,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
-            request.FosterChild.ChildDateOfBirth.ToString());
+            request.FosterChild.ChildDateOfBirth.ToString(), isGracePeriodEndDateApplied:true);
 
         // Reconfirmation properties       
         var reconfirmation = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
@@ -44,7 +51,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             request.FosterChild.ChildDateOfBirth.ToString());
 
         // Placeholder for actual eligibility code preview logic
-        var response = new FosterFamilyCodePreviewResponse
+        var response = new FosterCodePreviewResponse
         {
             ValidityStartDate = workingEvent.ValidityStartDate,
             ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,

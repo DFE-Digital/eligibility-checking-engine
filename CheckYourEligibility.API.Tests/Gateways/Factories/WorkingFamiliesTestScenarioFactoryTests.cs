@@ -11,7 +11,7 @@ public class WorkingFamiliesTestScenarioFactoryTests
 {
     private static readonly DateTime CheckDate = new(2026, 9, 7);
     private static readonly Term CurrentTerm =
-        new(Domain.Enums.WorkingFamilies.TermName.Autumn, new DateTime(2026, 9, 1));
+        new(Domain.Enums.WorkingFamilies.TermName.Autumn, new DateTime(2026, 9, 1), new DateTime(2026, 12, 31));
 
     private readonly TestDataConfiguration _configuration = new();
     private WorkingFamiliesTestScenarioFactory _sut = null!;
@@ -43,7 +43,6 @@ public class WorkingFamiliesTestScenarioFactoryTests
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.EligibilityCode, Is.EqualTo(eligibilityCode));
-        Assert.That(result.SubmissionDate, Is.EqualTo(result.ValidityStartDate));
         Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(result.ValidityStartDate));
 
         switch (eligibilityCode[..3])

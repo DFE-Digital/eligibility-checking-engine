@@ -16,6 +16,8 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public DateTime GracePeriodEndDate { get; set; }
 
+        public bool GracePeriodEndDateApplied { get; set; }
+
         public ReconfirmationProperties ReconfirmationProperties { get; set; }
 
         public TermValidity TermValidity { get; set; }
@@ -48,6 +50,5 @@ namespace CheckYourEligibility.API.Boundary.Responses
         public string? CarerName { get; set; }
 
         public string? PartnerName { get; set; }
-
     }
 }

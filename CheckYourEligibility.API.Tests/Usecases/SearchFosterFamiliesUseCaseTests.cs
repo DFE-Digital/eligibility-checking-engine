@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Moq;
@@ -84,6 +85,55 @@ public class SearchFosterFamiliesUseCaseTests
             .ThrowAsync<ValidationException>();
 
         ex.And.Message.Should().Be(FosterFamilyValidationMessages.InvalidPageSize);
+    }
+
+    [Test]
+    public async Task Execute_ShouldThrowValidationException_WhenNinoFilterIsInvalid()
+    {
+        // Arrange
+        var request = new FosterFamiliesSearchRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            NINOFilter = "INVALID"
+        };
+
+        // Act
+        var act = () => _sut.Execute(request, 1);
+
+        // Assert
+        var ex = await FluentActions
+            .Invoking(act)
+            .Should()
+            .ThrowAsync<ValidationException>();
+
+        ex.And.Message.Should().Be(FosterFamilyValidationMessages.InvalidNINO);
+    }
+
+    [Test]
+    public async Task Execute_ShouldCallGateway_WithCorrectParameters_AndNinoFilter()
+    {
+        // Arrange
+        var request = new FosterFamiliesSearchRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            NINOFilter = "AB123456C"
+        };
+
+        var response = new FosterFamiliesSearchResponse();
+
+        _gateway
+            .Setup(x => x.SearchFosterFamilies(123, request))
+            .ReturnsAsync(response);
+
+        // Act
+        await _sut.Execute(request, 123);
+
+        // Assert
+        _gateway.Verify(
+            x => x.SearchFosterFamilies(123, request),
+            Times.Once);
     }
 
     [Test]

@@ -69,7 +69,7 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
         item.IsDiscretionaryValidityStartDateApplied =
         WorkingFamiliesCheckHelper.IsDiscretionaryValidityStartDateApplied(item.ValidityStartDate, item.DiscretionaryValidityStartDate);
 
-        item.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(checkDate, item.GracePeriodEndDate, item.ValidityStartDate, item.DateOfBirth);
+        item.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(checkDate, item.GracePeriodEndDate, item.ValidityStartDate, item.DateOfBirth, item.IsGracePeriodEndDateApplied ?? true);
 
         item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
            item.ValidityEndDate,
