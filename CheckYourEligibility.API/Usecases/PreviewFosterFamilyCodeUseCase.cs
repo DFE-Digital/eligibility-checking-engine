@@ -39,7 +39,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             DateTime.Today,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
-            request.FosterChild.ChildDateOfBirth.ToString());
+            request.FosterChild.ChildDateOfBirth.ToString(), isGracePeriodEndDateApplied:true);
 
         // Reconfirmation properties       
         var reconfirmation = WorkingFamiliesCheckHelper.SetReconfirmationProperties(

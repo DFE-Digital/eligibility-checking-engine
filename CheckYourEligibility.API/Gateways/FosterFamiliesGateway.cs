@@ -364,7 +364,8 @@ public class FosterFamiliesGateway : IFosterFamilies
                     : null,
                 ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
                 ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
-                GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value
+                GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value,
+                GracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
             })
             .AsNoTracking()
             .SingleOrDefaultAsync();
@@ -388,7 +389,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             checkDate,
             result.GracePeriodEndDate.ToString(),
             result.ValidityStartDate.ToString(),
-            result.ChildDateOfBirth.ToString()
+            result.ChildDateOfBirth.ToString(),
+            result.GracePeriodEndDateApplied
         );
 
         // Calculate reconfirmation properties
@@ -545,7 +547,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             DateTime.Today,
             existingSummaryRecord.GracePeriodEndDate.ToString(),
             existingSummaryRecord.ValidityStartDate.ToString(),
-            fosterChild.DateOfBirth.ToString());
+            fosterChild.DateOfBirth.ToString(),
+            existingSummaryRecord.GracePeriodEndDateApplied);
 
         // Reconfirmation properties       
         var reconfirmation = WorkingFamiliesCheckHelper.SetReconfirmationProperties(

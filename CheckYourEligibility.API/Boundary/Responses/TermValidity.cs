@@ -10,24 +10,26 @@ public class TermValidity
 
     public TermValidity(Term? current, Term? next)
     {
-        Current = current ?? new Term(TermName.None, DateTime.MinValue);
-        Next = next ?? new Term(TermName.None, DateTime.MinValue);
+        Current = current ?? new Term(TermName.None, DateTime.MinValue, DateTime.MinValue);
+        Next = next ?? new Term(TermName.None, DateTime.MinValue, DateTime.MinValue);
     }
 }
-
 
 public class Term
 {
 
-    public static Term None => new Term(TermName.None, DateTime.MinValue);
+    public static Term None => new Term(TermName.None, DateTime.MinValue, DateTime.MinValue);
 
     public TermName Name { get; set; }
 
     public DateTime StartDate { get; set; }
 
-    public Term(TermName name, DateTime startDate)
+    public DateTime EndDate { get; set; }
+
+    public Term(TermName name, DateTime startDate, DateTime endDate)
     {
         Name = name;
         StartDate = startDate;
+        EndDate = endDate;
     }
 }

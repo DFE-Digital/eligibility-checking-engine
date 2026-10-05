@@ -121,16 +121,35 @@ public class WorkingFamiliesEventHelperTests
     //If VED >= 1 September and VED <= 21 October then GPED = 31-Dec
     //If VED >= 22 October and VED <= 31 Dec then GPED  31-Mar following year
 
-    [TestCase(2026, 10, 21, 2026, 12, 31)]
-    [TestCase(2026, 10, 22, 2027, 3, 31)]
-    [TestCase(2026, 5, 26, 2026, 8, 31)]
-    [TestCase(2026, 5, 27, 2026, 12, 31)]
-    [TestCase(2026, 2, 10, 2026, 3, 31)]
-    [TestCase(2026, 2, 11, 2026, 8, 31)]
+    [TestCase(1, 1, 2026, 3, 31)]
+    [TestCase(2, 10, 2026, 3, 31)]
+    [TestCase(2, 11, 2026, 8, 31)]
+    [TestCase(5, 26, 2026, 8, 31)]
+    [TestCase(5, 27, 2026, 12, 31)]
+    [TestCase(8, 31, 2026, 12, 31)]
+    [TestCase(9, 1, 2026, 12, 31)]
+    [TestCase(10, 21, 2026, 12, 31)]
+    [TestCase(10, 22, 2027, 3, 31)]
+    [TestCase(12, 31, 2027, 3, 31)]
     public void GetGracePeriodEndDate_ReturnsExpectedTermEnd(
-        int year, int month, int day, int expectedYear, int expectedMonth, int expectedDay)
+        int month, int day, int expectedYear, int expectedMonth, int expectedDay)
     {
-        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(year, month, day));
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, month, day));
+
+        Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
+    }
+
+    [TestCase(2, 10, 2026, 3, 31)]
+    [TestCase(5, 26, 2026, 8, 31)]
+    [TestCase(8, 31, 2026, 12, 31)]
+    [TestCase(10, 21, 2026, 12, 31)]
+    [TestCase(12, 31, 2027, 3, 31)]
+    public void GetGracePeriodEndDate_UsesValidityEndCalendarDate(
+        int month, int day, int expectedYear, int expectedMonth, int expectedDay)
+    {
+        var validityEndDate = new DateTime(2026, month, day, 23, 59, 59);
+
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(validityEndDate);
 
         Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
     }
@@ -251,7 +270,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 8, 20),
             ValidityEndDate = new DateTime(2026, 11, 20),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
-            GracePeriodEndDate = new DateTime(2027, 3, 31)
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 20))
         };
 
         var result = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
@@ -299,6 +318,7 @@ public class WorkingFamiliesEventHelperTests
         Assert.That(result.ChildFirstNameTruncated, Is.EqualTo("test"));
     }
 
+    /// <summary>Verifies a new summary is created from the incoming event when no historic summary exists.</summary>
     [Test]
     public void EvaluateContiguityForCodeFromIncomingEvent_WhenNoSummaryRecord_CreatesNewSummary()
     {
@@ -313,7 +333,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 8, 20),
             ValidityEndDate = new DateTime(2026, 11, 20),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
-            GracePeriodEndDate = new DateTime(2027, 3, 31)
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 20))
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, null, 0);
@@ -331,14 +351,15 @@ public class WorkingFamiliesEventHelperTests
 
     }
 
+    /// <summary>Verifies a single historic event spanning validity terms remains in the chain before GPED.</summary>
     [Test]
-    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSingleHistoricEventBreaksAfterPreviousValidityEnd_ShouldBreakChain()
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSingleHistoricEventSpansBetweenTwoTerms_ShouldContinueContigousChain()
     {
         var summary = new WorkingFamiliesEventSummary
         {
-            EligibilityCode = "70100000000",
+            EligibilityCode = "50100000000",
             ValidityEndDate = new DateTime(2026, 6, 30),
-            GracePeriodEndDate = new DateTime(2026, 8, 31),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 6, 30)),
             FirstEventDate = new DateTime(2026, 1, 10),
             ValidityStartDate = new DateTime(2026, 1, 2),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
@@ -347,33 +368,160 @@ public class WorkingFamiliesEventHelperTests
 
         var incomingEvent = new WorkingFamiliesEvent
         {
-            EligibilityCode = "70100000000",
-            SubmissionDate = new DateTime(2026, 9, 10),
-            ValidityStartDate = new DateTime(2026, 9, 1),
+            EligibilityCode = "50100000000",
+            SubmissionDate = new DateTime(2026, 7, 1),
+            ValidityStartDate = new DateTime(2026, 6, 30),
             ValidityEndDate = new DateTime(2026, 12, 1),
-            DiscretionaryValidityStartDate = new DateTime(2026, 9, 1),
-            GracePeriodEndDate = new DateTime(2026, 12, 31)
+            DiscretionaryValidityStartDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 1))
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
 
-        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
-        Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(summary.ValidityStartDate));
         Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
-        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(summary.DiscretionaryValidityStartDate));
         Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
     }
 
+    /// <summary>Verifies a single same-term historic event breaks when the incoming submission is after historic VED.</summary>
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSingleHistoricEventEndsWithinSameTerm_ShouldBreakChain()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "501000000001",
+            ValidityStartDate = new DateTime(2026, 9, 2),
+            ValidityEndDate = new DateTime(2026, 11, 30),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 30)),
+            DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
+            FirstEventDate = new DateTime(2026, 9, 2)
+        };
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "501000000001",
+            SubmissionDate = new DateTime(2026, 12,1),
+            ValidityStartDate = new DateTime(2026, 12, 1),
+            ValidityEndDate = new DateTime(2027, 2, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 12, 1),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2027, 2, 1))
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
+
+        Assert.That(result, Is.SameAs(summary));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+    }
+
+    /// <summary>Verifies a single historic event spanning validity terms stays contiguous within its grace period.</summary>
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSingleHistoricEventHasDifferentValidityTerms_KeepsChainWithinGracePeriod()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "70100000000",
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 9, 1),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 1)),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
+            FirstEventDate = new DateTime(2026, 1, 10)
+        };
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            SubmissionDate = new DateTime(2026, 9, 2),
+            ValidityStartDate = new DateTime(2026, 9, 2),
+            ValidityEndDate = new DateTime(2026, 12, 2),
+            DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 2))
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
+
+        Assert.That(result, Is.SameAs(summary));
+        Assert.That(result.FirstEventDate, Is.EqualTo(new DateTime(2026, 1, 10)));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(incomingEvent.GracePeriodEndDate));
+    }
+
+    /// <summary>Verifies submission on historic VED does not break the chain even when incoming VSD is later.</summary>
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenSubmissionIsNotAfterValidityEnd_KeepsChainEvenIfValidityStartIsAfter()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "70100000000",
+            ValidityStartDate = new DateTime(2026, 9, 2),
+            ValidityEndDate = new DateTime(2026, 10, 30),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 10, 30)),
+            DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
+            FirstEventDate = new DateTime(2026, 9, 2)
+        };
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            SubmissionDate = new DateTime(2026, 10, 30),
+            ValidityStartDate = new DateTime(2026, 10, 31),
+            ValidityEndDate = new DateTime(2027, 2, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 10, 31),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2027, 2, 1))
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
+
+        Assert.That(result, Is.SameAs(summary));
+        Assert.That(result.FirstEventDate, Is.EqualTo(new DateTime(2026, 9, 2)));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(new DateTime(2026, 9, 2)));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 9, 2)));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+    }
+
+    /// <summary>Verifies incoming VSD equal to historic GPED remains contiguous because only dates after GPED break.</summary>
+    [Test]
+    public void EvaluateContiguityForCodeFromIncomingEvent_WhenNewEventStartsOnGracePeriodEndDate_ShouldKeepChain()
+    {
+        var summary = new WorkingFamiliesEventSummary
+        {
+            EligibilityCode = "50100000000",
+            ValidityStartDate = new DateTime(2026, 1, 2),
+            ValidityEndDate = new DateTime(2026, 6, 30),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 6, 30)),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
+            FirstEventDate = new DateTime(2026, 1, 10)
+        };
+        var incomingEvent = new WorkingFamiliesEvent
+        {
+            EligibilityCode = "50100000000",
+            SubmissionDate = new DateTime(2026, 8, 31),
+            ValidityStartDate = new DateTime(2026, 8, 31),
+            ValidityEndDate = new DateTime(2026, 11, 30),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 30))
+        };
+
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
+
+        Assert.That(result, Is.SameAs(summary));
+        Assert.That(result.FirstEventDate, Is.EqualTo(new DateTime(2026, 1, 10)));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(new DateTime(2026, 1, 2)));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 1, 2)));
+        Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(incomingEvent.GracePeriodEndDate));
+    }
+
+    /// <summary>Verifies an incoming event starting after historic GPED resets the summary's chain dates.</summary>
     [Test]
     public void EvaluateContiguityForCodeFromIncomingEvent_WhenHistoricEventsExistAndNewEventStartsAfterGracePeriod_ShouldBreakChain()
     {
         var summary = new WorkingFamiliesEventSummary
         {
             EligibilityCode = "70100000000",
-            ValidityEndDate = new DateTime(2026, 6, 30),
-            GracePeriodEndDate = new DateTime(2026, 8, 31),
-            FirstEventDate = new DateTime(2026, 1, 10),
             ValidityStartDate = new DateTime(2026, 1, 2),
+            ValidityEndDate = new DateTime(2026, 5, 26),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 5, 26)),
+            FirstEventDate = new DateTime(2026, 1, 10),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
             LatestSubmissionDate = new DateTime(2026, 6, 15)
         };
@@ -385,18 +533,18 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 9, 1),
             ValidityEndDate = new DateTime(2026, 12, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 9, 1),
-            GracePeriodEndDate = new DateTime(2026, 12, 31)
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 1))
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
 
-        Assert.That(result.FirstEventDate, Is.EqualTo(DateTime.UtcNow.Date));
         Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
         Assert.That(result.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
         Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(incomingEvent.DiscretionaryValidityStartDate));
         Assert.That(result.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
     }
 
+    /// <summary>Verifies a contiguous incoming event updates the summary's latest dates while preserving chain start dates.</summary>
     [Test]
     public void EvaluateContiguityForCodeFromIncomingEvent_WhenChainIsContiguous_UsesExistingSummary()
     {
@@ -404,7 +552,7 @@ public class WorkingFamiliesEventHelperTests
         {
             EligibilityCode = "70100000000",
             ValidityEndDate = new DateTime(2026, 7, 31),
-            GracePeriodEndDate = new DateTime(2026, 12, 31),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 7, 31)),
             FirstEventDate = new DateTime(2026, 1, 10),
             ValidityStartDate = new DateTime(2026, 1, 2),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
@@ -418,7 +566,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 8, 1),
             ValidityEndDate = new DateTime(2026, 11, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 1),
-            GracePeriodEndDate = new DateTime(2027, 3, 31)
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 1))
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);

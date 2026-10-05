@@ -1,5 +1,3 @@
-// Ignore Spelling: Levenshtein
-
 using AutoFixture;
 using AutoMapper;
 using CheckYourEligibility.API.Adapters;
@@ -27,7 +25,7 @@ using System.Net;
 namespace CheckYourEligibility.API.Tests;
 
 public class CheckingEngineGatewayTests : TestBase.TestBase
-   
+
 {
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
@@ -37,6 +35,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     private Mock<IEcsAdapter> _moqEcsGateway;
     private Mock<ILocalAuthority> _localAuthority;
     private Mock<IEligibilityPolicy> _eligibilityPolicy;
+    private Mock<IWorkingFamiliesEvent> _moqWorkingFamiliesEventGateway;
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueue> _moqStorageQueueGateway;
     private Mock<IWorkingFamiliesTestScenarioFactory> _moqWFTestScenarioFactory;
@@ -46,7 +45,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
     [SetUp]
     public async Task Setup()
-    {       
+    {
         var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
             .UseInMemoryDatabase(nameof(CheckingEngineGatewayTests), InMemoryDatabaseRoot)
             .Options;
@@ -87,6 +86,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _localAuthority = new Mock<ILocalAuthority>(MockBehavior.Strict);
         _eligibilityPolicy = new Mock<IEligibilityPolicy>(MockBehavior.Strict);
         _moqStorageQueueGateway = new Mock<IStorageQueue>();
+        _moqWorkingFamiliesEventGateway = new Mock<IWorkingFamiliesEvent>(MockBehavior.Strict);
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _moqWFTestScenarioFactory = new Mock<IWorkingFamiliesTestScenarioFactory>(MockBehavior.Strict);
         _moqStandardTestScenarioFactory = new Mock<IStandardCheckTestScenarioFactory>(MockBehavior.Strict);
@@ -94,8 +94,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
 
 
         _sut = new CheckingEngineGateway(new NullLoggerFactory(), _fakeInMemoryDb,
-            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object, 
-            _eligibilityPolicy.Object, _moqWFTestScenarioFactory.Object, _moqStandardTestScenarioFactory.Object);
+            _configuration, _moqEcsGateway.Object, _moqDwpGateway.Object, _hashGateway, _localAuthority.Object,
+            _eligibilityPolicy.Object, _moqWFTestScenarioFactory.Object, _moqStandardTestScenarioFactory.Object, _moqWorkingFamiliesEventGateway.Object);
     }
 
     [TearDown]
@@ -118,14 +118,14 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             UniversalCreditThreshold = 123.45,
             IsDeleted = false
         };
-      
+
         _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals, null)).ReturnsAsync(1);
         _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(1, null)).ReturnsAsync(expectedPolicy);
 
         // Act
-        var result =  _sut.GetType()
+        var result = _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals,null }) as Task<EligibilityPolicy>;
+            .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
 
         // Assert
@@ -142,7 +142,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         int laId = 0;
 
         // Act
-        var result =  _sut.GetType()
+        var result = _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
@@ -159,11 +159,11 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     {
         // Arrange
         int laId = 123;
-        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals,null)).ReturnsAsync((int)0);
-        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(null,null)).ReturnsAsync((EligibilityPolicy)null);
+        _localAuthority.Setup(x => x.GetEligibilityPolicyIdForTypeAsync(laId, CheckEligibilityType.FreeSchoolMeals, null)).ReturnsAsync((int)0);
+        _eligibilityPolicy.Setup(x => x.GeEligibilityPolicyByIdAsync(null, null)).ReturnsAsync((EligibilityPolicy)null);
 
         // Act
-        var result =  _sut.GetType()
+        var result = _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "local-authority", laId, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
@@ -175,10 +175,10 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task  GetOrganisationEligibilityPolicyAsync()
+    public async Task GetOrganisationEligibilityPolicyAsync()
     {
         // Act
-        var result =  _sut.GetType()
+        var result = _sut.GetType()
             .GetMethod("GetOrganisationEligibilityPolicyAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .Invoke(_sut, new object[] { "multi-academy-trust", 123, CheckEligibilityType.FreeSchoolMeals, null }) as Task<EligibilityPolicy>;
         var policy = await result;
@@ -201,8 +201,8 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Assert
         status.Should().BeNull();
         tier.Should().BeNull();
-    } 
-    
+    }
+
 
     [Test]
     public async Task Given_validRequest_Process_Should_Return_updatedStatus_parentNotFound()
@@ -532,7 +532,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-       
+
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
          It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), It.IsAny<EligibilityPolicy>()))
      .ReturnsAsync(capiClaimResponse);
@@ -677,10 +677,10 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         await _fakeInMemoryDb.SaveChangesAsync();
 
         _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("false");
-        
+
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
-        
+
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         // Act
@@ -1244,7 +1244,40 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         // Assert
         status.Should().Be(CheckEligibilityStatus.eligible);
     }
+    [Test]
+    public async Task Given_SurnameMismatchAndNoPartner_Process_Should_Return_NotFound()
+    {
+        var item = CreateWorkingFamiliesCheck("50012345678");
+        var wfEvent = CreateWorkingFamiliesEvent(item);
 
+        wfEvent.ChildFirstName = "Alex";
+        wfEvent.ChildLastName = "Doe";
+        wfEvent.ParentFirstName = "Sam";
+
+        // Request surname is "smith"; the recorded parent is "DOE".
+        wfEvent.ParentLastName = "DOE";
+        wfEvent.PartnerLastName = null;
+        wfEvent.PartnerNationalInsuranceNumber = null;
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqEcsGateway
+            .Setup(x => x.UseEcsforChecksWF)
+            .Returns("false");
+
+        _moqAudit
+            .Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null))
+            .ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(
+            item.EligibilityCheckID);
+
+        status.Should().Be(
+            CheckEligibilityStatus.notFound);
+    }
     [Test]
     public async Task Given_Contiguous_WF_Events_Request_Should_Return_Earliest_VSD_single_event()
     {
@@ -1619,7 +1652,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         string correlationId = Guid.NewGuid().ToString();
-       
+
 
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
        .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
@@ -1634,7 +1667,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             .ReturnsAsync(capiClaimResponse);
 
         // Act
-        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId,eligibilityPolicy);
+        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId, eligibilityPolicy);
 
         // Assert
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
@@ -1658,11 +1691,11 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         string correlationId = Guid.NewGuid().ToString();
 
-       var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
-      .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
-      .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
-      .With(x => x.Reason, "Get CAPI citizen claim failed")
-      .Create();
+        var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
+       .With(x => x.CAPIEndpoint, $"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based")
+       .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
+       .With(x => x.Reason, "Get CAPI citizen claim failed")
+       .Create();
 
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
@@ -1700,16 +1733,16 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         .Create();
 
         CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
-       
+
         // Arrange
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CheckEligibilityType>(), It.IsAny<string>(),It.IsAny<EligibilityPolicy>()))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), It.IsAny<EligibilityPolicy>()))
             .ReturnsAsync(capiClaimResponse);
 
         // Act
-        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId,eligibilityPolicy);
+        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId, eligibilityPolicy);
 
         // Assert
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");
@@ -1756,7 +1789,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Is_Found_Result_Should_Return_Eligible_Standard()
-    {   
+    {
         // Arrange
         CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
@@ -1787,7 +1820,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
                 eligibilityPolicy.CheckType, It.IsAny<string>(), eligibilityPolicy))
             .ReturnsAsync(capiClaimResponse);
         // Act
-        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId,eligibilityPolicy);
+        CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId, eligibilityPolicy);
 
         // Assert
         response.CAPIEndpoint.Should().BeEquivalentTo($"v2/citizens/{citizenResponse.Guid}/claims?benefitType=pensions_credit,universal_credit,employment_support_allowance_income_based,income_support,job_seekers_allowance_income_based");

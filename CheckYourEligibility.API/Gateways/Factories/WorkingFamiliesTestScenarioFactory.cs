@@ -383,7 +383,6 @@ namespace CheckYourEligibility.API.Gateways.Factories
         private void PopulateCommonFields(WorkingFamiliesEvent wfEvent, CheckProcessData checkData)
         {
             wfEvent.DiscretionaryValidityStartDate = wfEvent.ValidityStartDate;
-            wfEvent.SubmissionDate = wfEvent.ValidityStartDate;
             wfEvent.ParentLastName = checkData.LastName ?? "TESTER";
             wfEvent.EligibilityCode = checkData.EligibilityCode;
         }

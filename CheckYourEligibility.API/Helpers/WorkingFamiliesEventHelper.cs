@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Helpers;
 
 
 public static class WorkingFamiliesEventHelper
@@ -57,6 +58,7 @@ public static class WorkingFamiliesEventHelper
         eventSummary.LatestSubmissionDate = workingFamiliesEvent.SubmissionDate;
         eventSummary.ValidityEndDate = workingFamiliesEvent.ValidityEndDate;
         eventSummary.GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate;
+        eventSummary.GracePeriodEndDateApplied = true;
 
         if (!isContiguous)
         {
@@ -71,12 +73,15 @@ public static class WorkingFamiliesEventHelper
     {
 
         DateTime today = DateTime.UtcNow.Date;
+        var currentTerm = WorkingFamiliesCheckHelper.GetTerms(today).Current;
         WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
         {
             WorkingFamiliesEventSummaryID = Guid.NewGuid().ToString(),
             EligibilityCode = workingFamiliesEvent.EligibilityCode,
             ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth,
             ChildFirstName = workingFamiliesEvent.ChildFirstName,
+            ParentLastName = workingFamiliesEvent.ParentLastName,
+            PartnerLastName = workingFamiliesEvent.PartnerLastName,
             ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
             PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
             ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
@@ -89,9 +94,11 @@ public static class WorkingFamiliesEventHelper
             GracePeriodEndDate = workingFamiliesEvent.GracePeriodEndDate,
             DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
             ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
-            ValidityEndDate = workingFamiliesEvent.ValidityEndDate
-        };
-        return newEventSummary;
+            ValidityEndDate = workingFamiliesEvent.ValidityEndDate,
+            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate,1)
+            
+        };       
+            return newEventSummary;
 
     }
 
@@ -108,6 +115,8 @@ public static class WorkingFamiliesEventHelper
         eventSummary.PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber;
         eventSummary.ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty;
         eventSummary.ChildFirstName = workingFamiliesEvent.ChildFirstName;
+        eventSummary.ParentLastName = workingFamiliesEvent.ParentLastName;
+        eventSummary.PartnerLastName = workingFamiliesEvent.PartnerLastName;
         eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
 
         return eventSummary;
@@ -144,29 +153,30 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
-
-    //If VED => 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
-    //If VED => 11 Feb and VED <= 26 May then GPED = 31-Aug 
-    //If VED => 27 May and VED <= 31 August then GPED  = 31-Dec 
-    //If VED => 1 September and VED <= 21 October then GPED = 31-Dec
-    //If VED => 22 October and VED <= 31 Dec then GPED  31-Mar following year
+    //If VED >= 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
+    //If VED >= 11 Feb and VED <= 26 May then GPED = 31-Aug 
+    //If VED >= 27 May and VED <= 31 August then GPED  = 31-Dec 
+    //If VED >= 1 September and VED <= 21 October then GPED = 31-Dec
+    //If VED >= 22 October and VED <= 31 Dec then GPED  31-Mar following year
     public static DateTime GetGracePeriodEndDate(DateTime validityEndDate)
     {
-        if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 10, 22)) >= 0)
+        var validityEndDateOnly = validityEndDate.Date;
+
+        if (validityEndDateOnly >= new DateTime(validityEndDateOnly.Year, 10, 22))
         {
-            return new DateTime(validityEndDate.Year + 1, 3, 31);
+            return new DateTime(validityEndDateOnly.Year + 1, 3, 31);
         }
-        else if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 5, 27)) >= 0)
+        else if (validityEndDateOnly >= new DateTime(validityEndDateOnly.Year, 5, 27))
         {
-            return new DateTime(validityEndDate.Year, 12, 31);
+            return new DateTime(validityEndDateOnly.Year, 12, 31);
         }
-        else if (validityEndDate.CompareTo(new DateTime(validityEndDate.Year, 2, 11)) >= 0)
+        else if (validityEndDateOnly >= new DateTime(validityEndDateOnly.Year, 2, 11))
         {
-            return new DateTime(validityEndDate.Year, 8, 31);
+            return new DateTime(validityEndDateOnly.Year, 8, 31);
         }
         else
         {
-            return new DateTime(validityEndDate.Year, 3, 31);
+            return new DateTime(validityEndDateOnly.Year, 3, 31);
         }
     }
 
@@ -192,22 +202,25 @@ public static class WorkingFamiliesEventHelper
     }
     /// <summary>
     /// Determines if the contiguity of an event is broken:
-    /// If only one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent VED
-    /// or if more than one historic event is found and the reconfirmation(new event VSD) has happened after the historicEvent GPED
+    /// If only one historic event is found and the reconfirmation(new event submission date) has happened after the historicEvent VED and the earlier record VSD and VED fall within the same term (code has never been valid).
+    /// of if a reconfirmation(new event VSD) has happened after the historicEvent GPED
     /// </summary>
     /// <param name="incomingEvent"></param>
     /// <param name="summaryRecord"></param>
     /// <param name="historicEventRecordCount"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount)
-    {
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
+      
         //if older events found (summary record is not null), initiate contiguous logic
         if (summaryRecord != null)
         {
+            var historicalEventVSDTerm = WorkingFamiliesCheckHelper.GetTerms(summaryRecord.DiscretionaryValidityStartDate);
+            var historicalEventVEDTerm = WorkingFamiliesCheckHelper.GetTerms(summaryRecord.ValidityEndDate);
 
             // if contiguous chain is broken
-            if ((historicEventRecordCount == 1 && incomingEvent.ValidityStartDate > summaryRecord.ValidityEndDate) ||
-                (incomingEvent.ValidityStartDate > summaryRecord.GracePeriodEndDate))
+            if ((historicEventRecordCount == 1 &&  incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate 
+                && historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
+                (incomingEvent.DiscretionaryValidityStartDate > summaryRecord.GracePeriodEndDate))
             {
                 return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
             }

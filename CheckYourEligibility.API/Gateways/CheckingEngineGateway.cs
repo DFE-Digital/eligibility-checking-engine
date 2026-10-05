@@ -28,6 +28,7 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly IHash _hashGateway;
     private readonly ILogger _logger;
     private readonly IEligibilityPolicy _eligibilityPolicy;
+    private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
     private readonly IWorkingFamiliesTestScenarioFactory _workingFamiliesTestScenarioFactory;
     private readonly IStandardCheckTestScenarioFactory _standardCheckTestScenarioFactory;
     private string _groupId;
@@ -49,7 +50,8 @@ public class CheckingEngineGateway : ICheckingEngine
         localAuthority, 
         IEligibilityPolicy eligibilityPolicy,
         IWorkingFamiliesTestScenarioFactory workingFamiliesTestScenarioFactory,
-        IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory)
+        IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory,
+        IWorkingFamiliesEvent workingFamiliesEventGateway)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
@@ -61,6 +63,7 @@ public class CheckingEngineGateway : ICheckingEngine
         _eligibilityPolicy = eligibilityPolicy;
         _workingFamiliesTestScenarioFactory = workingFamiliesTestScenarioFactory;
         _standardCheckTestScenarioFactory = standardCheckTestScenarioFactory;
+        _workingFamiliesEventGateway = workingFamiliesEventGateway;
 
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
@@ -127,49 +130,80 @@ public class CheckingEngineGateway : ICheckingEngine
     /// Logic to find a match in Working families events' table
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// </summary>
-    /// <param name="checkData"></param>
-    /// <returns></returns>
-    private async Task<WorkingFamiliesEvent> Check_Working_Families_EventRecord(string dateOfBirth,
+    /// <returns>WorkingFamiliesEventSummary if event matched or null if no match is found</returns>
+    // NOTE: This method will be replacing Check_Working_Families_EventRecord method used for checks.
+    private async Task<WorkingFamiliesEventSummary?> Match_Working_Families_EventSummaryRecord(string dateOfBirth,
         string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
-        
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
-            x.EligibilityCode == eligibilityCode &&
-            (x.ParentNationalInsuranceNumber == nino || x.PartnerNationalInsuranceNumber == nino) &&
-            (lastName == null || lastName == "" || x.ParentLastName.ToUpper() == lastName ||
-             x.PartnerLastName.ToUpper() == lastName) &&
-            x.ChildDateOfBirth == checkDob).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
 
-        WorkingFamiliesEvent wfEvent = wfRecords.FirstOrDefault();
-        // If there is more than one record
-        // check if second to last record has not expired yet
-        // set the event to the second record that is still valid, sets submission date
-        // and get set ValidityEndDate and the GracePeriodEndDate of the future record
-        if (wfRecords.Count() > 1 && wfRecords[1].ValidityEndDate > DateTime.UtcNow)
-        {
-            wfEvent = wfRecords[1];
-            wfEvent.ValidityEndDate = wfRecords[0].ValidityEndDate;
-            wfEvent.GracePeriodEndDate = wfRecords[0].GracePeriodEndDate;
-        }
+        // Check if there is a match on the code
+        var latestEventRecord = await context.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().FirstOrDefaultAsync();
 
-        //Check for contiguous events and set VSD to earliest VSD of the current contiguous block
-        for (int i = 0; i < wfRecords.Count() - 1; i++)
+        // If record is found retrieve the summary record
+        if (latestEventRecord != null)
         {
-            if (wfRecords[i].DiscretionaryValidityStartDate <= wfRecords[i + 1].GracePeriodEndDate)
+            bool isMatch =
+            (latestEventRecord.ParentNationalInsuranceNumber == nino || latestEventRecord.PartnerNationalInsuranceNumber == nino) &&
+            (lastName == null || lastName == "" || latestEventRecord.ParentLastName.ToUpper() == lastName || latestEventRecord.PartnerLastName.ToUpper() == lastName) &&
+            latestEventRecord.ChildDateOfBirth == checkDob;
+
+            if (isMatch)
             {
-                wfEvent.DiscretionaryValidityStartDate = wfRecords[i + 1].DiscretionaryValidityStartDate;
-                wfEvent.ValidityStartDate = wfRecords[i + 1].ValidityStartDate;
-            }
-            else
-            {
-                break;
+                var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(eligibilityCode);
+
+                // If we have an event for this code but for some reason we do not have a summary record
+                // Return null, status: notFound , for now
+                if (summaryRecord == null) return null;
+
+                // If either ParentLastName or PartnerLastName or GPED is null;
+                // Initiate self healing process and populate the ParentLastName and PartnerLastName and GPED
+                if (summaryRecord.ParentLastName == null || summaryRecord.ParentLastName == null || summaryRecord.GracePeriodEndDate == null)
+                {
+                    summaryRecord.ParentLastName = latestEventRecord.ParentLastName;
+                    summaryRecord.PartnerLastName = latestEventRecord.PartnerLastName;
+                    summaryRecord.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(latestEventRecord.ValidityEndDate);
+                    await _workingFamiliesEventGateway.UpdateWorkingFamiliesSummaryRecordAsync(summaryRecord);
+                }
+                return summaryRecord;
             }
         }
-        return wfEvent;
+        return null;
     }
+    private async Task<(WorkingFamiliesEvent?, bool)> Check_Working_Families_EventRecord(string dateOfBirth,
+       string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+    {
 
+        var context = dbContextFactory ?? _db;
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // Check if there is a match on the code
+        var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
+
+        if (wfRecords.Any())
+        {
+           var latestEvent = wfRecords.FirstOrDefault();
+            bool surnameMatches = string.IsNullOrEmpty(lastName) ||
+                string.Equals(latestEvent.ParentLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(latestEvent.PartnerLastName) && 
+                string.Equals(latestEvent.PartnerLastName, lastName, StringComparison.OrdinalIgnoreCase));
+
+            bool isMatch = (latestEvent.ParentNationalInsuranceNumber == nino || 
+                latestEvent.PartnerNationalInsuranceNumber == nino) && 
+                surnameMatches && latestEvent.ChildDateOfBirth == checkDob;
+            
+            if (isMatch)
+            {
+                return WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(wfRecords);
+
+            }
+            
+        }
+        return (null, true);
+    }
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
@@ -183,6 +217,7 @@ public class CheckingEngineGateway : ICheckingEngine
     {
         //TODO: This should be cleaned up
         WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
+        bool isGracePeriodEndDateApplied = true;
         var source = ProcessEligibilityCheckSource.HMRC;
         string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
 
@@ -235,7 +270,7 @@ public class CheckingEngineGateway : ICheckingEngine
         // Get event for ECE record
         else
         {
-            wfEvent = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
+             (wfEvent, isGracePeriodEndDateApplied) = await Check_Working_Families_EventRecord(checkData.DateOfBirth, checkData.EligibilityCode,
                 checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
 
             if (wfEvent == null) { result.Status = CheckEligibilityStatus.notFound; }
@@ -244,21 +279,11 @@ public class CheckingEngineGateway : ICheckingEngine
         }
 
         var wfCheckData = JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
-        // If event is returned initiate business logic.
+
         if (wfEvent != null && result.Status != CheckEligibilityStatus.error && result.Status != CheckEligibilityStatus.notFound)
         {
 
-            //Get current date and ensure it is between the DiscretionaryValidityStartDate and GracePeriodEndDate
-            var currentDate = DateTime.UtcNow.Date;
-
-            if (currentDate >= wfEvent.DiscretionaryValidityStartDate && currentDate <= wfEvent.GracePeriodEndDate)
-            {
-                result.Status = CheckEligibilityStatus.eligible;
-            }
-            else
-            {
-                result.Status = CheckEligibilityStatus.notEligible;
-            }
+           result.Status =  WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(result.Source, wfEvent.DiscretionaryValidityStartDate, wfEvent.ValidityEndDate, wfEvent.GracePeriodEndDate, isGracePeriodEndDateApplied);
 
         }
 
@@ -276,13 +301,12 @@ public class CheckingEngineGateway : ICheckingEngine
             wfCheckData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
             wfCheckData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
             wfCheckData.LastName = wfEvent.ParentLastName;
-            wfCheckData.SubmissionDate = wfEvent.SubmissionDate.ToString("yyyy-MM-dd");
+            wfCheckData.IsGracePeriodEndDateApplied = isGracePeriodEndDateApplied;
 
             result.CheckData = JsonConvert.SerializeObject(wfCheckData);
             context.CheckEligibilities.Update(result);
 
         }
-
 
         result.Updated = DateTime.UtcNow;
         await context.SaveChangesAsync();
