@@ -5,14 +5,24 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Globalization;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 public class FosterFamiliesGateway : IFosterFamilies
 {
     private readonly IEligibilityCheckContext _db;
+
+    private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
+
     private ILogger _logger;
-    public FosterFamiliesGateway(IEligibilityCheckContext db, ILogger<FosterFamiliesGateway> logger)
+
+    public FosterFamiliesGateway(
+        IEligibilityCheckContext db,
+        IWorkingFamiliesEvent workingFamiliesEventGateway,
+        ILogger<FosterFamiliesGateway> logger
+    )
     {
         _db = db;
+        _workingFamiliesEventGateway = workingFamiliesEventGateway;
         _logger = logger;
     }
 
@@ -39,7 +49,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                     PartnerLastName = x.PartnerLastName,
                     PartnerDateOfBirth = x.PartnerDateOfBirth,
                     PartnerNationalInsuranceNumber = x.PartnerNationalInsuranceNumber,
-
+                    LocalAuthorityID = x.LocalAuthorityID,
                     FosterChildren = x.FosterChildren.Select(c =>
                         new FosterChildSummaryResponse
                         {
@@ -85,6 +95,21 @@ public class FosterFamiliesGateway : IFosterFamilies
         return result;
     }
 
+    public async Task<FosterCarer> GetFosterCarer(Guid fosterCarerId, int localAuthorityId)
+    {
+        FosterCarer? result = await _db.FosterCarers
+            .Where(x => x.FosterCarerId == fosterCarerId && x.LocalAuthorityID == localAuthorityId)
+            .AsNoTracking()
+            .SingleOrDefaultAsync();
+
+        if (result is null)
+        {
+            _logger.LogWarning("Foster carer with ID {FosterCarerId} not found", fosterCarerId);
+            throw new NotFoundException($"Foster carer {fosterCarerId} not found");
+        }
+        return result;
+    }
+
     public async Task<FosterFamilyCreatedResponse> CreateFosterFamily(
     FosterFamilyRequest request)
     {
@@ -105,21 +130,28 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         string eligibilityCode = await GetEligibilityCodeForFosterChild();
 
-        var fosterCarer = BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
-        var fosterChild = BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
+        var fosterCarer = FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner);
+        var fosterChild = FosterFamiliesHelper.BuildFosterChild(request.FosterChild, request.SubmissionDate, fosterCarer.FosterCarerId);
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
-
         try
         {
-            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, eligibilityCode);
+            var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(request.SubmissionDate, null);
 
+            var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+                fosterCarer,
+                fosterChild,
+                eligibilityCode,
+                validityStartDate,
+                request.SubmissionDate
+            );
             var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
 
-            fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
             fosterChild.EligibilityCode = eligibilityCode;
-            fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
-            fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
+
+            // Obsolete fields only set for compatibility
+            fosterChild.ValidityStartDate = newWorkingSummaryEvent.ValidityStartDate;
+            fosterChild.ValidityEndDate = newWorkingSummaryEvent.ValidityEndDate;
 
             await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
             await _db.WorkingFamiliesEventSummaries.AddAsync(newWorkingSummaryEvent);
@@ -150,9 +182,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating foster family");
-
             await transaction.RollbackAsync();
-
             throw;
         }
     }
@@ -272,6 +302,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             .OrderByDescending(x => x.SubmissionDate)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .Include(x => x.WorkingFamiliesEventSummary)
             .Select(x => new FosterFamiliesSearchItemResponse
             {
                 FosterCarerId = x.FosterCarerId,
@@ -279,18 +310,10 @@ public class FosterFamiliesGateway : IFosterFamilies
                 ChildName = $"{x.FirstName} {x.LastName}",
                 ChildDateOfBirth = x.DateOfBirth,
                 EligibilityCode = x.EligibilityCode,
-
                 CarerName = $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}",
-
-                ValidityStartDate = x.SubmissionDate,
-
-                GracePeriodEndDate = _db.WorkingFamiliesEvents
-                    .Where(w => w.EligibilityCode == x.EligibilityCode)
-                    .Select(w => w.GracePeriodEndDate)
-                    .SingleOrDefault(),
-
-                ValidityEndDate = x.ValidityEndDate
-
+                ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
+                ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
+                GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value
             })
             .AsNoTracking()
             .ToListAsync();
@@ -326,12 +349,11 @@ public class FosterFamiliesGateway : IFosterFamilies
             .Where(x =>
                 x.FosterChildId == fosterChildId &&
                 x.FosterCarer.LocalAuthorityID == localAuthorityId)
+            .Include(x => x.WorkingFamiliesEventSummary)
             .Select(x => new FosterChildResponse
             {
                 FosterChildId = x.FosterChildId,
                 EligibilityCode = x.EligibilityCode,
-                ValidityStartDate = x.ValidityStartDate,
-                ValidityEndDate = x.ValidityEndDate,
                 ChildFirstName = x.FirstName,
                 ChildLastName = x.LastName,
                 ChildFullName = $"{x.FirstName} {x.LastName}",
@@ -342,7 +364,11 @@ public class FosterFamiliesGateway : IFosterFamilies
                 CarerName = includeFosterCarer ? $"{x.FosterCarer.FirstName} {x.FosterCarer.LastName}" : null,
                 PartnerName = includeFosterCarer && x.FosterCarer.HasPartner
                     ? $"{x.FosterCarer.PartnerFirstName} {x.FosterCarer.PartnerLastName}"
-                    : null
+                    : null,
+                ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
+                ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
+                GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value,
+                GracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
             })
             .AsNoTracking()
             .SingleOrDefaultAsync();
@@ -352,12 +378,6 @@ public class FosterFamiliesGateway : IFosterFamilies
             _logger.LogWarning("Foster child with ID {FosterChildId} not found", fosterChildId);
             throw new NotFoundException($"Foster child {fosterChildId} not found");
         }
-
-        var workingEvent = _db.WorkingFamiliesEvents
-                    .Where(w => w.EligibilityCode == result.EligibilityCode)
-                    .OrderByDescending(w => w.CreatedDateTime)
-                    .SingleOrDefault();
-        result.GracePeriodEndDate = workingEvent.GracePeriodEndDate;
 
         var checkDate = GetCheckDate();
 
@@ -370,11 +390,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         // Calculate term validity
         result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
             checkDate,
-            workingEvent.GracePeriodEndDate.ToString(),
-            workingEvent.ValidityStartDate.ToString(),
+            result.GracePeriodEndDate.ToString(),
+            result.ValidityStartDate.ToString(),
             result.ChildDateOfBirth.ToString(),
-            isGracePeriodEndDateApplied:true
-            
+            result.GracePeriodEndDateApplied
         );
 
         // Calculate reconfirmation properties
@@ -402,41 +421,37 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         if (fosterCarer is null)
         {
-            throw new NotFoundException(
-                $"Foster carer {fosterCarerId} not found");
+            throw new NotFoundException($"Foster carer {fosterCarerId} not found");
         }
 
         string eligibilityCode = await GetEligibilityCodeForFosterChild();
 
         // build domain model from request
-        var fosterChild = BuildFosterChild(request, DateTime.UtcNow, fosterCarerId);
+        var fosterChild = FosterFamiliesHelper.BuildFosterChild(request, DateTime.UtcNow, fosterCarerId);
 
         // link child to current foster carer
         fosterChild.FosterCarerId = fosterCarer.FosterCarerId;
         fosterChild.EligibilityCode = eligibilityCode;
 
         // Create new wf event
-        var workingEvent =
-              WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(new FosterFamilyRequest()
-              {
-                  FosterCarer = new FosterCarerRequest
-                  {
-                      CarerFirstName = fosterCarer.FirstName,
-                      CarerLastName = fosterCarer.LastName,
-                      CarerDateOfBirth = fosterCarer.DateOfBirth,
-                      CarerNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber,
-                  },
-                  FosterChild = request,
-                  SubmissionDate = submissionDate
-              }, eligibilityCode);
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, null);
+        var workingEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            fosterCarer,
+            fosterChild,
+            eligibilityCode,
+            validityStartDate,
+            submissionDate
+        );
+        var newWorkingSummaryEvent = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(workingEvent);
+        fosterChild.EligibilityCode = workingEvent.EligibilityCode;
+        fosterChild.WorkingFamiliesEventSummaryID = newWorkingSummaryEvent.WorkingFamiliesEventSummaryID;
 
-        fosterChild.ValidityStartDate = workingEvent.ValidityStartDate;
-        fosterChild.ValidityEndDate = workingEvent.ValidityEndDate;
+        // Obsolete fields only set for compatibility
+        fosterChild.ValidityStartDate = newWorkingSummaryEvent.ValidityStartDate;
+        fosterChild.ValidityEndDate = newWorkingSummaryEvent.ValidityEndDate;
 
         await _db.WorkingFamiliesEvents.AddAsync(workingEvent);
-
-        fosterChild.EligibilityCode = workingEvent.EligibilityCode;
-
+        await _db.WorkingFamiliesEventSummaries.AddAsync(newWorkingSummaryEvent);
         await _db.FosterChildren.AddAsync(fosterChild);
         await _db.SaveChangesAsync();
 
@@ -454,26 +469,125 @@ public class FosterFamiliesGateway : IFosterFamilies
         var fosterChild = await _db.FosterChildren
             .Include(x => x.FosterCarer)
             .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId);
-
-        if (fosterChild is null)
-        {
-            throw new NotFoundException(
-                $"Foster child {fosterChildId} not found");
-        }
-
-        // Working Family Event?? 
+        if (fosterChild is null) { throw new NotFoundException($"Foster child {fosterChildId} not found"); }
 
         fosterChild.FirstName = request.FosterChildRequest.ChildFirstName;
         fosterChild.LastName = request.FosterChildRequest.ChildLastName;
         fosterChild.DateOfBirth = request.FosterChildRequest.ChildDateOfBirth;
         fosterChild.PostCode = request.FosterChildRequest.ChildPostCode;
-
         fosterChild.Updated = DateTime.UtcNow;
+
+        // TODO - Update Working Family Events / summary here
 
         await _db.SaveChangesAsync();
 
         return await GetFosterChild(fosterChildId, fosterChild.FosterCarer.LocalAuthorityID.Value, true);
     }
+
+    public async Task<FosterChildResponse> ReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate)
+    {
+        // Get foster child record
+        var fosterChild = await _db.FosterChildren.Include(x => x.FosterCarer).SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+        if (fosterChild is null) { throw new NotFoundException($"Foster child {fosterChildId} not found"); }
+
+        // Validate LA for foster carer record
+        if (fosterChild.FosterCarer.LocalAuthorityID != localAuthorityId)
+        {
+            throw new NotFoundException($"Foster child is not associated with selected local authority");
+        }
+
+        // Get existing summary record
+        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
+
+        // Calculate the validity start date based on the submission date and existing summary record
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, existingSummaryRecord);
+        
+        // Create new wf event
+        var newEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            fosterChild.FosterCarer,
+            fosterChild,
+            fosterChild.EligibilityCode,
+            validityStartDate,
+            submissionDate
+        );
+        await _db.WorkingFamiliesEvents.AddAsync(newEvent);
+
+        // Update summary record
+        int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
+        existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
+
+        // Obsolete fields only set for compatibility
+        fosterChild.ValidityStartDate = existingSummaryRecord.ValidityStartDate;
+        fosterChild.ValidityEndDate = existingSummaryRecord.ValidityEndDate;
+
+        // Save all changes
+        await _db.SaveChangesAsync();
+
+        // Return the response as a get for the new record
+        return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, true);
+    }
+
+
+    public async Task<FosterCodePreviewResponse> PreviewReconfirmFosterChild(Guid fosterChildId, int localAuthorityId, DateTime submissionDate)
+    {
+        // Get foster child record
+        var fosterChild = await _db.FosterChildren.Include(x => x.FosterCarer).SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId);
+        if (fosterChild is null) { throw new NotFoundException($"Foster child {fosterChildId} not found"); }
+
+        // Validate LA for foster carer record
+        if (fosterChild.FosterCarer.LocalAuthorityID != localAuthorityId)
+        {
+            throw new NotFoundException($"Foster child is not associated with selected local authority");
+        }
+
+        // Get existing summary record
+        var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
+
+        // Calculate the validity start date based on the submission date and existing summary record
+        var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, existingSummaryRecord);
+
+        // Create new wf event
+        var newEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            fosterChild.FosterCarer,
+            fosterChild,
+            fosterChild.EligibilityCode,
+            validityStartDate,
+            submissionDate
+        );
+
+        // Create updated summary record
+        int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
+        existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
+
+        // Term validity
+        var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(
+            DateTime.Today,
+            existingSummaryRecord.GracePeriodEndDate.ToString(),
+            existingSummaryRecord.ValidityStartDate.ToString(),
+            fosterChild.DateOfBirth.ToString(),
+            existingSummaryRecord.GracePeriodEndDateApplied);
+
+        // Reconfirmation properties       
+        var reconfirmation = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
+            existingSummaryRecord.ValidityEndDate.ToString(),
+            existingSummaryRecord.GracePeriodEndDate.ToString(),
+            submissionDate,
+            EligibilityCodeType.Foster,
+            fosterChild.DateOfBirth.ToString());
+
+        // Generate response
+        FosterCodePreviewResponse response = new()
+        {
+            ValidityStartDate = existingSummaryRecord.ValidityStartDate,
+            ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,
+            ReconfirmBetweenStart = reconfirmation.StartDate,
+            ReconfirmBetweenEnd = reconfirmation.EndDate,
+            GracePeriodEndDate = existingSummaryRecord.GracePeriodEndDate.Value
+        };
+        return response;
+    }
+
+
 
     public async Task DeleteFosterChild(Guid fosterChildId, int localAuthorityId)
     {
@@ -498,56 +612,6 @@ public class FosterFamiliesGateway : IFosterFamilies
 
     #region helpers
 
-    private static FosterCarer BuildFosterCarer(
-    FosterCarerRequest request,
-    FosterPartnerRequest? partner,
-    bool hasPartner)
-    {
-        return new FosterCarer
-        {
-            FosterCarerId = Guid.NewGuid(),
-
-            FirstName = request.CarerFirstName,
-            LastName = request.CarerLastName,
-            DateOfBirth = request.CarerDateOfBirth,
-            NationalInsuranceNumber = request.CarerNationalInsuranceNumber,
-            LocalAuthorityID = request.LocalAuthorityID,
-
-            HasPartner = hasPartner,
-
-            PartnerFirstName = partner?.PartnerFirstName,
-            PartnerLastName = partner?.PartnerLastName,
-            PartnerDateOfBirth = partner?.PartnerDateOfBirth,
-            PartnerNationalInsuranceNumber = partner?.PartnerNationalInsuranceNumber,
-
-            Created = DateTime.UtcNow,
-            Updated = DateTime.UtcNow
-        };
-    }
-
-    private static FosterChild BuildFosterChild(
-    FosterChildRequest request,
-    DateTime submissionDate,
-    Guid fosterCarerId)
-    {
-        return new FosterChild
-        {
-            FosterChildId = Guid.NewGuid(),
-
-            FirstName = request.ChildFirstName,
-            LastName = request.ChildLastName,
-            DateOfBirth = request.ChildDateOfBirth,
-            PostCode = request.ChildPostCode,
-
-            FosterCarerId = fosterCarerId,
-
-            SubmissionDate = submissionDate,
-
-            Status = "Active",
-            Created = DateTime.UtcNow,
-            Updated = DateTime.UtcNow
-        };
-    }
 
     public async Task<string> GetEligibilityCodeForFosterChild()
     {
