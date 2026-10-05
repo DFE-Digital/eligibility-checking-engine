@@ -32,6 +32,19 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         _mockWFEventGateway = new Mock<IWorkingFamiliesEvent>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<FosterFamiliesGateway>>();
 
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(It.IsAny<string>()))
+            .ReturnsAsync((string eligibilityCode) =>
+                _fakeInMemoryDb.WorkingFamiliesEventSummaries.FirstOrDefault(x => x.EligibilityCode == eligibilityCode));
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(It.IsAny<string>()))
+            .ReturnsAsync((string eligibilityCode) =>
+                _fakeInMemoryDb.WorkingFamiliesEvents
+                    .Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted)
+                    .OrderByDescending(x => x.SubmissionDate)
+                    .FirstOrDefault());
+
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureDeletedAsync();
@@ -422,6 +435,125 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task UpdateFosterCarer_Should_Update_Working_Families_Summary_And_Latest_Event()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
+
+        var updateRequest = new UpdateFosterCarerRequest
+        {
+            FosterCarerRequest = new FosterCarerRequest
+            {
+                CarerFirstName = "Peter",
+                CarerLastName = "Jones",
+                CarerDateOfBirth = new DateTime(1985, 1, 1),
+                CarerNationalInsuranceNumber = "ZZ123456Z"
+            },
+            FosterPartnerRequest = new FosterPartnerRequest
+            {
+                PartnerFirstName = "Sarah",
+                PartnerLastName = "Jones",
+                PartnerDateOfBirth = new DateTime(1986, 1, 1),
+                PartnerNationalInsuranceNumber = "DD123456D"
+            }
+        };
+
+        // Act
+        await _sut.UpdateFosterCarer(fosterCarerId, 0, updateRequest);
+
+        // Assert
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.ParentLastName.Should().Be("Jones");
+        updatedSummary.ParentNationalInsuranceNumber.Should().Be("ZZ123456Z");
+        updatedSummary.PartnerLastName.Should().Be("Jones");
+        updatedSummary.PartnerNationalInsuranceNumber.Should().Be("DD123456D");
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.ParentLastName.Should().Be("Jones");
+        updatedEvent.ParentNationalInsuranceNumber.Should().Be("ZZ123456Z");
+        updatedEvent.PartnerLastName.Should().Be("Jones");
+        updatedEvent.PartnerNationalInsuranceNumber.Should().Be("DD123456D");
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+    }
+
+    [Test]
+    public async Task UpdateFosterCarer_Should_Not_Throw_When_Working_Family_Summary_Or_Event_Is_Missing()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync((WorkingFamiliesEvent?)null);
+
+        var updateRequest = new UpdateFosterCarerRequest
+        {
+            FosterCarerRequest = new FosterCarerRequest
+            {
+                CarerFirstName = "Peter",
+                CarerLastName = "Jones",
+                CarerDateOfBirth = new DateTime(1985, 1, 1),
+                CarerNationalInsuranceNumber = "ZZ123456Z"
+            }
+        };
+
+        // Act
+        Func<Task> act = async () => await _sut.UpdateFosterCarer(fosterCarerId, 0, updateRequest);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+
+        var updatedCarer = await _fakeInMemoryDb.FosterCarers
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        updatedCarer.FirstName.Should().Be("Peter");
+        updatedCarer.LastName.Should().Be("Jones");
+    }
+
+    [Test]
     public async Task UpdateFosterCarer_Should_Throw_NotFoundException_When_Carer_Does_Not_Exist()
     {
         // Arrange
@@ -537,7 +669,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task DeleteFosterPartner_Should_Remove_Partner_Details()
+    public async Task DeleteFosterPartner_Should_Remove_Partner_Details_And_Update_Working_Families_Summary_And_Latest_Event()
     {
         // Arrange
         var request = BuildValidRequest(DateTime.UtcNow);
@@ -547,6 +679,23 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         var fosterCarerId = await _fakeInMemoryDb.FosterCarers
             .Select(x => x.FosterCarerId)
             .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
 
         // Act
         await _sut.DeleteFosterPartner(fosterCarerId, 0);
@@ -559,6 +708,22 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         fosterCarer.PartnerLastName.Should().BeNull();
         fosterCarer.PartnerDateOfBirth.Should().BeNull();
         fosterCarer.PartnerNationalInsuranceNumber.Should().BeNull();
+
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.PartnerLastName.Should().BeNull();
+        updatedSummary.PartnerNationalInsuranceNumber.Should().BeNull();
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.PartnerLastName.Should().BeNull();
+        updatedEvent.PartnerNationalInsuranceNumber.Should().BeNull();
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
     }
 
     [Test]
@@ -1236,6 +1401,73 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Assert
         result.ChildFirstName.Should().Be("Sam");
         result.ChildLastName.Should().Be("Jones");
+    }
+
+    [Test]
+    public async Task UpdateFosterChild_Should_Update_Working_Families_Summary_And_Latest_Event()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync();
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
+
+        var updateRequest = new UpdateFosterChildRequest
+        {
+            FosterChildRequest = new FosterChildRequest
+            {
+                ChildFirstName = "Sam",
+                ChildLastName = "Jones",
+                ChildDateOfBirth = new DateTime(2023, 1, 1),
+                ChildPostCode = "AB1 2CD"
+            }
+        };
+
+        // Act
+        var result = await _sut.UpdateFosterChild(
+            fosterChild.FosterChildId,
+            0,
+            updateRequest);
+
+        // Assert
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.ChildFirstName.Should().Be("Sam");
+        updatedSummary.ChildFirstNameTruncated.Should().Be("sam");
+        updatedSummary.ChildDateOfBirth.Should().Be(new DateTime(2023, 1, 1));
+        updatedSummary.ChildPostCode.Should().Be("AB1 2CD");
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.ChildFirstName.Should().Be("Sam");
+        updatedEvent.ChildLastName.Should().Be("Jones");
+        updatedEvent.ChildDateOfBirth.Should().Be(new DateTime(2023, 1, 1));
+        updatedEvent.ChildPostCode.Should().Be("AB1 2CD");
+
+        result.ChildFirstName.Should().Be("Sam");
+        result.ChildLastName.Should().Be("Jones");
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
     }
 
     [Test]

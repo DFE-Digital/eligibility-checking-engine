@@ -229,6 +229,9 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         fosterCarer.Updated = DateTime.UtcNow;
 
+        // Update the working families event records for all foster children associated with this foster carer
+        await UpdateFosterChildEvents(_db, fosterCarer);
+
         await _db.SaveChangesAsync();
     }
 
@@ -261,15 +264,57 @@ public class FosterFamiliesGateway : IFosterFamilies
         }
 
         fosterCarer.HasPartner = false;
-
         fosterCarer.PartnerFirstName = null;
         fosterCarer.PartnerLastName = null;
         fosterCarer.PartnerDateOfBirth = null;
         fosterCarer.PartnerNationalInsuranceNumber = null;
-
         fosterCarer.Updated = DateTime.UtcNow;
+        
+        // Update the working families event records for all foster children associated with this foster carer
+        await UpdateFosterChildEvents(_db, fosterCarer);
 
         await _db.SaveChangesAsync();
+    }
+
+    private async Task UpdateFosterChildEvents(IEligibilityCheckContext db, FosterCarer fosterCarer)
+    {
+        var children = db.FosterChildren.Where(c => c.FosterCarerId == fosterCarer.FosterCarerId).ToList();
+        foreach (var child in children)
+        {
+            // Get existing summary record
+            var summary = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(child.EligibilityCode);
+            if (summary is not null)
+            {
+                // Identify if the summary record will be changed by the update and if so, update the summary record
+                if (summary.ParentLastName != fosterCarer.LastName ||
+                    summary.ParentNationalInsuranceNumber != fosterCarer.NationalInsuranceNumber ||
+                    summary.PartnerLastName != fosterCarer.PartnerLastName ||
+                    summary.PartnerNationalInsuranceNumber != fosterCarer.PartnerNationalInsuranceNumber)
+                {
+                    summary.ParentLastName = fosterCarer.LastName;
+                    summary.ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber;
+                    summary.PartnerLastName = fosterCarer.PartnerLastName;
+                    summary.PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber;
+                    summary.LastUpdatedDate = DateTime.UtcNow;
+                }
+            }
+
+            // Get latest working families event for the foster child and update the event record if any of the fields have changed
+            var latestEvent = await _workingFamiliesEventGateway.GetLatestWorkingFamiliesEventByEligibilityCode(child.EligibilityCode);
+            if (latestEvent is not null)
+            {
+                if (latestEvent.ParentLastName != fosterCarer.LastName ||
+                    latestEvent.ParentNationalInsuranceNumber != fosterCarer.NationalInsuranceNumber ||
+                    latestEvent.PartnerLastName != fosterCarer.PartnerLastName ||
+                    latestEvent.PartnerNationalInsuranceNumber != fosterCarer.PartnerNationalInsuranceNumber)
+                {
+                    latestEvent.ParentLastName = fosterCarer.LastName;
+                    latestEvent.ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber;
+                    latestEvent.PartnerLastName = fosterCarer.PartnerLastName;
+                    latestEvent.PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber;
+                }
+            }
+        }
     }
 
     public async Task<FosterFamiliesSearchResponse> SearchFosterFamilies(int localAuthorityId, FosterFamiliesSearchRequest request)
@@ -477,7 +522,32 @@ public class FosterFamiliesGateway : IFosterFamilies
         fosterChild.PostCode = request.FosterChildRequest.ChildPostCode;
         fosterChild.Updated = DateTime.UtcNow;
 
-        // TODO - Update Working Family Events / summary here
+        // Get existing summary record
+        var summary = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode);
+
+        // Identify if the summary record will be changed by the update and if so, update the summary record
+        if (summary.ChildFirstName != fosterChild.FirstName ||
+            summary.ChildDateOfBirth != fosterChild.DateOfBirth ||
+            summary.ChildPostCode != fosterChild.PostCode)
+        {
+            summary.ChildFirstName = fosterChild.FirstName;
+            summary.ChildFirstNameTruncated = fosterChild.FirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
+            summary.ChildDateOfBirth = fosterChild.DateOfBirth;
+            summary.ChildPostCode = fosterChild.PostCode;
+            summary.LastUpdatedDate = DateTime.UtcNow;
+        }
+
+        // Get latest working families event for the foster child and update the event record if any of the fields have changed
+        var latestEvent = await _workingFamiliesEventGateway.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode);
+        if (latestEvent.ChildFirstName != fosterChild.FirstName ||
+            latestEvent.ChildDateOfBirth != fosterChild.DateOfBirth ||
+            latestEvent.ChildPostCode != fosterChild.PostCode)
+        {
+            latestEvent.ChildFirstName = fosterChild.FirstName;
+            latestEvent.ChildDateOfBirth = fosterChild.DateOfBirth;
+            latestEvent.ChildPostCode = fosterChild.PostCode;
+            latestEvent.ChildLastName = fosterChild.LastName;
+        }
 
         await _db.SaveChangesAsync();
 
@@ -501,7 +571,7 @@ public class FosterFamiliesGateway : IFosterFamilies
 
         // Calculate the validity start date based on the submission date and existing summary record
         var validityStartDate = WorkingFamiliesEventHelper.CalculateValidityStartDate(submissionDate, existingSummaryRecord);
-        
+
         // Create new wf event
         var newEvent = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
             fosterChild.FosterCarer,
