@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Helpers;
 
 namespace CheckYourEligibility.API.Tests.Helpers;
 
@@ -34,7 +35,13 @@ public class WorkingFamiliesEventHelperTests
             }
         };
 
-        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "12345678901");
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
+            FosterFamiliesHelper.BuildFosterChild(request.FosterChild, submissionDate, Guid.Empty),
+            "12345678901",
+            submissionDate,
+            submissionDate
+        );
 
         Assert.That(result.WorkingFamiliesEventID, Is.Not.Empty);
         Assert.That(result.EligibilityCode, Is.EqualTo("12345678901"));
@@ -60,14 +67,50 @@ public class WorkingFamiliesEventHelperTests
     [Test]
     public void ParseWorkingFamilyFromFosterFamily_WithoutPartner_UsesEmptyPartnerStrings()
     {
+        var submissionDate = new DateTime(2026, 8, 20);
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            new FosterCarer(), 
+            new FosterChild(), 
+            "code",
+            submissionDate,
+            submissionDate
+        );
+
+        Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo(string.Empty));
+        Assert.That(result.PartnerFirstName, Is.EqualTo(string.Empty));
+        Assert.That(result.PartnerLastName, Is.EqualTo(string.Empty));
+        Assert.That(result.PartnerDateOfBirth, Is.Null);
+    }
+
+    [Test]
+    public void ParseWorkingFamilyFromFosterFamily_WithoutPartner_WhatHappens()
+    {
+        var submissionDate = new DateTime(2026, 8, 20);
         var request = new FosterFamilyRequest
         {
-            SubmissionDate = new DateTime(2026, 1, 10),
-            FosterCarer = new FosterCarerRequest(),
-            FosterChild = new FosterChildRequest()
+            SubmissionDate = submissionDate,
+            FosterCarer = new FosterCarerRequest
+            {
+                CarerFirstName = "Alex",
+                CarerLastName = "Foster",
+                CarerDateOfBirth = new DateTime(1980, 2, 3),
+                CarerNationalInsuranceNumber = "ab 12 34 56 c"
+            },
+            FosterChild = new FosterChildRequest
+            {
+                ChildFirstName = "Casey",
+                ChildLastName = "Foster",
+                ChildDateOfBirth = new DateTime(2022, 6, 7),
+                ChildPostCode = "AB1 2CD"
+            }
         };
-
-        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyFromFosterFamily(request, "code");
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            FosterFamiliesHelper.BuildFosterCarer(request.FosterCarer, request.Partner, request.HasPartner),
+            FosterFamiliesHelper.BuildFosterChild(request.FosterChild, submissionDate, Guid.Empty),
+            "code",
+            submissionDate,
+            submissionDate
+        );
 
         Assert.That(result.PartnerNationalInsuranceNumber, Is.EqualTo(string.Empty));
         Assert.That(result.PartnerFirstName, Is.EqualTo(string.Empty));

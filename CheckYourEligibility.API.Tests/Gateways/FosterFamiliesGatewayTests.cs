@@ -4,14 +4,17 @@ using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
 public class FosterFamiliesGatewayTests : TestBase.TestBase
 {
     private IEligibilityCheckContext _fakeInMemoryDb;
+    private Mock<IWorkingFamiliesEvent> _mockWFEventGateway = null!;
     private FosterFamiliesGateway _sut;
     private Mock<ILogger<FosterFamiliesGateway>> _mockLogger = null!;
     private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
@@ -27,9 +30,21 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
-        
-
+        _mockWFEventGateway = new Mock<IWorkingFamiliesEvent>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<FosterFamiliesGateway>>();
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(It.IsAny<string>()))
+            .ReturnsAsync((string eligibilityCode) =>
+                _fakeInMemoryDb.WorkingFamiliesEventSummaries.FirstOrDefault(x => x.EligibilityCode == eligibilityCode));
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(It.IsAny<string>()))
+            .ReturnsAsync((string eligibilityCode) =>
+                _fakeInMemoryDb.WorkingFamiliesEvents
+                    .Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted)
+                    .OrderByDescending(x => x.SubmissionDate)
+                    .FirstOrDefault());
 
         // Ensure database is created and clean
         var context = (EligibilityCheckContext)_fakeInMemoryDb;
@@ -47,7 +62,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         await context.SaveChangesAsync();
 
-        _sut = new FosterFamiliesGateway(_fakeInMemoryDb, _mockLogger.Object);
+        _sut = new FosterFamiliesGateway(_fakeInMemoryDb, _mockWFEventGateway.Object, _mockLogger.Object);
     }
 
     [TearDown]
@@ -143,10 +158,72 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #region Create Foster Family
 
     [Test]
+    public async Task CreateFosterFamily_Should_Not_Log_Database_Error_Details()
+    {
+        const string privateValue = "PRIVATE-FOSTER-GATEWAY-3644";
+        var sourceException = new DbUpdateException(
+            $"Database error containing {privateValue}",
+            new InvalidOperationException($"Inner error containing {privateValue}"));
+
+        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(x => x.Ignore(
+                InMemoryEventId.TransactionIgnoredWarning))
+            .AddInterceptors(new FailWorkingFamiliesEventSaveInterceptor(sourceException))
+            .Options;
+
+        await using var context = new EligibilityCheckContext(options);
+
+        context.EligibilityCodeRanges.Add(new EligibilityCodeRange
+        {
+            EligibilityCodeRangeId = 1,
+            Name = EligibilityCodeType.Foster,
+            StartRange = 40000000001,
+            EndRange = 49999999999,
+            NextAvailableCode = 40000000001
+        });
+        await context.SaveChangesAsync();
+
+        var logger = new Mock<ILogger<FosterFamiliesGateway>>();
+        var gateway = new FosterFamiliesGateway(context, _mockWFEventGateway.Object, logger.Object);
+
+        Func<Task> act = () => gateway.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+
+        var thrown = await act.Should().ThrowAsync<DbUpdateException>();
+        thrown.Which.Should().BeSameAs(sourceException);
+
+        var logCalls = logger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle(
+            invocation => (LogLevel)invocation.Arguments[0] == LogLevel.Error);
+
+        foreach (var logCall in logCalls)
+        {
+            // ILogger.Log argument 3 holds the exception object.
+            logCall.Arguments[3].Should().BeNull(
+                "the original exception may contain submitted personal data");
+
+            var state = (IEnumerable<KeyValuePair<string, object?>>)
+                logCall.Arguments[2];
+
+            foreach (var entry in state)
+            {
+                (entry.Value?.ToString() ?? string.Empty)
+                    .Should().NotContain(privateValue);
+            }
+
+            (logCall.Arguments[2].ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+    }
+
+    [Test]
     public async Task CreateFosterFamily_Should_Return_Created_Response()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         // Act
         var result = await _sut.CreateFosterFamily(request);
@@ -162,13 +239,13 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Arrange
         // LA is 0 
-        var request1 = BuildValidRequest();
+        var request1 = BuildValidRequest(DateTime.UtcNow);
         string request1NINO = request1.FosterCarer.CarerNationalInsuranceNumber;
         await _sut.CreateFosterFamily(request1);
 
         // Act
         // LA is now 123 but NINO is same
-        var request2 = BuildValidRequest();
+        var request2 = BuildValidRequest(DateTime.UtcNow);
         request2.FosterCarer.LocalAuthorityID = 123;
         request2.FosterCarer.CarerNationalInsuranceNumber = request1NINO;
         var result = await _sut.CreateFosterFamily(request2);
@@ -183,7 +260,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterFamily_Should_Link_Child_To_FosterCarer()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         // Act
         await _sut.CreateFosterFamily(request);
@@ -199,7 +276,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterFamily_Should_Create_WorkingFamilies_Event()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         // Act
         await _sut.CreateFosterFamily(request);
@@ -212,7 +289,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterFamily_Should_Set_EligibilityCode_On_Child()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         // Act
         var response = await _sut.CreateFosterFamily(request);
@@ -224,10 +301,11 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    [Obsolete]
     public async Task CreateFosterFamily_Should_Set_Validity_Dates()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         // Act
         await _sut.CreateFosterFamily(request);
@@ -238,6 +316,24 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         fosterChild.ValidityStartDate.Should().NotBe(default);
         fosterChild.ValidityEndDate.Should().NotBe(default);
         fosterChild.ValidityEndDate.Should().BeAfter(fosterChild.ValidityStartDate);
+    }
+
+    [Test]
+    public async Task CreateFosterFamily_Should_CreateLinkedSummary()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        // Act
+        await _sut.CreateFosterFamily(request);
+
+        // Assert
+        var fosterChild = await _fakeInMemoryDb.FosterChildren.Include(x => x.WorkingFamiliesEventSummary).SingleAsync();
+
+        fosterChild.WorkingFamiliesEventSummary.Should().NotBeNull();
+        fosterChild.WorkingFamiliesEventSummary.ValidityStartDate.Should().NotBe(default);
+        fosterChild.WorkingFamiliesEventSummary.ValidityEndDate.Should().NotBe(default);
+        fosterChild.WorkingFamiliesEventSummary.ValidityEndDate.Should().BeAfter(fosterChild.ValidityStartDate);
     }
 
     [Test]
@@ -255,17 +351,25 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     {
         // Arrange
         // When the LA already contains a family with SAME nino
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
+        request.FosterCarer.CarerNationalInsuranceNumber = "AA123456A";
 
         await _sut.CreateFosterFamily(request);
 
-        // Act
         Func<Task> act = () => _sut.CreateFosterFamily(request);
 
-        // Assert
-        await act.Should()
-            .ThrowAsync<ValidationException>()
-            .WithMessage($"*{request.FosterCarer.CarerNationalInsuranceNumber}*already exists*");
+        var exception = await act.Should()
+            .ThrowAsync<ValidationException>();
+
+        exception.Which.Message.Should().Be(
+            "A foster family with this National Insurance number already exists.");
+
+        exception.Which.ToString().Should()
+            .NotContain(request.FosterCarer.CarerNationalInsuranceNumber);
+
+        (await _fakeInMemoryDb.FosterCarers.CountAsync()).Should().Be(1);
+        (await _fakeInMemoryDb.FosterChildren.CountAsync()).Should().Be(1);
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(1);
     }
 
     #endregion
@@ -402,6 +506,125 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task UpdateFosterCarer_Should_Update_Working_Families_Summary_And_Latest_Event()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
+
+        var updateRequest = new UpdateFosterCarerRequest
+        {
+            FosterCarerRequest = new FosterCarerRequest
+            {
+                CarerFirstName = "Peter",
+                CarerLastName = "Jones",
+                CarerDateOfBirth = new DateTime(1985, 1, 1),
+                CarerNationalInsuranceNumber = "ZZ123456Z"
+            },
+            FosterPartnerRequest = new FosterPartnerRequest
+            {
+                PartnerFirstName = "Sarah",
+                PartnerLastName = "Jones",
+                PartnerDateOfBirth = new DateTime(1986, 1, 1),
+                PartnerNationalInsuranceNumber = "DD123456D"
+            }
+        };
+
+        // Act
+        await _sut.UpdateFosterCarer(fosterCarerId, 0, updateRequest);
+
+        // Assert
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.ParentLastName.Should().Be("Jones");
+        updatedSummary.ParentNationalInsuranceNumber.Should().Be("ZZ123456Z");
+        updatedSummary.PartnerLastName.Should().Be("Jones");
+        updatedSummary.PartnerNationalInsuranceNumber.Should().Be("DD123456D");
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.ParentLastName.Should().Be("Jones");
+        updatedEvent.ParentNationalInsuranceNumber.Should().Be("ZZ123456Z");
+        updatedEvent.PartnerLastName.Should().Be("Jones");
+        updatedEvent.PartnerNationalInsuranceNumber.Should().Be("DD123456D");
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+    }
+
+    [Test]
+    public async Task UpdateFosterCarer_Should_Not_Throw_When_Working_Family_Summary_Or_Event_Is_Missing()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterCarerId = await _fakeInMemoryDb.FosterCarers
+            .Select(x => x.FosterCarerId)
+            .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync((WorkingFamiliesEvent?)null);
+
+        var updateRequest = new UpdateFosterCarerRequest
+        {
+            FosterCarerRequest = new FosterCarerRequest
+            {
+                CarerFirstName = "Peter",
+                CarerLastName = "Jones",
+                CarerDateOfBirth = new DateTime(1985, 1, 1),
+                CarerNationalInsuranceNumber = "ZZ123456Z"
+            }
+        };
+
+        // Act
+        Func<Task> act = async () => await _sut.UpdateFosterCarer(fosterCarerId, 0, updateRequest);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+
+        var updatedCarer = await _fakeInMemoryDb.FosterCarers
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        updatedCarer.FirstName.Should().Be("Peter");
+        updatedCarer.LastName.Should().Be("Jones");
+    }
+
+    [Test]
     public async Task UpdateFosterCarer_Should_Throw_NotFoundException_When_Carer_Does_Not_Exist()
     {
         // Arrange
@@ -476,7 +699,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task DeleteFosterCarer_Should_Delete_FosterCarer()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -495,7 +718,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task DeleteFosterCarer_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -517,16 +740,33 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task DeleteFosterPartner_Should_Remove_Partner_Details()
+    public async Task DeleteFosterPartner_Should_Remove_Partner_Details_And_Update_Working_Families_Summary_And_Latest_Event()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
         var fosterCarerId = await _fakeInMemoryDb.FosterCarers
             .Select(x => x.FosterCarerId)
             .SingleAsync();
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
 
         // Act
         await _sut.DeleteFosterPartner(fosterCarerId, 0);
@@ -539,13 +779,29 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         fosterCarer.PartnerLastName.Should().BeNull();
         fosterCarer.PartnerDateOfBirth.Should().BeNull();
         fosterCarer.PartnerNationalInsuranceNumber.Should().BeNull();
+
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.PartnerLastName.Should().BeNull();
+        updatedSummary.PartnerNationalInsuranceNumber.Should().BeNull();
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.PartnerLastName.Should().BeNull();
+        updatedEvent.PartnerNationalInsuranceNumber.Should().BeNull();
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
     }
 
     [Test]
     public async Task DeleteFosterPartner_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -575,7 +831,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task SearchFosterFamilies_Should_Return_Results()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -601,10 +857,10 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task SearchFosterFamilies_Should_Filter_By_Carer_Or_Partner_Nino()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
         await _sut.CreateFosterFamily(request);
 
-        var otherRequest = BuildValidRequest();
+        var otherRequest = BuildValidRequest(DateTime.UtcNow);
         otherRequest.FosterCarer.CarerNationalInsuranceNumber = "QQ123456Q";
         await _sut.CreateFosterFamily(otherRequest);
 
@@ -627,8 +883,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task SearchFosterFamilies_Should_Return_Total_Record_Count()
     {
         // Arrange
-        await _sut.CreateFosterFamily(BuildValidRequest());
-        await _sut.CreateFosterFamily(BuildValidRequest());
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
 
         // Act
         var result = await _sut.SearchFosterFamilies(
@@ -662,7 +918,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task SearchFosterFamilies_Should_Return_Grace_Period_End_Date()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -686,7 +942,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Arrange
         for (var i = 0; i < 15; i++)
         {
-            await _sut.CreateFosterFamily(BuildValidRequest());
+            await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
         }
 
         // Act
@@ -709,9 +965,9 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     [Test]
     public async Task GetFosterChild_Should_Use_CheckDate_For_TermValidity()
     {
-		// Arrange
-		// Create backdated foster appliaction for August 2026
-		var fosterCarer = new FosterCarer
+        // Arrange
+        // Create backdated foster appliaction for August 2026
+        var fosterCarer = new FosterCarer
         {
             FosterCarerId = Guid.NewGuid(),
             FirstName = "John",
@@ -755,15 +1011,33 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             ChildPostCode = "NNU 1AE",
             CreatedDateTime = new DateTime(2026, 8, 20)
         };
+        var workingEventSummary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = Guid.NewGuid().ToString(),
+            EligibilityCode = fosterChild.EligibilityCode,
+            LatestSubmissionDate = new DateTime(2026, 8, 20),
+            ValidityStartDate = new DateTime(2026, 8, 20),
+            ValidityEndDate = new DateTime(2026, 11, 20),
+            DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
+            GracePeriodEndDate = new DateTime(2027, 3, 31),
+            GracePeriodEndDateApplied = true,
+            ParentNationalInsuranceNumber = "AA123456A",
+            ChildFirstName = "Tom-Boy",
+            ChildFirstNameTruncated = "Tom",
+            ChildDateOfBirth = fosterChild.DateOfBirth,
+            ChildPostCode = "NNU 1AE"
+        };
+        fosterChild.WorkingFamiliesEventSummaryID = workingEventSummary.WorkingFamiliesEventSummaryID;
 
         await _fakeInMemoryDb.FosterCarers.AddAsync(fosterCarer);
         await _fakeInMemoryDb.FosterChildren.AddAsync(fosterChild);
         await _fakeInMemoryDb.WorkingFamiliesEvents.AddAsync(workingEvent);
+        await _fakeInMemoryDb.WorkingFamiliesEventSummaries.AddAsync(workingEventSummary);
         await _fakeInMemoryDb.SaveChangesAsync();
 
         // Simulate check date as September 2026
-		var checkDate = new DateTime(2026, 9, 10);
-		var deterministicGateway = new FixedDateFosterFamiliesGateway(_fakeInMemoryDb, _mockLogger.Object, checkDate);
+        var checkDate = new DateTime(2026, 9, 10);
+        var deterministicGateway = new FixedDateFosterFamiliesGateway(_fakeInMemoryDb, _mockWFEventGateway.Object, _mockLogger.Object, checkDate);
 
         // Act
         var result = await deterministicGateway.GetFosterChild(fosterChild.FosterChildId, 0, false);
@@ -779,7 +1053,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterChild_Should_Return_FosterCarer_Details_When_Requested()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -802,7 +1076,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterChild_Should_Return_FosterChild_Response()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -822,7 +1096,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterChild_Should_Return_Eligibility_Details()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -842,7 +1116,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterChild_Should_Return_Child_Details()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -864,7 +1138,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task GetFosterChild_Should_Return_Grace_Period_End_Date()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -894,11 +1168,55 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #region Create Foster Child
 
+    [TestCase("ab 12 34 56 c", "AB123456C")]
+    [TestCase("ab-12.34/56c", "AB-12.34/56C")]
+    public async Task CreateFosterChild_Should_Preserve_Existing_Event_Nino_Formatting(
+    string storedNino,
+    string expectedEventNino)
+    {
+        var fosterCarerId = Guid.NewGuid();
+
+        await _fakeInMemoryDb.FosterCarers.AddAsync(new FosterCarer
+        {
+            FosterCarerId = fosterCarerId,
+            LocalAuthorityID = 0,
+            FirstName = "John",
+            LastName = "Smith",
+            DateOfBirth = new DateTime(1980, 1, 1),
+            NationalInsuranceNumber = storedNino
+        });
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var request = new FosterChildRequest
+        {
+            ChildFirstName = "Sam",
+            ChildLastName = "Jones",
+            ChildDateOfBirth = new DateTime(2023, 1, 1),
+            ChildPostCode = "AB1 2CD"
+        };
+
+        var response = await _sut.CreateFosterChild(
+            request, 0, fosterCarerId, DateTime.UtcNow);
+
+        var workingEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == response.EligibilityCode);
+
+        workingEvent.ParentNationalInsuranceNumber
+            .Should().Be(expectedEventNino);
+
+        var storedCarer = await _fakeInMemoryDb.FosterCarers
+            .AsNoTracking()
+            .SingleAsync(x => x.FosterCarerId == fosterCarerId);
+
+        storedCarer.NationalInsuranceNumber.Should().Be(storedNino);
+    }
+
     [Test]
     public async Task CreateFosterChild_Should_Create_FosterChild()
     {
         // Arrange
-        var familyRequest = BuildValidRequest();
+        var familyRequest = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(familyRequest);
 
@@ -929,7 +1247,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterChild_Should_Link_Child_To_FosterCarer()
     {
         // Arrange
-        var familyRequest = BuildValidRequest();
+        var familyRequest = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(familyRequest);
 
@@ -964,7 +1282,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterChild_Should_Create_WorkingFamilies_Event()
     {
         // Arrange
-        var familyRequest = BuildValidRequest();
+        var familyRequest = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(familyRequest);
 
@@ -999,7 +1317,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterChild_Should_Return_Created_Response()
     {
         // Arrange
-        var familyRequest = BuildValidRequest();
+        var familyRequest = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(familyRequest);
 
@@ -1059,7 +1377,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task CreateFosterChild_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
-        var familyRequest = BuildValidRequest();
+        var familyRequest = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(familyRequest);
 
@@ -1096,7 +1414,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task UpdateFosterChild_Should_Update_Child_Details()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1135,7 +1453,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task UpdateFosterChild_Should_Update_Updated_Date()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1170,7 +1488,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task UpdateFosterChild_Should_Return_Updated_Response()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1198,6 +1516,73 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         // Assert
         result.ChildFirstName.Should().Be("Sam");
         result.ChildLastName.Should().Be("Jones");
+    }
+
+    [Test]
+    public async Task UpdateFosterChild_Should_Update_Working_Families_Summary_And_Latest_Event()
+    {
+        // Arrange
+        var request = BuildValidRequest(DateTime.UtcNow);
+
+        await _sut.CreateFosterFamily(request);
+
+        var fosterChild = await _fakeInMemoryDb.FosterChildren
+            .SingleAsync();
+
+        var summary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        var latestEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(summary);
+
+        _mockWFEventGateway
+            .Setup(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode))
+            .ReturnsAsync(latestEvent);
+
+        var updateRequest = new UpdateFosterChildRequest
+        {
+            FosterChildRequest = new FosterChildRequest
+            {
+                ChildFirstName = "Sam",
+                ChildLastName = "Jones",
+                ChildDateOfBirth = new DateTime(2023, 1, 1),
+                ChildPostCode = "AB1 2CD"
+            }
+        };
+
+        // Act
+        var result = await _sut.UpdateFosterChild(
+            fosterChild.FosterChildId,
+            0,
+            updateRequest);
+
+        // Assert
+        var updatedSummary = await _fakeInMemoryDb.WorkingFamiliesEventSummaries
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedSummary.ChildFirstName.Should().Be("Sam");
+        updatedSummary.ChildFirstNameTruncated.Should().Be("sam");
+        updatedSummary.ChildDateOfBirth.Should().Be(new DateTime(2023, 1, 1));
+        updatedSummary.ChildPostCode.Should().Be("AB1 2CD");
+        updatedSummary.LastUpdatedDate.Should().NotBe(default);
+
+        var updatedEvent = await _fakeInMemoryDb.WorkingFamiliesEvents
+            .SingleAsync(x => x.EligibilityCode == fosterChild.EligibilityCode);
+
+        updatedEvent.ChildFirstName.Should().Be("Sam");
+        updatedEvent.ChildLastName.Should().Be("Jones");
+        updatedEvent.ChildDateOfBirth.Should().Be(new DateTime(2023, 1, 1));
+        updatedEvent.ChildPostCode.Should().Be("AB1 2CD");
+
+        result.ChildFirstName.Should().Be("Sam");
+        result.ChildLastName.Should().Be("Jones");
+
+        _mockWFEventGateway.Verify(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
+        _mockWFEventGateway.Verify(g => g.GetLatestWorkingFamiliesEventByEligibilityCode(fosterChild.EligibilityCode), Times.Once);
     }
 
     [Test]
@@ -1230,7 +1615,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task UpdateFosterChild_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1263,13 +1648,105 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
     #endregion
 
+    #region Reconfirm Foster Child
+
+    [Test]
+    public async Task ReconfirmFosterChild_Should_Create_Event_Update_Validity_Dates_And_Return_Response()
+    {
+        // Arrange
+        var originalSubmissionDate = new DateTime(2025, 8, 26);
+        var reconfirmationDate = new DateTime(2025, 11, 24);
+        
+        var expectedSummaryValidityStartDate = originalSubmissionDate;
+        var expectedSummaryValidityEndDate = expectedSummaryValidityStartDate.AddMonths(6).AddDays(1);
+        var expectedGPED = WorkingFamiliesEventHelper.GetGracePeriodEndDate(expectedSummaryValidityEndDate);
+
+        await _sut.CreateFosterFamily(BuildValidRequest(originalSubmissionDate));
+        var child = await _fakeInMemoryDb.FosterChildren.Include(x => x.WorkingFamiliesEventSummary).SingleAsync();
+
+        var existingEventCount = await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync(x => x.EligibilityCode == child.EligibilityCode);
+        _mockWFEventGateway.Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(child.EligibilityCode)).ReturnsAsync(
+            await _fakeInMemoryDb.WorkingFamiliesEventSummaries.FirstOrDefaultAsync(x => x.EligibilityCode == child.EligibilityCode)
+        );
+        _mockWFEventGateway.Setup(g => g.GetWorkingFamiliesEventsCount(child.EligibilityCode)).ReturnsAsync(
+            await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync(x => x.EligibilityCode == child.EligibilityCode)
+        );
+
+
+        // Act
+        var reconfirmedResponse = await _sut.ReconfirmFosterChild(child.FosterChildId, 0, reconfirmationDate);
+
+        // Assert
+        var updatedChild = await _fakeInMemoryDb.FosterChildren.SingleAsync(x => x.FosterChildId == child.FosterChildId);
+        var reconfirmationEvent = await _fakeInMemoryDb.WorkingFamiliesEvents.OrderByDescending(x => x.CreatedDateTime).FirstOrDefaultAsync(x => x.SubmissionDate == reconfirmationDate);
+
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(existingEventCount + 1);
+
+        updatedChild.ValidityStartDate.Should().Be(expectedSummaryValidityStartDate);
+        updatedChild.ValidityEndDate.Should().Be(expectedSummaryValidityEndDate);
+
+        reconfirmationEvent.EligibilityCode.Should().Be(child.EligibilityCode);
+        reconfirmationEvent.ParentFirstName.Should().Be("John");
+        reconfirmationEvent.ParentLastName.Should().Be("Smith");
+        reconfirmationEvent.ParentNationalInsuranceNumber.Should().Be(child.FosterCarer.NationalInsuranceNumber);
+        reconfirmationEvent.ChildFirstName.Should().Be(child.FirstName);
+        reconfirmationEvent.ChildLastName.Should().Be(child.LastName);
+        reconfirmationEvent.ChildDateOfBirth.Should().Be(child.DateOfBirth);
+        reconfirmationEvent.ChildPostCode.Should().Be(child.PostCode);
+        reconfirmationEvent.CreatedDateTime.Should().NotBeNull();
+
+        reconfirmedResponse.FosterChildId.Should().Be(child.FosterChildId);
+        reconfirmedResponse.EligibilityCode.Should().Be(child.EligibilityCode);
+        reconfirmedResponse.ValidityStartDate.Should().Be(expectedSummaryValidityStartDate);
+        reconfirmedResponse.ValidityEndDate.Should().Be(expectedSummaryValidityEndDate);
+        reconfirmedResponse.GracePeriodEndDate.Should().Be(expectedGPED);
+        reconfirmedResponse.GracePeriodEndDateApplied.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Should_Throw_NotFoundException_When_Child_Does_Not_Exist()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+
+        // Act
+        Func<Task> act = () => _sut.ReconfirmFosterChild(fosterChildId, 0, DateTime.UtcNow);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage($"Foster child {fosterChildId} not found");
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(0);
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Should_Throw_NotFoundException_When_Local_Authority_Does_Not_Match()
+    {
+        // Arrange
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+
+        var child = await _fakeInMemoryDb.FosterChildren.SingleAsync();
+        var existingEventCount = await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync();
+
+        // Act
+        Func<Task> act = () => _sut.ReconfirmFosterChild(child.FosterChildId, 123, DateTime.UtcNow);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage("Foster child is not associated with selected local authority");
+        (await _fakeInMemoryDb.WorkingFamiliesEvents.CountAsync()).Should().Be(existingEventCount);
+    }
+
+    #endregion
+
     #region Delete Foster Child
 
     [Test]
     public async Task DeleteFosterChild_Should_Delete_FosterChild()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1288,7 +1765,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task DeleteFosterChild_Should_Not_Delete_FosterCarer()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1307,7 +1784,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     public async Task DeleteFosterChild_Should_Throw_NotFound_When_LA_Does_Not_Match()
     {
         // Arrange
-        var request = BuildValidRequest();
+        var request = BuildValidRequest(DateTime.UtcNow);
 
         await _sut.CreateFosterFamily(request);
 
@@ -1355,12 +1832,41 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     #endregion
 
     #region helpers
-    private static FosterFamilyRequest BuildValidRequest()
+
+    private sealed class FailWorkingFamiliesEventSaveInterceptor
+    : SaveChangesInterceptor
+    {
+        private readonly Exception _exception;
+
+        public FailWorkingFamiliesEventSaveInterceptor(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var savingNewEvent = eventData.Context?.ChangeTracker
+                .Entries<CheckYourEligibility.API.Domain.WorkingFamiliesEvent>()
+                .Any(entry => entry.State == EntityState.Added) == true;
+
+            if (savingNewEvent)
+            {
+                throw _exception;
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
+    private static FosterFamilyRequest BuildValidRequest(DateTime submissionDate)
     {
         return new FosterFamilyRequest
         {
             HasPartner = true,
-            SubmissionDate = DateTime.UtcNow,
+            SubmissionDate = submissionDate,
 
             FosterCarer = new FosterCarerRequest
             {
@@ -1395,8 +1901,8 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         return $"AA{Random.Shared.Next(1_000_000):D6}A";
     }
 
-    private sealed class FixedDateFosterFamiliesGateway(IEligibilityCheckContext db, ILogger<FosterFamiliesGateway> logger, DateTime checkDate)
-        : FosterFamiliesGateway(db, logger)
+    private sealed class FixedDateFosterFamiliesGateway(IEligibilityCheckContext db, IWorkingFamiliesEvent workingFamiliesEventGateway, ILogger<FosterFamiliesGateway> logger, DateTime checkDate)
+        : FosterFamiliesGateway(db, workingFamiliesEventGateway, logger)
     {
         private readonly DateTime _checkDate = checkDate;
 

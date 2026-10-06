@@ -26,8 +26,11 @@ public class FosterFamilyControllerTests
     private Mock<IGetFosterChildUseCase> _mockGetFosterChild = null!;
     private Mock<ICreateFosterChildUseCase> _mockCreateFosterChild = null!;
     private Mock<IUpdateFosterChildUseCase> _mockUpdateFosterChild = null!;
+    private Mock<IReconfirmFosterChildUseCase> _mockReconfirmFosterChild = null!;
+    private Mock<IPreviewReconfirmFosterChildUseCase> _mockPreviewReconfirmFosterChild = null!;
     private Mock<IDeleteFosterChildUseCase> _mockDeleteFosterChild = null!;
     private Mock<IAudit> _mockAudit = null!;
+    private Mock<ILogger<FosterFamilyController>> _mockLogger = null!;
 
     private IConfigurationRoot _configuration = null!;
     private FosterFamilyController _sut = null!;
@@ -45,20 +48,23 @@ public class FosterFamilyControllerTests
         _mockGetFosterChild = new Mock<IGetFosterChildUseCase>(MockBehavior.Strict);
         _mockCreateFosterChild = new Mock<ICreateFosterChildUseCase>(MockBehavior.Strict);
         _mockUpdateFosterChild = new Mock<IUpdateFosterChildUseCase>(MockBehavior.Strict);
+        _mockReconfirmFosterChild = new Mock<IReconfirmFosterChildUseCase>(MockBehavior.Strict);
+        _mockPreviewReconfirmFosterChild = new Mock<IPreviewReconfirmFosterChildUseCase>(MockBehavior.Strict);
         _mockDeleteFosterChild = new Mock<IDeleteFosterChildUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
+        _mockLogger = new Mock<ILogger<FosterFamilyController>>();
 
         var configData = new Dictionary<string, string?>
-        {
-            { "Jwt:Scopes:local_authority", "local_authority" }
-        };
+            {
+                { "Jwt:Scopes:local_authority", "local_authority" }
+            };
 
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configData)
             .Build();
 
         _sut = new FosterFamilyController(
-            Mock.Of<ILogger<FosterFamilyController>>(),
+            _mockLogger.Object,
             _configuration,
             _mockGetFosterFamily.Object,
             _mockCreateFosterFamily.Object,
@@ -70,6 +76,8 @@ public class FosterFamilyControllerTests
             _mockGetFosterChild.Object,
             _mockCreateFosterChild.Object,
             _mockUpdateFosterChild.Object,
+            _mockReconfirmFosterChild.Object,
+            _mockPreviewReconfirmFosterChild.Object,
             _mockDeleteFosterChild.Object,
             _mockAudit.Object);
     }
@@ -87,6 +95,8 @@ public class FosterFamilyControllerTests
         _mockGetFosterChild.VerifyAll();
         _mockCreateFosterChild.VerifyAll();
         _mockUpdateFosterChild.VerifyAll();
+        _mockReconfirmFosterChild.VerifyAll();
+        _mockPreviewReconfirmFosterChild.VerifyAll();
         _mockDeleteFosterChild.VerifyAll();
     }
 
@@ -199,6 +209,77 @@ public class FosterFamilyControllerTests
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task SaveFosterFamily_Should_Not_Expose_Unexpected_Error_Details(
+    bool update)
+    {
+        const string privateValue = "PRIVATE-FOSTER-VALUE-3644";
+        SetupControllerWithLocalAuthorityIds(new List<int> { 201 });
+
+        var sourceException = new Exception(
+            $"Source error containing {privateValue}",
+            new Exception($"Inner error containing {privateValue}"));
+
+        ActionResult result;
+
+        if (update)
+        {
+            var id = Guid.NewGuid();
+            var request = new UpdateFosterCarerRequest();
+
+            _mockUpdateFosterCarer
+                .Setup(x => x.Execute(id, 201, request))
+                .ThrowsAsync(sourceException);
+
+            result = await _sut.UpdateFosterCarer(id, request);
+        }
+        else
+        {
+            var request = new FosterFamilyRequest();
+
+            _mockCreateFosterFamily
+                .Setup(x => x.Execute(request, 201))
+                .ThrowsAsync(sourceException);
+
+            result = await _sut.CreateFosterFamily(request);
+        }
+
+        var badRequest = result.Should()
+            .BeOfType<BadRequestObjectResult>().Subject;
+
+        var response = badRequest.Value.Should()
+            .BeOfType<ErrorResponse>().Subject;
+
+        response.Errors.Should().ContainSingle();
+        response.Errors.First().Title.Should().NotBeNullOrWhiteSpace();
+
+        System.Text.Json.JsonSerializer.Serialize(response)
+            .Should().NotContain(privateValue);
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+
+        var logCall = logCalls.Single();
+        logCall.Arguments[3].Should().BeNull(
+            "the original exception can contain personal data");
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object?>>)logCall.Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+
+        logCall.Arguments[2].ToString()
+            .Should().NotContain(privateValue);
     }
 
     [Test]
@@ -698,6 +779,108 @@ public class FosterFamilyControllerTests
 
         errorResponse.Errors.First().Title
             .Should().Be("Foster child not found");
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Returns_Created()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+        var request = new FosterChildReconfirmRequest
+        {
+            EligibilityCode = "40000000001",
+            SubmissionDate = new DateTime(2026, 9, 15)
+        };
+        var response = new FosterChildResponse { FosterChildId = fosterChildId };
+
+        SetupControllerWithLocalAuthorityIds([201]);
+
+        _mockReconfirmFosterChild
+            .Setup(x => x.Execute(fosterChildId, request, 201))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _sut.ReconfirmFosterChild(fosterChildId, request);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)result;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeSameAs(response);
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Returns_BadRequest_When_No_LocalAuthority_Scope()
+    {
+        // Arrange
+        SetupControllerWithLocalAuthorityIds([]);
+        var request = new FosterChildReconfirmRequest
+        {
+            EligibilityCode = "40000000001",
+            SubmissionDate = new DateTime(2026, 9, 15)
+        };
+
+        // Act
+        var result = await _sut.ReconfirmFosterChild(Guid.NewGuid(), request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequest = (BadRequestObjectResult)result;
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+        errorResponse.Errors.First().Title.Should().Be("No local authority scope found");
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Returns_NotFound_When_NotFoundException_Thrown()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+        var request = new FosterChildReconfirmRequest
+        {
+            EligibilityCode = "40000000001",
+            SubmissionDate = new DateTime(2026, 9, 15)
+        };
+
+        SetupControllerWithLocalAuthorityIds([201]);
+        _mockReconfirmFosterChild
+            .Setup(x => x.Execute(fosterChildId, request, 201))
+            .ThrowsAsync(new NotFoundException("Child was not found"));
+
+        // Act
+        var result = await _sut.ReconfirmFosterChild(fosterChildId, request);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var notFound = (NotFoundObjectResult)result;
+        var errorResponse = (ErrorResponse)notFound.Value!;
+        errorResponse.Errors.First().Title.Should().Be("Foster child not found");
+        errorResponse.Errors.First().Detail.Should().Be("Child was not found");
+    }
+
+    [Test]
+    public async Task ReconfirmFosterChild_Returns_BadRequest_When_Request_Is_Invalid()
+    {
+        // Arrange
+        var fosterChildId = Guid.NewGuid();
+        var request = new FosterChildReconfirmRequest
+        {
+            EligibilityCode = "40000000001",
+            SubmissionDate = new DateTime(2026, 9, 15)
+        };
+
+        SetupControllerWithLocalAuthorityIds([201]);
+        _mockReconfirmFosterChild
+            .Setup(x => x.Execute(fosterChildId, request, 201))
+            .ThrowsAsync(new FluentValidation.ValidationException("Invalid reconfirm request"));
+
+        // Act
+        var result = await _sut.ReconfirmFosterChild(fosterChildId, request);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequest = (BadRequestObjectResult)result;
+        var errorResponse = (ErrorResponse)badRequest.Value!;
+        errorResponse.Errors.First().Title.Should().Be("Invalid reconfirm request");
     }
 
     [Test]

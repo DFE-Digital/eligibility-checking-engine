@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Domain.Validation;
+using CheckYourEligibility.API.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.UseCases;
 

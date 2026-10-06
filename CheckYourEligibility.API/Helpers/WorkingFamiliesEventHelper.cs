@@ -4,34 +4,41 @@ using CheckYourEligibility.API.Helpers;
 
 public static class WorkingFamiliesEventHelper
 {
-    public static WorkingFamiliesEvent ParseWorkingFamilyFromFosterFamily(FosterFamilyRequest data, string eligibilityCode)
+
+    public static WorkingFamiliesEvent ParseWorkingFamilyEventFromFosterFamily(
+        FosterCarer fosterCarer,
+        FosterChild fosterChild,
+        string eligibilityCode,
+        DateTime validityStartDate,
+        DateTime submissionDate)
     {
-
-        WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent
+        WorkingFamiliesEvent wfEvent = new()
         {
-
             WorkingFamiliesEventID = Guid.NewGuid().ToString(),
             EligibilityCode = eligibilityCode,
-            ValidityStartDate = data.SubmissionDate,
-            ValidityEndDate = data.SubmissionDate.AddMonths(3),
+            ValidityStartDate = validityStartDate,
+            ValidityEndDate = validityStartDate.AddMonths(3),
 
-            ParentNationalInsuranceNumber = data.FosterCarer.CarerNationalInsuranceNumber,
-            ParentFirstName = data.FosterCarer.CarerFirstName,
-            ParentLastName = data.FosterCarer.CarerLastName,
-            ParentDateOfBirth = data.FosterCarer.CarerDateOfBirth,
-            PartnerNationalInsuranceNumber = data.Partner?.PartnerNationalInsuranceNumber ?? string.Empty,
-            PartnerFirstName = data.Partner?.PartnerFirstName ?? string.Empty,
-            PartnerLastName = data.Partner?.PartnerLastName ?? string.Empty,
-            PartnerDateOfBirth = data.Partner?.PartnerDateOfBirth,
+            ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber?.ToUpper().Replace(" ", string.Empty),
+            ParentFirstName = fosterCarer.FirstName,
+            ParentLastName = fosterCarer.LastName,
+            ParentDateOfBirth = fosterCarer.DateOfBirth,
+            PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber?.ToUpper().Replace(" ", string.Empty) ?? string.Empty,
+            PartnerFirstName = fosterCarer.PartnerFirstName ?? string.Empty,
+            PartnerLastName = fosterCarer.PartnerLastName ?? string.Empty,
+            PartnerDateOfBirth = fosterCarer.PartnerDateOfBirth,
 
-            ChildFirstName = data.FosterChild.ChildFirstName,
-            ChildLastName = data.FosterChild.ChildLastName,
-            ChildPostCode = data.FosterChild.ChildPostCode,
-            ChildDateOfBirth = data.FosterChild.ChildDateOfBirth,
-            SubmissionDate = data.SubmissionDate,
+            ChildFirstName = fosterChild.FirstName,
+            ChildLastName = fosterChild.LastName,
+            ChildPostCode = fosterChild.PostCode,
+            ChildDateOfBirth = fosterChild.DateOfBirth,
+            SubmissionDate = submissionDate,
 
-            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(data.SubmissionDate, data.SubmissionDate), // validity start date and submmission
-            GracePeriodEndDate = GetGracePeriodEndDate(data.SubmissionDate.AddMonths(3))
+            DiscretionaryValidityStartDate = GetDiscretionaryStartDate(validityStartDate, submissionDate), // validity start date and submmission
+            GracePeriodEndDate = GetGracePeriodEndDate(validityStartDate.AddMonths(3)),
+
+            CreatedDateTime = DateTime.UtcNow,
+            EventDateTime = DateTime.UtcNow
         };
 
         return wfEvent;
@@ -43,8 +50,9 @@ public static class WorkingFamiliesEventHelper
     /// <param name="isContiguous">
     /// if True - it will also map FirstEventDate, LastCheckDate, FirstCheckDate, DVSD, VSD</param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false) {
-        
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false)
+    {
+
         DateTime today = DateTime.UtcNow.Date;
 
         eventSummary.LastUpdatedDate = today;
@@ -55,14 +63,15 @@ public static class WorkingFamiliesEventHelper
 
         if (!isContiguous)
         {
-            eventSummary.FirstEventDate = today;     
+            eventSummary.FirstEventDate = today;
             eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
             eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
 
         }
         return eventSummary;
     }
-    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent) {
+    public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent)
+    {
 
         DateTime today = DateTime.UtcNow.Date;
         var currentTerm = WorkingFamiliesCheckHelper.GetTerms(today).Current;
@@ -87,10 +96,9 @@ public static class WorkingFamiliesEventHelper
             DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
             ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
             ValidityEndDate = workingFamiliesEvent.ValidityEndDate,
-            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate,1)
-            
-        };       
-            return newEventSummary;
+            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate, 1)
+        };
+        return newEventSummary;
 
     }
 
@@ -99,7 +107,8 @@ public static class WorkingFamiliesEventHelper
     /// </summary>
     /// <param name="workingFamiliesEvent"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent) {
+    public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent)
+    {
 
         eventSummary.ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth;
         eventSummary.ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber;
@@ -109,7 +118,7 @@ public static class WorkingFamiliesEventHelper
         eventSummary.ParentLastName = workingFamiliesEvent.ParentLastName;
         eventSummary.PartnerLastName = workingFamiliesEvent.PartnerLastName;
         eventSummary.ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim();
-       
+
         return eventSummary;
     }
 
@@ -170,6 +179,7 @@ public static class WorkingFamiliesEventHelper
             return new DateTime(validityEndDateOnly.Year, 3, 31);
         }
     }
+
     // if submitted date is before the current term, and the VSD is < 15 days from the start of the term
     public static DateTime GetDiscretionaryStartDate(DateTime validityStartDate, DateTime submissionDate)
     {
@@ -199,8 +209,9 @@ public static class WorkingFamiliesEventHelper
     /// <param name="summaryRecord"></param>
     /// <param name="historicEventRecordCount"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount) {
-      
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount)
+    {
+
         //if older events found (summary record is not null), initiate contiguous logic
         if (summaryRecord != null)
         {
@@ -208,11 +219,11 @@ public static class WorkingFamiliesEventHelper
             var historicalEventVEDTerm = WorkingFamiliesCheckHelper.GetTerms(summaryRecord.ValidityEndDate);
 
             // if contiguous chain is broken
-            if ((historicEventRecordCount == 1 &&  incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate 
+            if ((historicEventRecordCount == 1 && incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate
                 && historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
                 (incomingEvent.DiscretionaryValidityStartDate > summaryRecord.GracePeriodEndDate))
             {
-               return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
+                return MapWorkingFamiliesEventUpdateDatesToSummaryRecord(incomingEvent, summaryRecord, isContiguous: false);
             }
             // continue the chain
             else
@@ -223,8 +234,21 @@ public static class WorkingFamiliesEventHelper
         // if no summary event record found, map a new summary record from the incoming event.
         else
         {
-           WorkingFamiliesEventSummary eventSummaryRecord = new();
-          return  eventSummaryRecord = MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+            return MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
+        }
+    }
+
+    public static DateTime CalculateValidityStartDate(DateTime submissionDate, WorkingFamiliesEventSummary? existingSummaryRecord)
+    {
+        if (existingSummaryRecord == null || submissionDate > existingSummaryRecord.ValidityEndDate)
+        {
+            // If there is no existing summary record or submitted date > summaryRecord.VED, the validity start date should be the submission date
+            return submissionDate;
+        }
+        else
+        {
+            // If there is an existing summary record, the validity start date should be the day after the existing validity end date
+            return existingSummaryRecord.ValidityEndDate.AddDays(1);
         }
     }
 }

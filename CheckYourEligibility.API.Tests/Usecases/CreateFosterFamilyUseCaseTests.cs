@@ -1,5 +1,5 @@
-
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Moq;
@@ -29,7 +29,7 @@ public class CreateFosterFamilyUseCaseTests
     public async Task Execute_Should_Throw_When_Request_Is_Null()
     {
         // Arrange
-        
+
         // Act
         var act = () => _sut.Execute(
             null!,
@@ -137,6 +137,130 @@ public class CreateFosterFamilyUseCaseTests
         // Assert
         result.Should().BeEquivalentTo(expected);
         request.FosterCarer.LocalAuthorityID.Should().Be(999);
+    }
+
+    [TestCase("ab 12 34 56 c", "ce 12 34 56 a")]
+    [TestCase("ab-12.34/56c", "ce-12.34/56a")]
+    [TestCase("ab\t12\r\n3456c", "ce\t12\r\n3456a")]
+    public async Task Execute_ForwardsCanonicalCarerAndPartnerNinos(
+    string carerNino,
+    string partnerNino)
+    {
+        var request = BuildValidRequest();
+        request.FosterCarer.CarerNationalInsuranceNumber = carerNino;
+        request.HasPartner = true;
+        request.Partner = new FosterPartnerRequest
+        {
+            PartnerFirstName = "Jane",
+            PartnerLastName = "Bloggs",
+            PartnerDateOfBirth = new DateTime(1981, 1, 1),
+            PartnerNationalInsuranceNumber = partnerNino
+        };
+
+        _mockGateway
+            .Setup(x => x.CreateFosterFamily(
+                It.Is<FosterFamilyRequest>(r =>
+                    r.FosterCarer.CarerNationalInsuranceNumber == "AB123456C" &&
+                    r.Partner != null &&
+                    r.Partner.PartnerNationalInsuranceNumber == "CE123456A")))
+            .ReturnsAsync(new FosterFamilyCreatedResponse());
+
+        await _sut.Execute(request, 1);
+    }
+
+    [Test]
+    public async Task Execute_RejectsInvalidNino_WithoutCallingGateway(
+    [Values(false, true)] bool invalidPartner,
+    [Values(
+        "BG123456C",
+        "A1123456C",
+        "AB123456E",
+        "AB123456 ",
+        "AB12345C",
+        "AB123456CD",
+        "AB\u0661\u0662\u0663\u0664\u0665\u0666C",
+        "---")] string invalidNino)
+    {
+        var request = BuildValidRequest();
+        request.HasPartner = true;
+        request.Partner = new FosterPartnerRequest
+        {
+            PartnerFirstName = "Jane",
+            PartnerLastName = "Bloggs",
+            PartnerDateOfBirth = new DateTime(1981, 1, 1),
+            PartnerNationalInsuranceNumber = "CE123456A"
+        };
+
+        if (invalidPartner)
+        {
+            request.Partner.PartnerNationalInsuranceNumber = invalidNino;
+        }
+        else
+        {
+            request.FosterCarer.CarerNationalInsuranceNumber = invalidNino;
+        }
+
+        var expectedProperty = invalidPartner
+            ? "Partner.PartnerNationalInsuranceNumber"
+            : "FosterCarer.CarerNationalInsuranceNumber";
+
+        Func<Task> act = () => _sut.Execute(request, 1);
+
+        var thrown = await act.Should()
+            .ThrowAsync<FluentValidation.ValidationException>();
+
+        thrown.Which.Errors.Should().NotBeEmpty();
+        thrown.Which.Errors.Should().OnlyContain(
+            error => error.PropertyName == expectedProperty);
+
+        var retainedNino = invalidPartner
+            ? request.Partner!.PartnerNationalInsuranceNumber
+            : request.FosterCarer.CarerNationalInsuranceNumber;
+
+        retainedNino.Should().Be(invalidNino);
+
+        _mockGateway.Verify(
+            gateway => gateway.CreateFosterFamily(
+                It.IsAny<FosterFamilyRequest>()),
+            Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_Should_Preserve_Unvalidated_Partner_When_HasPartner_Is_False()
+    {
+        var request = BuildValidRequest();
+        request.HasPartner = false;
+        request.FosterCarer.CarerNationalInsuranceNumber = "ab-12.34/56c";
+
+        var partner = new FosterPartnerRequest
+        {
+            PartnerFirstName = string.Empty,
+            PartnerLastName = string.Empty,
+            PartnerDateOfBirth = default,
+            PartnerNationalInsuranceNumber = "bg-12.34/56c"
+        };
+        request.Partner = partner;
+
+        _mockGateway
+            .Setup(gateway => gateway.CreateFosterFamily(
+                It.Is<FosterFamilyRequest>(r =>
+                    !r.HasPartner &&
+                    r.FosterCarer.CarerNationalInsuranceNumber == "AB123456C" &&
+                    r.Partner == partner &&
+                    r.Partner.PartnerNationalInsuranceNumber == "bg-12.34/56c")))
+            .ReturnsAsync(new FosterFamilyCreatedResponse());
+
+        await _sut.Execute(request, 1);
+
+        request.Partner.Should().BeSameAs(partner);
+        partner.PartnerNationalInsuranceNumber.Should().Be("bg-12.34/56c");
+        partner.PartnerFirstName.Should().BeEmpty();
+        partner.PartnerLastName.Should().BeEmpty();
+        partner.PartnerDateOfBirth.Should().Be(default(DateTime));
+
+        _mockGateway.Verify(
+            gateway => gateway.CreateFosterFamily(request),
+            Times.Once);
     }
 
     private static FosterFamilyRequest BuildValidRequest()

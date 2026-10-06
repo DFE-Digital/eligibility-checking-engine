@@ -4,7 +4,6 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases.Internal;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using FluentValidation;
@@ -129,8 +128,8 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult());
 
         _mockCheckGateway
-            .Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),It.IsAny<CheckMetaData>()))
-            .Callback<IEligibilityServiceType, CheckMetaData>((arg,metaArg) => capturedArg = arg)
+            .Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), It.IsAny<CheckMetaData>()))
+            .Callback<IEligibilityServiceType, CheckMetaData>((arg, metaArg) => capturedArg = arg)
             .ReturnsAsync(responseData);
         // Act
         var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
@@ -197,7 +196,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .Returns(new ValidationResult([
                 new ValidationFailure("test", "test error")
             ])); // Act
-        Func<Task> act = async () => await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals,meta);
+        Func<Task> act = async () => await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
 
         // Assert
         await act.Should().ThrowAsync<ValidationException>();
@@ -218,7 +217,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>()))
             .Returns(new ValidationResult());
-        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>(),meta))
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<CheckEligibilityRequestWorkingFamiliesData>(), meta))
             .ReturnsAsync(responseData);
 
         // Act
@@ -248,11 +247,11 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new ValidationResult());
-        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),meta))
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), meta))
             .ReturnsAsync(responseData);
 
         // Act
-        var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals,meta);
+        var result = await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
 
         // Assert
         result.Data.Should().NotBeNull();
@@ -278,7 +277,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
 
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new ValidationResult());
-        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),meta))
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), meta))
             .ReturnsAsync(responseData);
         // Act
         await _sut.Execute(model, CheckEligibilityType.FreeSchoolMeals, meta);
@@ -296,7 +295,7 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
         _mockValidator.Setup(v => v.Validate(It.IsAny<CheckEligibilityRequestData>()))
             .Returns(new ValidationResult());
 
-        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(),meta))
+        _mockCheckGateway.Setup(s => s.PostCheck(It.IsAny<IEligibilityServiceType>(), meta))
             .ReturnsAsync((PostCheckResult)null!);
 
         // Act
@@ -307,7 +306,103 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             .WithMessage("Eligibility check not completed successfully.");
 
         // Verify audit service was not called
-        _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(),null), Times.Never);
+        _mockAuditGateway.Verify(a => a.CreateAuditEntry(It.IsAny<AuditType>(), It.IsAny<string>(), null), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_ForwardsCanonicalNino_WithRealValidation(
+    [Values(false, true)] bool workingFamilies,
+    [Values(
+        "ab 12 34 56 c",
+        "ab-12.34/56c",
+        "ab\t12\r\n3456c")] string input)
+    {
+        var sut = new CheckEligibilityUseCase(
+            _mockCheckGateway.Object,
+            _mockAuditGateway.Object,
+            new FeatureManagement.Domain.Validation.CheckEligibilityRequestDataValidator(),
+            _mockLogger.Object);
+
+        var meta = _fixture.Create<CheckMetaData>();
+        string? forwardedNino = null;
+
+        _mockCheckGateway
+            .Setup(g => g.PostCheck(It.IsAny<IEligibilityServiceType>(), meta))
+            .Callback<IEligibilityServiceType, CheckMetaData>((data, _) =>
+            {
+                forwardedNino =
+                    ((CheckEligibilityRequestDataBase)data).NationalInsuranceNumber;
+            })
+            .ReturnsAsync(new PostCheckResult
+            {
+                Id = "nino-contract-test",
+                Status = CheckEligibilityStatus.queuedForProcessing
+            });
+
+        if (workingFamilies)
+        {
+            var request = CreateValidWFCheckRequest();
+            request.Data!.NationalInsuranceNumber = input;
+            await sut.Execute(request, CheckEligibilityType.WorkingFamilies, meta);
+        }
+        else
+        {
+            var request = CreateValidCheckRequest();
+            request.Data!.NationalInsuranceNumber = input;
+            await sut.Execute(request, CheckEligibilityType.FreeSchoolMeals, meta);
+        }
+
+        forwardedNino.Should().Be("AB123456C");
+
+        _mockCheckGateway.Verify(
+            g => g.PostCheck(It.IsAny<IEligibilityServiceType>(), meta),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Execute_RejectsInvalidNino_WithRealValidation(
+        [Values(false, true)] bool workingFamilies,
+        [Values(
+        "BG123456C",
+        "A1123456C",
+        "AB123456E",
+        "AB123456 ",
+        "AB12345C",
+        "AB123456CD",
+        "AB\u0661\u0662\u0663\u0664\u0665\u0666C",
+        "---")] string input)
+    {
+        var sut = new CheckEligibilityUseCase(
+            _mockCheckGateway.Object,
+            _mockAuditGateway.Object,
+            new FeatureManagement.Domain.Validation.CheckEligibilityRequestDataValidator(),
+            _mockLogger.Object);
+
+        var meta = _fixture.Create<CheckMetaData>();
+
+        Func<Task> act = async () =>
+        {
+            if (workingFamilies)
+            {
+                var request = CreateValidWFCheckRequest();
+                request.Data!.NationalInsuranceNumber = input;
+                await sut.Execute(request, CheckEligibilityType.WorkingFamilies, meta);
+            }
+            else
+            {
+                var request = CreateValidCheckRequest();
+                request.Data!.NationalInsuranceNumber = input;
+                await sut.Execute(request, CheckEligibilityType.FreeSchoolMeals, meta);
+            }
+        };
+
+        await act.Should().ThrowAsync<ValidationException>();
+
+        _mockCheckGateway.Verify(
+            g => g.PostCheck(
+                It.IsAny<IEligibilityServiceType>(),
+                It.IsAny<CheckMetaData>()),
+            Times.Never);
     }
 
     private CheckEligibilityRequest<CheckEligibilityRequestData> CreateValidCheckRequest()
@@ -322,7 +417,6 @@ public class CheckEligibilityUseCaseTests : TestBase.TestBase
             }
         };
     }
-
 
     private CheckEligibilityRequest<CheckEligibilityRequestWorkingFamiliesData> CreateValidWFCheckRequest()
     {

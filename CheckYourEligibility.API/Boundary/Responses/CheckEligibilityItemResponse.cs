@@ -7,6 +7,7 @@ public class CheckEligibilityItemBase
     public string? EligibilityCheckID { get; set; }
     public string NationalInsuranceNumber { get; set; }
     public string Status { get; set; }
+    public string? ClientIdentifier { get; set; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string LastName { get; set; }
@@ -27,7 +28,7 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string? Tier { get; set; }
     public string? EligibilityEndDate { get; set; }
     public string? NationalAsylumSeekerServiceNumber { get; set; }
-    public string? ClientIdentifier { get; set; }
+
   
 }
 

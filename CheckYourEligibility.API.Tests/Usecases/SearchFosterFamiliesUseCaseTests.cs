@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Moq;

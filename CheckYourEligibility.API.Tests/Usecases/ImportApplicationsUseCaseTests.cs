@@ -90,6 +90,53 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task Execute_Should_Reject_Invalid_Nino_And_Import_Canonical_Valid_Nino()
+    {
+        var csvContent =
+            "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
+            "John,Smith,1985-03-15,bg-12.34/56c,john@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
+            "Jane,Jones,1985-03-15,ns-73.83/56d,jane@example.com,Sam,Jones,2015-04-12,123456,2025-07-31";
+
+        var fileMock = CreateMockFile(csvContent, "text/csv");
+        var request = new ApplicationBulkImportRequest { File = fileMock.Object };
+
+        var establishmentLookup = new Dictionary<string, DomainEstablishment>
+        {
+            ["123456"] = new DomainEstablishment
+            {
+                EstablishmentID = 123456,
+                LocalAuthorityID = 1,
+                EstablishmentName = "Test School"
+            }
+        };
+
+        var capturedApplications = new List<Application>();
+
+        _mockApplicationGateway
+            .Setup(g => g.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(establishmentLookup);
+
+        _mockApplicationGateway
+            .Setup(g => g.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
+            .Callback<IEnumerable<Application>>(apps =>
+                capturedApplications = apps.ToList())
+            .Returns(Task.CompletedTask);
+
+        var result = await _sut.Execute(request, new List<int> { 1 });
+
+        result.SuccessfulImports.Should().Be(1);
+        result.FailedImports.Should().Be(1);
+        result.TotalRecords.Should().Be(2);
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Be("Row 1: Invalid National Insurance Number");
+
+        capturedApplications.Should().ContainSingle();
+        capturedApplications.Single().ParentNationalInsuranceNumber
+            .Should().Be("NS738356D");
+        capturedApplications.Single().ParentFirstName.Should().Be("Jane");
+    }
+
+    [Test]
     public async Task Execute_Should_Process_Valid_CSV_File()
     {
         // Arrange
@@ -233,7 +280,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
+            "Jane,Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -286,7 +333,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
+            "Jane,Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -338,8 +385,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
-            "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+            "Jane,Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+            "Bob,Wilson,1988-05-10,EH345678B,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -400,8 +447,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,999999,2025-07-31\n" +
-            "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,654321,2025-07-31";
+            "Jane,Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,999999,2025-07-31\n" +
+            "Bob,Wilson,1988-05-10,EH345678B,bob.wilson@example.com,Alice,Wilson,2014-12-20,654321,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -456,8 +503,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             ",Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            "Jane,,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
-            "Bob,Wilson,invalid-date,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+            "Jane,,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+            "Bob,Wilson,invalid-date,EH345678B,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -602,7 +649,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
-            .ThrowsAsync(new Exception("Database error"));
+            .ThrowsAsync(new Exception("PRIVATE-DATABASE-VALUE-3644"));
         _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
@@ -615,7 +662,24 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().NotBeNull();
         result.Message.Should().Be("Import failed - error during bulk database operation.");
-        result.Errors.Should().Contain("Error during bulk import: Database error");
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Be("Error during bulk import. Contact support.");
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+        logCalls.Single().Arguments[3].Should().BeNull();
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object>>)logCalls.Single().Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain("PRIVATE-DATABASE-VALUE-3644");
+        }
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(1);
     }
@@ -650,8 +714,8 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,2015-04-12,123456,2025-07-31\n" +
-            ",Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
-            "Bob,Wilson,1988-05-10,EF345678G,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
+            ",Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,2016-09-08,654321,2025-07-31\n" +
+            "Bob,Wilson,1988-05-10,EH345678B,bob.wilson@example.com,Alice,Wilson,2014-12-20,789012,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -851,6 +915,107 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.Tier.Should().Be(expectedTier);
     }
 
+    [TestCase("text/csv")]
+    [TestCase("application/json")]
+    public async Task Execute_Should_Not_Expose_File_Read_Error_Details(
+    string contentType)
+    {
+        const string privateValue = "PRIVATE-IMPORT-VALUE-3644";
+
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.ContentType).Returns(contentType);
+        fileMock.Setup(f => f.OpenReadStream())
+            .Throws(new IOException($"Source error containing {privateValue}"));
+
+        var request = new ApplicationBulkImportRequest
+        {
+            File = fileMock.Object
+        };
+
+        var result = await _sut.Execute(request, new List<int> { 1 });
+
+        result.SuccessfulImports.Should().Be(0);
+        result.Errors.Should().ContainSingle();
+        result.Message.Should().NotContain(privateValue);
+        string.Join(" ", result.Errors).Should().NotContain(privateValue);
+
+        _mockApplicationGateway.Verify(
+            g => g.BulkImportApplications(It.IsAny<IEnumerable<Application>>()),
+            Times.Never);
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+
+        var logCall = logCalls.Single();
+        logCall.Arguments[3].Should().BeNull(
+            "the source exception may contain submitted personal data");
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object>>)logCall.Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+    }
+
+    [Test]
+    public async Task Execute_Should_Not_Expose_Invalid_Status_In_Errors_Or_Logs()
+    {
+        const string privateValue = "PRIVATE-STATUS-VALUE-3644";
+
+        var csvContent =
+            "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date,Application Status\n" +
+            $"John,Smith,1985-03-15,AB123456C,john@example.com,Emma,Smith,2015-04-12,123456,2025-07-31,{privateValue}";
+
+        var fileMock = CreateMockFile(csvContent, "text/csv");
+        var request = new ApplicationBulkImportRequest { File = fileMock.Object };
+
+        _mockApplicationGateway
+            .Setup(g => g.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
+            .ReturnsAsync(new Dictionary<string, DomainEstablishment>
+            {
+                ["123456"] = new DomainEstablishment
+                {
+                    EstablishmentID = 123456,
+                    LocalAuthorityID = 1,
+                    EstablishmentName = "Test School"
+                }
+            });
+
+        var result = await _sut.Execute(request, new List<int> { 1 });
+
+        result.SuccessfulImports.Should().Be(0);
+        result.FailedImports.Should().Be(1);
+        result.TotalRecords.Should().Be(1);
+        result.Errors.Should().ContainSingle().Which.Should().Be(
+            "Row 1: Error processing record. Check the supplied values.");
+
+        _mockApplicationGateway.Verify(
+            g => g.BulkImportApplications(It.IsAny<IEnumerable<Application>>()),
+            Times.Never);
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+        logCalls.Single().Arguments[3].Should().BeNull();
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object>>)logCalls.Single().Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain(privateValue);
+        }
+    }
+
     private Mock<IFormFile> CreateMockFile(string content, string contentType)
     {
         var fileMock = new Mock<IFormFile>();
@@ -979,7 +1144,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1053,7 +1218,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1130,7 +1295,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1205,7 +1370,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1219,7 +1384,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Bob",
             ParentSurname = "Wilson",
             ParentDateOfBirth = "1988-05-10",
-            ParentNino = "EF345678G",
+            ParentNino = "EH345678B",
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
@@ -1306,7 +1471,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1320,7 +1485,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Bob",
             ParentSurname = "Wilson",
             ParentDateOfBirth = "1988-05-10",
-            ParentNino = "EF345678G",
+            ParentNino = "EH345678B",
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
@@ -1400,7 +1565,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "", // Invalid - empty
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1414,7 +1579,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Bob",
             ParentSurname = "Wilson",
             ParentDateOfBirth = "invalid-date", // Invalid date format
-            ParentNino = "EF345678G",
+            ParentNino = "EH345678B",
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
@@ -1492,7 +1657,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         _mockApplicationGateway.Setup(x => x.GetEstablishmentEntitiesByUrns(It.IsAny<List<string>>()))
             .ReturnsAsync(establishmentLookup);
         _mockApplicationGateway.Setup(x => x.BulkImportApplications(It.IsAny<IEnumerable<Application>>()))
-            .ThrowsAsync(new Exception("Database error"));
+            .ThrowsAsync(new Exception("PRIVATE-DATABASE-VALUE-3644"));
         _mockAuditGateway.Setup(x => x.CreateAuditEntry(AuditType.Administration, string.Empty,null))
             .ReturnsAsync("audit-id");
 
@@ -1505,7 +1670,24 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         // Assert
         result.Should().NotBeNull();
         result.Message.Should().Be("Import failed - error during bulk database operation.");
-        result.Errors.Should().Contain("Error during bulk import: Database error");
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Be("Error during bulk import. Contact support.");
+
+        var logCalls = _mockLogger.Invocations
+            .Where(invocation => invocation.Method.Name == "Log")
+            .ToList();
+
+        logCalls.Should().ContainSingle();
+        logCalls.Single().Arguments[3].Should().BeNull();
+
+        var logState =
+            (IEnumerable<KeyValuePair<string, object>>)logCalls.Single().Arguments[2];
+
+        foreach (var entry in logState)
+        {
+            (entry.Value?.ToString() ?? string.Empty)
+                .Should().NotContain("PRIVATE-DATABASE-VALUE-3644");
+        }
         result.SuccessfulImports.Should().Be(0);
         result.FailedImports.Should().Be(1);
     }
@@ -1567,7 +1749,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "", // Invalid - empty
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
@@ -1581,7 +1763,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Bob",
             ParentSurname = "Wilson",
             ParentDateOfBirth = "1988-05-10",
-            ParentNino = "EF345678G",
+            ParentNino = "EH345678B",
             ParentEmail = "bob.wilson@example.com",
             ChildFirstName = "Alice",
             ChildSurname = "Wilson",
@@ -1642,7 +1824,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "John",
             ParentSurname = "Smith",
             ParentDateOfBirth = "1985-03-15",
-            ParentNino = "AB123456C",
+            ParentNino = "ab-12.34/56c",
             ParentEmail = "john.smith@example.com",
             ChildFirstName = "Emma",
             ChildSurname = "Smith",
@@ -1689,6 +1871,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         capturedApplication.ParentLastName.Should().Be("Smith");
         capturedApplication.ParentDateOfBirth.Should().Be(new DateTime(1985, 3, 15));
         capturedApplication.ParentNationalInsuranceNumber.Should().Be("AB123456C");
+        applicationData.ParentNino.Should().Be("ab-12.34/56c");
         capturedApplication.ParentEmail.Should().Be("john.smith@example.com");
         capturedApplication.ChildFirstName.Should().Be("Emma");
         capturedApplication.ChildLastName.Should().Be("Smith");
@@ -1757,7 +1940,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
         var csvContent =
             "Parent First Name,Parent Surname,Parent DOB,Parent Nino,Parent Email Address,Child First Name,Child Surname,Child Date of Birth,Child School URN,Eligibility End Date\n" +
             "John,Smith,1985-03-15,AB123456C,john.smith@example.com,Emma,Smith,invalid-date,123456,2025-07-31\n" +
-            "Jane,Doe,1990-02-20,CD789012E,jane.doe@example.com,Peter,Doe,,654321,2025-07-31";
+            "Jane,Doe,1990-02-20,CE789012A,jane.doe@example.com,Peter,Doe,,654321,2025-07-31";
 
         var fileMock = CreateMockFile(csvContent, "text/csv");
         var request = new ApplicationBulkImportRequest { File = fileMock.Object };
@@ -1812,7 +1995,7 @@ public class ImportApplicationsUseCaseTests : TestBase.TestBase
             ParentFirstName = "Jane",
             ParentSurname = "Doe",
             ParentDateOfBirth = "1990-02-20",
-            ParentNino = "CD789012E",
+            ParentNino = "CE789012A",
             ParentEmail = "jane.doe@example.com",
             ChildFirstName = "Peter",
             ChildSurname = "Doe",
