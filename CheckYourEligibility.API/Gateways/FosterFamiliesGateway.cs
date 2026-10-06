@@ -379,7 +379,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                 ReconfirmationStatus.ChildTooOld => 3,
                 _ => 4
             })
-            .ThenBy(item => item.ValidityEndDate)
+            .ThenByDescending(item => item.ValidityEndDate)
             .ThenBy(item => item.EligibilityCode)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

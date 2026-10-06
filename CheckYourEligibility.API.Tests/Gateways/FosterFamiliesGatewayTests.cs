@@ -783,7 +783,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task SearchFosterFamilies_Should_Order_By_Reconfirmation_Status_Then_Oldest_Validity_End_Date()
+    public async Task SearchFosterFamilies_Should_Order_By_Reconfirmation_Status_Then_Descending_Validity_End_Date()
     {
         // Arrange
         var checkDate = new DateTime(2025, 6, 15);
@@ -869,12 +869,12 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             ReconfirmationStatus.NotDueYet,
             ReconfirmationStatus.ChildTooOld);
         results.Select(item => item.EligibilityCode).Should().Equal(
-            "40000000044",
             "40000000014",
-            "40000000064",
+            "40000000044",
             "40000000024",
-            "40000000054",
+            "40000000064",
             "40000000034",
+            "40000000054",
             "40000000004");
     }
 
