@@ -225,7 +225,7 @@ public class CheckEligibilityGateway : ICheckEligibility
                             {
                                 var firstValidCheck = await _db.CheckEligibilities
                                     .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID && x.Status == hashedStatus)
-                                    .OrderByDescending(x => x.Created)
+                                    .OrderBy(x => x.Created)
                                     .AsNoTracking()
                                     .FirstOrDefaultAsync();
                                 if (firstValidCheck != null)
