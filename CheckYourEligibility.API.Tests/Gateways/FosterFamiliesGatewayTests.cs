@@ -783,6 +783,102 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
     }
 
     [Test]
+    public async Task SearchFosterFamilies_Should_Order_By_Reconfirmation_Status_Then_Oldest_Validity_End_Date()
+    {
+        // Arrange
+        var checkDate = new DateTime(2025, 6, 15);
+        var searchRecords = new[]
+        {
+            (EligibilityCode: "40000000004", ValidityEndDate: new DateTime(2025, 5, 1), ChildDateOfBirth: new DateTime(2010, 1, 1)),
+            (EligibilityCode: "40000000014", ValidityEndDate: new DateTime(2025, 6, 10), ChildDateOfBirth: new DateTime(2022, 1, 1)),
+            (EligibilityCode: "40000000024", ValidityEndDate: new DateTime(2025, 6, 25), ChildDateOfBirth: new DateTime(2022, 1, 1)),
+            (EligibilityCode: "40000000034", ValidityEndDate: new DateTime(2025, 8, 1), ChildDateOfBirth: new DateTime(2022, 1, 1)),
+            (EligibilityCode: "40000000044", ValidityEndDate: new DateTime(2025, 6, 1), ChildDateOfBirth: new DateTime(2022, 1, 1)),
+            (EligibilityCode: "40000000054", ValidityEndDate: new DateTime(2025, 7, 20), ChildDateOfBirth: new DateTime(2022, 1, 1)),
+            (EligibilityCode: "40000000064", ValidityEndDate: new DateTime(2025, 6, 20), ChildDateOfBirth: new DateTime(2022, 1, 1))
+        };
+
+        foreach (var (eligibilityCode, validityEndDate, childDateOfBirth) in searchRecords)
+        {
+            var summaryId = Guid.NewGuid().ToString();
+            var fosterCarerId = Guid.NewGuid();
+
+            await _fakeInMemoryDb.FosterCarers.AddAsync(new FosterCarer
+            {
+                FosterCarerId = fosterCarerId,
+                FirstName = "Carer",
+                LastName = eligibilityCode,
+                NationalInsuranceNumber = $"AA{eligibilityCode[^6..]}A",
+                LocalAuthorityID = 0
+            });
+
+            await _fakeInMemoryDb.WorkingFamiliesEventSummaries.AddAsync(new WorkingFamiliesEventSummary
+            {
+                WorkingFamiliesEventSummaryID = summaryId,
+                EligibilityCode = eligibilityCode,
+                ChildFirstName = "Child",
+                ChildFirstNameTruncated = "Child",
+                ChildPostCode = "NNU 1AE",
+                ParentNationalInsuranceNumber = "AA123456A",
+                ValidityStartDate = validityEndDate.AddMonths(-3),
+                ValidityEndDate = validityEndDate,
+                GracePeriodEndDate = validityEndDate.AddDays(14)
+            });
+
+            await _fakeInMemoryDb.FosterChildren.AddAsync(new FosterChild
+            {
+                FosterChildId = Guid.NewGuid(),
+                FirstName = "Child",
+                LastName = eligibilityCode,
+                DateOfBirth = childDateOfBirth,
+                PostCode = "NNU 1AE",
+                EligibilityCode = eligibilityCode,
+                FosterCarerId = fosterCarerId,
+                WorkingFamiliesEventSummaryID = summaryId
+            });
+        }
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+        var deterministicGateway = new FixedDateFosterFamiliesGateway(
+            _fakeInMemoryDb,
+            _mockWFEventGateway.Object,
+            _mockLogger.Object,
+            checkDate);
+
+        // Act
+        var firstPage = await deterministicGateway.SearchFosterFamilies(
+            0,
+            new FosterFamiliesSearchRequest { PageNumber = 1, PageSize = 3 });
+        var secondPage = await deterministicGateway.SearchFosterFamilies(
+            0,
+            new FosterFamiliesSearchRequest { PageNumber = 2, PageSize = 3 });
+        var thirdPage = await deterministicGateway.SearchFosterFamilies(
+            0,
+            new FosterFamiliesSearchRequest { PageNumber = 3, PageSize = 3 });
+        var results = firstPage.Data.Concat(secondPage.Data).Concat(thirdPage.Data).ToList();
+
+        // Assert
+        new[] { firstPage.Data.Count(), secondPage.Data.Count(), thirdPage.Data.Count() }
+            .Should().Equal(3, 3, 1);
+        results.Select(item => item.ReconfirmationProperties.Status).Should().Equal(
+            ReconfirmationStatus.Overdue,
+            ReconfirmationStatus.Overdue,
+            ReconfirmationStatus.Due,
+            ReconfirmationStatus.Due,
+            ReconfirmationStatus.NotDueYet,
+            ReconfirmationStatus.NotDueYet,
+            ReconfirmationStatus.ChildTooOld);
+        results.Select(item => item.EligibilityCode).Should().Equal(
+            "40000000044",
+            "40000000014",
+            "40000000064",
+            "40000000024",
+            "40000000054",
+            "40000000034",
+            "40000000004");
+    }
+
+    [Test]
     public async Task SearchFosterFamilies_Should_Filter_By_Carer_Or_Partner_Nino()
     {
         // Arrange

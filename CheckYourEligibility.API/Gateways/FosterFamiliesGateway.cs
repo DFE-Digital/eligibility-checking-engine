@@ -337,16 +337,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                 x.FosterCarer.PartnerNationalInsuranceNumber == ninoFilter);
         }
 
-        // Calculate record count and max pages
-        var totalRecords = await baseQuery.CountAsync();
-        var maxPage = totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
-        if (pageNumber > maxPage) { pageNumber = maxPage; }
-
-        // Generate result set
-        var results = await baseQuery
-            .OrderByDescending(x => x.SubmissionDate)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
+        var records = await baseQuery
             .Include(x => x.WorkingFamiliesEventSummary)
             .Select(x => new FosterFamiliesSearchItemResponse
             {
@@ -363,16 +354,36 @@ public class FosterFamiliesGateway : IFosterFamilies
             .AsNoTracking()
             .ToListAsync();
 
-        foreach (var item in results)
+        var totalRecords = records.Count;
+        var maxPage = totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
+        if (pageNumber > maxPage) { pageNumber = maxPage; }
+
+        var checkDate = GetCheckDate();
+        foreach (var item in records)
         {
             item.ReconfirmationProperties = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
                 item.ValidityEndDate.ToString(),
                 item.GracePeriodEndDate.ToString(),
-                GetCheckDate(),
+                checkDate,
                 EligibilityCodeType.Foster,
                 item.ChildDateOfBirth.ToString()
             );
         }
+
+        var results = records
+            .OrderBy(item => item.ReconfirmationProperties.Status switch
+            {
+                ReconfirmationStatus.Overdue => 0,
+                ReconfirmationStatus.Due => 1,
+                ReconfirmationStatus.NotDueYet => 2,
+                ReconfirmationStatus.ChildTooOld => 3,
+                _ => 4
+            })
+            .ThenBy(item => item.ValidityEndDate)
+            .ThenBy(item => item.EligibilityCode)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
 
         return new FosterFamiliesSearchResponse
         {
