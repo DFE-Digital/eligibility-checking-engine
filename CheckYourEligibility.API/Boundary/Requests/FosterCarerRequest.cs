@@ -42,8 +42,7 @@ public class FosterCarerRequest
     public string? CarerNationalInsuranceNumber
     {
         get => _carerNationalInsuranceNumber;
-        set => _carerNationalInsuranceNumber =
-            value?.ToUpper().Replace(" ", string.Empty);
+        set => _carerNationalInsuranceNumber = value;
     }
 
 }

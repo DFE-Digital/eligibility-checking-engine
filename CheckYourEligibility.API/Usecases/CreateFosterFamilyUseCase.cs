@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
@@ -28,6 +31,15 @@ public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
         {
             throw new FluentValidation.ValidationException(
                 validationResult.Errors);
+        }
+
+        request.FosterCarer.CarerNationalInsuranceNumber =
+            NinoValidation.Normalize(request.FosterCarer.CarerNationalInsuranceNumber);
+
+        if (request.HasPartner && request.Partner is not null)
+        {
+            request.Partner.PartnerNationalInsuranceNumber =
+                NinoValidation.Normalize(request.Partner.PartnerNationalInsuranceNumber);
         }
 
         request.FosterCarer.LocalAuthorityID = localAuthorityId;

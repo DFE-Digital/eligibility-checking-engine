@@ -2,6 +2,7 @@ using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FeatureManagement.Domain.Validation;
 using FluentValidation;
@@ -53,14 +54,15 @@ public class CreateApplicationUseCase : ICreateApplicationUseCase
         if (model.Data.Type == CheckEligibilityType.None)
             throw new ValidationException($"Invalid request, Valid Type is required: {model.Data.Type}");
 
-        model.Data.ParentNationalInsuranceNumber = model.Data.ParentNationalInsuranceNumber?.ToUpper();
-        model.Data.ParentNationalAsylumSeekerServiceNumber =
-            model.Data.ParentNationalAsylumSeekerServiceNumber?.ToUpper();
-
         var validator = new ApplicationRequestValidator();
         var validationResults = validator.Validate(model);
 
         if (!validationResults.IsValid) throw new ValidationException(validationResults.ToString());
+
+        model.Data.ParentNationalInsuranceNumber =
+            NinoValidation.Normalize(model.Data.ParentNationalInsuranceNumber);
+        model.Data.ParentNationalAsylumSeekerServiceNumber =
+            model.Data.ParentNationalAsylumSeekerServiceNumber?.ToUpperInvariant();
 
         // Get the local authority ID for the establishment and check permissions
         var localAuthorityId = await _applicationGateway.GetLocalAuthorityIdForEstablishment(model.Data.Establishment);

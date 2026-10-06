@@ -19,11 +19,11 @@ public static class WorkingFamiliesEventHelper
             ValidityStartDate = validityStartDate,
             ValidityEndDate = validityStartDate.AddMonths(3),
 
-            ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber,
+            ParentNationalInsuranceNumber = fosterCarer.NationalInsuranceNumber?.ToUpper().Replace(" ", string.Empty),
             ParentFirstName = fosterCarer.FirstName,
             ParentLastName = fosterCarer.LastName,
             ParentDateOfBirth = fosterCarer.DateOfBirth,
-            PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber ?? string.Empty,
+            PartnerNationalInsuranceNumber = fosterCarer.PartnerNationalInsuranceNumber?.ToUpper().Replace(" ", string.Empty) ?? string.Empty,
             PartnerFirstName = fosterCarer.PartnerFirstName ?? string.Empty,
             PartnerLastName = fosterCarer.PartnerLastName ?? string.Empty,
             PartnerDateOfBirth = fosterCarer.PartnerDateOfBirth,
