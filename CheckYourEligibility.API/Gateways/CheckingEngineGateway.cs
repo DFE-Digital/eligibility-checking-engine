@@ -40,6 +40,8 @@ public class CheckingEngineGateway : ICheckingEngine
     private readonly string isInGracePeriodPrefix;
     private readonly string isNotYetEligiblePrefix;
     private readonly string isExpiredPrefix;
+    private readonly bool recordNoneConflict;
+    private readonly bool useEcsAsFinalResult;
     private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new();
     private readonly Dictionary<CheckEligibilityType, string> _DWP_ApiCriteria = new();
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
@@ -68,6 +70,8 @@ public class CheckingEngineGateway : ICheckingEngine
         _workingFamiliesEventGateway = workingFamiliesEventGateway;
         _workingFamiliesDualRunningCheck = workingFamiliesDualRunningCheck;
 
+        useEcsAsFinalResult = _configuration.GetValue<bool>("WorkingFamiliesDualRunning:UseEcsAsFinalResult");
+        recordNoneConflict = _configuration.GetValue<bool>("WorkingFamiliesDualRunning:RecordNoneConflict"); 
         isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
         isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
         isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
@@ -275,45 +279,7 @@ public class CheckingEngineGateway : ICheckingEngine
            result.Status =  WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(result.Source, wfEvent.DiscretionaryValidityStartDate, wfEvent.ValidityEndDate, wfEvent.GracePeriodEndDate, isGracePeriodEndDateApplied);
 
         }
-        if (_ecsAdapter.UseEcsforChecksWF == "validate")
-        {
-            try
-            {
-
-                // run a ECS check and record result in the table
-                string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
-                var ecsResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
-                string ecsStatus = convertEcsResultStatus(ecsResult, CheckEligibilityType.WorkingFamilies).ToString();
-                string eceStatus = result.Status.ToString();
-
-                WorkingFamiliesDualRunningCheck dualRunningCheck = new()
-                {
-
-                    Created = DateTime.UtcNow,
-                    EligibilityCheckID = result.EligibilityCheckID,
-                    ECSStatus = ecsStatus,
-                    ECSQualifier = ecsResult.Qualifier ?? null,
-                    ECEStatus = eceStatus,                  
-                    EligibilityCheck = result,
-                    EligibilityCode = checkData.EligibilityCode,
-                    isConflict = eceStatus == ecsStatus ? false : true
-
-                };
-                dualRunningCheck.ECEValidityDates = ""; // json data for dates
-                dualRunningCheck.ECSValidityDates = ""; //json data for dates
-
-                // record dual running event
-                await _workingFamiliesDualRunningCheck.Create(dualRunningCheck, dbContextFactory);
-
-            }
-            catch (Exception ex) {
-                _logger.LogError($"Action:WF Dual running,EligibilityCheckID: {result.EligibilityCheckID} ", ex);
-                throw;
-            }
-            
-            
-        }
-
+        
         // Create hash just with the check request data to match on post requests
         result.EligibilityCheckHashID =
             await _hashGateway.Create(wfCheckData, result.Status, result.Tier, source, dbContextFactory);
@@ -336,8 +302,75 @@ public class CheckingEngineGateway : ICheckingEngine
         }
 
         result.Updated = DateTime.UtcNow;
+
+        if (_ecsAdapter.UseEcsforChecksWF == "validate")
+        {
+            try
+            {
+                var dualRunningCheck = await Process_WorkingFamiliesDualRunningCheck(checkData, result);
+
+                if (dualRunningCheck != null) {
+
+                    // record dual running event
+                    await _workingFamiliesDualRunningCheck.Create(dualRunningCheck, dbContextFactory);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Action:WF Dual running,EligibilityCheckID: {result.EligibilityCheckID} ", ex);
+                throw;
+            }
+        }
+
         await context.SaveChangesAsync();
 
+    }
+    /// <summary>
+    /// Run an ECS check and record result in the table
+    /// </summary>
+    /// <param name="checkData"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    private async Task<WorkingFamiliesDualRunningCheck?> Process_WorkingFamiliesDualRunningCheck(CheckProcessData checkData, EligibilityCheck result ) {
+      
+        string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+        var ecsResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
+        string ecsStatus = convertEcsResultStatus(ecsResult, CheckEligibilityType.WorkingFamilies).ToString();
+        string eceStatus = result.Status.ToString();
+
+        // do not record none conflict results if flag is set to false
+        if (!recordNoneConflict && eceStatus == ecsStatus) return null;
+
+        WorkingFamiliesDualRunningCheck dualRunningCheck = new()
+        {
+
+            Created = DateTime.UtcNow,
+            EligibilityCheckID = result.EligibilityCheckID,
+            ECSStatus = ecsStatus,
+            ECSQualifier = ecsResult.Qualifier ?? null,
+            ECEStatus = eceStatus,
+            EligibilityCheck = result,
+            EligibilityCode = checkData.EligibilityCode,
+            isConflict = eceStatus == ecsStatus ? false : true,
+            ECEResponseBody = result.CheckData,
+            ECSResponseBody = JsonConvert.SerializeObject(ecsResult),
+            AreDatesMatching = CalculateAreDatesMatching(ecsResult,JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData)) // is this safe?
+
+        };
+         
+        return dualRunningCheck;
+    }
+    private bool CalculateAreDatesMatching(SoapCheckResponse ecsDates, CheckProcessData eceDates)
+    {
+        if (ecsDates.ValidityStartDate != eceDates.DiscretionaryValidityStartDate ||
+            ecsDates.ValidityEndDate != ecsDates.ValidityEndDate ||
+            ecsDates.GracePeriodEndDate != ecsDates.GracePeriodEndDate)
+        {
+            return false;
+        }
+
+        return true;
     }
     private async Task<WorkingFamiliesEvent> Process_WorkingFamiliesCheckWithECS(EligibilityCheck result, CheckProcessData checkData,WorkingFamiliesEvent wfEvent) {
         //To ensure correct LA ID is passed when using ECS for checks
@@ -369,9 +402,9 @@ public class CheckingEngineGateway : ICheckingEngine
             if (policyID != 0)
                 return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID, dbContextFactory);
         }
+        
 
-
-        //fallback to default policy from appsettings.
+        // Fallback to default policy from appsettings
         return new EligibilityPolicy
         {
             CheckType = type,
@@ -599,7 +632,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 }
 
             }
-
             else if (result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA" && result.Status == "0" && result.ErrorCode == "0")
             {
                 return CheckEligibilityStatus.parentNotFound;

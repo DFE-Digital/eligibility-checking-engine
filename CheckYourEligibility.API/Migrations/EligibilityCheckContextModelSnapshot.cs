@@ -763,22 +763,22 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ECEStatus")
+                    b.Property<string>("ECEResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECEValidityDates")
+                    b.Property<string>("ECEStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ECSQualifier")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECSStatus")
+                    b.Property<string>("ECSResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECSValidityDates")
+                    b.Property<string>("ECSStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -1390,13 +1390,13 @@ namespace CheckYourEligibility.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", "eventSummary")
+                    b.HasOne("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", "WorkingFamiliesEventSummary")
                         .WithMany()
                         .HasForeignKey("WorkingFamiliesEventSummaryID");
 
                     b.Navigation("FosterCarer");
 
-                    b.Navigation("eventSummary");
+                    b.Navigation("WorkingFamiliesEventSummary");
                 });
 
             modelBuilder.Entity("UserRole", b =>

@@ -1,5 +1,4 @@
 ﻿using CheckYourEligibility.API.Domain;
-using DocumentFormat.OpenXml.Office.CustomUI;
 
 namespace CheckYourEligibility.API.Gateways
 {

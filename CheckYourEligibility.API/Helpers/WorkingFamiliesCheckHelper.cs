@@ -298,9 +298,10 @@ namespace CheckYourEligibility.API.Helpers
                     else return CheckEligibilityStatus.notEligible;
             }
         }
+
         #region Private
         /// <summary>
-        /// Calculates if checkDate is on/after the start of this term => child is too old
+        /// Calculates if checkDate is on/after the term following the child's birthday => child is too old
         /// </summary>
         /// <param name="dateOfBirth"></param>
         /// <param name="checkDate"></param>

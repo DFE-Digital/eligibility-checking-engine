@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckYourEligibility.API.Migrations
 {
     [DbContext(typeof(EligibilityCheckContext))]
-    [Migration("20261002154622_AddWorkingFamiliesDualRunningCheckIndexes")]
-    partial class AddWorkingFamiliesDualRunningCheckIndexes
+    [Migration("20261006153715_Add_WorkingFamiliesDualRunningChecks")]
+    partial class Add_WorkingFamiliesDualRunningChecks
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -766,22 +766,22 @@ namespace CheckYourEligibility.API.Migrations
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ECEStatus")
+                    b.Property<string>("ECEResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECEValidityDates")
+                    b.Property<string>("ECEStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ECSQualifier")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECSStatus")
+                    b.Property<string>("ECSResponseBody")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ECSValidityDates")
+                    b.Property<string>("ECSStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -1393,13 +1393,13 @@ namespace CheckYourEligibility.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", "eventSummary")
+                    b.HasOne("CheckYourEligibility.API.Domain.WorkingFamiliesEventSummary", "WorkingFamiliesEventSummary")
                         .WithMany()
                         .HasForeignKey("WorkingFamiliesEventSummaryID");
 
                     b.Navigation("FosterCarer");
 
-                    b.Navigation("eventSummary");
+                    b.Navigation("WorkingFamiliesEventSummary");
                 });
 
             modelBuilder.Entity("UserRole", b =>
