@@ -53,7 +53,7 @@ public class CheckingEngineGateway : ICheckingEngine
         IWorkingFamiliesTestScenarioFactory workingFamiliesTestScenarioFactory,
         IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory,
         IWorkingFamiliesEvent workingFamiliesEventGateway,
-        IWorkingFamiliesDualRunningCheck workingFamiliesDualRunningCheck,)
+        IWorkingFamiliesDualRunningCheck workingFamiliesDualRunningCheck)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
