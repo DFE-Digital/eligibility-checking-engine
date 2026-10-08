@@ -21,7 +21,7 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
     private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
     private readonly ILogger<ImportWfHMRCDataUseCase> _logger;
 
-    public ImportWfHMRCDataUseCase(IAdministration Gateway, IAudit auditGateway,IWorkingFamiliesEvent workingFamiliesEventGateway,
+    public ImportWfHMRCDataUseCase(IAdministration Gateway, IAudit auditGateway, IWorkingFamiliesEvent workingFamiliesEventGateway,
         ILogger<ImportWfHMRCDataUseCase> logger)
     {
         _gateway = Gateway;
@@ -86,62 +86,57 @@ public class ImportWfHMRCDataUseCase : IImportWfHMRCDataUseCase
                     NinoValidation.Normalize(wfEvent.ParentNationalInsuranceNumber);
                 DataLoad.Add(wfEvent);
             }
-if (DataLoad.Count == 0)
-{
-    safeErrorMessage = "Invalid file no content.";
-    throw new InvalidDataException(safeErrorMessage);
-}
+            if (DataLoad.Count == 0)
+            {
+                safeErrorMessage = "Invalid file no content.";
+                throw new InvalidDataException(safeErrorMessage);
+            }
 
-await _gateway.BulkImportWorkingFamiliesEventHMRCData(DataLoad);
-}
-catch (Exception ex)
-{
-    _logger.LogError(
-        "Working Families import failed. Error type: {ErrorType}",
-        ex.GetType().Name);
+            await _gateway.BulkImportWorkingFamiliesEventHMRCData(DataLoad);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                "Working Families import failed. Error type: {ErrorType}",
+                ex.GetType().Name);
 
-    throw new InvalidDataException(safeErrorMessage);
-}
+            throw new InvalidDataException(safeErrorMessage);
+        }
 
-// Run business logic and upsert summary record for each event
-try
-{
-    IList<WorkingFamiliesEventSummary> summaryRecordsDataLoad = [];
+        // Run business logic and upsert summary record for each event
+        try
+        {
+            IList<WorkingFamiliesEventSummary> summaryRecordsDataLoad = [];
 
-    for (int i = 0; i < DataLoad.Count; i++)
-    {
-        WorkingFamiliesEventSummary eventSummaryRecord = new();
+            for (int i = 0; i < DataLoad.Count; i++)
+            {
+                WorkingFamiliesEventSummary eventSummaryRecord = new();
 
-        // Check for existing records in the working families events table
-        // Check for existing summary record for that event
-        var summaryRecord =
-            await _workingFamiliesEventGateway
-                .GetWorkingFamiliesEventSummaryRecordByEligibilityCode(
-                    DataLoad[i].EligibilityCode);
+                // Check for existing records in the working families events table
+                // Check for existing summary record for that event
+                var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(DataLoad[i].EligibilityCode);
 
-        int historicEventRecordsCount =
-            await _workingFamiliesEventGateway
-                .GetWorkingFamiliesEventsCount(
-                    DataLoad[i].EligibilityCode);
+                // The count includes the incoming event because events are persisted before
+                // contiguity is evaluated, ensuring no third-party event data is lost.
+                // Subtract one so the helper evaluates only the previously existing events.
+                int historicEventRecordsCount = summaryRecord == null ? 0 
+                    : Math.Max( 0,await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(DataLoad[i].EligibilityCode) - 1);
 
-        // Pass record to evaluate contiguity for each incoming event
-        eventSummaryRecord =
-            WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(
-                DataLoad[i],
-                summaryRecord,
-                historicEventRecordsCount);
+                // Pass record to evaluate contiguity for each incoming event
+                eventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(
+                       DataLoad[i], summaryRecord,
+                       historicEventRecordsCount);
 
-        summaryRecordsDataLoad.Add(eventSummaryRecord);
-    }
+                summaryRecordsDataLoad.Add(eventSummaryRecord);
+            }
 
-    await _workingFamiliesEventGateway
-        .BulkImportWorkingFamiliesEventSummaryRecords(summaryRecordsDataLoad);
-}
-catch (Exception ex)
-{
-    _logger.LogError("ImportWfHMRCData", ex);
-    throw;
-}
+            await _workingFamiliesEventGateway.BulkImportWorkingFamiliesEventSummaryRecords(summaryRecordsDataLoad);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("ImportWfHMRCData", ex);
+            throw;
+        }
     }
 
 }

@@ -128,6 +128,9 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
         _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
         SetupNoOverlaps();
         SetupNoSummaryRecord();
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(ValidDern))
+            .ReturnsAsync(1);
         _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
             .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
 
@@ -144,6 +147,7 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
                 summary.ValidityEndDate == ValidRequest.EligibilityEvent.ValidityEndDate)),
             Times.Once);
         _mockGateway.Verify(g => g.UpdateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()), Times.Never);
+        _mockGateway.Verify(g => g.GetWorkingFamiliesEventsCount(ValidDern), Times.Never);
     }
 
     [Test]
@@ -192,6 +196,46 @@ public class UpsertWorkingFamiliesEventUseCaseTests : TestBase.TestBase
                 s.ParentNationalInsuranceNumber == "AA123456A")),
             Times.Once);
         _mockGateway.Verify(g => g.CreateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Execute_ShouldSubtractIncomingEventFromCount_WhenUpdatingExistingSummary()
+    {
+        // Arrange
+        var summary = new WorkingFamiliesEventSummary
+        {
+            WorkingFamiliesEventSummaryID = "summary-historic-count",
+            EligibilityCode = ValidDern,
+            ValidityStartDate = new DateTime(2025, 12, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
+            ValidityEndDate = new DateTime(2026, 1, 10),
+            GracePeriodEndDate = new DateTime(2026, 3, 31)
+        };
+
+        _mockGateway.Setup(g => g.GetByHMRCId(HmrcId)).ReturnsAsync((WorkingFamiliesEvent?)null);
+        SetupNoOverlaps();
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(ValidDern))
+            .ReturnsAsync(summary);
+        _mockGateway
+            .Setup(g => g.GetWorkingFamiliesEventsCount(ValidDern))
+            .ReturnsAsync(2);
+        _mockGateway
+            .Setup(g => g.UpdateWorkingFamiliesSummaryRecordAsync(It.IsAny<WorkingFamiliesEventSummary>()))
+            .Returns(Task.CompletedTask);
+        _mockGateway.Setup(g => g.UpsertWorkingFamiliesEvent(It.IsAny<WorkingFamiliesEvent>()))
+            .ReturnsAsync((WorkingFamiliesEvent wfe) => wfe);
+
+        // Act
+        await _sut.Execute(HmrcId, ValidRequest);
+
+        // Assert
+        _mockGateway.Verify(g => g.UpdateWorkingFamiliesSummaryRecordAsync(
+            It.Is<WorkingFamiliesEventSummary>(updatedSummary =>
+                updatedSummary.EligibilityCode == ValidDern &&
+                updatedSummary.ValidityStartDate == ValidRequest.EligibilityEvent!.ValidityStartDate)),
+            Times.Once);
+        _mockGateway.Verify(g => g.GetWorkingFamiliesEventsCount(ValidDern), Times.Once);
     }
 
     [Test]
