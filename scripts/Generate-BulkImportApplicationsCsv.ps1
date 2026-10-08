@@ -79,6 +79,9 @@ param(
     [ValidateSet('Entitled', 'Receiving', 'EvidenceNeeded', 'SentForReview', 'ReviewedEntitled', 'ReviewedNotEntitled', 'Archived')]
     [string]$ApplicationStatus,
 
+    [ValidateSet('targeted', 'expanded')]
+    [string]$Tier,
+
     [switch]$IncludeRandomStatuses,
 
     [int]$Seed
@@ -171,7 +174,7 @@ for ($i = 1; $i -le $Count; $i++) {
         $status = Get-RandomItem -Items $RandomStatusPool
     }
 
-    $rows.Add("$parentFirstName,$surname,$parentDob,$nino,$email,$childFirstName,$surname,$childDob,$EstablishmentUrn,$eligibilityEndDate,$status,")
+    $rows.Add("$parentFirstName,$surname,$parentDob,$nino,$email,$childFirstName,$surname,$childDob,$EstablishmentUrn,$eligibilityEndDate,$status,$Tier")
 }
 
 $rows | Out-File -FilePath $OutputPath -Encoding utf8
