@@ -23,6 +23,7 @@ namespace CheckYourEligibility.API.Migrations
                     ECSStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ECSQualifier = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     isConflict = table.Column<bool>(type: "bit", nullable: false),
+                    AreDatesMatching = table.Column<bool>(type: "bit", nullable: false),
                     ECSResponseBody = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ECEResponseBody = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created = table.Column<DateTime>(type: "datetime2", nullable: false)
