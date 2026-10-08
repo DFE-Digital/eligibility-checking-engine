@@ -68,10 +68,17 @@ public class PreviewReconfirmFosterChildUseCaseTests
         var expected = new FosterCodePreviewResponse
         {
             ValidityStartDate = new DateTime(2026, 9, 15),
-            ReconfirmBetweenStart = new DateTime(2026, 9, 15),
-            ReconfirmBetweenEnd = new DateTime(2027, 1, 15),
+            TermValidity = new TermValidity(
+                new Term(TermName.Spring, new DateTime(2026, 1, 1), new DateTime(2026, 3, 30)),
+                new Term(TermName.Summer, new DateTime(2026, 4, 1), new DateTime(2026, 8, 31))
+            ),
+            ReconfirmationProperties = new ReconfirmationProperties
+            {
+                StartDate = new DateTime(2026, 9, 15),
+                EndDate = new DateTime(2027, 1, 15)
+            },
             GracePeriodEndDate = new DateTime(2027, 3, 31),
-            ValidFromTerm = new Term(TermName.Autumn, new DateTime(DateTime.Now.Year, 9, 1), new DateTime(DateTime.Now.Year, 12, 31))
+            ChildTooYoung = false
         };
 
         _mockGateway

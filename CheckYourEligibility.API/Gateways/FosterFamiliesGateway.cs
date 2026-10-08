@@ -272,7 +272,7 @@ public class FosterFamiliesGateway : IFosterFamilies
         fosterCarer.PartnerDateOfBirth = null;
         fosterCarer.PartnerNationalInsuranceNumber = null;
         fosterCarer.Updated = DateTime.UtcNow;
-        
+
         // Update the working families event records for all foster children associated with this foster carer
         await UpdateFosterChildEvents(_db, fosterCarer);
 
@@ -427,7 +427,7 @@ public class FosterFamiliesGateway : IFosterFamilies
                 ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
                 ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
                 GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value,
-                GracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
+                IsGracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
             })
             .AsNoTracking()
             .SingleOrDefaultAsync();
@@ -452,7 +452,7 @@ public class FosterFamiliesGateway : IFosterFamilies
             result.GracePeriodEndDate.ToString(),
             result.ValidityStartDate.ToString(),
             result.ChildDateOfBirth.ToString(),
-            result.GracePeriodEndDateApplied
+            result.IsGracePeriodEndDateApplied
         );
 
         // Calculate reconfirmation properties
@@ -663,10 +663,12 @@ public class FosterFamiliesGateway : IFosterFamilies
         FosterCodePreviewResponse response = new()
         {
             ValidityStartDate = existingSummaryRecord.ValidityStartDate,
-            ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,
-            ReconfirmBetweenStart = reconfirmation.StartDate,
-            ReconfirmBetweenEnd = reconfirmation.EndDate,
-            GracePeriodEndDate = existingSummaryRecord.GracePeriodEndDate.Value
+            ValidityEndDate = existingSummaryRecord.ValidityEndDate,
+            TermValidity = termValidity,
+            ReconfirmationProperties = reconfirmation,
+            GracePeriodEndDate = existingSummaryRecord.GracePeriodEndDate.Value,
+            IsGracePeriodEndDateApplied = existingSummaryRecord.GracePeriodEndDateApplied,
+            ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(fosterChild.DateOfBirth, submissionDate)
         };
         return response;
     }
