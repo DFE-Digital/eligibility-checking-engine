@@ -108,15 +108,17 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
             .Setup(s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode("50173110190"))
             .ReturnsAsync((WorkingFamiliesEventSummary?)null);
         _mockWorkingFamiliesEventGateway
-            .Setup(s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode("50173110191"))
-            .ReturnsAsync((WorkingFamiliesEventSummary?)null);
-        _mockWorkingFamiliesEventGateway
-            .Setup(s => s.GetWorkingFamiliesEventsCount("50173110190"))
-            .ReturnsAsync(0);
-        _mockWorkingFamiliesEventGateway
-            .Setup(s => s.GetWorkingFamiliesEventsCount("50173110191"))
-            .ReturnsAsync(0);
+           .Setup(s => s.GetWorkingFamiliesEventSummaryRecordByEligibilityCode("50173110191"))
+           .ReturnsAsync(new WorkingFamiliesEventSummary
+           {
+               EligibilityCode = "50173110191",
+               ValidityStartDate = new DateTime(2000, 1, 1),
+               DiscretionaryValidityStartDate = new DateTime(2000, 1, 1),
+               ValidityEndDate = new DateTime(2000, 3, 31),
+               GracePeriodEndDate = new DateTime(2000,8,31)
+           });
 
+        _mockWorkingFamiliesEventGateway.Setup(s => s.GetWorkingFamiliesEventsCount("50173110191")).ReturnsAsync(1);
         _mockGateway.Setup(s => s.BulkImportWorkingFamiliesEventHMRCData(It.IsAny<List<WorkingFamiliesEvent>>())).Returns(Task.CompletedTask);
         _mockWorkingFamiliesEventGateway.Setup(s=> s.BulkImportWorkingFamiliesEventSummaryRecords(It.IsAny<List<WorkingFamiliesEventSummary>>())).Returns(Task.CompletedTask);
 
@@ -143,7 +145,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase.TestBase
             Times.Exactly(2));
         _mockWorkingFamiliesEventGateway.Verify(
             s => s.GetWorkingFamiliesEventsCount(It.IsAny<string>()),
-            Times.Exactly(2));
+            Times.Exactly(1));
     }
 
     [Test]
