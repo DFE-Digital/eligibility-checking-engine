@@ -114,13 +114,22 @@ try
 
         // Check for existing records in the working families events table
         // Check for existing summary record for that event
-        var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(DataLoad[i].EligibilityCode);
+        var summaryRecord =
+            await _workingFamiliesEventGateway
+                .GetWorkingFamiliesEventSummaryRecordByEligibilityCode(
+                    DataLoad[i].EligibilityCode);
 
-        int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(DataLoad[i].EligibilityCode);
+        int historicEventRecordsCount =
+            await _workingFamiliesEventGateway
+                .GetWorkingFamiliesEventsCount(
+                    DataLoad[i].EligibilityCode);
 
         // Pass record to evaluate contiguity for each incoming event
-        eventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(
-            DataLoad[i], summaryRecord, historicEventRecordsCount);
+        eventSummaryRecord =
+            WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(
+                DataLoad[i],
+                summaryRecord,
+                historicEventRecordsCount);
 
         summaryRecordsDataLoad.Add(eventSummaryRecord);
     }

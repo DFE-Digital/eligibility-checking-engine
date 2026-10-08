@@ -202,14 +202,14 @@ public static class WorkingFamiliesEventHelper
     }
     /// <summary>
     /// Determines if the contiguity of an event is broken:
-    /// If 2 events found (historic and new) the reconfirmation(new event submission date) has happened after the historicEvent VED and the earlier record VSD and VED fall within the same term (code has never been valid).
+    /// If only one historic event is found and the reconfirmation(new event submission date) has happened after the historicEvent VED and the earlier record VSD and VED fall within the same term (code has never been valid).
     /// of if a reconfirmation(new event VSD) has happened after the historicEvent GPED
     /// </summary>
     /// <param name="incomingEvent"></param>
     /// <param name="summaryRecord"></param>
-    /// <param name="eventRecordCount"></param>
+    /// <param name="historicEventRecordCount"></param>
     /// <returns></returns>
-    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int eventRecordCount)
+    public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount)
     {
 
         //if older events found (summary record is not null), initiate contiguous logic
@@ -219,7 +219,7 @@ public static class WorkingFamiliesEventHelper
             var historicalEventVEDTerm = WorkingFamiliesCheckHelper.GetTerms(summaryRecord.ValidityEndDate);
 
             // if contiguous chain is broken
-            if ((eventRecordCount == 2 && incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate
+            if ((historicEventRecordCount == 1 && incomingEvent.SubmissionDate > summaryRecord.ValidityEndDate
                 && historicalEventVSDTerm.Current.Name == historicalEventVEDTerm.Current.Name) ||
                 (incomingEvent.DiscretionaryValidityStartDate > summaryRecord.GracePeriodEndDate))
             {

@@ -597,8 +597,8 @@ public class FosterFamiliesGateway : IFosterFamilies
         await _db.WorkingFamiliesEvents.AddAsync(newEvent);
 
         // Update summary record
-        int eventRecordCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
-        existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, eventRecordCount);
+        int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(fosterChild.EligibilityCode);
+        existingSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(newEvent, existingSummaryRecord, historicEventRecordsCount);
 
         // Obsolete fields only set for compatibility
         fosterChild.ValidityStartDate = existingSummaryRecord.ValidityStartDate;

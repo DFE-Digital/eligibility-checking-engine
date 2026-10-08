@@ -446,7 +446,7 @@ public class WorkingFamiliesEventHelperTests
             GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2027, 2, 1))
         };
 
-        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
+        var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
 
         Assert.That(result, Is.SameAs(summary));
         Assert.That(result.ValidityStartDate, Is.EqualTo(incomingEvent.ValidityStartDate));
