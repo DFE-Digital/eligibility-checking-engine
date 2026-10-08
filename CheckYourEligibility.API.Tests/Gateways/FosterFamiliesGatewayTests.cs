@@ -1796,7 +1796,7 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         reconfirmedResponse.ValidityStartDate.Should().Be(expectedSummaryValidityStartDate);
         reconfirmedResponse.ValidityEndDate.Should().Be(expectedSummaryValidityEndDate);
         reconfirmedResponse.GracePeriodEndDate.Should().Be(expectedGPED);
-        reconfirmedResponse.GracePeriodEndDateApplied.Should().BeTrue();
+        reconfirmedResponse.IsGracePeriodEndDateApplied.Should().BeTrue();
     }
 
     [Test]

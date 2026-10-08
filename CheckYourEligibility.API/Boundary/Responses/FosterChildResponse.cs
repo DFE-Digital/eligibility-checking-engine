@@ -16,7 +16,7 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public DateTime GracePeriodEndDate { get; set; }
 
-        public bool GracePeriodEndDateApplied { get; set; }
+        public bool IsGracePeriodEndDateApplied { get; set; }
 
         public ReconfirmationProperties ReconfirmationProperties { get; set; }
 

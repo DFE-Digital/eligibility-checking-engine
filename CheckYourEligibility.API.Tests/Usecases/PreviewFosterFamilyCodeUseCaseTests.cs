@@ -69,10 +69,11 @@ public class PreviewFosterFamilyCodeUseCaseTests
         // Assert
         result.Should().NotBeNull();
         result.ValidityStartDate.Should().NotBe(default);
-        result.ValidFromTerm.Should().NotBeNull();
-        result.ValidFromTerm.Name.Should().NotBe(TermName.None);
-        result.ReconfirmBetweenStart.Should().NotBe(default);
-        result.ReconfirmBetweenEnd.Should().BeAfter(result.ReconfirmBetweenStart);
+        result.ValidityEndDate.Should().NotBe(default);
+        result.TermValidity.Should().NotBeNull();
+        result.TermValidity.Current.Name.Should().Be(TermName.None);
+        result.ReconfirmationProperties.StartDate.Should().NotBe(default);
+        result.ReconfirmationProperties.EndDate.Should().BeAfter(result.ReconfirmationProperties.StartDate);
         result.GracePeriodEndDate.Should().BeAfter(result.ValidityStartDate);
         request.FosterCarer.LocalAuthorityID.Should().Be(201);
     }

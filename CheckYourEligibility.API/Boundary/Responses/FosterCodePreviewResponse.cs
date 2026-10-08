@@ -2,14 +2,18 @@ namespace CheckYourEligibility.API.Boundary.Responses
 {
     public class FosterCodePreviewResponse
     {
-        public DateTime ValidityStartDate { get; init; }
+        public DateTime ValidityStartDate { get; set; }
 
-        public Term ValidFromTerm { get; init; }
+        public DateTime ValidityEndDate { get; set; }
 
-        public DateTime ReconfirmBetweenStart { get; init; }
+        public DateTime GracePeriodEndDate { get; set; }
+
+        public bool IsGracePeriodEndDateApplied { get; set; }
+
+        public ReconfirmationProperties ReconfirmationProperties { get; set; }
+
+        public TermValidity TermValidity { get; set; }
         
-        public DateTime ReconfirmBetweenEnd { get; init; }
-        
-        public DateTime GracePeriodEndDate { get; init; }
+        public bool ChildTooYoung { get; set; }
     }
 }

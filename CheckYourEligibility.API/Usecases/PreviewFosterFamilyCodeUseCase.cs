@@ -54,10 +54,12 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
         var response = new FosterCodePreviewResponse
         {
             ValidityStartDate = workingEvent.ValidityStartDate,
-            ValidFromTerm = termValidity.Current.Name != TermName.None ? termValidity.Current : termValidity.Next,
-            ReconfirmBetweenStart = reconfirmation.StartDate,
-            ReconfirmBetweenEnd = reconfirmation.EndDate,
+            ValidityEndDate = workingEvent.ValidityEndDate,
             GracePeriodEndDate = workingEvent.GracePeriodEndDate,
+            TermValidity = termValidity,
+            ReconfirmationProperties = reconfirmation,
+            IsGracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingEvent.DiscretionaryValidityStartDate, workingEvent.ValidityEndDate, 1),
+            ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(request.FosterChild.ChildDateOfBirth, request.SubmissionDate)
         };
 
         return response;
