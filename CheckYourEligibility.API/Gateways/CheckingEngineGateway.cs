@@ -307,7 +307,7 @@ public class CheckingEngineGateway : ICheckingEngine
         // Update check data for response
         if (wfEvent != null && check.Status != CheckEligibilityStatus.error && check.Status != CheckEligibilityStatus.notFound)
         {
-            wfCheckData =  BuildCheckProcessedData_WorkingFamilies(wfEvent, isGracePeriodEndDateApplied);
+            wfCheckData = BuildCheckProcessedData_WorkingFamilies(wfEvent,isGracePeriodEndDateApplied, wfCheckData);
             check.CheckData = JsonConvert.SerializeObject(wfCheckData);
 
             context.CheckEligibilities.Update(check);
@@ -370,7 +370,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
             if (wfEvent != null)
             {
-                eceResponse = BuildCheckProcessedData_WorkingFamilies(wfEvent, isGracePeriodEndDateApplied);
+                eceResponse = BuildCheckProcessedData_WorkingFamilies(wfEvent, isGracePeriodEndDateApplied, eceResponse);
             }
 
             eceStatus = wfEvent == null
@@ -414,7 +414,6 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             Created = DateTime.UtcNow,
             EligibilityCheckID = check.EligibilityCheckID,
-            EligibilityCheck = check,
             EligibilityCode = processedCheckData.EligibilityCode,
             ECSStatus = ecsStatus,
             ECSQualifier = ecsResult?.Qualifier,
@@ -437,18 +436,19 @@ public class CheckingEngineGateway : ICheckingEngine
         return true;
     }
     private static CheckProcessData BuildCheckProcessedData_WorkingFamilies(
-    WorkingFamiliesEvent wfEvent,
-    bool isGracePeriodEndDateApplied)
+        WorkingFamiliesEvent wfEvent,
+        bool isGracePeriodEndDateApplied,
+        CheckProcessData? checkData = null)
     {
-        return new CheckProcessData
-        {
-            DiscretionaryValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd"),
-            ValidityStartDate =  wfEvent.ValidityStartDate.ToString("yyyy-MM-dd"),
-            ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd"),
-            GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"),
-            LastName = wfEvent.ParentLastName,
-            IsGracePeriodEndDateApplied = isGracePeriodEndDateApplied
-        };
+        checkData ??= new CheckProcessData();
+        checkData.DiscretionaryValidityStartDate = wfEvent.DiscretionaryValidityStartDate.ToString("yyyy-MM-dd");
+        checkData.ValidityStartDate = wfEvent.ValidityStartDate.ToString("yyyy-MM-dd");
+        checkData.ValidityEndDate = wfEvent.ValidityEndDate.ToString("yyyy-MM-dd");
+        checkData.GracePeriodEndDate = wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd");
+        checkData.LastName = wfEvent.ParentLastName;
+        checkData.IsGracePeriodEndDateApplied = isGracePeriodEndDateApplied;
+
+        return checkData;
     }
     private async Task<WorkingFamiliesEvent> Process_WorkingFamiliesCheckWithECS(EligibilityCheck result, CheckProcessData checkData, WorkingFamiliesEvent wfEvent)
     {

@@ -997,13 +997,19 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ECSForWorkingFamiliesChecks_Is_Set_To_Validate_Process_Should_Run_Both_Checks_And_Persist_ECE_Result()
+    public async Task Given_WorkingFamiliesDualRunningIsEnabled_Process_Should_Run_Both_Checks_And_Persist_ECE_Result()
     {
-        _configuration["WorkingFamiliesDualRunning:RecordNoneConflict"] = "true";
+        _configuration["WorkingFamiliesDualRunning:RecordNonConflictResults"] = "true";
+        _configuration["WorkingFamiliesDualRunning:IsEnabled"] = "true";
+        _configuration["Dwp:UseEcsforChecksWF"] = "false";
+
         _sut = CreateCheckingEngineGateway();
 
         var item = CreateWorkingFamiliesCheck("50012345678");
         var submittedCheckData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
+        submittedCheckData.ClientIdentifier = "client-123";
+        submittedCheckData.Order = 42;
+        item.CheckData = JsonConvert.SerializeObject(submittedCheckData);
         var wfEvent = CreateWorkingFamiliesEvent(item);
         wfEvent.ChildFirstName = "TEST";
         wfEvent.ChildLastName = "TESTER";
@@ -1022,7 +1028,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
-        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("validate");
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
         _moqEcsGateway
             .Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()))
             .ReturnsAsync(ecsResponse);
@@ -1046,6 +1052,12 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         persistedCheckData.ValidityEndDate.Should().Be(wfEvent.ValidityEndDate.ToString("yyyy-MM-dd"));
         persistedCheckData.GracePeriodEndDate.Should().Be(wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"));
         persistedCheckData.LastName.Should().Be(wfEvent.ParentLastName);
+        persistedCheckData.DateOfBirth.Should().Be(submittedCheckData.DateOfBirth);
+        persistedCheckData.NationalInsuranceNumber.Should().Be(submittedCheckData.NationalInsuranceNumber);
+        persistedCheckData.EligibilityCode.Should().Be(submittedCheckData.EligibilityCode);
+        persistedCheckData.Type.Should().Be(submittedCheckData.Type);
+        persistedCheckData.ClientIdentifier.Should().Be(submittedCheckData.ClientIdentifier);
+        persistedCheckData.Order.Should().Be(submittedCheckData.Order);
 
         var hash = await _fakeInMemoryDb.EligibilityCheckHashes
             .SingleAsync(x => x.EligibilityCheckHashID == persistedCheck.EligibilityCheckHashID);
@@ -1059,15 +1071,16 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         dualRunningCheck.EligibilityCode.Should().Be(submittedCheckData.EligibilityCode);
         dualRunningCheck.ECSQualifier.Should().Be(ecsResponse.Qualifier);
         dualRunningCheck.ECSResponseBody.Should().Be(JsonConvert.SerializeObject(ecsResponse));
-        dualRunningCheck.ECEResponseBody.Should().Be(JsonConvert.SerializeObject(persistedCheck.CheckData));
+        dualRunningCheck.ECEResponseBody.Should().Be(persistedCheck.CheckData);
         dualRunningCheck.isConflict.Should().BeTrue();
     }
 
     [Test]
-    public async Task Given_ECSForWorkingFamiliesChecks_Is_Set_To_Validate_And_UseEcsAsFinalResult_Is_True_Should_Persist_ECS_Result()
+    public async Task Given_WorkingFamiliesDualRunningIsEnabled_And_UseEcsAsFinalResult_Is_True_Should_Persist_ECS_Result()
     {
-        _configuration["WorkingFamiliesDualRunning:UseEcsAsFinalResult"] = "true";
-        _configuration["WorkingFamiliesDualRunning:RecordNoneConflict"] = "true";
+        _configuration["WorkingFamiliesDualRunning:RecordNonConflictResults"] = "true";
+        _configuration["WorkingFamiliesDualRunning:IsEnabled"] = "true";
+        _configuration["Dwp:UseEcsforChecksWF"] = "true";
         _sut = CreateCheckingEngineGateway();
 
         var item = CreateWorkingFamiliesCheck("50012345678");
@@ -1080,16 +1093,16 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
             Status = "0",
             ErrorCode = "0",
             Qualifier = "",
-            ValidityStartDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
-            ValidityEndDate = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"),
-            GracePeriodEndDate = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")
+            ValidityStartDate = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"),
+            ValidityEndDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
+            GracePeriodEndDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")
         };
 
         _fakeInMemoryDb.CheckEligibilities.Add(item);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
-        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("validate");
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("true");
         _moqEcsGateway
             .Setup(x => x.EcsWFCheck(It.IsAny<CheckProcessData>(), It.IsAny<string>()))
             .ReturnsAsync(ecsResponse);
@@ -1119,9 +1132,10 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_ECSForWorkingFamiliesChecks_Is_Set_To_Validate_And_RecordNoneConflict_Is_False_Should_Not_Persist_NonConflict()
+    public async Task Given_WorkingFamiliesDualRunningIsEnabled_And_RecordNonConflictResults_Is_False_Should_Not_Persist_NonConflict()
     {
-        _configuration["WorkingFamiliesDualRunning:RecordNoneConflict"] = "false";
+        _configuration["WorkingFamiliesDualRunning:RecordNonConflictResults"] = "false";
+        _configuration["WorkingFamiliesDualRunning:IsEnabled"] = "true";
         _sut = CreateCheckingEngineGateway();
 
         var item = CreateWorkingFamiliesCheck("50012345678");
