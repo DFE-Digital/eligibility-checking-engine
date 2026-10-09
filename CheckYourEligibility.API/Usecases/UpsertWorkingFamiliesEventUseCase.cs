@@ -82,7 +82,7 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
             CreatedDateTime = existing == null ? DateTime.UtcNow : existing.CreatedDateTime,
             EventDateTime = eventData.EventDateTime
         };
-
+        // save incoming events first so we do not lose third-party data
         var result = await _workingFamiliesEventGateway.UpsertWorkingFamiliesEvent(domain);
 
         try
@@ -91,8 +91,14 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
             // Check for existing records in the working families events table
             // Check for existing summary record for that event
             var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(result.EligibilityCode);
-            int historicEventRecordsCount = await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(result.EligibilityCode);
-            // Evaluate contiguity for event 
+            // The count includes the incoming event because events are persisted before
+            // contiguity is evaluated, ensuring no third-party event data is lost.
+            // Subtract one so the helper evaluates only the previously existing events.
+            int historicEventRecordsCount = existingSummaryRecord == null ? 0 
+                : Math.Max(0, await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(result.EligibilityCode) - 1);
+
+
+            // Evaluate contiguity for event
             mappedEventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(result, existingSummaryRecord, historicEventRecordsCount);
 
             if (existingSummaryRecord == null)
