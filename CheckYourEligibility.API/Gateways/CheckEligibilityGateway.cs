@@ -234,6 +234,8 @@ public class CheckEligibilityGateway : ICheckEligibility
                                     CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                                     hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
                                     hashCheckData.Order = checkData.Order;
+                                    // The reference belongs to this submission, even when it is blank.
+                                    hashCheckData.Reference = checkData.Reference;
                                     item.CheckData = JsonConvert.SerializeObject(hashCheckData);
                                     _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
                                     break;
@@ -268,6 +270,8 @@ public class CheckEligibilityGateway : ICheckEligibility
                             CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
                             hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
                             hashCheckData.Order = checkData.Order;
+                            // The reference belongs to this submission, even when it is blank.
+                            hashCheckData.Reference = checkData.Reference;
                             hashCheckData.FirstName = checkData.FirstName;
                             hashCheckData.ChildFirstName = checkData.ChildFirstName;
                             hashCheckData.ChildLastName = checkData.ChildLastName;

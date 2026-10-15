@@ -11,6 +11,7 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
 
     private string? nationalInsuranceNumber;
     private string? lastName;
+    private string? reference;
     //public int? Sequence { get; set; }
 
     public string? DateOfBirth { get; set; }
@@ -27,6 +28,12 @@ public class CheckEligibilityRequestDataBase : IEligibilityServiceType
     public string? ChildDateOfBirth { get; set; }
     public string? ChildSchoolURN { get; set; }
     public string? EmailAddress { get; set; }
+
+    public string? Reference
+    {
+        get => reference;
+        set => reference = value?.Trim();
+    }
 
     /// <summary>
     /// The type of eligibility check. This field is optional and determined by the endpoint path.

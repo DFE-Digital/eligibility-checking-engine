@@ -13,6 +13,7 @@ public class CheckEligibilityItemBase
     public string LastName { get; set; }
     public DateTime Created { get; set; }
     public int? Order { get; set; }
+    public string? Reference { get; set; }
 }
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]

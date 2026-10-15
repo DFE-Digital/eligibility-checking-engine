@@ -105,7 +105,8 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
                     ChildLastName = "Tester",
                     ChildDateOfBirth = "2015-01-01",
                     ChildSchoolURN = "123456",
-                    EmailAddress = "parent@example.com"
+                    EmailAddress = "parent@example.com",
+                    Reference = "BATCH-001"
                 })
             }
         };

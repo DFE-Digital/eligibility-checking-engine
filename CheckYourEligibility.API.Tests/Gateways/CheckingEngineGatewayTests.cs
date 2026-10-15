@@ -10,6 +10,7 @@ using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -2115,6 +2116,115 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         response.CheckEligibilityStatus.Should().Be(CheckEligibilityStatus.eligible);
         response.Reason.Should().Be(reason);
         response.ResponseCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task ProcessCheckAsync_StandardCheck_PreservesReferenceWhenRewritingCheckData(
+        [Values(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityType.TwoYearOffer,
+            CheckEligibilityType.EarlyYearPupilPremium)] CheckEligibilityType type,
+        [Values(null, "", "  Current  reference  ")] string? reference)
+    {
+        var request = new CheckEligibilityRequestBulkData
+        {
+            Type = type,
+            LastName = "Smith",
+            DateOfBirth = "1990-01-01",
+            NationalInsuranceNumber = "AB123456C",
+            EmailAddress = "parent@example.com",
+            Reference = reference,
+            Order = 7,
+            ClientIdentifier = "row-7"
+        };
+        var check = new EligibilityCheck
+        {
+            EligibilityCheckID = Guid.NewGuid().ToString(),
+            Type = type,
+            Created = DateTime.UtcNow,
+            Status = CheckEligibilityStatus.queuedForProcessing,
+            CheckData = JsonConvert.SerializeObject(request)
+        };
+        _fakeInMemoryDb.CheckEligibilities.Add(check);
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecks).Returns("true");
+        _moqEcsGateway.Setup(x => x.EcsCheck(
+                It.IsAny<CheckProcessData>(), type, It.IsAny<string>()))
+            .ReturnsAsync(new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" });
+
+        var (status, _) = await _sut.ProcessCheckAsync(check.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.eligible);
+        var stored = await _fakeInMemoryDb.CheckEligibilities.AsNoTracking()
+            .SingleAsync(x => x.EligibilityCheckID == check.EligibilityCheckID);
+        var storedData = JsonConvert.DeserializeObject<CheckProcessData>(stored.CheckData)!;
+        storedData.Reference.Should().Be(reference?.Trim());
+        storedData.Order.Should().Be(7);
+        storedData.ClientIdentifier.Should().Be("row-7");
+        storedData.EmailAddress.Should().Be("parent@example.com");
+        stored.EligibilityCheckHashID.Should().NotBeNullOrEmpty();
+        if (type == CheckEligibilityType.FreeSchoolMeals)
+            storedData.EligibilityEndDate.Should().NotBeNullOrEmpty();
+        var responseMapper = new EligibilityCheckDataResponseMapper(
+            NullLogger<EligibilityCheckDataResponseMapper>.Instance,
+            Mock.Of<ICheckEligibility>());
+        responseMapper.MapCheckDataToResponse(stored).Reference.Should().Be(reference?.Trim());
+    }
+
+    [Test]
+    public async Task ProcessCheckAsync_WorkingFamilies_PreservesReferenceWithAndWithoutMatchingEvent(
+        [Values(true, false)] bool eventExists,
+        [Values(null, "", "  Current  reference  ")] string? reference)
+    {
+        var request = new CheckEligibilityRequestWorkingFamiliesBulkData
+        {
+            Type = CheckEligibilityType.WorkingFamilies,
+            EligibilityCode = "50012345678",
+            LastName = "Smith",
+            DateOfBirth = "2023-01-01",
+            NationalInsuranceNumber = "AB123456C",
+            Reference = reference,
+            Order = 7,
+            ClientIdentifier = "row-7"
+        };
+        var check = new EligibilityCheck
+        {
+            EligibilityCheckID = Guid.NewGuid().ToString(),
+            Type = CheckEligibilityType.WorkingFamilies,
+            Status = CheckEligibilityStatus.queuedForProcessing,
+            CheckData = JsonConvert.SerializeObject(request)
+        };
+        _fakeInMemoryDb.CheckEligibilities.Add(check);
+        if (eventExists)
+        {
+            var wfEvent = CreateWorkingFamiliesEvent(check);
+            wfEvent.ParentFirstName = "Alex";
+            wfEvent.ChildFirstName = "Sam";
+            wfEvent.ChildLastName = "Smith";
+            wfEvent.SubmissionDate = DateTime.UtcNow.Date.AddDays(-1);
+            wfEvent.ValidityStartDate = wfEvent.SubmissionDate;
+            wfEvent.DiscretionaryValidityStartDate = wfEvent.SubmissionDate;
+            wfEvent.ValidityEndDate = DateTime.UtcNow.Date.AddDays(30);
+            wfEvent.GracePeriodEndDate = DateTime.UtcNow.Date.AddDays(60);
+            _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+        }
+        await _fakeInMemoryDb.SaveChangesAsync();
+        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
+
+        var (status, _) = await _sut.ProcessCheckAsync(check.EligibilityCheckID);
+
+        status.Should().Be(eventExists ? CheckEligibilityStatus.eligible : CheckEligibilityStatus.notFound);
+        var stored = await _fakeInMemoryDb.CheckEligibilities.AsNoTracking()
+            .SingleAsync(x => x.EligibilityCheckID == check.EligibilityCheckID);
+        var storedData = JsonConvert.DeserializeObject<CheckProcessData>(stored.CheckData)!;
+        storedData.Reference.Should().Be(reference?.Trim());
+        storedData.Order.Should().Be(7);
+        storedData.ClientIdentifier.Should().Be("row-7");
+        stored.EligibilityCheckHashID.Should().NotBeNullOrEmpty();
+        if (eventExists)
+            storedData.ValidityEndDate.Should().NotBeNullOrEmpty();
+        var responseMapper = new EligibilityCheckDataResponseMapper(
+            NullLogger<EligibilityCheckDataResponseMapper>.Instance,
+            Mock.Of<ICheckEligibility>());
+        responseMapper.MapCheckDataToResponse(stored).Reference.Should().Be(reference?.Trim());
     }
 
     private CheckingEngineGateway CreateCheckingEngineGateway()
