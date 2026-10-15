@@ -1,5 +1,6 @@
 ﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Infrastructure;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -7,7 +8,7 @@ using System.Linq.Expressions;
 using ApplicationStatus = CheckYourEligibility.API.Domain.ApplicationStatus;
 
 [ExcludeFromCodeCoverage(Justification = "framework")]
-public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
+public class EligibilityCheckContext  : DbContext, IEligibilityCheckContext
 {
     public EligibilityCheckContext(DbContextOptions<EligibilityCheckContext> options) : base(options)
     {
@@ -61,6 +62,57 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         return base.SaveChangesAsync();
     }
 
+    int IEligibilityCheckContext.SaveChanges()
+    {
+        return base.SaveChanges();
+    }
+    /// <summary>
+    /// Inserts data in batches, each in its own transaction with its own retry.
+    /// Earlier batches stay committed if a later batch exhausts its retries.
+    /// </summary>
+    public void ManagedBulkInsert<T>(IEnumerable<T> data, ManagedBulkInsertOptions? options = null) where T : class
+    {
+        options ??= new ManagedBulkInsertOptions();
+        if (options.BatchSize < 1) throw new ArgumentOutOfRangeException(nameof(options), "BatchSize must be at least 1");
+        if (options.MaxRetries < 1) throw new ArgumentOutOfRangeException(nameof(options), "MaxRetries must be at least 1");
+
+        foreach (var batch in data.Chunk(options.BatchSize))
+        {
+            var attempt = 0;
+            while (true)
+            {
+                attempt++;
+                using var transaction = base.Database.BeginTransaction();
+                try
+                {
+                    this.BulkInsert(batch, config =>
+                    {
+                        config.BatchSize = options.BatchSize;
+                        config.BulkCopyTimeout = options.TimeoutSeconds;
+                    });
+                    transaction.Commit();
+                    break;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    if (attempt >= options.MaxRetries) { throw; }
+                    Thread.Sleep(TimeSpan.FromSeconds(options.RetryDelaySeconds * attempt));
+                }
+            }
+        }
+    }
+
+    public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data)
+    {
+        ManagedBulkInsert(data);
+    }
+
+    public void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data)
+    {
+        ManagedBulkInsert(data);
+    }
+
     public void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data, int? expireCachedResultsDays = null)
     {
         using var transaction = base.Database.BeginTransaction();
@@ -78,51 +130,6 @@ public class EligibilityCheckContext : DbContext, IEligibilityCheckContext
         }
 
         transaction.Commit();
-    }
-
-    int IEligibilityCheckContext.SaveChanges()
-    {
-        return base.SaveChanges();
-    }
-    public void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data)
-    {
-        // Add basic retry logic to resubmit batch checks
-        const int maxRetries = 3;
-        int attempt = 0;
-        while (true)
-        {
-            using var transaction = base.Database.BeginTransaction();
-            try
-            {
-                attempt++;
-                this.BulkInsert(data, config => { config.BatchSize = 1000; });
-                transaction.Commit();
-                break;
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                if (attempt >= maxRetries) { throw; }
-                Thread.Sleep(TimeSpan.FromSeconds(2 * attempt));
-            }
-        }
-    }
-
-    public void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data)
-    {
-        using var transaction = base.Database.BeginTransaction();
-        try
-        {
-            this.BulkInsert(data);
-            transaction.Commit();
-        }
-        catch (Exception ex)
-        {
-
-            transaction.Rollback();
-            throw;
-        }
-
     }
 
     public void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data)
