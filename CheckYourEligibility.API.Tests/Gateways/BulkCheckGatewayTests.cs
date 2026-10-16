@@ -1,30 +1,17 @@
-// Ignore Spelling: Levenshtein
-
-using System.Globalization;
-using System.Net;
 using AutoFixture;
 using AutoMapper;
-using Azure.Messaging.EventGrid.SystemEvents;
-using Azure.Storage.Queues;
 using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Requests.DWP;
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Data.Mappings;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Newtonsoft.Json;
 using DomainBulkCheck = CheckYourEligibility.API.Domain.BulkCheck;
 
 namespace CheckYourEligibility.API.Tests;
@@ -345,6 +332,9 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         // Arrange()
         var items = _fixture.CreateMany<EligibilityCheck>();
         var guid = _fixture.Create<string>();
+        var bulkCheck = _fixture.Create<DomainBulkCheck>();
+        bulkCheck.BulkCheckID = guid;
+        bulkCheck.Status = BulkCheckStatus.Completed;
         foreach (var item in items)
         {
             item.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -354,9 +344,11 @@ public class BulkCheckGatewayTests : TestBase.TestBase
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
             item.EligibilityCheckHashID = null;
-            item.BulkCheck = null;
+            item.BulkCheck = bulkCheck;
         }
+        
         _fakeInMemoryDb.CheckEligibilities.AddRange(items);
+        _fakeInMemoryDb.BulkChecks.Add(bulkCheck);
         _fakeInMemoryDb.SaveChanges();
         var results = _fakeInMemoryDb.CheckEligibilities
             .Where(x => x.BulkCheckID == guid)
@@ -371,6 +363,7 @@ public class BulkCheckGatewayTests : TestBase.TestBase
         // Assert
         response.Result.Total.Should().Be(total);
         response.Result.Complete.Should().Be(completed);
+        response.Result.Status.Should().Be(bulkCheck.Status.ToString());
     }
 
     [Test]
