@@ -186,17 +186,20 @@ namespace CheckYourEligibility.API.Helpers
         /// <param name="validityStartDate"></param>
         /// <param name="validityEndDdate"></param>
         /// <returns></returns>
-        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate, int eventCount)
+        public static bool isGracePeriodEndDateApplied(DateTime validityStartDate, DateTime validityEndDdate, int eventCount, DateTime childDateOfBirth, DateTime checkDate)
         {
 
             var firstEventVSDTerm = GetTerms(validityStartDate).Current.Name;
 
             var firstEventVEDTerm = GetTerms(validityEndDdate).Current.Name;
 
-            if (eventCount == 1 && firstEventVSDTerm == firstEventVEDTerm)
+            if (eventCount == 1)
             {
+                // if only one event for child too young exists
+                if (ChildIsTooYoung(childDateOfBirth, checkDate)) return false;
 
-                return false;
+                //or only one event exists and code was never valid
+                if (firstEventVSDTerm == firstEventVEDTerm) return false;
             }
             return true;
         }
@@ -209,14 +212,16 @@ namespace CheckYourEligibility.API.Helpers
         /// or if more than more events exist and the reconfirmation(latest event submission date) has happened after the historicEvent GPED
         /// </summary>
         public static (WorkingFamiliesEvent Event, bool GracePeriodEndDateApplied)
-       CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords)
+            CalculateContiguousChainForCodeFromEvents(List<WorkingFamiliesEvent> eventRecords)
         {
             var latestEvent = eventRecords.First();
 
             bool gracePeriodEndDateApplied = isGracePeriodEndDateApplied(
                     latestEvent.DiscretionaryValidityStartDate,
                     latestEvent.ValidityEndDate,
-                    eventRecords.Count);
+                    eventRecords.Count,
+                    childDateOfBirth:latestEvent.ChildDateOfBirth,
+                    DateTime.UtcNow.Date);
 
             if (eventRecords.Count == 1)
             {

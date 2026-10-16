@@ -96,7 +96,7 @@ public static class WorkingFamiliesEventHelper
             DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate,
             ValidityStartDate = workingFamiliesEvent.ValidityStartDate,
             ValidityEndDate = workingFamiliesEvent.ValidityEndDate,
-            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate, 1)
+            GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.isGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate, 1, workingFamiliesEvent.ChildDateOfBirth, today)
         };
         return newEventSummary;
 
