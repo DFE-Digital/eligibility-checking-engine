@@ -294,6 +294,16 @@ public static class ProgramExtensions
                     .Build());
             });
 
+            options.AddPolicy(PolicyNames.ManageWorkingFamiliesCorrections, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.Requirements.Add(
+                    RuleBuilder.And(
+                        RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
+                        RuleBuilder.Role(UserRoleName.Support_CodeManagement)
+                    ).Build());
+            });
+
             options.AddPolicy(PolicyNames.RequireUserManagementRole, policy =>
             {
                 policy.Requirements.Add(
