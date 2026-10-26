@@ -259,6 +259,85 @@ public class TemporaryCodeUploadUseCaseTests
 			Times.Once);
 	}
 
+	// Regression test for ELIG-3780.
+	// A QA test upload contained cells copied from Word.
+	// The spreadsheet contained a cell with no StyleIndex.
+	// This caused an error in: CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
+	// The line has been removed as it was redundant but the test ensures future code can handle this scenario.
+	[Test]
+	public async Task Execute_Should_Process_File_When_Cell_Has_No_Style_Index()
+	{
+		// Arrange
+		var fileMock = new Mock<IFormFile>();
+
+		fileMock.Setup(f => f.ContentType)
+			.Returns("text/xml");
+
+		fileMock.Setup(f => f.FileName)
+			.Returns("HMRCManualEligibilityEvent_NoStyleOnEligibilityCodes.xlsm");
+
+		var stream = Assembly.GetExecutingAssembly()
+			.GetManifestResourceStream(
+				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent_NoStyleOnEligibilityCodes.xlsm");
+
+		fileMock.Setup(f => f.OpenReadStream())
+			.Returns(stream);
+
+		var request = new TemporaryCodeUploadCreateRequest
+		{
+			File = fileMock.Object
+		};
+
+		_workingFamiliesReportingGatewayMock
+			.Setup(x => x.GetAllWorkingFamiliesEventsByEligibilityCode(
+				It.IsAny<string>()))
+			.ReturnsAsync(
+				new WorkingFamilyEventByEligibilityCodeRepsonse
+				{
+					Data = []
+				});
+
+		_administrationGatewayMock
+			.Setup(x => x.BulkImportWorkingFamiliesEventHMRCData(
+				It.IsAny<List<WorkingFamiliesEvent>>()))
+			.Returns(Task.CompletedTask);
+
+		_workingFamiliesEventGatewayMock
+			.Setup(x => x.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(
+				It.IsAny<string>()))
+			.ReturnsAsync((WorkingFamiliesEventSummary?)null);
+
+		_workingFamiliesEventGatewayMock
+			.Setup(x => x.GetWorkingFamiliesEventsCount(
+				It.IsAny<string>()))
+			.ReturnsAsync(0);
+
+		_workingFamiliesEventGatewayMock
+			.Setup(x => x.BulkImportWorkingFamiliesEventSummaryRecords(
+				It.IsAny<List<WorkingFamiliesEventSummary>>()))
+			.Returns(Task.CompletedTask);
+
+		_temporaryCodeUploadGatewayMock
+			.Setup(x => x.CreateTemporaryCodeUpload(
+				It.IsAny<TemporaryCodeUploadCreateRequest>(),
+				It.IsAny<string>(),
+				It.IsAny<int>(),
+				It.IsAny<string>(),
+				It.IsAny<string>()))
+			.ReturnsAsync(new TemporaryCodeUpload
+			{
+				NumberOfCodes = 2
+			});
+
+		// Act
+		var result = await _sut.Execute(
+			request,
+			Guid.NewGuid().ToString());
+
+		// Assert
+		result.Should().NotBeNull();
+	}
+
 	[Test]
 	public async Task Execute_Should_Throw_BulkTempCodeValidationException_When_File_Contains_Invalid_Data()
 	{
