@@ -40,7 +40,7 @@ namespace CheckYourEligibility.API.Controllers
 		/// </summary>
 		/// <param name="request">The bulk import request containing binary file</param>
 		/// <returns>Import results with success/failure counts and error details</returns>
-		[ProducesResponseType(typeof(TemporaryCodeUploadCreateResponse), (int)HttpStatusCode.OK)]
+		[ProducesResponseType(typeof(TemporaryCodeUploadCreateResponse), (int)HttpStatusCode.Accepted)]
 		[ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
 		[Consumes("multipart/form-data")]
 		[HttpPost("/temporary-codes/upload")]
@@ -50,7 +50,7 @@ namespace CheckYourEligibility.API.Controllers
 			try
 			{
 				var response = await _temporaryCodeUploadUseCase.Execute(request, User.GetUserID().ToString());
-				return Ok(response);
+				return Accepted(response);
 			}
 			catch (UnauthorizedAccessException ex)
 			{
