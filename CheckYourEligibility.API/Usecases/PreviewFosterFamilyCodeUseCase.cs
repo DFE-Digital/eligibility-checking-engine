@@ -41,12 +41,15 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             request.SubmissionDate
         );
 
+        //IsGracePeriodEndDateApplied
+        bool isGracePeriodEndDateApplied = WorkingFamiliesCheckHelper.IsGracePeriodEndDateApplied(workingEvent.DiscretionaryValidityStartDate, workingEvent.ValidityEndDate, 1, workingEvent.ChildDateOfBirth, request.SubmissionDate);
+        
         // Term validity
         var termValidity = WorkingFamiliesCheckHelper.SetTermValidity(
-            request.SubmissionDate,
+            DateTime.Today,
             workingEvent.GracePeriodEndDate.ToString(),
             workingEvent.ValidityStartDate.ToString(),
-            request.FosterChild.ChildDateOfBirth.ToString(), isGracePeriodEndDateApplied:true);
+            request.FosterChild.ChildDateOfBirth.ToString(), isGracePeriodEndDateApplied);
 
         // Reconfirmation properties       
         var reconfirmation = WorkingFamiliesCheckHelper.SetReconfirmationProperties(
@@ -64,7 +67,7 @@ public class PreviewFosterFamilyCodeUseCase : IPreviewFosterFamilyCodeUseCase
             GracePeriodEndDate = workingEvent.GracePeriodEndDate,
             TermValidity = termValidity,
             ReconfirmationProperties = reconfirmation,
-            IsGracePeriodEndDateApplied = WorkingFamiliesCheckHelper.IsGracePeriodEndDateApplied(workingEvent.DiscretionaryValidityStartDate, workingEvent.ValidityEndDate, 1, workingEvent.ChildDateOfBirth, request.SubmissionDate),
+            IsGracePeriodEndDateApplied = isGracePeriodEndDateApplied,
             ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(request.FosterChild.ChildDateOfBirth, request.SubmissionDate),
             ChildTooOld = WorkingFamiliesCheckHelper.ChildIsTooOld(request.FosterChild.ChildDateOfBirth, request.SubmissionDate)
         };
