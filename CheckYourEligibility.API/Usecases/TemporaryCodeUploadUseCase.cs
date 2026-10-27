@@ -87,7 +87,6 @@ namespace CheckYourEligibility.API.UseCases
 					List<string> eventProps = [];
 					foreach (Cell cell in row.Elements<Cell>().Skip(1))
 					{
-						CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
 						var cellValueString = CsvGetHelper.getCellValueString(cell, sharedStrings, cellStyles);
 						eventProps.Add(cellValueString);
 					}

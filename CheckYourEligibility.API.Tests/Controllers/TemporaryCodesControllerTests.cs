@@ -8,14 +8,12 @@ using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
-using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
-using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -107,7 +105,7 @@ namespace CheckYourEligibility.API.Tests.Controllers
 		}
 
 		[Test]
-		public async Task TemporaryCodesUpload_Should_Return_Ok_When_UseCase_Succeeds()
+		public async Task TemporaryCodesUpload_Should_Return_Accepted_When_UseCase_Succeeds()
 		{
 			// Arrange
 			var fileMock = new Mock<IFormFile>();
@@ -133,12 +131,12 @@ namespace CheckYourEligibility.API.Tests.Controllers
 			var result = await _sut.TemporaryCodesUpload(request);
 
 			// Assert
-			var okResult = result.Should()
-				.BeOfType<OkObjectResult>()
+			var acceptedResult = result.Should()
+				.BeOfType<AcceptedResult>()
 				.Subject;
 
-			okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-			okResult.Value.Should().Be(response);
+			acceptedResult.StatusCode.Should().Be(StatusCodes.Status202Accepted);
+			acceptedResult.Value.Should().Be(response);
 		}
 
 		[Test]
