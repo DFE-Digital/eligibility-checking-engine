@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Factories.Helper;
 using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.Telemetry;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using CheckYourEligibility.API.UseCases.Internal;
 using FeatureManagement.Domain.Validation;
@@ -231,6 +232,8 @@ builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamil
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
 
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
+builder.Services.AddScoped<ISupportSearchEstablishmentUseCase, SupportSearchEstablishmentUseCase>();
+builder.Services.AddScoped<ISupportGetEstablishmentUseCase, SupportGetEstablishmentUseCase>();
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

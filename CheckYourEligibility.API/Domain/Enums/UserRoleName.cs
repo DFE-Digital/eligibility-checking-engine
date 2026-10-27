@@ -11,5 +11,6 @@ public enum UserRoleName
 {
     Support_CodeManagement,
     Support_UserManagement,
-    Support_TestRole
+    Support_TestRole,
+    Support_EstablishmentManagement
 }
