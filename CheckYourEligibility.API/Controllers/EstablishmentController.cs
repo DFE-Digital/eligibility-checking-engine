@@ -20,6 +20,7 @@ public class EstablishmentController : BaseController
     private readonly ISearchEstablishmentsUseCase _searchUseCase;
     private readonly ISupportSearchEstablishmentUseCase _supportSearchUseCase;
     private readonly ISupportGetEstablishmentUseCase _supportGetEstablishmentUseCase;
+    private readonly IUpdateEstablishmentPrivateBetaUseCase _updateEstablishmentPrivateBetaUseCase;
     private readonly IApplication _applicationGateway;
 
     public EstablishmentController(
@@ -27,6 +28,7 @@ public class EstablishmentController : BaseController
     ISearchEstablishmentsUseCase searchUseCase,
     ISupportSearchEstablishmentUseCase supportSearchUseCase,
     ISupportGetEstablishmentUseCase supportGetEstablishmentUseCase,
+    IUpdateEstablishmentPrivateBetaUseCase updateEstablishmentUseCase,
     IAudit audit,
     IApplication applicationGateway)
     : base(audit)
@@ -34,7 +36,9 @@ public class EstablishmentController : BaseController
         _logger = logger;
         _searchUseCase = searchUseCase;
         _supportGetEstablishmentUseCase = supportGetEstablishmentUseCase;
+        _updateEstablishmentPrivateBetaUseCase = updateEstablishmentUseCase;
         _applicationGateway = applicationGateway;
+        _supportSearchUseCase = supportSearchUseCase;
     }
 
     [ProducesResponseType(typeof(IEnumerable<Establishment>), (int)HttpStatusCode.OK)]
@@ -86,40 +90,10 @@ public class EstablishmentController : BaseController
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/establishment/support-search")]
-    [Authorize(Policy = PolicyNames.RequireEstablishmentManagement)]
-    public async Task<ActionResult> Support_Search(
-     SupportEstablishmentSearchRequest request)
+    [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
+    public async Task<ActionResult> Support_Search(SupportEstablishmentSearchRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name) &&
-            !request.Urn.HasValue)
-        {
-            return BadRequest(new ErrorResponse
-            {
-                Errors =
-                [
-                    new Error
-                {
-                    Title = "Either Name or URN must be supplied."
-                }
-                ]
-            });
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Name) &&
-            request.Name.Length < 3)
-        {
-            return BadRequest(new ErrorResponse
-            {
-                Errors =
-                [
-                    new Error
-                {
-                    Title = "At least 3 characters are required to query."
-                }
-                ]
-            });
-        }
-
+       
         var results = await _supportSearchUseCase.Execute(request);
 
         return Ok(results);
@@ -127,7 +101,7 @@ public class EstablishmentController : BaseController
     [ProducesResponseType(typeof(SupportEstablishmentResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [HttpGet("/establishment/{establishmentId}")]
-    [Authorize(Policy = PolicyNames.RequireEstablishmentManagement)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
     public async Task<ActionResult> GetEstablishment(int establishmentId)
     {
         var result = await _supportGetEstablishmentUseCase.Execute(establishmentId);
@@ -138,5 +112,26 @@ public class EstablishmentController : BaseController
         }
 
         return Ok(result);
+    }
+
+    
+    [HttpPost("/establishment/private-beta")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
+    public async Task<IActionResult> UpdatePrivateBeta(
+       UpdateEstablishmentPrivateBetaRequest request)
+    {
+        var updated = await _updateEstablishmentPrivateBetaUseCase.Execute(
+            request.EstablishmentId,
+            request.InPrivateBeta);
+
+        if (!updated)
+        {
+            return NotFound(
+                $"Establishment {request.EstablishmentId} not found");
+        }
+
+        return Ok();
     }
 }

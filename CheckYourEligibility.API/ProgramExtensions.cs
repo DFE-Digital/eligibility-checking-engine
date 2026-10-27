@@ -72,8 +72,7 @@ public static class ProgramExtensions
         services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
         services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
-        services.AddTransient<ISupportEstablishmentSearch, SupportEstablishmentSearchGateway>();
-        services.AddTransient<ISupportGetEstablishment, SupportGetEstablishmentGateway>();
+        services.AddTransient<IEstablishmentManagement, EstablishmentManagementGateway>();
         return services;
     }
 
@@ -273,7 +272,7 @@ public static class ProgramExtensions
             {
                 policy.Requirements.Add(RuleBuilder.UserType(UserType.ChildcareAdmin).Build());
             });
-            options.AddPolicy(PolicyNames.RequireEstablishmentManagement, policy =>
+            options.AddPolicy(PolicyNames.RequireEstablishmentManagementRole, policy =>
             {
                 policy.Requirements.Add(
                     RuleBuilder.Role(UserRoleName.Support_EstablishmentManagement)

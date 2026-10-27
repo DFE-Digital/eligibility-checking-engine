@@ -15,10 +15,10 @@ public class SupportSearchEstablishmentUseCase
     : ISupportSearchEstablishmentUseCase
 {
     private readonly IAudit _auditGateway;
-    private readonly ISupportEstablishmentSearch _gateway;
+    private readonly IEstablishmentManagement _gateway;
 
     public SupportSearchEstablishmentUseCase(
-        ISupportEstablishmentSearch gateway,
+        IEstablishmentManagement gateway,
         IAudit auditGateway)
     {
         _gateway = gateway;
@@ -43,11 +43,7 @@ public class SupportSearchEstablishmentUseCase
             request.PageSize = 20;
         }
 
-        if (request.Name is null && !request.Urn.HasValue)
-        {
-            throw new ArgumentException(
-                "Either Name or Urn must be supplied.");
-        }
+       
 
         var results = await _gateway.Search(request);
 

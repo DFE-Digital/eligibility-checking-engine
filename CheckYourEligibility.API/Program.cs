@@ -234,6 +234,7 @@ builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheck
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 builder.Services.AddScoped<ISupportSearchEstablishmentUseCase, SupportSearchEstablishmentUseCase>();
 builder.Services.AddScoped<ISupportGetEstablishmentUseCase, SupportGetEstablishmentUseCase>();
+builder.Services.AddScoped<IUpdateEstablishmentPrivateBetaUseCase, UpdateEstablishmentPrivateBetaUseCase>();
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

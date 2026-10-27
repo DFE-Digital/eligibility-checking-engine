@@ -2,6 +2,7 @@ using AutoFixture;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -17,18 +18,34 @@ public class EstablishmentControllerTests : TestBase.TestBase
     private Mock<IApplication> _mockApplicationGateway;
     private ILogger<EstablishmentController> _mockLogger;
     private Mock<ISearchEstablishmentsUseCase> _mockSearchUseCase;
+    private Mock<ISupportSearchEstablishmentUseCase> _mockSupportSearchUseCase;
+    private Mock<ISupportGetEstablishmentUseCase> _mockSupportGetEstablishmentUseCase;
+    private Mock<IUpdateEstablishmentPrivateBetaUseCase> _mockUpdateEstablishmentPrivateBetaUseCase;
     private EstablishmentController _sut;
 
     [SetUp]
     public void Setup()
     {
         _mockSearchUseCase = new Mock<ISearchEstablishmentsUseCase>(MockBehavior.Strict);
+
+        _mockSupportSearchUseCase = new Mock<ISupportSearchEstablishmentUseCase>(MockBehavior.Strict);
+
+        _mockSupportGetEstablishmentUseCase = new Mock<ISupportGetEstablishmentUseCase>(MockBehavior.Strict);
+
+        _mockUpdateEstablishmentPrivateBetaUseCase = new Mock<IUpdateEstablishmentPrivateBetaUseCase>(MockBehavior.Strict);
+
         _mockLogger = Mock.Of<ILogger<EstablishmentController>>();
+
         _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
+
         _mockApplicationGateway = new Mock<IApplication>(MockBehavior.Strict);
+
         _sut = new EstablishmentController(
             _mockLogger,
             _mockSearchUseCase.Object,
+            _mockSupportSearchUseCase.Object,
+            _mockSupportGetEstablishmentUseCase.Object,
+            _mockUpdateEstablishmentPrivateBetaUseCase.Object,
             _mockAuditGateway.Object,
             _mockApplicationGateway.Object);
     }

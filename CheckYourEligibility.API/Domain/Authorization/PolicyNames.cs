@@ -23,8 +23,9 @@ public static class PolicyNames
     public const string RequireSupportPortalSource = "RequireSupportPortalSource";
     public const string RequireChildCareAdminSource = "RequireChildCareAdminSource";
     public const string RequireUserRole = "RequireUserRole";
-    public const string RequireEstablishmentManagement = "RequireEstablishmentManagement";
+   
     // New policies for compound authorization rules
     public const string GetEligibilityCodeHistory = nameof(GetEligibilityCodeHistory);
     public const string RequireUserManagementRole = nameof(RequireUserManagementRole);
+    public const string RequireEstablishmentManagementRole = nameof(RequireEstablishmentManagementRole);
 }

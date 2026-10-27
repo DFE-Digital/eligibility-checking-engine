@@ -8,10 +8,10 @@ namespace CheckYourEligibility.API.Usecases
     }
     public class SupportGetEstablishmentUseCase : ISupportGetEstablishmentUseCase
     {
-        private readonly ISupportGetEstablishment _gateway;
-
+        
+        private readonly IEstablishmentManagement _gateway;
         public SupportGetEstablishmentUseCase(
-            ISupportGetEstablishment gateway)
+            IEstablishmentManagement gateway)
         {
             _gateway = gateway;
         }
