@@ -896,7 +896,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ChildFirstNameTruncated")
                         .IsRequired()
-                        .HasColumnType("nvarchar(26)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildPostCode")
                         .IsRequired()

@@ -44,9 +44,9 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
     }
 
     public Task<WorkingFamiliesCorrectionRecord?> UpdateCarer(
-    string eligibilityCode,
-    WorkingFamiliesAdultCorrectionRequest request,
-    CancellationToken cancellationToken = default)
+        string eligibilityCode,
+        WorkingFamiliesAdultCorrectionRequest request,
+        CancellationToken cancellationToken = default)
     {
         return UpdateRecord(
             eligibilityCode,
@@ -74,11 +74,45 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             cancellationToken);
     }
 
+    public Task<WorkingFamiliesCorrectionRecord?> UpdateChild(
+        string eligibilityCode,
+        WorkingFamiliesChildCorrectionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateRecord(
+            eligibilityCode,
+            request.ExpectedVersion,
+            (summary, latestEvent) =>
+            {
+                var dateOfBirth = DateTime.ParseExact(
+                    request.DateOfBirth!,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture);
+
+                latestEvent.ChildFirstName = request.FirstName!;
+                latestEvent.ChildLastName = request.LastName!;
+                latestEvent.ChildDateOfBirth = dateOfBirth;
+                latestEvent.ChildPostCode = request.Postcode!;
+
+                summary.ChildFirstName = request.FirstName!;
+                summary.ChildFirstNameTruncated = request.FirstName!
+                    .Replace("-", " ")
+                    .Split(" ")
+                    .First()
+                    .ToLower()
+                    .Trim();
+
+                summary.ChildDateOfBirth = dateOfBirth;
+                summary.ChildPostCode = request.Postcode!;
+            },
+            cancellationToken);
+    }
+
     private async Task<WorkingFamiliesCorrectionRecord?> UpdateRecord(
-    string eligibilityCode,
-    string? expectedVersion,
-    Action<WorkingFamiliesEventSummary, WorkingFamiliesEvent> applyChanges,
-    CancellationToken cancellationToken)
+        string eligibilityCode,
+        string? expectedVersion,
+        Action<WorkingFamiliesEventSummary, WorkingFamiliesEvent> applyChanges,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
@@ -135,8 +169,7 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
     }
 
     private async Task<(
-    WorkingFamiliesEventSummary Summary,
-    WorkingFamiliesEvent LatestEvent)?> SelectRecord(
+        WorkingFamiliesEventSummary Summary, WorkingFamiliesEvent LatestEvent)?> SelectRecord(
         string eligibilityCode,
         bool trackChanges,
         CancellationToken cancellationToken)

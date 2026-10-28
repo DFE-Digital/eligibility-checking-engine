@@ -530,6 +530,108 @@ public class WorkingFamiliesCorrectionGatewayTests
         }
     }
 
+    [TestCase(26)]
+    [TestCase(27)]
+    [TestCase(100)]
+    public async Task Child_correction_persists_long_names_and_preserves_other_data(
+        int nameLength)
+    {
+        var olderEvent = CreateEvent("Older", new DateTime(2025, 1, 1));
+        var latestEvent = CreateEvent("Latest", new DateTime(2025, 2, 1));
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(CreateSummary());
+            setupContext.WorkingFamiliesEvents.AddRange(olderEvent, latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var updateContext = SqlServerFixture.CreateContext();
+
+        var beforeSummary = await updateContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvents = await updateContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        var beforeOlder = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var beforeLatest = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+        var original = await gateway.GetByEligibilityCode(EligibilityCode);
+
+        original.Should().NotBeNull();
+
+        var firstName = new string('A', nameLength);
+
+        var request = new WorkingFamiliesChildCorrectionRequest
+        {
+            FirstName = firstName,
+            LastName = "CorrectedChild",
+            DateOfBirth = "2000-04-12",
+            Postcode = "M1 1AE",
+            ExpectedVersion = original!.Version
+        };
+
+        var result = await gateway.UpdateChild(EligibilityCode, request);
+
+        result.Should().NotBeNull();
+        result!.Child.FirstName.Should().Be(firstName);
+        result.Child.LastName.Should().Be("CorrectedChild");
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        afterEvents.Should().HaveCount(2);
+
+        var afterOlder = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var afterLatest = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        afterOlder.Should().BeEquivalentTo(beforeOlder);
+
+        afterLatest.ChildFirstName.Should().Be(firstName);
+        afterLatest.ChildLastName.Should().Be("CorrectedChild");
+        afterLatest.ChildDateOfBirth.Should().Be(new DateTime(2000, 4, 12));
+        afterLatest.ChildPostCode.Should().Be("M1 1AE");
+
+        afterLatest.Should().BeEquivalentTo(beforeLatest, options => options
+            .Excluding(x => x.ChildFirstName)
+            .Excluding(x => x.ChildLastName)
+            .Excluding(x => x.ChildDateOfBirth)
+            .Excluding(x => x.ChildPostCode));
+
+        afterSummary.ChildFirstName.Should().Be(firstName);
+        afterSummary.ChildFirstNameTruncated.Should()
+            .Be(new string('a', nameLength));
+        afterSummary.ChildDateOfBirth.Should().Be(new DateTime(2000, 4, 12));
+        afterSummary.ChildPostCode.Should().Be("M1 1AE");
+        afterSummary.LastUpdatedDate.Should().BeAfter(beforeSummary.LastUpdatedDate);
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary, options => options
+            .Excluding(x => x.ChildFirstName)
+            .Excluding(x => x.ChildFirstNameTruncated)
+            .Excluding(x => x.ChildDateOfBirth)
+            .Excluding(x => x.ChildPostCode)
+            .Excluding(x => x.LastUpdatedDate));
+    }
+
     private static WorkingFamiliesEvent CreateEvent(
         string childFirstName,
         DateTime submissionDate)
