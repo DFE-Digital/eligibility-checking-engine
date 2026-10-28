@@ -15,6 +15,8 @@ public class WorkingFamiliesCorrectionGatewayTests
 {
     private const string EligibilityCode = "50000375201";
 
+    #region Tests
+
     [TearDown]
     public async Task RemoveTestRecords()
     {
@@ -822,6 +824,127 @@ public class WorkingFamiliesCorrectionGatewayTests
         afterEvent.Should().BeEquivalentTo(beforeEvent);
     }
 
+    [TestCase("child")]
+    [TestCase("carer")]
+    [TestCase("partner")]
+    public async Task Corrections_preserve_supported_accented_names_at_maximum_length(
+        string section)
+    {
+        var latestEvent = CreateEvent("Latest", new DateTime(2025, 2, 1));
+
+        latestEvent.PartnerFirstName = "Pat";
+        latestEvent.PartnerLastName = "Partner";
+        latestEvent.PartnerDateOfBirth = new DateTime(1988, 3, 20);
+        latestEvent.PartnerNationalInsuranceNumber = "CE123456A";
+
+        var summary = CreateSummary();
+        summary.PartnerLastName = "Partner";
+        summary.PartnerNationalInsuranceNumber = "CE123456A";
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(summary);
+            setupContext.WorkingFamiliesEvents.Add(latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        // Both characters are included in the shared name-validation rules.
+        var firstName = new string('Ŵ', 100);
+        var lastName = new string('Ć', 100);
+
+        await using (var updateContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+            var original = await gateway.GetByEligibilityCode(EligibilityCode);
+
+            original.Should().NotBeNull();
+
+            if (section == "child")
+            {
+                await gateway.UpdateChild(
+                    EligibilityCode,
+                    new WorkingFamiliesChildCorrectionRequest
+                    {
+                        FirstName = firstName,
+                        LastName = lastName,
+                        DateOfBirth = "2021-06-15",
+                        Postcode = "SW1A 1AA",
+                        ExpectedVersion = original!.Version
+                    });
+            }
+            else
+            {
+                var request = new WorkingFamiliesAdultCorrectionRequest
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    DateOfBirth = "1985-05-10",
+                    NationalInsuranceNumber = "AB654321D",
+                    ExpectedVersion = original!.Version
+                };
+
+                if (section == "carer")
+                {
+                    await gateway.UpdateCarer(EligibilityCode, request);
+                }
+                else
+                {
+                    await gateway.UpdatePartner(EligibilityCode, request);
+                }
+            }
+        }
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var savedEvent = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var actualNames = section switch
+        {
+            "child" => (
+                savedEvent.ChildFirstName,
+                savedEvent.ChildLastName),
+
+            "carer" => (
+                savedEvent.ParentFirstName,
+                savedEvent.ParentLastName),
+
+            "partner" => (
+                savedEvent.PartnerFirstName,
+                savedEvent.PartnerLastName),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(section))
+        };
+
+        actualNames.Item1.Should().Be(firstName);
+        actualNames.Item2.Should().Be(lastName);
+
+        var savedSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        switch (section)
+        {
+            case "child":
+                savedSummary.ChildFirstName.Should().Be(firstName);
+                savedSummary.ChildFirstNameTruncated.Should()
+                    .Be(new string('ŵ', 100));
+                break;
+
+            case "carer":
+                savedSummary.ParentLastName.Should().Be(lastName);
+                break;
+
+            case "partner":
+                savedSummary.PartnerLastName.Should().Be(lastName);
+                break;
+        }
+    }
+
+    #endregion
+
+    #region Helpers
     private static WorkingFamiliesEvent CreateEvent(
         string childFirstName,
         DateTime submissionDate)
@@ -866,4 +989,5 @@ public class WorkingFamiliesCorrectionGatewayTests
             LastUpdatedDate = new DateTime(2025, 2, 2)
         };
     }
+    #endregion
 }
