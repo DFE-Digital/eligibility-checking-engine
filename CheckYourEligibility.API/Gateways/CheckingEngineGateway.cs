@@ -357,7 +357,7 @@ public class CheckingEngineGateway : ICheckingEngine
             var (wfEvent, isGracePeriodEndDateApplied) =
                 await Check_Working_Families_EventRecord(requestCheckData.DateOfBirth, requestCheckData.EligibilityCode, requestCheckData.NationalInsuranceNumber, requestCheckData.LastName, dbContextFactory);
 
-            var eceResponse = new CheckProcessData();
+            var eceResponse = requestCheckData;
 
             if (wfEvent != null)
             {
