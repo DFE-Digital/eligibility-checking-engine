@@ -17,29 +17,62 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
     }
 
     public async Task<WorkingFamiliesCorrectionRecord?> GetByEligibilityCode(
-        string eligibilityCode,
-        CancellationToken cancellationToken = default)
+     string eligibilityCode,
+     CancellationToken cancellationToken = default)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
 
-        var summaries = await _db.WorkingFamiliesEventSummaries
-            .AsNoTracking()
-            .Where(x => x.EligibilityCode == eligibilityCode)
+        var selected = await SelectRecord(
+            eligibilityCode,
+            trackChanges: false,
+            cancellationToken: cancellationToken);
+
+        var record = selected.HasValue
+            ? MapRecord(selected.Value.Summary, selected.Value.LatestEvent)
+            : null;
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return record;
+    }
+
+    private async Task<(
+    WorkingFamiliesEventSummary Summary,
+    WorkingFamiliesEvent LatestEvent)?> SelectRecord(
+        string eligibilityCode,
+        bool trackChanges,
+        CancellationToken cancellationToken)
+    {
+        var summaryQuery = _db.WorkingFamiliesEventSummaries
+            .Where(x => x.EligibilityCode == eligibilityCode);
+
+        var eventQuery = _db.WorkingFamiliesEvents
+            .Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted);
+
+        if (trackChanges)
+        {
+            summaryQuery = summaryQuery.AsTracking();
+            eventQuery = eventQuery.AsTracking();
+        }
+        else
+        {
+            summaryQuery = summaryQuery.AsNoTracking();
+            eventQuery = eventQuery.AsNoTracking();
+        }
+
+        var summaries = await summaryQuery
             .Take(2)
             .ToListAsync(cancellationToken);
 
-        var events = await _db.WorkingFamiliesEvents
-            .AsNoTracking()
-            .Where(x => x.EligibilityCode == eligibilityCode && !x.IsDeleted)
+        var events = await eventQuery
             .OrderByDescending(x => x.SubmissionDate)
             .Take(2)
             .ToListAsync(cancellationToken);
 
         if (summaries.Count == 0 && events.Count == 0)
         {
-            await transaction.CommitAsync(cancellationToken);
             return null;
         }
 
@@ -56,11 +89,7 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
                 "Multiple events share the latest submission date.");
         }
 
-        var record = MapRecord(summaries[0], events[0]);
-
-        await transaction.CommitAsync(cancellationToken);
-
-        return record;
+        return (summaries[0], events[0]);
     }
 
     private static WorkingFamiliesCorrectionRecord MapRecord(
