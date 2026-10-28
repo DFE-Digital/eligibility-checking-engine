@@ -174,7 +174,7 @@ public class WorkingFamiliesCorrectionRequestValidatorTests
             .Errors.Select(x => x.PropertyName)
             .Should().BeEquivalentTo(new[]
             {
-                "FirstName", "LastName", "DateOfBirth", "Postcode"
+                "FirstName", "LastName", "DateOfBirth", "Postcode", "ExpectedVersion"
             });
 
         _adultValidator.Validate(
@@ -183,8 +183,28 @@ public class WorkingFamiliesCorrectionRequestValidatorTests
             .Should().BeEquivalentTo(new[]
             {
                 "FirstName", "LastName", "DateOfBirth",
-                "NationalInsuranceNumber"
+                "NationalInsuranceNumber", "ExpectedVersion"
             });
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Missing_record_version_is_rejected(string? version)
+    {
+        var child = ValidChild();
+        child.ExpectedVersion = version;
+
+        var adult = ValidAdult();
+        adult.ExpectedVersion = version;
+
+        _childValidator.Validate(child).Errors
+            .Should().ContainSingle()
+            .Which.PropertyName.Should().Be("ExpectedVersion");
+
+        _adultValidator.Validate(adult).Errors
+            .Should().ContainSingle()
+            .Which.PropertyName.Should().Be("ExpectedVersion");
     }
 
     private static WorkingFamiliesChildCorrectionRequest ValidChild()
@@ -194,7 +214,8 @@ public class WorkingFamiliesCorrectionRequestValidatorTests
             FirstName = "Sam",
             LastName = "Child",
             DateOfBirth = "2021-06-15",
-            Postcode = "SW1A 1AA"
+            Postcode = "SW1A 1AA",
+            ExpectedVersion = $"v1.{new string('A', 64)}"
         };
     }
 
@@ -205,7 +226,8 @@ public class WorkingFamiliesCorrectionRequestValidatorTests
             FirstName = "Alex",
             LastName = "Carer",
             DateOfBirth = "1985-05-10",
-            NationalInsuranceNumber = "AB123456C"
+            NationalInsuranceNumber = "AB123456C",
+            ExpectedVersion = $"v1.{new string('A', 64)}"
         };
     }
 }

@@ -9,4 +9,6 @@ public class WorkingFamiliesAdultCorrectionRequest
     public string? DateOfBirth { get; set; }
 
     public string? NationalInsuranceNumber { get; set; }
+
+    public string? ExpectedVersion { get; set; }
 }

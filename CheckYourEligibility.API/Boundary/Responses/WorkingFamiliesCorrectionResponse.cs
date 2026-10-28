@@ -22,6 +22,7 @@ public class WorkingFamiliesCorrectionRecord
     public DateTime DiscretionaryValidityStartDate { get; set; }
     public DateTime? GracePeriodEndDate { get; set; }
     public DateTime LastUpdatedDate { get; set; }
+    public string Version { get; set; } = string.Empty;
 }
 
 public class WorkingFamiliesCorrectionChild

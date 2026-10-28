@@ -43,5 +43,9 @@ public class WorkingFamiliesAdultCorrectionRequestValidator
             .WithMessage(ValidationMessages.ParentNINumberEmpty)
             .Must(value => DataValidation.BeAValidNi(value))
             .WithMessage(ValidationMessages.NI);
+
+        RuleFor(x => x.ExpectedVersion)
+            .NotEmpty()
+            .WithMessage("A record version is required. Reload the record and try again.");
     }
 }

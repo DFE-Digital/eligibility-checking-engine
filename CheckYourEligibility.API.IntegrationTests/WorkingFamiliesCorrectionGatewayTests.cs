@@ -1,8 +1,11 @@
 ﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
+using CheckYourEligibility.API.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using CheckYourEligibility.API.Boundary.Requests;
 
 namespace CheckYourEligibility.API.IntegrationTests;
 
@@ -195,6 +198,336 @@ public class WorkingFamiliesCorrectionGatewayTests
 
         await act.Should()
             .ThrowAsync<WorkingFamiliesCorrectionDataException>();
+    }
+
+    [Test]
+    public async Task Carer_correction_updates_both_records_and_preserves_other_data()
+    {
+        var olderEvent = CreateEvent("Older", new DateTime(2025, 1, 1));
+        var latestEvent = CreateEvent("Latest", new DateTime(2025, 2, 1));
+
+        // Existing partner details must survive a carer correction.
+        latestEvent.PartnerFirstName = "Pat";
+        latestEvent.PartnerLastName = "Partner";
+        latestEvent.PartnerDateOfBirth = new DateTime(1988, 3, 20);
+        latestEvent.PartnerNationalInsuranceNumber = "CE123456A";
+
+        var summary = CreateSummary();
+        summary.PartnerLastName = "Partner";
+        summary.PartnerNationalInsuranceNumber = "CE123456A";
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(summary);
+            setupContext.WorkingFamiliesEvents.AddRange(olderEvent, latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var updateContext = SqlServerFixture.CreateContext();
+        var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+
+        // Capture persisted snapshots, detached from EF change tracking.
+        var beforeSummary = await updateContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvents = await updateContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        var beforeOlder = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var beforeLatest = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        var original = await gateway.GetByEligibilityCode(EligibilityCode);
+        original.Should().NotBeNull();
+
+        var request = new WorkingFamiliesAdultCorrectionRequest
+        {
+            FirstName = "Morgan",
+            LastName = "Corrected",
+            DateOfBirth = "1987-04-12",
+            NationalInsuranceNumber = "ab 65 43 21 d",
+            ExpectedVersion = original!.Version
+        };
+
+        var result = await gateway.UpdateCarer(EligibilityCode, request);
+
+        result.Should().NotBeNull();
+        result!.Carer.FirstName.Should().Be("Morgan");
+        result.Carer.LastName.Should().Be("Corrected");
+        result.Carer.DateOfBirth.Should().Be(new DateTime(1987, 4, 12));
+        result.Carer.NationalInsuranceNumber.Should().Be("AB654321D");
+        result.Version.Should().NotBe(original.Version);
+
+        // Verify committed data using a separate context.
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        afterEvents.Should().HaveCount(2);
+
+        var afterOlder = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var afterLatest = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        afterOlder.Should().BeEquivalentTo(beforeOlder);
+
+        afterLatest.ParentFirstName.Should().Be("Morgan");
+        afterLatest.ParentLastName.Should().Be("Corrected");
+        afterLatest.ParentDateOfBirth.Should().Be(new DateTime(1987, 4, 12));
+        afterLatest.ParentNationalInsuranceNumber.Should().Be("AB654321D");
+
+        afterLatest.Should().BeEquivalentTo(beforeLatest, options => options
+            .Excluding(x => x.ParentFirstName)
+            .Excluding(x => x.ParentLastName)
+            .Excluding(x => x.ParentDateOfBirth)
+            .Excluding(x => x.ParentNationalInsuranceNumber));
+
+        afterSummary.ParentLastName.Should().Be("Corrected");
+        afterSummary.ParentNationalInsuranceNumber.Should().Be("AB654321D");
+        afterSummary.LastUpdatedDate.Should().BeAfter(beforeSummary.LastUpdatedDate);
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary, options => options
+            .Excluding(x => x.ParentLastName)
+            .Excluding(x => x.ParentNationalInsuranceNumber)
+            .Excluding(x => x.LastUpdatedDate));
+
+        var freshGateway = new WorkingFamiliesCorrectionGateway(verificationContext);
+        var reloaded = await freshGateway.GetByEligibilityCode(EligibilityCode);
+
+        reloaded.Should().NotBeNull();
+        result.Version.Should().Be(reloaded!.Version);
+    }
+
+    [TestCase("summary")]
+    [TestCase("event")]
+    [TestCase("new-latest-event")]
+    public async Task Carer_correction_rejects_stale_version_without_changing_records(
+    string changedRecord)
+    {
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(CreateSummary());
+            setupContext.WorkingFamiliesEvents.Add(
+                CreateEvent("Latest", new DateTime(2025, 2, 1)));
+
+            await setupContext.SaveChangesAsync();
+        }
+
+        // Simulate the version obtained when the user opened the record.
+        string originalVersion;
+
+        await using (var lookupContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(lookupContext);
+            var original = await gateway.GetByEligibilityCode(EligibilityCode);
+
+            original.Should().NotBeNull();
+            originalVersion = original!.Version;
+        }
+
+        // Simulate another writer changing data after the screen was opened.
+        await using (var otherContext = SqlServerFixture.CreateContext())
+        {
+            switch (changedRecord)
+            {
+                case "summary":
+                    var summary = await otherContext.WorkingFamiliesEventSummaries
+                        .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+                    summary.ChildPostCode = "M1 1AE";
+                    break;
+
+                case "event":
+                    var existingEvent = await otherContext.WorkingFamiliesEvents
+                        .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+                    existingEvent.ParentDateOfBirth = new DateTime(1986, 6, 11);
+                    break;
+
+                case "new-latest-event":
+                    otherContext.WorkingFamiliesEvents.Add(
+                        CreateEvent("New latest", new DateTime(2025, 3, 1)));
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(changedRecord));
+            }
+
+            await otherContext.SaveChangesAsync();
+        }
+
+        // Snapshot the other writer's committed changes.
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var beforeSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        var request = new WorkingFamiliesAdultCorrectionRequest
+        {
+            FirstName = "Morgan",
+            LastName = "ShouldNotBeSaved",
+            DateOfBirth = "1987-04-12",
+            NationalInsuranceNumber = "AB654321D",
+            ExpectedVersion = originalVersion
+        };
+
+        await using (var updateContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+
+            Func<Task> act = () =>
+                gateway.UpdateCarer(EligibilityCode, request);
+
+            var exception = await act.Should()
+                .ThrowAsync<WorkingFamiliesCorrectionConflictException>();
+
+            exception.Which.Message.Should().Be(
+                "An error occurred - a record update conflict was detected - please try again");
+        }
+
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary);
+        afterEvents.Should().BeEquivalentTo(beforeEvents);
+    }
+
+    [Test]
+    public async Task Carer_correction_rolls_back_both_records_when_failure_occurs_after_writes()
+    {
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(CreateSummary());
+            setupContext.WorkingFamiliesEvents.Add(
+                CreateEvent("Latest", new DateTime(2025, 2, 1)));
+
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var beforeSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvent = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var lookupGateway =
+            new WorkingFamiliesCorrectionGateway(verificationContext);
+
+        var original = await lookupGateway.GetByEligibilityCode(EligibilityCode);
+        original.Should().NotBeNull();
+
+        var request = new WorkingFamiliesAdultCorrectionRequest
+        {
+            FirstName = "Morgan",
+            LastName = "Corrected",
+            DateOfBirth = "1987-04-12",
+            NationalInsuranceNumber = "AB654321D",
+            ExpectedVersion = original!.Version
+        };
+
+        var interceptor = new FailAfterCorrectionWritesInterceptor();
+
+        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
+            .UseSqlServer(SqlServerFixture.ConnectionString)
+            .AddInterceptors(interceptor)
+            .Options;
+
+        await using (var updateContext = new EligibilityCheckContext(options))
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+
+            Func<Task> act = () =>
+                gateway.UpdateCarer(EligibilityCode, request);
+
+            var exception = await act.Should()
+                .ThrowAsync<InvalidOperationException>();
+
+            exception.Which.Message.Should()
+                .Be(FailAfterCorrectionWritesInterceptor.FailureMessage);
+        }
+
+        // Prove both updates reached SQL before the injected failure.
+        interceptor.SummaryLastNameSeen.Should().Be("Corrected");
+        interceptor.EventLastNameSeen.Should().Be("Corrected");
+
+        // Outside the failed transaction, both records must be unchanged.
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvent = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary);
+        afterEvent.Should().BeEquivalentTo(beforeEvent);
+    }
+
+    private sealed class FailAfterCorrectionWritesInterceptor
+    : SaveChangesInterceptor
+    {
+        public const string FailureMessage =
+            "Simulated failure after SQL writes.";
+
+        public string? SummaryLastNameSeen { get; private set; }
+
+        public string? EventLastNameSeen { get; private set; }
+
+        public override async ValueTask<int> SavedChangesAsync(
+            SaveChangesCompletedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            var context = eventData.Context
+                ?? throw new InvalidOperationException(
+                    "The interceptor requires a database context.");
+
+            SummaryLastNameSeen = await context
+                .Set<WorkingFamiliesEventSummary>()
+                .AsNoTracking()
+                .Where(x => x.EligibilityCode == EligibilityCode)
+                .Select(x => x.ParentLastName)
+                .SingleAsync(cancellationToken);
+
+            EventLastNameSeen = await context
+                .Set<WorkingFamiliesEvent>()
+                .AsNoTracking()
+                .Where(x => x.EligibilityCode == EligibilityCode)
+                .Select(x => x.ParentLastName)
+                .SingleAsync(cancellationToken);
+
+            throw new InvalidOperationException(FailureMessage);
+        }
     }
 
     private static WorkingFamiliesEvent CreateEvent(

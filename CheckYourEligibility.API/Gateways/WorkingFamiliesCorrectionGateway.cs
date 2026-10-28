@@ -1,4 +1,9 @@
 ﻿using System.Data;
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Globalization;
+using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Domain.Validation;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
@@ -32,6 +37,97 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
         var record = selected.HasValue
             ? MapRecord(selected.Value.Summary, selected.Value.LatestEvent)
             : null;
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return record;
+    }
+
+    public Task<WorkingFamiliesCorrectionRecord?> UpdateCarer(
+    string eligibilityCode,
+    WorkingFamiliesAdultCorrectionRequest request,
+    CancellationToken cancellationToken = default)
+    {
+        return UpdateRecord(
+            eligibilityCode,
+            request.ExpectedVersion,
+            (summary, latestEvent) =>
+            {
+                var dateOfBirth = DateTime.ParseExact(
+                    request.DateOfBirth!,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture);
+
+                var nationalInsuranceNumber =
+                    NinoValidation.Normalize(request.NationalInsuranceNumber);
+
+                latestEvent.ParentFirstName = request.FirstName!;
+                latestEvent.ParentLastName = request.LastName!;
+                latestEvent.ParentDateOfBirth = dateOfBirth;
+                latestEvent.ParentNationalInsuranceNumber =
+                    nationalInsuranceNumber;
+
+                summary.ParentLastName = request.LastName!;
+                summary.ParentNationalInsuranceNumber =
+                    nationalInsuranceNumber!;
+            },
+            cancellationToken);
+    }
+
+    private async Task<WorkingFamiliesCorrectionRecord?> UpdateRecord(
+    string eligibilityCode,
+    string? expectedVersion,
+    Action<WorkingFamiliesEventSummary, WorkingFamiliesEvent> applyChanges,
+    CancellationToken cancellationToken)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var selected = await SelectRecord(
+            eligibilityCode,
+            trackChanges: true,
+            cancellationToken: cancellationToken);
+
+        if (!selected.HasValue)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
+
+        var summary = selected.Value.Summary;
+        var latestEvent = selected.Value.LatestEvent;
+
+        var currentVersion = CreateVersion(summary, latestEvent);
+
+        if (!string.Equals(
+            expectedVersion,
+            currentVersion,
+            StringComparison.Ordinal))
+        {
+            throw new WorkingFamiliesCorrectionConflictException();
+        }
+
+        applyChanges(summary, latestEvent);
+
+        summary.LastUpdatedDate = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var persisted = await SelectRecord(
+            eligibilityCode,
+            trackChanges: false,
+            cancellationToken: cancellationToken);
+
+        if (!persisted.HasValue)
+        {
+            throw new WorkingFamiliesCorrectionDataException(
+                "The correction record could not be retrieved after saving.");
+        }
+
+        var record = MapRecord(
+            persisted.Value.Summary,
+            persisted.Value.LatestEvent);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -101,6 +197,7 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             EligibilityCode = summary.EligibilityCode,
             SummaryId = summary.WorkingFamiliesEventSummaryID,
             LatestEventId = latestEvent.WorkingFamiliesEventID,
+            Version = CreateVersion(summary, latestEvent),
 
             Child = new WorkingFamiliesCorrectionChild
             {
@@ -134,6 +231,21 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             GracePeriodEndDate = summary.GracePeriodEndDate,
             LastUpdatedDate = summary.LastUpdatedDate
         };
+    }
+
+    private static string CreateVersion(
+    WorkingFamiliesEventSummary summary,
+    WorkingFamiliesEvent latestEvent)
+    {
+        var state = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            Summary = summary,
+            LatestEvent = latestEvent
+        });
+
+        var hash = SHA256.HashData(state);
+
+        return $"v1.{Convert.ToHexString(hash)}";
     }
 
     private static bool HasPartnerDetails(WorkingFamiliesEvent record)

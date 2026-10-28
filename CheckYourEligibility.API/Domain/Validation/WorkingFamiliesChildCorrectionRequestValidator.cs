@@ -45,5 +45,9 @@ public class WorkingFamiliesChildCorrectionRequestValidator
             .WithMessage("Postcode must be 9 characters or fewer")
             .Must(value => DataValidation.BeAValidPostcode(value))
             .WithMessage(ValidationMessages.ChildPostCodeInvalid);
+
+        RuleFor(x => x.ExpectedVersion)
+            .NotEmpty()
+            .WithMessage("A record version is required. Reload the record and try again.");
     }
 }
