@@ -632,6 +632,196 @@ public class WorkingFamiliesCorrectionGatewayTests
             .Excluding(x => x.LastUpdatedDate));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Partner_correction_updates_existing_partner_and_preserves_other_data(
+        bool partialPartner)
+    {
+        var olderEvent = CreateEvent("Older", new DateTime(2025, 1, 1));
+        var latestEvent = CreateEvent("Latest", new DateTime(2025, 2, 1));
+
+        latestEvent.PartnerFirstName = "Pat";
+
+        if (!partialPartner)
+        {
+            latestEvent.PartnerLastName = "Partner";
+            latestEvent.PartnerDateOfBirth = new DateTime(1988, 3, 20);
+            latestEvent.PartnerNationalInsuranceNumber = "CE123456A";
+        }
+
+        var summary = CreateSummary();
+        summary.PartnerLastName = latestEvent.PartnerLastName;
+        summary.PartnerNationalInsuranceNumber =
+            latestEvent.PartnerNationalInsuranceNumber;
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(summary);
+            setupContext.WorkingFamiliesEvents.AddRange(olderEvent, latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var beforeSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        var beforeOlder = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var beforeLatest = beforeEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        var lookupGateway =
+            new WorkingFamiliesCorrectionGateway(verificationContext);
+
+        var original = await lookupGateway.GetByEligibilityCode(EligibilityCode);
+        original.Should().NotBeNull();
+        original!.HasPartner.Should().BeTrue();
+
+        var request = new WorkingFamiliesAdultCorrectionRequest
+        {
+            FirstName = "Morgan",
+            LastName = "CorrectedPartner",
+            DateOfBirth = "1990-04-12",
+            NationalInsuranceNumber = "ce 65 43 21 b",
+            ExpectedVersion = original.Version
+        };
+
+        await using (var updateContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+            var result = await gateway.UpdatePartner(EligibilityCode, request);
+
+            result.Should().NotBeNull();
+            result!.HasPartner.Should().BeTrue();
+            result.Partner.Should().NotBeNull();
+            result.Partner!.FirstName.Should().Be("Morgan");
+            result.Partner.LastName.Should().Be("CorrectedPartner");
+            result.Partner.DateOfBirth.Should().Be(new DateTime(1990, 4, 12));
+            result.Partner.NationalInsuranceNumber.Should().Be("CE654321B");
+        }
+
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvents = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .Where(x => x.EligibilityCode == EligibilityCode)
+            .ToListAsync();
+
+        afterEvents.Should().HaveCount(2);
+
+        var afterOlder = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == olderEvent.WorkingFamiliesEventID);
+
+        var afterLatest = afterEvents.Single(
+            x => x.WorkingFamiliesEventID == latestEvent.WorkingFamiliesEventID);
+
+        afterOlder.Should().BeEquivalentTo(beforeOlder);
+
+        afterLatest.PartnerFirstName.Should().Be("Morgan");
+        afterLatest.PartnerLastName.Should().Be("CorrectedPartner");
+        afterLatest.PartnerDateOfBirth.Should().Be(new DateTime(1990, 4, 12));
+        afterLatest.PartnerNationalInsuranceNumber.Should().Be("CE654321B");
+
+        afterLatest.Should().BeEquivalentTo(beforeLatest, options => options
+            .Excluding(x => x.PartnerFirstName)
+            .Excluding(x => x.PartnerLastName)
+            .Excluding(x => x.PartnerDateOfBirth)
+            .Excluding(x => x.PartnerNationalInsuranceNumber));
+
+        afterSummary.PartnerLastName.Should().Be("CorrectedPartner");
+        afterSummary.PartnerNationalInsuranceNumber.Should().Be("CE654321B");
+        afterSummary.LastUpdatedDate.Should().BeAfter(beforeSummary.LastUpdatedDate);
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary, options => options
+            .Excluding(x => x.PartnerLastName)
+            .Excluding(x => x.PartnerNationalInsuranceNumber)
+            .Excluding(x => x.LastUpdatedDate));
+    }
+
+    [TestCase(null, false)]
+    [TestCase("", false)]
+    [TestCase("   ", false)]
+    [TestCase(null, true)]
+    public async Task Partner_correction_cannot_add_a_partner(
+        string? emptyValue,
+        bool useDefaultDate)
+    {
+        var latestEvent = CreateEvent("Latest", new DateTime(2025, 2, 1));
+
+        latestEvent.PartnerFirstName = emptyValue;
+        latestEvent.PartnerLastName = emptyValue;
+        latestEvent.PartnerNationalInsuranceNumber = emptyValue;
+        latestEvent.PartnerDateOfBirth =
+            useDefaultDate ? DateTime.MinValue : null;
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(CreateSummary());
+            setupContext.WorkingFamiliesEvents.Add(latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var beforeSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var beforeEvent = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var lookupGateway =
+            new WorkingFamiliesCorrectionGateway(verificationContext);
+
+        var original = await lookupGateway.GetByEligibilityCode(EligibilityCode);
+
+        original.Should().NotBeNull();
+        original!.HasPartner.Should().BeFalse();
+        original.Partner.Should().BeNull();
+
+        var request = new WorkingFamiliesAdultCorrectionRequest
+        {
+            FirstName = "Morgan",
+            LastName = "MustNotBeAdded",
+            DateOfBirth = "1990-04-12",
+            NationalInsuranceNumber = "CE654321B",
+            ExpectedVersion = original.Version
+        };
+
+        await using (var updateContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+
+            Func<Task> act = () =>
+                gateway.UpdatePartner(EligibilityCode, request);
+
+            await act.Should()
+                .ThrowAsync<WorkingFamiliesCorrectionPartnerMissingException>();
+        }
+
+        var afterSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var afterEvent = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        afterSummary.Should().BeEquivalentTo(beforeSummary);
+        afterEvent.Should().BeEquivalentTo(beforeEvent);
+    }
+
     private static WorkingFamiliesEvent CreateEvent(
         string childFirstName,
         DateTime submissionDate)

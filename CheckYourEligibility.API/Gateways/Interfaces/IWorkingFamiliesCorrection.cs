@@ -18,4 +18,9 @@ public interface IWorkingFamiliesCorrection
         string eligibilityCode,
         WorkingFamiliesChildCorrectionRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<WorkingFamiliesCorrectionRecord?> UpdatePartner(
+        string eligibilityCode,
+        WorkingFamiliesAdultCorrectionRequest request,
+        CancellationToken cancellationToken = default);
 }

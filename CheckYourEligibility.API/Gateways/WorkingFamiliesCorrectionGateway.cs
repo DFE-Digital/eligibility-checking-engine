@@ -108,6 +108,42 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             cancellationToken);
     }
 
+    public Task<WorkingFamiliesCorrectionRecord?> UpdatePartner(
+        string eligibilityCode,
+        WorkingFamiliesAdultCorrectionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateRecord(
+            eligibilityCode,
+            request.ExpectedVersion,
+            (summary, latestEvent) =>
+            {
+                if (!HasPartnerDetails(latestEvent))
+                {
+                    throw new WorkingFamiliesCorrectionPartnerMissingException();
+                }
+
+                var dateOfBirth = DateTime.ParseExact(
+                    request.DateOfBirth!,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture);
+
+                var nationalInsuranceNumber =
+                    NinoValidation.Normalize(request.NationalInsuranceNumber);
+
+                latestEvent.PartnerFirstName = request.FirstName!;
+                latestEvent.PartnerLastName = request.LastName!;
+                latestEvent.PartnerDateOfBirth = dateOfBirth;
+                latestEvent.PartnerNationalInsuranceNumber =
+                    nationalInsuranceNumber;
+
+                summary.PartnerLastName = request.LastName!;
+                summary.PartnerNationalInsuranceNumber =
+                    nationalInsuranceNumber;
+            },
+            cancellationToken);
+    }
+
     private async Task<WorkingFamiliesCorrectionRecord?> UpdateRecord(
         string eligibilityCode,
         string? expectedVersion,
