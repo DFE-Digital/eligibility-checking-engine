@@ -232,6 +232,9 @@ builder.Services.AddScoped<IGetTemporaryCodeUploadsUseCase, GetTemporaryCodeUplo
 builder.Services.AddScoped<
     IGetWorkingFamiliesCorrectionUseCase,
     GetWorkingFamiliesCorrectionUseCase>();
+builder.Services.AddScoped<
+    IUpdateWorkingFamiliesCorrectionUseCase,
+    UpdateWorkingFamiliesCorrectionUseCase>();
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });
