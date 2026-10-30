@@ -192,3 +192,9 @@ correctly.
 The SQL-backed tests exposed a concurrency weakness, supported the improved
 atomic allocation approach and now protect the complete concurrent
 foster-family creation path.
+
+Working Families correction is another reference scenario. Its
+[SQL-backed tests](../CheckYourEligibility.API.IntegrationTests/WorkingFamiliesCorrectionGatewayTests.cs)
+check that the summary and latest event update together, and that a stale
+record version is rejected without saving. This complements the allocation
+example with atomic correction and optimistic concurrency.
