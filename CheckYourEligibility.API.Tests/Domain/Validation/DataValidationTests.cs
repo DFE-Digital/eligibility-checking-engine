@@ -171,18 +171,116 @@ public class DataValidationTests
         result.Errors.Should().Contain(e => e.PropertyName.Contains("ChildFirstName"));
     }
 
-    [TestCase("123456789", true)]
-    [TestCase("12345678", false)]
-    [TestCase("1234567890", false)]
-    [TestCase("12/34/56789", false)]
-    public void Asylum_seeker_reference_number_must_be_nine_digits(string referenceNumber, bool expectedIsValid)
+    [TestCase(CheckEligibilityType.FreeSchoolMeals, "123456789", true)]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals, "12345678", false)]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals, "1234567890", false)]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals, "12/34/56789", false)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "123456789", true)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12345678", false)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "1234567890", false)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12/34/56789", false)]
+    public void Asylum_seeker_reference_number_validation_is_unchanged_for_fsm_and_eypp(
+        CheckEligibilityType type,
+        string referenceNumber,
+        bool expectedIsValid)
     {
         var request = ValidRequestWith("Smith");
         request.NationalInsuranceNumber = null;
-        request.NationalAsylumSeekerServiceNumber = referenceNumber;
+        request.AsylumSeekerReferenceNumber = referenceNumber;
+        request.Type = type;
 
         var result = _validator.Validate(request);
 
         result.IsValid.Should().Be(expectedIsValid);
+    }
+
+    [TestCase(CheckEligibilityType.FreeSchoolMeals)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium)]
+    public void Nino_validation_is_unchanged_for_fsm_and_eypp(CheckEligibilityType type)
+    {
+        var request = ValidRequestWith("Smith");
+        request.NationalInsuranceNumber = "invalid";
+        request.Type = type;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(request.NationalInsuranceNumber) &&
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI);
+    }
+
+    [TestCase(CheckEligibilityType.FreeSchoolMeals)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium)]
+    public void Fsm_and_eypp_still_reject_a_request_containing_both_identifiers(CheckEligibilityType type)
+    {
+        var request = ValidRequestWith("Smith");
+        request.AsylumSeekerReferenceNumber = "123456789";
+        request.Type = type;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber) &&
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_and_ASRN);
+    }
+
+    [Test]
+    public void Two_year_offer_requires_a_nino()
+    {
+        var request = ValidRequestWith("Smith");
+        request.NationalInsuranceNumber = null;
+        request.Type = CheckEligibilityType.TwoYearOffer;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == nameof(request.NationalInsuranceNumber) &&
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_REQUIRED);
+    }
+
+    [Test]
+    public void Two_year_offer_does_not_accept_nass_instead_of_nino()
+    {
+        var request = ValidRequestWith("Smith");
+        request.NationalInsuranceNumber = null;
+        request.AsylumSeekerReferenceNumber = "123456789";
+        request.Type = CheckEligibilityType.TwoYearOffer;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == nameof(request.NationalInsuranceNumber) &&
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_REQUIRED);
+        result.Errors.Should().NotContain(e =>
+            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber));
+    }
+
+    [Test]
+    public void Two_year_offer_validates_nino_and_ignores_nass()
+    {
+        var request = ValidRequestWith("Smith");
+        request.AsylumSeekerReferenceNumber = "not-a-valid-nass";
+        request.Type = CheckEligibilityType.TwoYearOffer;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().NotContain(e =>
+            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber));
+        result.Errors.Should().NotContain(e =>
+            e.PropertyName == nameof(request.NationalInsuranceNumber));
+    }
+
+    [Test]
+    public void Two_year_offer_rejects_invalid_nino()
+    {
+        var request = ValidRequestWith("Smith");
+        request.NationalInsuranceNumber = "invalid";
+        request.Type = CheckEligibilityType.TwoYearOffer;
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(request.NationalInsuranceNumber) &&
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI);
     }
 }

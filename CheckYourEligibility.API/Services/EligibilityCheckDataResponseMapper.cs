@@ -89,7 +89,7 @@ namespace CheckYourEligibility.API.Services
             item.Order = checkData?.Order;
             item.DateOfBirth = checkData.DateOfBirth;
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
-            item.NationalAsylumSeekerServiceNumber =
+            item.AsylumSeekerReferenceNumber =
             checkData.NationalAsylumSeekerServiceNumber;
             item.LastName = checkData.LastName;
             item.FirstName = checkData.FirstName;

@@ -572,7 +572,7 @@ public class EligibilityCheckReportingGatewayTests : TestBase.TestBase
         {
             DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type
         };

@@ -99,7 +99,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestData>();
         var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
-        request.NationalAsylumSeekerServiceNumber = null;
+        request.AsylumSeekerReferenceNumber = null;
 
         var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
 
@@ -125,9 +125,9 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var citizenResponse = _fixture.Create<CAPICitizenResponse>();
         var meta = _fixture.Create<CheckMetaData>();
         request.DateOfBirth = "1970-02-01";
-        request.NationalAsylumSeekerServiceNumber = null;
+        request.AsylumSeekerReferenceNumber = null;
         var key = string.IsNullOrEmpty(request.NationalInsuranceNumber)
-            ? request.NationalAsylumSeekerServiceNumber
+            ? request.AsylumSeekerReferenceNumber
             : request.NationalInsuranceNumber;
         // Arrange standard policy
 
@@ -176,14 +176,14 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestData>();
         request.Type = CheckEligibilityType.TwoYearOffer;
         request.NationalInsuranceNumber = null;
-        request.NationalAsylumSeekerServiceNumber = "190000001";
+        request.AsylumSeekerReferenceNumber = "190000001";
         request.LastName = "Smith";
         request.DateOfBirth = "1990-01-01";
 
         var checkData = new CheckProcessData
         {
             Type = request.Type,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
             LastName = request.LastName,
             DateOfBirth = request.DateOfBirth
         };
@@ -208,14 +208,14 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
         var request = _fixture.Create<CheckEligibilityRequestData>();
         request.Type = CheckEligibilityType.FreeSchoolMeals;
         request.NationalInsuranceNumber = null;
-        request.NationalAsylumSeekerServiceNumber = "190000001";
+        request.AsylumSeekerReferenceNumber = "190000001";
         request.LastName = "Smith";
         request.DateOfBirth = "1990-01-01";
 
         var checkData = new CheckProcessData
         {
             Type = request.Type,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
             LastName = request.LastName,
             DateOfBirth = request.DateOfBirth
         };
@@ -648,7 +648,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             ChildLastName = request.ChildLastName,
             ChildDateOfBirth = request.ChildDateOfBirth,
             ChildSchoolURN = request.ChildSchoolURN,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type,
             EligibilityEndDate = eligiblityEndDate
@@ -697,7 +697,7 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
             ChildLastName = request.ChildLastName,
             ChildDateOfBirth = request.ChildDateOfBirth,
             ChildSchoolURN = request.ChildSchoolURN,
-            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
+            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type
         };

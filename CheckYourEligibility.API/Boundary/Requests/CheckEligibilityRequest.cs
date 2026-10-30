@@ -97,7 +97,7 @@ public class CheckEligibilityRequestBulkBase
 
 public class CheckEligibilityRequestData : CheckEligibilityRequestDataBase
 {
-    public string? NationalAsylumSeekerServiceNumber { get; set; }
+    public string? AsylumSeekerReferenceNumber { get; set; }
 }
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]

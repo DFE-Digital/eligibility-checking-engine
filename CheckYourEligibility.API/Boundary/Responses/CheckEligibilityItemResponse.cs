@@ -28,7 +28,7 @@ public class CheckEligibilityItem : CheckEligibilityItemBase
     public string DateOfBirth { get; set; }
     public string? Tier { get; set; }
     public string? EligibilityEndDate { get; set; }
-    public string? NationalAsylumSeekerServiceNumber { get; set; }
+    public string? AsylumSeekerReferenceNumber { get; set; }
 
   
 }

@@ -55,7 +55,7 @@ namespace CheckYourEligibility.API.Helpers
                             ChildSchoolURN = checkItem?.ChildSchoolURN,
                             EmailAddress = checkItem?.EmailAddress,
                             Reference = checkItem?.Reference,
-                            NationalAsylumSeekerServiceNumber = checkItem?.NationalAsylumSeekerServiceNumber,
+                            NationalAsylumSeekerServiceNumber = checkItem?.AsylumSeekerReferenceNumber,
                             NationalInsuranceNumber = checkItem?.NationalInsuranceNumber,
                             Type = type,
                             ClientIdentifier = checkItem?.ClientIdentifier,

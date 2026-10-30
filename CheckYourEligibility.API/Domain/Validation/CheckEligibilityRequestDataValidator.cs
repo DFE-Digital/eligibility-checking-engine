@@ -2,6 +2,7 @@
 
 using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
+using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Domain.Validation;
 using FluentValidation;
 
@@ -82,28 +83,39 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 .Must(DataValidation.BeAValidDate)
                 .WithMessage(ValidationMessages.DOB);
 
-            When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalInsuranceNumber), () =>
+            When(x => ((CheckEligibilityRequestData)x).Type == CheckEligibilityType.TwoYearOffer, () =>
             {
-                RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
-                    .Empty()
-                    .WithMessage(ValidationMessages.NI_and_NASS);
-
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty()
+                    .WithMessage(ValidationMessages.NI_REQUIRED)
                     .Must(DataValidation.BeAValidNi)
                     .WithMessage(ValidationMessages.NI);
-
             }).Otherwise(() =>
             {
-                When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber), () =>
+                When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalInsuranceNumber), () =>
                 {
-                    RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
-                        .Must(DataValidation.BeAValidNass)
-                        .WithMessage(ValidationMessages.NASS);
-                });
+                    RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                        .Empty()
+                        .WithMessage(ValidationMessages.NI_and_ASRN);
 
-                RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
-                    .NotEmpty()
-                    .WithMessage(ValidationMessages.NI_or_NASS);
+                    RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
+                        .Must(DataValidation.BeAValidNi)
+                        .WithMessage(ValidationMessages.NI);
+
+                }).Otherwise(() =>
+                {
+                    When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber), () =>
+                    {
+                        RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                            .Must(DataValidation.BeAValidNass)
+                            .WithMessage(ValidationMessages.NASS);
+                    });
+
+                    RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                        .NotEmpty()
+                        .WithMessage(ValidationMessages.NI_or_ASRN);
+                });
             });
         });
 
