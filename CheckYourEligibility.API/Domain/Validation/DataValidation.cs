@@ -79,8 +79,10 @@ internal static class DataValidation
 
 	internal static bool BeAValidPostcode(string? value)
     {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
         var regexString = @"^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
-        var rg = new Regex(regexString);
+        var rg = new Regex(@"\A(?:" + regexString + @")\z");
         var res = rg.Match(value);
         return res.Success;
     }
