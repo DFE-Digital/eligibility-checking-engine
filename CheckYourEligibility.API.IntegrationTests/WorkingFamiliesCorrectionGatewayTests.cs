@@ -634,6 +634,70 @@ public class WorkingFamiliesCorrectionGatewayTests
             .Excluding(x => x.LastUpdatedDate));
     }
 
+    [Test]
+    public async Task Child_correction_trims_leading_whitespace_when_deriving_summary_name()
+    {
+        var summary = CreateSummary();
+        var latestEvent = CreateEvent(
+            "Latest",
+            new DateTime(2025, 2, 1));
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(summary);
+            setupContext.WorkingFamiliesEvents.Add(latestEvent);
+            await setupContext.SaveChangesAsync();
+        }
+
+        string expectedVersion;
+
+        await using (var lookupContext = SqlServerFixture.CreateContext())
+        {
+            var lookupGateway =
+                new WorkingFamiliesCorrectionGateway(lookupContext);
+
+            var record =
+                await lookupGateway.GetByEligibilityCode(EligibilityCode);
+
+            record.Should().NotBeNull();
+            expectedVersion = record!.Version;
+        }
+
+        var request = new WorkingFamiliesChildCorrectionRequest
+        {
+            FirstName = " Sam",
+            LastName = "CorrectedChild",
+            DateOfBirth = "2000-04-12",
+            Postcode = "M1 1AE",
+            ExpectedVersion = expectedVersion
+        };
+
+        await using (var updateContext = SqlServerFixture.CreateContext())
+        {
+            var gateway = new WorkingFamiliesCorrectionGateway(updateContext);
+            var result = await gateway.UpdateChild(EligibilityCode, request);
+
+            result.Should().NotBeNull();
+            result!.Child.FirstName.Should().Be(" Sam");
+        }
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var persistedSummary =
+            await verificationContext.WorkingFamiliesEventSummaries
+                .AsNoTracking()
+                .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        var persistedEvent =
+            await verificationContext.WorkingFamiliesEvents
+                .AsNoTracking()
+                .SingleAsync(x => x.EligibilityCode == EligibilityCode);
+
+        persistedSummary.ChildFirstName.Should().Be(" Sam");
+        persistedSummary.ChildFirstNameTruncated.Should().Be("sam");
+        persistedEvent.ChildFirstName.Should().Be(" Sam");
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task Partner_correction_updates_existing_partner_and_preserves_other_data(

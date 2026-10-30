@@ -96,11 +96,11 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
 
                 summary.ChildFirstName = request.FirstName!;
                 summary.ChildFirstNameTruncated = request.FirstName!
+                    .Trim()
                     .Replace("-", " ")
                     .Split(" ")
                     .First()
-                    .ToLower()
-                    .Trim();
+                    .ToLower();
 
                 summary.ChildDateOfBirth = dateOfBirth;
                 summary.ChildPostCode = request.Postcode!;
