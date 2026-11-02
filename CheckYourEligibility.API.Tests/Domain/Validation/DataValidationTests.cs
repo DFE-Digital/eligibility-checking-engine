@@ -16,7 +16,7 @@ public class DataValidationTests
         _validator = new CheckEligibilityRequestDataValidator();
     }
 
-    private CheckEligibilityRequestData ValidRequestWith(string lastName) =>
+    private CheckEligibilityRequestData ValidRequestWithNINO(string lastName) =>
         new CheckEligibilityRequestData
         {
             LastName = lastName,
@@ -34,7 +34,7 @@ public class DataValidationTests
     [TestCase("van den Berg", "spaces")]
     public void LastName_with_valid_characters_passes_validation(string lastName, string reason)
     {
-        var result = _validator.Validate(ValidRequestWith(lastName));
+        var result = _validator.Validate(ValidRequestWithNINO(lastName));
 
         result.Errors.Should().NotContain(
             e => e.PropertyName.Contains("LastName") && e.ErrorMessage.Contains("LastName"),
@@ -57,7 +57,7 @@ public class DataValidationTests
     string lastName,
     string accentType)
     {
-        var result = _validator.Validate(ValidRequestWith(lastName));
+        var result = _validator.Validate(ValidRequestWithNINO(lastName));
 
         result.Errors.Should().NotContain(
             e => e.PropertyName.Contains("LastName"),
@@ -69,7 +69,7 @@ public class DataValidationTests
     [TestCase("Smith@Jones","at-sign not allowed")]
     public void LastName_with_invalid_characters_fails_validation(string lastName, string reason)
     {
-        var result = _validator.Validate(ValidRequestWith(lastName));
+        var result = _validator.Validate(ValidRequestWithNINO(lastName));
 
         result.IsValid.Should().BeFalse(because: reason);
         result.Errors.Should().Contain(
@@ -179,12 +179,12 @@ public class DataValidationTests
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12345678", false)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "1234567890", false)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12/34/56789", false)]
-    public void Asylum_seeker_reference_number_validation_is_unchanged_for_fsm_and_eypp(
+    public void NASS_IsAcceptedAndValid_For_FSM_And_EYPP (
         CheckEligibilityType type,
         string referenceNumber,
         bool expectedIsValid)
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalInsuranceNumber = null;
         request.NationalAsylumSeekerServiceNumber = referenceNumber;
         request.Type = type;
@@ -196,9 +196,9 @@ public class DataValidationTests
 
     [TestCase(CheckEligibilityType.FreeSchoolMeals)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium)]
-    public void Nino_validation_is_unchanged_for_fsm_and_eypp(CheckEligibilityType type)
+    public void NINO_IsInvalid_For_FSM_and_EYPP(CheckEligibilityType type)
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalInsuranceNumber = "invalid";
         request.Type = type;
 
@@ -211,9 +211,9 @@ public class DataValidationTests
 
     [TestCase(CheckEligibilityType.FreeSchoolMeals)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium)]
-    public void Fsm_and_eypp_still_reject_a_request_containing_both_identifiers(CheckEligibilityType type)
+    public void NASS_and_NINO_provided_IsInvalid_For_FSM_and_EYPP(CheckEligibilityType type)
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalAsylumSeekerServiceNumber = "123456789";
         request.Type = type;
 
@@ -225,9 +225,9 @@ public class DataValidationTests
     }
 
     [Test]
-    public void Two_year_offer_requires_a_nino()
+    public void NINO_IsRequired_For_2YO()
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalInsuranceNumber = null;
         request.Type = CheckEligibilityType.TwoYearOffer;
 
@@ -239,9 +239,9 @@ public class DataValidationTests
     }
 
     [Test]
-    public void Two_year_offer_does_not_accept_nass_instead_of_nino()
+    public void NINO_IsRequired_NASS_IsIgnored_For_2YO()
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalInsuranceNumber = null;
         request.NationalAsylumSeekerServiceNumber = "123456789";
         request.Type = CheckEligibilityType.TwoYearOffer;
@@ -256,9 +256,9 @@ public class DataValidationTests
     }
 
     [Test]
-    public void Two_year_offer_validates_nino_and_ignores_nass()
+    public void NINO_IsValid_NASS_IsIgnored_2YO()
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalAsylumSeekerServiceNumber = "not-a-valid-nass";
         request.Type = CheckEligibilityType.TwoYearOffer;
 
@@ -271,9 +271,9 @@ public class DataValidationTests
     }
 
     [Test]
-    public void Two_year_offer_rejects_invalid_nino()
+    public void NINO_IsInvalid_For_2YO()
     {
-        var request = ValidRequestWith("Smith");
+        var request = ValidRequestWithNINO("Smith");
         request.NationalInsuranceNumber = "invalid";
         request.Type = CheckEligibilityType.TwoYearOffer;
 
