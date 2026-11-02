@@ -4,8 +4,6 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -15,24 +13,19 @@ namespace CheckYourEligibility.Core.Tests.Gateways;
 
 public class BulkCheckGatewayTests : TestBase
 {
-    private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private Mock<IAudit> _moqAudit;
     private Mock<ICheckEligibility> _moqCheckEligibility;
     private BulkCheckGateway _sut;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public async Task Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(BulkCheckGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(BulkCheckGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 
         // Ensure database is created and clean
-        var context = (EligibilityCheckContext)_fakeInMemoryDb;       
+        var context = (EligibilityCheckContext)_fakeInMemoryDb;
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
@@ -45,11 +38,7 @@ public class BulkCheckGatewayTests : TestBase
             { "HashCheckDays", "7" },
             { "Dwp:UseEcsforChecksWF", "false"}
         };
-        _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configForSmsApi)
-            .Build();
-        var webJobsConnection =
-            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+        var webJobsConnection = "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
 
         _moqCheckEligibility = new Mock<ICheckEligibility>(MockBehavior.Strict);
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
@@ -324,6 +313,9 @@ public class BulkCheckGatewayTests : TestBase
         // Arrange()
         var items = _fixture.CreateMany<EligibilityCheck>();
         var guid = _fixture.Create<string>();
+        var bulkCheck = _fixture.Create<DomainBulkCheck>();
+        bulkCheck.BulkCheckID = guid;
+        bulkCheck.Status = BulkCheckStatus.Completed;
         foreach (var item in items)
         {
             item.Status = CheckEligibilityStatus.queuedForProcessing;
@@ -333,9 +325,11 @@ public class BulkCheckGatewayTests : TestBase
             // Set navigation properties to null to avoid creating additional entities
             item.EligibilityCheckHash = null;
             item.EligibilityCheckHashID = null;
-            item.BulkCheck = null;
+            item.BulkCheck = bulkCheck;
         }
+
         _fakeInMemoryDb.CheckEligibilities.AddRange(items);
+        _fakeInMemoryDb.BulkChecks.Add(bulkCheck);
         _fakeInMemoryDb.SaveChanges();
         var results = _fakeInMemoryDb.CheckEligibilities
             .Where(x => x.BulkCheckID == guid)
@@ -350,6 +344,7 @@ public class BulkCheckGatewayTests : TestBase
         // Assert
         response.Result.Total.Should().Be(total);
         response.Result.Complete.Should().Be(completed);
+        response.Result.Status.Should().Be(bulkCheck.Status.ToString());
     }
 
     [Test]

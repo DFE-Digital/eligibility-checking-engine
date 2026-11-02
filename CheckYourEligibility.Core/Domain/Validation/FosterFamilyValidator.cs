@@ -5,7 +5,7 @@ using CheckYourEligibility.Core.Domain.Validation;
 
 public class FosterFamilyRequestValidator : AbstractValidator<FosterFamilyRequest>
 {
-    public FosterFamilyRequestValidator()
+    public FosterFamilyRequestValidator(bool enforceSubmissionDateWindow = true)
     {
         RuleFor(x => x.FosterCarer)
             .NotNull();
@@ -17,7 +17,7 @@ public class FosterFamilyRequestValidator : AbstractValidator<FosterFamilyReques
             .SetValidator(new FosterCarerRequestValidator());
 
         RuleFor(x => x.FosterChild!)
-            .SetValidator(new FosterChildRequestValidator());
+            .SetValidator(new FosterChildRequestValidator(enforceSubmissionDateWindow));
 
         When(x => x.HasPartner, () =>
         {
@@ -84,7 +84,7 @@ public class FosterPartnerRequestValidator
 public class FosterChildRequestValidator
     : AbstractValidator<FosterChildRequest>
 {
-    public FosterChildRequestValidator()
+    public FosterChildRequestValidator(bool enforceSubmissionDateWindow = true)
     {
         RuleFor(x => x.ChildFirstName)
             .NotEmpty()
@@ -109,9 +109,12 @@ public class FosterChildRequestValidator
                 .Must(DataValidation.BeAPastDate)
                 .WithMessage(ValidationMessages.SubmissionDate);
 
-            RuleFor(x => x.SubmissionDate!.Value)
-                .Must(value => value >= DateTime.Today.AddDays(-31))
-                .WithMessage(ValidationMessages.SubmissionDateOutOfRange);
+            When(_ => enforceSubmissionDateWindow, () =>
+            {
+                RuleFor(x => x.SubmissionDate!.Value)
+                    .Must(value => value >= DateTime.Today.AddDays(-31))
+                    .WithMessage(ValidationMessages.SubmissionDateOutOfRange);
+            });
         });
     }
 }
@@ -123,7 +126,7 @@ public class FosterChildReconfirmRequestValidator
     {
         RuleFor(x => x.EligibilityCode)
             .NotEmpty()
-            .WithMessage(ValidationMessages.EligibilityCode);
+            .WithMessage(ValidationMessages.EligibilityCodeLength);
 
         RuleFor(x => x.SubmissionDate)
             .NotEmpty()

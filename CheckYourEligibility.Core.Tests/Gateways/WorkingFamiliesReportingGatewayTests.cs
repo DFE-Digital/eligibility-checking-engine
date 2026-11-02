@@ -12,8 +12,6 @@ namespace CheckYourEligibility.Core.Tests.Gateways;
 
 public class WorkingFamiliesReportingGatewayTests() : TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private Mock<ILogger<WorkingFamiliesReportingGateway>> _mockLogger = null!;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -26,11 +24,7 @@ public class WorkingFamiliesReportingGatewayTests() : TestBase
     {
         _mockLogger = new Mock<ILogger<WorkingFamiliesReportingGateway>>();
 
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(WorkingFamiliesReportingGatewayTests),
-                InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(WorkingFamiliesReportingGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

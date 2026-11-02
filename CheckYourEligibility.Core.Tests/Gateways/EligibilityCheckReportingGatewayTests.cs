@@ -20,15 +20,10 @@ public class EligibilityCheckReportingGatewayTests : TestBase
 
     private EligibilityCheckReportingGateway _sut;
 
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public async Task SetUpAsync()
     {        
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(EligibilityCheckReportingGatewayTests), InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbOptions.Create(nameof(EligibilityCheckReportingGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

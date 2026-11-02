@@ -94,8 +94,8 @@ describe("Bulk Check - Hashing Behaviour", () => {
       data: [
         request.data[0], // hashed record
         {
-          nationalInsuranceNumber: "NN123456C",
-          lastName: "NewUser",
+          nationalInsuranceNumber: "NN123456B",
+          lastName: "Tester",
           dateOfBirth: "2005-05-05",
           nationalAsylumSeekerServiceNumber: "",
         },
@@ -228,7 +228,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       data: [
         {
           nationalInsuranceNumber: "NN123456C",
-          lastName: "Small",
+          lastName: "Tester",
           dateOfBirth: "2001-01-01",
           nationalAsylumSeekerServiceNumber: "",
         },
@@ -239,7 +239,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       data: [
         {
           nationalInsuranceNumber: "NN123456C", // hashed
-          lastName: "Small",
+          lastName: "Tester",
           dateOfBirth: "2001-01-01",
           nationalAsylumSeekerServiceNumber: "",
         },
@@ -249,8 +249,8 @@ describe("Bulk Check - Hashing Behaviour", () => {
     const newSmall = {
       data: [
         {
-          nationalInsuranceNumber: "NN123456C", //  new
-          lastName: "SmallNew",
+          nationalInsuranceNumber: "NN123456B", //  new
+          lastName: "Tester",
           dateOfBirth: "2005-05-05",
           nationalAsylumSeekerServiceNumber: "",
         },
@@ -324,7 +324,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       data: [
         {
           nationalInsuranceNumber: "NN123456C",
-          lastName: "Small",
+          lastName: "Tester",
           dateOfBirth: "2001-01-01",
           nationalAsylumSeekerServiceNumber: "",
         },

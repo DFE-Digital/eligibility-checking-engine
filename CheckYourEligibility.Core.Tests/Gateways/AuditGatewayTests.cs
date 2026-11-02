@@ -22,14 +22,10 @@ public class AuditGatewayTests : TestBase
     private IHttpContextAccessor _httpContextAccessor;
     private IMapper _mapper;
     private AuditGateway _sut;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(AuditGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(AuditGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

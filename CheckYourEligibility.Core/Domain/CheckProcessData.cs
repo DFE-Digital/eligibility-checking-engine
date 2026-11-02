@@ -16,6 +16,7 @@ public class CheckProcessData : ECSCheckProcessData
     public string? ChildDateOfBirth { get; set; }
     public string? ChildSchoolURN { get; set; }
     public string? EmailAddress { get; set; }
+    public string? Reference { get; set; }
     public string? EligibilityCode { get; set; }
     public string? ValidityStartDate { get; set; }
     public string? DiscretionaryValidityStartDate { get; set; }

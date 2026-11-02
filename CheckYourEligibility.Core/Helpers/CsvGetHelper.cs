@@ -1,9 +1,10 @@
+using System.Globalization;
 using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace CheckYourEligibility.Core.Helpers;
+
 public static class CsvGetHelper
 {
-
     public static List<string> GetColumnHeaders(Row headerRow, SharedStringTable sharedStrings)
     {
         List<string> columnHeaders = [];
@@ -22,8 +23,7 @@ public static class CsvGetHelper
 
     public static string getCellValueString(Cell cell, SharedStringTable sharedStrings, CellFormat[] cellStyles)
     {
-        if (cell.CellValue is null)
-            return string.Empty;
+        if (cell.CellValue is null) { return string.Empty; }
         string value = cell.CellValue.InnerText.Trim();
 
         if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
@@ -34,7 +34,10 @@ public static class CsvGetHelper
             CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
             if (style.NumberFormatId == 14)
             {
-                value = DateTime.ParseExact(value, "dd/MM/yyyy", null).ToOADate().ToString();
+                if (DateTime.TryParseExact(value, "dd/MM/yyyy", null, DateTimeStyles.None, out var date))
+                {
+                    value = date.ToOADate().ToString();
+                }
             }
         }
         return value;

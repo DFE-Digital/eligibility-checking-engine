@@ -240,7 +240,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
             };
 
             // Calculate GPED using business logic
-            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.SubmissionDate, wfEvent.ValidityEndDate, wfEvent.ChildDateOfBirth);
             return wfEvent;
 
         }
@@ -299,7 +299,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
                 wfEvent.ValidityEndDate = RandomDateGenerator(new DateTime(year, 5, 1), new DateTime(year, 5, 26));
             }
 
-            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.SubmissionDate, wfEvent.ValidityEndDate, wfEvent.ChildDateOfBirth);
 
             return wfEvent;
         }
@@ -315,7 +315,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
             WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(15);
             wfEvent.ValidityEndDate = checkDate.AddMonths(3);
-            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.SubmissionDate, wfEvent.ValidityEndDate, wfEvent.ChildDateOfBirth);
 
             return wfEvent;
         }
@@ -333,7 +333,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
             WorkingFamiliesEvent wfEvent = new WorkingFamiliesEvent();
             wfEvent.ValidityStartDate = currentTerm.StartDate.AddDays(-1);
             wfEvent.ValidityEndDate = checkDate.AddDays(-1);
-            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(wfEvent.SubmissionDate, wfEvent.ValidityEndDate, wfEvent.ChildDateOfBirth);
             return wfEvent;
 
         }

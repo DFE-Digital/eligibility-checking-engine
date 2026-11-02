@@ -14,8 +14,6 @@ namespace CheckYourEligibility.Core.Tests.Gateways;
 
 public class UserGatewayTests : TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private IMapper _mapper;
@@ -24,11 +22,7 @@ public class UserGatewayTests : TestBase
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(UserGatewayTests),
-                InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(UserGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
         _fakeInMemoryDb.Database.EnsureDeleted();

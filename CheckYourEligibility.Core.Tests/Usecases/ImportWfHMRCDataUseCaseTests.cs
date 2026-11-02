@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 
 namespace CheckYourEligibility.Core.Tests.UseCases;
 
@@ -163,7 +164,7 @@ public class ImportWfHMRCDataUseCaseTests : TestBase
         fileMock.Setup(f => f.OpenReadStream()).Returns(stream!);
 
         const string expectedMessage =
-            "On row 2: Eligibility code must be 11 digits long, Invalid National Insurance Number, Submission date must not be in the future";
+            $"On row 2: {ValidationMessages.EligibilityCodeLength}, {ValidationMessages.ParentNINumberInvalid}, {ValidationMessages.SubmissionDateInFuture}";
 
         Func<Task> act = () => _sut.Execute(fileMock.Object);
 

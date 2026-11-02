@@ -32,6 +32,7 @@ namespace CheckYourEligibility.Core.Helpers
                             DateOfBirth = checkItem?.DateOfBirth,
                             ClientIdentifier = checkItem?.ClientIdentifier,
                             Order = checkItem?.Order,
+                            Reference = checkItem?.Reference,
                             Type = type
                         };
                     }
@@ -52,6 +53,7 @@ namespace CheckYourEligibility.Core.Helpers
                             ChildDateOfBirth = checkItem?.ChildDateOfBirth,
                             ChildSchoolURN = checkItem?.ChildSchoolURN,
                             EmailAddress = checkItem?.EmailAddress,
+                            Reference = checkItem?.Reference,
                             NationalAsylumSeekerServiceNumber = checkItem?.NationalAsylumSeekerServiceNumber,
                             NationalInsuranceNumber = checkItem?.NationalInsuranceNumber,
                             Type = type,

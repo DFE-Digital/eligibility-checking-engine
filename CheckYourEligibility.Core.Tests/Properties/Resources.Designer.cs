@@ -108,56 +108,6 @@ namespace CheckYourEligibility.Core.Tests.Properties
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-        ///
-        ///&lt;FreeSchoolMealsHMRC xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-        ///                     xsi:schemaLocation=&quot;http://www.govtalk.gov.uk/Education/FreeSchoolMeals-200705&quot;
-        ///                     xmlns=&quot;http://www.govtalk.gov.uk/Education/FreeSchoolMeals-200705&quot;&gt;
-        ///    &lt;Header&gt;
-        ///        &lt;OriginatingSystemID&gt;FS&lt;/OriginatingSystemID&gt;
-        ///        &lt;ReceivingSystemID&gt;DE&lt;/ReceivingSystemID&gt;
-        ///        &lt;CreationDate&gt;20240221&lt;/CreationDate&gt; &lt;!-- yyyymmdd --&gt;
-        ///        &lt;Creation [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string exampleHMRC_empty
-        {
-            get
-            {
-                return ResourceManager.GetString("exampleHMRC_empty", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to 19000001,19760509,Charlton
-        ///19000002,19760509,Cohen
-        ///19000003,19760509,Moore
-        ///19000004,19760509,Wilson
-        ///19000005,19760509,Ball
-        ///19000006,19760509,Stiles
-        ///19000007,19760509,Charlton
-        ///19000008,19760509,Peters
-        ///19000009,19760509,Hunt
-        ///19000010,19760509,Hurst
-        ///19000011,19760509,Banks
-        ///19000012,19760509,Hottges
-        ///19000013,19760509,Schulz
-        ///19000014,19760509,Weber
-        ///19000015,19760509,Schnellinger
-        ///19000016,19760509,Beckenbauer
-        ///19000017,19760509,Haller
-        ///19000018,19760509,Overath
-        ///19000019,19760509,Emmerich
-        ///19000020 [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string HO_Data_small
-        {
-            get
-            {
-                return ResourceManager.GetString("HO Data small", resourceCulture);
-            }
-        }
-
-        /// <summary>
         ///   Looks up a localized string similar to URN,LA (code),LA (name),EstablishmentNumber,EstablishmentName,TypeOfEstablishment (code),TypeOfEstablishment (name),EstablishmentTypeGroup (code),EstablishmentTypeGroup (name),EstablishmentStatus (code),EstablishmentStatus (name),ReasonEstablishmentOpened (code),ReasonEstablishmentOpened (name),OpenDate,ReasonEstablishmentClosed (code),ReasonEstablishmentClosed (name),CloseDate,PhaseOfEducation (code),PhaseOfEducation (name),StatutoryLowAge,StatutoryHighAge,Boarders (code),Boarders (name),NurseryProvision ( [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string small_gis

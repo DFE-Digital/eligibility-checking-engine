@@ -79,6 +79,7 @@ public class GetCheckWorkingFamiliesItemUseCase : IGetCheckWorkingFamiliesUseCas
            item.DateOfBirth);
 
         item.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(DateTime.Parse(item.DateOfBirth), checkDate);
+        item.ChildTooOld = WorkingFamiliesCheckHelper.ChildIsTooOld(DateTime.Parse(item.DateOfBirth), checkDate);
 
         return new CheckEligibilityItemResponse<CheckEligibilityWorkingFamiliesItem>
         {

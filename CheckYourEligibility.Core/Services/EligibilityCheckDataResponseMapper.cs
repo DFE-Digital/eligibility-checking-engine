@@ -54,6 +54,7 @@ namespace CheckYourEligibility.Core.Services
             item.NationalInsuranceNumber = checkData.NationalInsuranceNumber;
             item.DateOfBirth = checkData.DateOfBirth;
             item.Order = checkData.Order;
+            item.Reference = checkData.Reference;
 
             // for internal site endpoint provide both dates
             if (isInternal) {
@@ -96,6 +97,7 @@ namespace CheckYourEligibility.Core.Services
             item.ChildSchoolURN = checkData.ChildSchoolURN;
             item.EligibilityEndDate = checkData.EligibilityEndDate;
             item.EmailAddress = checkData.EmailAddress;
+            item.Reference = checkData.Reference;
             if (eligibilityCheck.BulkCheckID != null)
                 item.EligibilityCheckID = eligibilityCheck.EligibilityCheckID;
 

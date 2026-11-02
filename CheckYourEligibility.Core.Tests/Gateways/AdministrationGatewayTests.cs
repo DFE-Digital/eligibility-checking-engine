@@ -19,14 +19,10 @@ public class AdministrationGatewayTests : TestBase
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private AdministrationGateway _sut;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(AdministrationGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(AdministrationGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

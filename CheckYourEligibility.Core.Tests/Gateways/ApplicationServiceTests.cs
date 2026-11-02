@@ -27,16 +27,12 @@ public class ApplicationServiceTests : TestBase
     private ApplicationGateway _sut;
     private Establishment Establishment;
     private MultiAcademyTrust MultiAcademyTrust;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private User User;
 
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(ApplicationServiceTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(ApplicationServiceTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

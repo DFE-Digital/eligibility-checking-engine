@@ -2,7 +2,6 @@
 using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -10,8 +9,6 @@ namespace CheckYourEligibility.Core.Tests.Gateways;
 
 public class MultiAcademyTrustGatewayTests : TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private IEligibilityCheckContext _fakeInMemoryDb;
     private MultiAcademyTrustGateway _sut;
     private Mock<ILogger<MultiAcademyTrustGateway>> _mockLogger = null!;
@@ -19,14 +16,7 @@ public class MultiAcademyTrustGatewayTests : TestBase
     [SetUp]
     public async Task Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(MultiAcademyTrustGatewayTests),
-                InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(
-                Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId
-                    .TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbOptions.Create(nameof(MultiAcademyTrustGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

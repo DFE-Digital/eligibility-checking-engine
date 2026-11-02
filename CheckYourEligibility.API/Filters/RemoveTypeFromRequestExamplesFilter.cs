@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -11,6 +12,7 @@ namespace CheckYourEligibility.API.Filters;
 /// we intercept the serialized example JSON and remove it via regex.
 /// This filter only affects Swagger documentation — zero impact on runtime behavior.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RemoveTypeFromRequestExamplesFilter : IDocumentFilter
 {
     private static readonly Regex TypePropertyRegex = new(

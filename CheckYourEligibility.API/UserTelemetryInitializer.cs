@@ -16,6 +16,7 @@ public class UserTelemetryInitializer : ITelemetryInitializer
 
     public void Initialize(ITelemetry telemetry)
     {
+
         var httpContext = _httpContextAccessor.HttpContext;
 
         if (httpContext == null || httpContext.User == null)

@@ -75,6 +75,7 @@ public class PreviewFosterFamilyCodeUseCaseTests
         result.ReconfirmationProperties.StartDate.Should().NotBe(default);
         result.ReconfirmationProperties.EndDate.Should().BeAfter(result.ReconfirmationProperties.StartDate);
         result.GracePeriodEndDate.Should().BeAfter(result.ValidityStartDate);
+        result.ChildTooOld.Should().BeFalse();
         request.FosterCarer.LocalAuthorityID.Should().Be(201);
     }
 
@@ -82,7 +83,7 @@ public class PreviewFosterFamilyCodeUseCaseTests
     {
         return new FosterFamilyRequest
         {
-            SubmissionDate = DateTime.UtcNow,
+            SubmissionDate = new DateTime(2026, 9, 10),
             FosterCarer = new FosterCarerRequest
             {
                 CarerFirstName = "Joe",
