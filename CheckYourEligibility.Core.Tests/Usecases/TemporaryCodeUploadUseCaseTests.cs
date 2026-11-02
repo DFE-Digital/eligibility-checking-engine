@@ -123,7 +123,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);
@@ -171,7 +171,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);
@@ -276,7 +276,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent_NoStyleOnEligibilityCodes.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent_NoStyleOnEligibilityCodes.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);
@@ -350,7 +350,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent_invalid.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent_invalid.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);
@@ -399,7 +399,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent_empty.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent_empty.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);
@@ -439,7 +439,7 @@ public class TemporaryCodeUploadUseCaseTests
 
 		var stream = Assembly.GetExecutingAssembly()
 			.GetManifestResourceStream(
-				"CheckYourEligibility.API.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
+				"CheckYourEligibility.Core.Tests.Resources.HMRCManualEligibilityEvent.xlsm");
 
 		fileMock.Setup(f => f.OpenReadStream())
 			.Returns(stream);

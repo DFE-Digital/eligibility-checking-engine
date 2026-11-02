@@ -2,14 +2,12 @@
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Authorization;
 using CheckYourEligibility.Core.Domain.Exceptions;
-using CheckYourEligibility.API.Extensions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Extensions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using CheckYourEligibility.Core.Gateways.Interfaces;
-using CheckYourEligibility.Core.Boundary.Responses;
 
 namespace CheckYourEligibility.API.Controllers
 {
@@ -25,7 +23,6 @@ namespace CheckYourEligibility.API.Controllers
 		public TemporaryCodesController(
 			ILogger<TemporaryCodesController> logger,
 			IAudit audit,
-			IConfiguration configuration,
 			ITemporaryCodeUploadUseCase temporaryCodeUploadUseCase,
 			IGetTemporaryCodeUploadsUseCase getTemporaryCodeUploadsUseCase
 		)

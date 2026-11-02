@@ -5,8 +5,6 @@ using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.Core.Domain.Authorization;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Domain.Validation;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +12,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 
 namespace CheckYourEligibility.API.Tests.Controllers
 {
@@ -68,7 +68,6 @@ namespace CheckYourEligibility.API.Tests.Controllers
 			_sut = new TemporaryCodesController(
 				_loggerMock.Object,
 				_auditMock.Object,
-				_configuration,
 				_temporaryCodeUploadUseCaseMock.Object,
 				_getTemporaryCodeUploadsUseCaseMock.Object
 			);
