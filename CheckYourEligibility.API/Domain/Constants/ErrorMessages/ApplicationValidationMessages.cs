@@ -15,8 +15,8 @@ public static class ValidationMessages
     public const string NI = "National insurance number is invalid";
     public const string NI_REQUIRED = "National Insurance number is required";
     public const string NASS = "Invalid National Asylum Seeker Service Number";
-    public const string NI_and_ASRN = "Enter either a National Insurance number or asylum support reference number, not both";
-    public const string NI_or_ASRN = "National Insurance number or Asylum support reference number is required";
+    public const string NI_and_NASS = "Enter either a National Insurance number or asylum support reference number, not both";
+    public const string NI_or_NASS = "National Insurance number or Asylum support reference number is required";
     public const string SubmissionDate = "Submission date must not be in the future";
     public const string SubmissionDateOutOfRange = "Submission date must be within the last 31 days";
     public const string Email = "Invalid Email Address";

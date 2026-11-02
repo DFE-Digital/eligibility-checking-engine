@@ -221,7 +221,7 @@ public class DataValidationTests
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_and_ASRN);
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_and_NASS);
     }
 
     [Test]

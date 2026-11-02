@@ -97,7 +97,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 {
                     RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                         .Empty()
-                        .WithMessage(ValidationMessages.NI_and_ASRN);
+                        .WithMessage(ValidationMessages.NI_and_NASS);
 
                     RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
                         .Must(DataValidation.BeAValidNi)
@@ -114,7 +114,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
 
                     RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                         .NotEmpty()
-                        .WithMessage(ValidationMessages.NI_or_ASRN);
+                        .WithMessage(ValidationMessages.NI_or_NASS);
                 });
             });
         });

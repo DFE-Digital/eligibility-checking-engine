@@ -37,7 +37,7 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
         {
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .Empty()
-                .WithMessage(ValidationMessages.NI_and_ASRN);
+                .WithMessage(ValidationMessages.NI_and_NASS);
             RuleFor(x => x.Data.ParentNationalInsuranceNumber)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidNi)
@@ -52,7 +52,7 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
             });
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .NotEmpty()
-                .WithMessage(ValidationMessages.NI_or_ASRN);
+                .WithMessage(ValidationMessages.NI_or_NASS);
         });
     }
 }
