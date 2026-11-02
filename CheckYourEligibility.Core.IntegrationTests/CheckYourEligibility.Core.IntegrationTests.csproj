@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CheckYourEligibility.API\CheckYourEligibility.API.csproj" />
+    <ProjectReference Include="..\CheckYourEligibility.Core\CheckYourEligibility.Core.csproj" />
   </ItemGroup>
 
 </Project>

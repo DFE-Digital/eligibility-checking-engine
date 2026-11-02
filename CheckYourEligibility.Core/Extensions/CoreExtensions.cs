@@ -45,6 +45,7 @@ public static class CoreExtensions
         services.AddTransient<ILocalAuthority, LocalAuthorityGateway>();
         services.AddTransient<IAdministration, AdministrationGateway>();
         services.AddTransient<INotify, NotifyGateway>();
+        services.AddSingleton<INotificationClientFactory, NotificationClientFactory>();
         services.AddTransient<IEcsAdapter, EcsAdapter>();
         services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
         services.AddTransient<IUsers, UsersGateway>();
@@ -57,7 +58,8 @@ public static class CoreExtensions
         services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
         services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
-        services.AddTransient<INotificationClientFactory, NotificationClientFactory>();
+        services.AddTransient<ITemporaryCodeUpload, TemporaryCodeUploadGateway>();
+        services.AddTransient<IWorkingFamiliesCorrection, WorkingFamiliesCorrectionGateway>();
         return services;
     }
 

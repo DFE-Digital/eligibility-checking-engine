@@ -50,10 +50,10 @@ stages:
           arguments: '--configuration $(buildConfiguration) --verbosity minimal'
 
       - task: DotNetCoreCLI@2
-        displayName: 'Run tests'
+        displayName: 'Run core tests'
         inputs:
           command: 'test'
-          projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
+          projects: 'CheckYourEligibility.Core.Tests/CheckYourEligibility.Core.Tests.csproj'
           arguments: '--configuration $(buildConfiguration) --verbosity minimal'
           publishTestResults: true
           testRunTitle: 'Unit Tests'
@@ -67,6 +67,15 @@ stages:
           arguments: '--configuration $(buildConfiguration) --no-build --verbosity minimal'
           publishTestResults: true
           testRunTitle: 'SQL Server Integration Tests'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run API tests'
+        inputs:
+          command: 'test'
+          projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'Unit Tests'
 
       - task: DotNetCoreCLI@2
         inputs:

@@ -49,7 +49,7 @@ The existing fast unit-test suite remains separate:
 
 ```powershell
 dotnet test `
-    .\CheckYourEligibility.API.Tests\CheckYourEligibility.API.Tests.csproj
+    .\CheckYourEligibility.Core.Tests\CheckYourEligibility.Core.Tests.csproj
 ```
 
 ## Continuous integration

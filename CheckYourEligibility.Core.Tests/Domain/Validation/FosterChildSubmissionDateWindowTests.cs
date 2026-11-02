@@ -7,7 +7,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests.UseCases;
+namespace CheckYourEligibility.Core.Tests.UseCases;
 
 [TestFixture]
 public class FosterChildSubmissionDateWindowTests

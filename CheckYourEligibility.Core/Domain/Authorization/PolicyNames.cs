@@ -26,5 +26,6 @@ public static class PolicyNames
 
     // New policies for compound authorization rules
     public const string GetEligibilityCodeHistory = nameof(GetEligibilityCodeHistory);
+    public const string ManageWorkingFamiliesCorrections = nameof(ManageWorkingFamiliesCorrections);
     public const string RequireUserManagementRole = nameof(RequireUserManagementRole);
 }
