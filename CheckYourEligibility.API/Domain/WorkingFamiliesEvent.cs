@@ -9,25 +9,25 @@ public class WorkingFamiliesEvent
     public string WorkingFamiliesEventID { get; set; }
     
     [Column(TypeName = "nchar(11)")] public string EligibilityCode { get; set; }
-    [Column(TypeName = "varchar(100)")] public string ChildFirstName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string ChildFirstName { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string ChildLastName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string ChildLastName { get; set; }
     public DateTime ChildDateOfBirth { get; set; }
     [Column(TypeName = "nvarchar(9)")] public string? ChildPostCode { get; set; }
 
     public DateTime? ParentDateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string ParentFirstName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string ParentFirstName { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string ParentLastName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string ParentLastName { get; set; }
 
     [Column(TypeName = "varchar(10)")] public string? ParentNationalInsuranceNumber { get; set; }
 
     public DateTime? PartnerDateOfBirth { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string? PartnerFirstName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string? PartnerFirstName { get; set; }
 
-    [Column(TypeName = "varchar(100)")] public string? PartnerLastName { get; set; }
+    [Column(TypeName = "nvarchar(100)")] public string? PartnerLastName { get; set; }
 
     [Column(TypeName = "varchar(10)")] public string? PartnerNationalInsuranceNumber { get; set; }
     public DateTime SubmissionDate { get; set; }

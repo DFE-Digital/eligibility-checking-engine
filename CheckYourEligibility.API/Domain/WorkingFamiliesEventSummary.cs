@@ -20,9 +20,10 @@ public class WorkingFamiliesEventSummary
 
 	[Column(TypeName = "nvarchar(100)")] public string ChildFirstName { get; set; }
 
-    [Column(TypeName = "nvarchar(26)")] public string ChildFirstNameTruncated { get; set; }
+    [Column(TypeName = "nvarchar(100)")]
+    public string ChildFirstNameTruncated { get; set; }
 
-	[Column(TypeName = "nvarchar(9)")] public string ParentNationalInsuranceNumber { get; set; }
+    [Column(TypeName = "nvarchar(9)")] public string ParentNationalInsuranceNumber { get; set; }
 
 	[Column(TypeName = "nvarchar(9)")] public string? PartnerNationalInsuranceNumber { get; set; }
 

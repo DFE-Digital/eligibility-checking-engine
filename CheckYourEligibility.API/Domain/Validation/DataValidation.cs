@@ -13,7 +13,7 @@ internal static class DataValidation
     internal static bool BeAValidNass(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
-        var regexString = @"^\d{9}$";
+        var regexString = @"\A\d{9}\z";
         var rg = new Regex(regexString);
         var res = rg.Match(value);
         return res.Success;
@@ -29,7 +29,7 @@ internal static class DataValidation
     internal static bool BeAValidEligibilityCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
-        var regexString = @"^\d{11}$";
+        var regexString = @"\A\d{11}\z";
         var rg = new Regex(regexString);
         var res = rg.Match(value);
         return res.Success;
@@ -47,7 +47,7 @@ internal static class DataValidation
     internal static bool BeAValidName(string value)
     {
         var regexString =
-            @"^[a-zA-Z" +
+            @"\A[a-zA-Z" +
             @"ÁáÉéÍíÓóÚúÝýĆćĹĺŃńŔŕŚśŹź" +
             @"ÀàÈèÌìÒòÙùẀẁỲỳ" +
             @"ÂâÊêÎîÔôÛûĈĉĜĝĤĥĴĵŜŝŴŵŶŷ" +
@@ -60,7 +60,7 @@ internal static class DataValidation
             @"ĊċĖėĠġİẊẋŻż" +
             @"ĄąĘęĮįŲų" +
             @"ŐőŰű" +
-            @" ,.''\u2018\u2019-]+$";
+            @" ,.''\u2018\u2019-]+\z";
 
         var rg = new Regex(regexString);
         var res = rg.Match(value);
@@ -79,7 +79,13 @@ internal static class DataValidation
 
 	internal static bool BeAValidPostcode(string? value)
     {
-        var regexString = @"^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        var regexString =
+            @"\A(?:" +
+            @"([Gg][Ii][Rr] 0[Aa]{2})" +
+            @"|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2}))" +
+            @"\z";
         var rg = new Regex(regexString);
         var res = rg.Match(value);
         return res.Success;
