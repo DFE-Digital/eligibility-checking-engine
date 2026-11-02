@@ -178,7 +178,7 @@ public class HashGatewayTests : TestBase.TestBase
         {
             DateOfBirth = request.DateOfBirth ?? "1990-01-01",
             LastName = request.LastName,
-            NationalAsylumSeekerServiceNumber = request.AsylumSeekerReferenceNumber,
+            NationalAsylumSeekerServiceNumber = request.NationalAsylumSeekerServiceNumber,
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = request.Type
         };

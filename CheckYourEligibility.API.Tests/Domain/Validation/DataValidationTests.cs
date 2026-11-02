@@ -186,7 +186,7 @@ public class DataValidationTests
     {
         var request = ValidRequestWith("Smith");
         request.NationalInsuranceNumber = null;
-        request.AsylumSeekerReferenceNumber = referenceNumber;
+        request.NationalAsylumSeekerServiceNumber = referenceNumber;
         request.Type = type;
 
         var result = _validator.Validate(request);
@@ -214,13 +214,13 @@ public class DataValidationTests
     public void Fsm_and_eypp_still_reject_a_request_containing_both_identifiers(CheckEligibilityType type)
     {
         var request = ValidRequestWith("Smith");
-        request.AsylumSeekerReferenceNumber = "123456789";
+        request.NationalAsylumSeekerServiceNumber = "123456789";
         request.Type = type;
 
         var result = _validator.Validate(request);
 
         result.Errors.Should().Contain(e =>
-            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber) &&
+            e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber) &&
             e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_and_ASRN);
     }
 
@@ -243,7 +243,7 @@ public class DataValidationTests
     {
         var request = ValidRequestWith("Smith");
         request.NationalInsuranceNumber = null;
-        request.AsylumSeekerReferenceNumber = "123456789";
+        request.NationalAsylumSeekerServiceNumber = "123456789";
         request.Type = CheckEligibilityType.TwoYearOffer;
 
         var result = _validator.Validate(request);
@@ -252,20 +252,20 @@ public class DataValidationTests
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
             e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_REQUIRED);
         result.Errors.Should().NotContain(e =>
-            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber));
+            e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber));
     }
 
     [Test]
     public void Two_year_offer_validates_nino_and_ignores_nass()
     {
         var request = ValidRequestWith("Smith");
-        request.AsylumSeekerReferenceNumber = "not-a-valid-nass";
+        request.NationalAsylumSeekerServiceNumber = "not-a-valid-nass";
         request.Type = CheckEligibilityType.TwoYearOffer;
 
         var result = _validator.Validate(request);
 
         result.Errors.Should().NotContain(e =>
-            e.PropertyName == nameof(request.AsylumSeekerReferenceNumber));
+            e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber));
         result.Errors.Should().NotContain(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber));
     }

@@ -95,7 +95,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
             {
                 When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalInsuranceNumber), () =>
                 {
-                    RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                    RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                         .Empty()
                         .WithMessage(ValidationMessages.NI_and_ASRN);
 
@@ -105,14 +105,14 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
 
                 }).Otherwise(() =>
                 {
-                    When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber), () =>
+                    When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber), () =>
                     {
-                        RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                        RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                             .Must(DataValidation.BeAValidNass)
                             .WithMessage(ValidationMessages.NASS);
                     });
 
-                    RuleFor(x => ((CheckEligibilityRequestData)x).AsylumSeekerReferenceNumber)
+                    RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                         .NotEmpty()
                         .WithMessage(ValidationMessages.NI_or_ASRN);
                 });
