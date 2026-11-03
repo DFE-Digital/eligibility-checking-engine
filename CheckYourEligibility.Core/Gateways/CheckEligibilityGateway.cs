@@ -205,95 +205,45 @@ public class CheckEligibilityGateway : ICheckEligibility
             var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
 
             //TODO: The hashing logic should sit in the use case, targeting the hash gateway
-            var checkHashResult = ShouldUseHash(checkData)
-                ? await _hashGateway.Exists(checkData)
-                : null;
-            if (checkHashResult != null)
+            try
             {
-                CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
-                item.Status = hashedStatus;
-                item.Tier = checkHashResult.Tier;
-                item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
-                item.EligibilityCheckHash = checkHashResult;
-
-                // Find check data of last hashed result for Working families
-                if (data.Type == CheckEligibilityType.WorkingFamilies && (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
+                var checkHashResult = ShouldUseHash(checkData)
+                    ? await _hashGateway.Exists(checkData)
+                    : null;
+                if (checkHashResult != null)
                 {
-                    try
-                    {
-                        for (int i = 1; i <= 3; i++)
-                        {
-                            try
-                            {
-                                var firstValidCheck = await _db.CheckEligibilities
-                                    .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID && x.Status == hashedStatus)
-                                    .OrderBy(x => x.Created)
-                                    .AsNoTracking()
-                                    .FirstOrDefaultAsync();
-                                if (firstValidCheck != null)
-                                {
-                                    CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
-                                    hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
-                                    hashCheckData.Order = checkData.Order;
-                                    // The reference belongs to this submission, even when it is blank.
-                                    hashCheckData.Reference = checkData.Reference;
-                                    item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                                    _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found, Attempt:{i} ");
-                                    break;
-                                }
-                                _logger.LogWarning($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:NotFound, Attempt:{i} ");
-                            }
-                            catch (SqlException ex) when (ex.Number == -2) // SQL timeout
-                            {
-                                _logger.LogWarning($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:SQLTimeout, Attempt:{i} ");
-                            }
-                            await Task.Delay(1000);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Error creating check with ID: {item.EligibilityCheckHashID}");
-                    }
-                }
-                // Find check data of last hashed result for FSM to preserve EligibilityEndDate
-                else if (data.Type == CheckEligibilityType.FreeSchoolMeals && (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
-                {
-                    try
-                    {
-                        var firstValidCheck = await _db.CheckEligibilities
-                            .Where(x => x.EligibilityCheckHashID == checkHashResult.EligibilityCheckHashID && x.Status == hashedStatus)
-                            .OrderByDescending(x => x.Created)
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync();
+                    CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
+                    item.Status = hashedStatus;
+                    item.Tier = checkHashResult.Tier;
+                    item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
+                    item.EligibilityCheckHash = checkHashResult;
 
-                        if (firstValidCheck != null)
-                        {
-                            CheckProcessData hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
-                            hashCheckData.ClientIdentifier = checkData.ClientIdentifier;
-                            hashCheckData.Order = checkData.Order;
-                            // The reference belongs to this submission, even when it is blank.
-                            hashCheckData.Reference = checkData.Reference;
-                            hashCheckData.FirstName = checkData.FirstName;
-                            hashCheckData.ChildFirstName = checkData.ChildFirstName;
-                            hashCheckData.ChildLastName = checkData.ChildLastName;
-                            hashCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
-                            hashCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
-                            hashCheckData.EmailAddress = checkData.EmailAddress;
-                            item.CheckData = JsonConvert.SerializeObject(hashCheckData);
-                            _logger.LogInformation($"Action: Retrieve check with HashID:{checkHashResult.EligibilityCheckHashID}, Status:Found");
-                        }
-                    }
-                    catch (Exception ex)
+                    if ((data.Type == CheckEligibilityType.WorkingFamilies || data.Type == CheckEligibilityType.FreeSchoolMeals) &&
+                        (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
                     {
-                        _logger.LogError(ex, $"Error retrieving cached check data with ID: {item.EligibilityCheckHashID}");
+                        var cachedCheckData = await _hashGateway.GetCachedCheckDataAsync(checkData, checkHashResult);
+                        if (cachedCheckData != null)
+                        {
+                            item.CheckData = JsonConvert.SerializeObject(cachedCheckData);
+                        }
                     }
                 }
             }
+            catch (SqlException ex) when (ex.Number == -2) // SQL timeout
+            {
+                // Catch SQL timeout during hash processing/lookup and revert to just re-doing the check
+                _logger.LogError(ex, $"Error processing hash lookup for check: {item.EligibilityCheckHashID}");
+
+                item.Status = CheckEligibilityStatus.queuedForProcessing;
+                item.Tier = null;
+                item.EligibilityCheckHashID = null;
+            }
+
             return item;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Db post");
+            _logger.LogError(ex, "Error caught during MapCheck");
             throw;
         }
     }
