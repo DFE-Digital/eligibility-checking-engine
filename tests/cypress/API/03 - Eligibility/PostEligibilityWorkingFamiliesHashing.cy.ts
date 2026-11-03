@@ -1,6 +1,6 @@
 import { getandVerifyBearerToken } from "../../support/apiHelpers";
 import {
-  validLoginRequestBody,
+  validLoginRequestBodyTelford,
   validWorkingFamiliesRequestBodyEligible,
 } from "../../support/requestBodies";
 
@@ -18,7 +18,7 @@ describe("Working Families Check - Hashing Behaviour", () => {
   ];
 
   it("persists all Working Families check data from the original hashed check", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         const createAndGetCheck = () =>
           cy.apiRequest("POST", "check/working-families", request, token)

@@ -1,5 +1,5 @@
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validFSMTieredExpanded, validFSMTieredTargeted, validLoginRequestBody, validHMRCRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible } from '../../support/requestBodies';
+import { validFSMRequest, validFSMTieredExpanded, validFSMTieredTargeted, validLoginRequestBody, validWorkingFamiliesRequestBody, validWorkingFamiliesRequestBodyEligible } from '../../support/requestBodies';
 
 
 describe('GET eligibility soft check by Guid', () => {
@@ -8,7 +8,7 @@ describe('GET eligibility soft check by Guid', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
             cy.log(Cypress.env('lastName'));
-            const requestBody = validHMRCRequestBody();
+            const requestBody =  validFSMRequest();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 //extract Guid
@@ -27,9 +27,9 @@ describe('GET eligibility soft check by Guid', () => {
 
         });
     });
-        it('Verify 200 Success response is returned with valid guid for FSM tiered expanded', () => {
+    it('Verify 200 Success response is returned with valid guid for FSM tiered expanded', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            const requestBody = validFSMTieredExpanded();
+            const requestBody = { data: validFSMTieredExpanded() };
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
@@ -57,7 +57,7 @@ describe('GET eligibility soft check by Guid', () => {
 
     it('Verify 200 Success response is returned with valid guid for FSM tiered targeted', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            const requestBody = validFSMTieredTargeted();
+            const requestBody = { data: validFSMTieredTargeted() };
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
@@ -83,7 +83,7 @@ describe('GET eligibility soft check by Guid', () => {
         });
     });
 
-    
+
     it('Verify 200 Success response is returned with valid guid Working Families notFound', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             cy.log(Cypress.env('lastName'));
@@ -111,34 +111,34 @@ describe('GET eligibility soft check by Guid', () => {
         });
     });
 });
-    it('Verify 200 Success response is returned with valid guid Working Families found',function () {
-        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            //Make post request for eligibility check
-            cy.log(Cypress.env('lastName'));
-            const requestBody = validWorkingFamiliesRequestBodyEligible();
-            cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
-                cy.verifyApiResponseCode(response, 202);
-                //extract Guid
-                cy.extractGuid(response);
-                cy.wait(5000);
-                //make get request using the guid 
-                cy.get('@Guid').then((Guid) => {
-                    cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
-                        // Assert the response 
-                        cy.verifyApiResponseCode(newResponse, 200)
-                        cy.verifyGetEligibilityWFCheckResponseDataFound(newResponse, requestBody)
-                    })
-                });
-            });
-        });
-    })
-    it('Verify 404 Not Found response is returned with invalid guid', () => {
-        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            cy.apiRequest('GET', 'check/7fc12dc9-5a9d-4155-887c-d2b3d60384e', {}, token).then((response) => {
-                cy.verifyApiResponseCode(response, 404)
+it('Verify 200 Success response is returned with valid guid Working Families found', function () {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+        //Make post request for eligibility check
+        cy.log(Cypress.env('lastName'));
+        const requestBody = validWorkingFamiliesRequestBodyEligible();
+        cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
+            cy.verifyApiResponseCode(response, 202);
+            //extract Guid
+            cy.extractGuid(response);
+            cy.wait(5000);
+            //make get request using the guid 
+            cy.get('@Guid').then((Guid) => {
+                cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
+                    // Assert the response 
+                    cy.verifyApiResponseCode(newResponse, 200)
+                    cy.verifyGetEligibilityWFCheckResponseDataFound(newResponse, requestBody)
+                })
             });
         });
     });
+})
+it('Verify 404 Not Found response is returned with invalid guid', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+        cy.apiRequest('GET', 'check/7fc12dc9-5a9d-4155-887c-d2b3d60384e', {}, token).then((response) => {
+            cy.verifyApiResponseCode(response, 404)
+        });
+    });
+});
 
 describe('GET eligibility soft check by Guid and Type', () => {
     it('Verify 200 Success response is returned with valid guid', () => {
@@ -146,7 +146,7 @@ describe('GET eligibility soft check by Guid and Type', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
             cy.log(Cypress.env('lastName'));
-            const requestBody = validHMRCRequestBody();
+            const requestBody = validFSMRequest();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 //extract Guid
@@ -174,7 +174,7 @@ describe('GET eligibility soft check by Guid and Type', () => {
     it('Verify 404 Not Found response is returned with incorrect type but valid guid', () => {
         //Get token
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            const requestBody = validHMRCRequestBody();
+            const requestBody = validFSMRequest();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 //extract Guid
