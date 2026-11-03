@@ -35,13 +35,9 @@ describe('GET eligibility soft check Status with type', () => {
   });
 });
 
-
 describe('Verify Eligibility Check Statuses', () => {
-
-
   it('Verify Eligible status is returned', () => {
     const eligibleBody = validFSMRequest();
-    eligibleBody.data[0].lastName = "Tester";
     cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', eligibleBody)
     cy.get('@status').then((status: any) => {
       expect(status).to.equal('eligible')
@@ -61,7 +57,6 @@ describe('Verify Eligibility Check Statuses', () => {
       cy.get('@status').then((status: any) => {
         expect(status).to.equal('queuedForProcessing')
       })
-
     })
   })
 })

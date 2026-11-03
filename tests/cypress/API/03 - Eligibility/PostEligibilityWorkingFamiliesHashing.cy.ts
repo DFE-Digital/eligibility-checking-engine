@@ -28,7 +28,6 @@ describe("Working Families Check - Hashing Behaviour", () => {
               const checkId = checkUrl.substring(checkUrl.lastIndexOf("/") + 1);
               return cy.pollCheckStatus(checkId, token, 10)
                 .then((statusResponse) => {
-                  cy.log(`statusResponse: ${statusResponse}`);
                   return cy
                     .apiRequest("GET", `check/${checkId}`, null, token)
                     .then((checkResponse) =>
@@ -44,7 +43,6 @@ describe("Working Families Check - Hashing Behaviour", () => {
             });
 
         createAndGetCheck().then((originalCheck) => {
-          cy.log(`Original check status: ${originalCheck.status}`);
           expect(originalCheck.status).to.be.oneOf(["eligible", "notEligible"]);
           createAndGetCheck().then((hashedCheck) => {
             expect(hashedCheck.status).to.equal(originalCheck.status);

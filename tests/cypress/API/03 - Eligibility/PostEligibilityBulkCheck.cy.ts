@@ -49,7 +49,6 @@ describe("Post Eligibility Bulk Check - Valid Requests (large batch)", () => {
             validBulkRequest,
             token,
           ).then((response) => {
-            cy.log(JSON.stringify(response.body));
             // Assert the status and statusText
             cy.verifyApiResponseCode(response, 202);
             // Assert the response body data

@@ -7,8 +7,7 @@ describe('GET eligibility soft check by Guid', () => {
         //Get token
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
-            cy.log(Cypress.env('lastName'));
-            const requestBody =  validFSMRequest();
+            const requestBody = validFSMRequest();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 //extract Guid
@@ -29,7 +28,7 @@ describe('GET eligibility soft check by Guid', () => {
     });
     it('Verify 200 Success response is returned with valid guid for FSM tiered expanded', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            const requestBody = { data: validFSMTieredExpanded() };
+            const requestBody = validFSMTieredExpanded();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
@@ -57,7 +56,7 @@ describe('GET eligibility soft check by Guid', () => {
 
     it('Verify 200 Success response is returned with valid guid for FSM tiered targeted', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            const requestBody = { data: validFSMTieredTargeted() };
+            const requestBody = validFSMTieredTargeted();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
@@ -86,7 +85,6 @@ describe('GET eligibility soft check by Guid', () => {
 
     it('Verify 200 Success response is returned with valid guid Working Families notFound', () => {
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-            cy.log(Cypress.env('lastName'));
             const requestBody = validWorkingFamiliesRequestBody();
             cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
@@ -96,7 +94,7 @@ describe('GET eligibility soft check by Guid', () => {
                     cy.get('@Guid').then((Guid) => {
                         cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
                             cy.verifyApiResponseCode(newResponse, 200);
-                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
+                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 3) {
                                 cy.wait(waitTime).then(() => {
                                     pollCheck(retries + 1, waitTime + 1000);
                                 });
@@ -114,7 +112,6 @@ describe('GET eligibility soft check by Guid', () => {
 it('Verify 200 Success response is returned with valid guid Working Families found', function () {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         //Make post request for eligibility check
-        cy.log(Cypress.env('lastName'));
         const requestBody = validWorkingFamiliesRequestBodyEligible();
         cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
             cy.verifyApiResponseCode(response, 202);
@@ -145,7 +142,6 @@ describe('GET eligibility soft check by Guid and Type', () => {
         //Get token
         getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
             //Make post request for eligibility check
-            cy.log(Cypress.env('lastName'));
             const requestBody = validFSMRequest();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);

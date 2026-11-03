@@ -38,7 +38,6 @@ describe('Post Eligibility Check - Valid Requests', () => {
       cy.apiRequest('POST', 'check/free-school-meals', validHMRCRequest, token).then((response) => {
         // Assert the status and statusText
         cy.verifyApiResponseCode(response, 202)
-
         // Assert the response body data
         cy.verifyPostEligibilityCheckResponse(response)
       });
@@ -69,14 +68,12 @@ describe('Post Eligibility Check - Valid Requests', () => {
 })
 
 describe('Post Eligibility Check - Invalid Requests', () => {
-
   const invalidHMRCRequest = invalidHMRCRequestBody();
   const invalidDOBRequest = invalidDOBRequestBody();
   const invalidLastNameRequest = invalidLastNameRequestBody();
   const noNIAndNASSRequest = noNIAndNASSNRequestBody();
   const invalidEligiblityCodeRequest = invalidEligiblityCodeRequestBody();
   it('Verify 400 Bad Request response is returned with invalid Eligiblity code', () => {
-
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'check/working-families', invalidEligiblityCodeRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
@@ -86,7 +83,6 @@ describe('Post Eligibility Check - Invalid Requests', () => {
   });
 
   it('Verify 400 Bad Request response is returned with invalid National Insurance number', () => {
-
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', invalidHMRCRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
@@ -96,7 +92,6 @@ describe('Post Eligibility Check - Invalid Requests', () => {
   });
 
   it('Verify 400 Bad Request response is returned with invalid date of birth', () => {
-
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', invalidDOBRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
@@ -106,7 +101,6 @@ describe('Post Eligibility Check - Invalid Requests', () => {
   });
 
   it('Verify 400 Bad Request response is returned with invalid last name', () => {
-
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', invalidLastNameRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
@@ -116,7 +110,6 @@ describe('Post Eligibility Check - Invalid Requests', () => {
   });
 
   it('Verify 400 Bad Request response is returned with invalid NI and Nass number', () => {
-
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', noNIAndNASSRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)

@@ -42,39 +42,46 @@ export const validSupportPortalLoginRequestBody = "client_id=eligibility-checkin
   "&scope=user admin support",
 );
 
-function generateHMRCRequestBody(count = 1, prefix = '') {
+function generateHMRCRequestArrayBody(count = 1, prefix = '') {
   // Generate an array of HMRC request bodies based on the count parameter
   const data = [];
   for (let i = 1; i <= count; i++) {
-    // Generate unique national insurance numbers for each request body:
-    // - random prefix of NE or NA,
-    // - incrementing number to ensure uniqueness
-    if (prefix == '') { prefix = (Math.random() < 0.5 ? "NE" : "NA"); }
-    const number = `${String(i).padStart(6, "0")}`;
-    // Generate unique DOB for each request body using the index to add days to a base date
-    const dob = new Date("2001-01-01");
-    dob.setDate(dob.getDate() + i);
-    const dobString = dob.toISOString().split("T")[0];
-    data.push({
-      nationalInsuranceNumber: `${prefix}${number}C`,
-      lastName: "TESTER",
-      dateOfBirth: dobString
-    });
+    data.push(generateHMRCRequestSingleBody(prefix));
   }
   return data;
 }
 
+function generateHMRCRequestSingleBody(prefix = '') {
+  // Generate a request body for a single HMRC request
+  // - use supplied prefix, if blank then pick random prefix from NE or NA,
+  if (prefix == '') { prefix = (Math.random() < 0.5 ? "NE" : "NA"); }
+  // - generate unique number segment
+  const number = `${'1' + (String(Math.floor(Math.random() * 10000)).padStart(5, "0"))}`;
+  // - generate unique DOB
+  const dob = new Date("2001-01-01");
+  dob.setDate(dob.getDate() + Math.floor(Math.random() * 3000));
+  const dobString = dob.toISOString().split("T")[0];
+  return {
+    nationalInsuranceNumber: `${prefix}${number}C`,
+    lastName: "TESTER",
+    dateOfBirth: dobString,
+    nationalAsylumSeekerServiceNumber: '',
+  };
+}
+
 export function validFSMRequest() {
-  return { data: generateHMRCRequestBody(1) };
+  return { data: generateHMRCRequestSingleBody() };
 }
 export function validFSMTieredExpanded() {
-  return { data: generateHMRCRequestBody(1, "NE") };
+  return { data: generateHMRCRequestSingleBody('NE') };
 }
 export function validFSMTieredTargeted() {
-  return { data: generateHMRCRequestBody(1, "NA") };
+  return { data: generateHMRCRequestSingleBody('NA') };
 }
 export function invalidHMRCRequestBody() {
-  return { data: generateHMRCRequestBody(1, "PP") };
+  var body = generateHMRCRequestSingleBody('PP');
+  body.nationalInsuranceNumber += 'X';
+  return { data: body };
 }
 
 export function validHomeOfficeRequestBody() {
@@ -268,12 +275,12 @@ export function invalidLastNameWorkingFamiliesRequestBody() {
 //  bulk check requests
 export function validBulkRequestBody() {
   return {
-    data: generateHMRCRequestBody(5).concat([validHomeOfficeRequestBody().data]),
+    data: generateHMRCRequestArrayBody(5).concat([validHomeOfficeRequestBody().data]),
   };
 }
 export function validBulkRequestBodyLarge() {
   return {
-    data: generateHMRCRequestBody(500).concat([validHomeOfficeRequestBody().data]),
+    data: generateHMRCRequestArrayBody(500).concat([validHomeOfficeRequestBody().data]),
   };
 }
 export function invalidNinoRequestBody() {
@@ -293,17 +300,17 @@ export function invalidMultiChecksBulkRequestBody() {
 }
 export function invalidDateOfBirthBulkCheckRequestBody() {
   return {
-    data: generateHMRCRequestBody().concat([invalidDOBRequestBody().data]),
+    data: generateHMRCRequestArrayBody().concat([invalidDOBRequestBody().data]),
   };
 }
 export function invalidLastNameBulkCheckRequestBody() {
   return {
-    data: generateHMRCRequestBody().concat([invalidLastNameRequestBody().data]),
+    data: generateHMRCRequestArrayBody().concat([invalidLastNameRequestBody().data]),
   };
 }
 export function invalidNinoBulkRequestBody() {
   return {
-    data: [invalidNinoRequestBody().data].concat(generateHMRCRequestBody()),
+    data: [invalidNinoRequestBody().data].concat(generateHMRCRequestArrayBody(5)),
   };
 }
 
