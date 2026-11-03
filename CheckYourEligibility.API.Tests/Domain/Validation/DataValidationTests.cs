@@ -174,11 +174,11 @@ public class DataValidationTests
     [TestCase(CheckEligibilityType.FreeSchoolMeals, "123456789", true)]
     [TestCase(CheckEligibilityType.FreeSchoolMeals, "12345678", false)]
     [TestCase(CheckEligibilityType.FreeSchoolMeals, "1234567890", false)]
-    [TestCase(CheckEligibilityType.FreeSchoolMeals, "12/34/56789", false)]
+    [TestCase(CheckEligibilityType.FreeSchoolMeals, "12/34/56789", true)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "123456789", true)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12345678", false)]
     [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "1234567890", false)]
-    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12/34/56789", false)]
+    [TestCase(CheckEligibilityType.EarlyYearPupilPremium, "12/34/56789", true)]
     public void NASS_IsAcceptedAndValid_For_FSM_And_EYPP (
         CheckEligibilityType type,
         string referenceNumber,
@@ -206,7 +206,7 @@ public class DataValidationTests
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI);
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.InvalidNI);
     }
 
     [TestCase(CheckEligibilityType.FreeSchoolMeals)]
@@ -235,7 +235,7 @@ public class DataValidationTests
 
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_REQUIRED);
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.RequiredNI);
     }
 
     [Test]
@@ -250,7 +250,7 @@ public class DataValidationTests
 
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_REQUIRED);
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.RequiredNI);
         result.Errors.Should().NotContain(e =>
             e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber));
     }
@@ -281,6 +281,6 @@ public class DataValidationTests
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI);
+            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.InvalidNI);
     }
 }

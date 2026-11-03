@@ -12,8 +12,8 @@ public static class ValidationMessages
     public const string FirstName = "FirstName is required";
     public const string ChildLastName = "Child LastName is required";
     public const string ChildFirstName = "Child FirstName is required";
-    public const string NI = "National insurance number is invalid";
-    public const string NI_REQUIRED = "National Insurance number is required";
+    public const string InvalidNI = "Enter a National Insurance number in the correct format";
+    public const string RequiredNI = "National Insurance number is required";
     public const string NASS = "Invalid National Asylum Seeker Service Number";
     public const string NI_and_NASS = "Enter either a National Insurance number or asylum support reference number, not both";
     public const string NI_or_NASS = "National Insurance number or Asylum support reference number is required";

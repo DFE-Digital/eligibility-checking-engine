@@ -13,10 +13,8 @@ internal static class DataValidation
     internal static bool BeAValidNass(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
-        var regexString = @"^\d{9}$";
-        var rg = new Regex(regexString);
-        var res = rg.Match(value);
-        return res.Success;
+
+        return Regex.IsMatch(value, @"\A(?:\d{9}|\d{2}/\d{2}/\d{5})\z");
     }
 
     internal static bool BeElevenDigitEligibilityCode(string? value)

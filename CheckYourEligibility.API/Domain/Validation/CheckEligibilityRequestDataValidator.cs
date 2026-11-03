@@ -88,9 +88,9 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                 RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
                     .Cascade(CascadeMode.Stop)
                     .NotEmpty()
-                    .WithMessage(ValidationMessages.NI_REQUIRED)
+                    .WithMessage(ValidationMessages.RequiredNI)
                     .Must(DataValidation.BeAValidNi)
-                    .WithMessage(ValidationMessages.NI);
+                    .WithMessage(ValidationMessages.InvalidNI);
             }).Otherwise(() =>
             {
                 When(x => !string.IsNullOrEmpty(((CheckEligibilityRequestData)x).NationalInsuranceNumber), () =>
@@ -101,7 +101,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
 
                     RuleFor(x => ((CheckEligibilityRequestData)x).NationalInsuranceNumber)
                         .Must(DataValidation.BeAValidNi)
-                        .WithMessage(ValidationMessages.NI);
+                        .WithMessage(ValidationMessages.InvalidNI);
 
                 }).Otherwise(() =>
                 {
@@ -133,7 +133,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
 
 			RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).NationalInsuranceNumber)
                 .Must(DataValidation.BeAValidNi)
-                .WithMessage(ValidationMessages.NI);
+                .WithMessage(ValidationMessages.InvalidNI);
 
             RuleFor(x => ((CheckEligibilityRequestWorkingFamiliesData)x).DateOfBirth)
                 .NotEmpty()
