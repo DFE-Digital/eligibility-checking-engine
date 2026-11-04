@@ -8,6 +8,7 @@ using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.API.Gateways;
@@ -261,7 +262,7 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
         WorkingFamiliesEventSummary summary,
         WorkingFamiliesEvent latestEvent)
     {
-        return new WorkingFamiliesCorrectionRecord
+        var record = new WorkingFamiliesCorrectionRecord
         {
             EligibilityCode = summary.EligibilityCode,
             SummaryId = summary.WorkingFamiliesEventSummaryID,
@@ -298,8 +299,11 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             ValidityEndDate = summary.ValidityEndDate,
             DiscretionaryValidityStartDate = summary.DiscretionaryValidityStartDate,
             GracePeriodEndDate = summary.GracePeriodEndDate,
-            LastUpdatedDate = summary.LastUpdatedDate
+            LastUpdatedDate = summary.LastUpdatedDate,
+            LatestSubmissionDate = summary.LatestSubmissionDate,
+            GracePeriodEndDateApplied = summary.GracePeriodEndDateApplied
         };
+        return WorkingFamiliesCorrectionDisplayHelper.SetDisplayProperties(record, DateTime.UtcNow.Date);
     }
 
     private static string CreateVersion(

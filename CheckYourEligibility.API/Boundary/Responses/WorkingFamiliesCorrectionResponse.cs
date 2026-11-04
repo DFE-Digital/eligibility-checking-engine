@@ -1,4 +1,6 @@
-﻿namespace CheckYourEligibility.API.Boundary.Responses;
+﻿using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+
+namespace CheckYourEligibility.API.Boundary.Responses;
 
 public class WorkingFamiliesCorrectionResponse
 {
@@ -23,6 +25,17 @@ public class WorkingFamiliesCorrectionRecord
     public DateTime? GracePeriodEndDate { get; set; }
     public DateTime LastUpdatedDate { get; set; }
     public string Version { get; set; } = string.Empty;
+    public EligibilityCodeType EligibilityCodeType { get; set; }
+    public DateTime? LatestSubmissionDate { get; set; }
+    public bool GracePeriodEndDateApplied { get; set; }
+
+    public TermValidity? TermValidity { get; set; }
+    public ReconfirmationStatus ReconfirmationStatus { get; set; }
+    public DateTime? ReconfirmFrom { get; set; }
+    public DateTime? ReconfirmTo { get; set; }
+
+    public bool ChildTooYoung { get; set; }
+    public bool ChildTooOld { get; set; }
 }
 
 public class WorkingFamiliesCorrectionChild
