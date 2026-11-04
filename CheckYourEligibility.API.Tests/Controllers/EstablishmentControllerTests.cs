@@ -1,4 +1,5 @@
 using AutoFixture;
+using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
 using CheckYourEligibility.API.Gateways.Interfaces;
@@ -54,6 +55,9 @@ public class EstablishmentControllerTests : TestBase.TestBase
     public void Teardown()
     {
         _mockSearchUseCase.VerifyAll();
+        _mockSupportSearchUseCase.VerifyAll();
+        _mockSupportGetEstablishmentUseCase.VerifyAll();
+        _mockUpdateEstablishmentPrivateBetaUseCase.VerifyAll();
         _mockApplicationGateway.VerifyAll();
     }
 
@@ -146,5 +150,101 @@ public class EstablishmentControllerTests : TestBase.TestBase
 
         // Assert
         response.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Test]
+    public async Task Given_Support_Search_Should_Return_Status200OK()
+    {
+        // Arrange
+        var request = _fixture.Create<SupportEstablishmentSearchRequest>();
+        var result = _fixture.Create<SupportEstablishmentSearchResponse>();
+
+        _mockSupportSearchUseCase.Setup(x => x.Execute(request)).ReturnsAsync(result);
+
+        // Act
+        var response = await _sut.Support_Search(request);
+
+        // Assert
+        response.Should().BeOfType<OkObjectResult>();
+
+        var okResult = response as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(result);
+    }
+
+    [Test]
+    public async Task Given_GetEstablishment_With_Invalid_Id_Should_Return_Status400BadRequest()
+    {
+        // Arrange
+        var establishmentId = 0;
+
+        // Act
+        var response = await _sut.GetEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Test]
+    public async Task Given_GetEstablishment_When_NotFound_Should_Return_Status404NotFound()
+    {
+        // Arrange
+        var establishmentId = _fixture.Create<int>();
+
+        _mockSupportGetEstablishmentUseCase.Setup(x => x.Execute(establishmentId)).ReturnsAsync((SupportEstablishmentResponse?)null);
+
+        // Act
+        var response = await _sut.GetEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Test]
+    public async Task Given_GetEstablishment_Should_Return_Status200OK()
+    {
+        // Arrange
+        var establishmentId = _fixture.Create<int>();
+        var result = _fixture.Create<SupportEstablishmentResponse>();
+
+        _mockSupportGetEstablishmentUseCase.Setup(x => x.Execute(establishmentId)).ReturnsAsync(result);
+
+        // Act
+        var response = await _sut.GetEstablishment(establishmentId);
+
+        // Assert
+        response.Should().BeOfType<OkObjectResult>();
+
+        var okResult = response as OkObjectResult;
+        okResult!.Value.Should().BeEquivalentTo(result);
+    }
+
+    [Test]
+    public async Task Given_UpdatePrivateBeta_When_NotFound_Should_Return_Status404NotFound()
+    {
+        // Arrange
+        var request = _fixture.Create<UpdateEstablishmentPrivateBetaRequest>();
+
+        _mockUpdateEstablishmentPrivateBetaUseCase.Setup(x => x.Execute(request.EstablishmentId,request.InPrivateBeta)).ReturnsAsync(false);
+
+        // Act
+        var response = await _sut.UpdatePrivateBeta(request);
+
+        // Assert
+        response.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task Given_UpdatePrivateBeta_Should_Return_Status200OK()
+    {
+        // Arrange
+        var request = _fixture.Create<UpdateEstablishmentPrivateBetaRequest>();
+
+        _mockUpdateEstablishmentPrivateBetaUseCase.Setup(x => x.Execute(request.EstablishmentId,request.InPrivateBeta)).ReturnsAsync(true);
+
+        // Act
+        var response = await _sut.UpdatePrivateBeta(request);
+
+        // Assert
+        response.Should().BeOfType<OkResult>();
     }
 }

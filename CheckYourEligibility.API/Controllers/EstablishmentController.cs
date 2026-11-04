@@ -88,22 +88,29 @@ public class EstablishmentController : BaseController
 
     [ProducesResponseType(typeof(SupportEstablishmentSearchResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
     [HttpGet("/establishment/support-search")]
     [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
-    public async Task<ActionResult> Support_Search(SupportEstablishmentSearchRequest request)
+    public async Task<ActionResult> Support_Search([FromQuery] SupportEstablishmentSearchRequest request)
     {
        
         var results = await _supportSearchUseCase.Execute(request);
 
         return Ok(results);
     }
+
     [ProducesResponseType(typeof(SupportEstablishmentResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
-    [HttpGet("/establishment/{establishmentId}")]
+    [HttpGet("/establishment/{establishmentId:int}")]
     [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
     public async Task<ActionResult> GetEstablishment(int establishmentId)
     {
+        if (establishmentId <= 0)
+        {
+            return BadRequest(new ErrorResponse
+            {
+                Errors = [new Error { Title = "A valid establishmentId is required." }]
+            });
+        }
         var result = await _supportGetEstablishmentUseCase.Execute(establishmentId);
 
         if (result == null)
@@ -114,7 +121,7 @@ public class EstablishmentController : BaseController
         return Ok(result);
     }
 
-    
+
     [HttpPost("/establishment/private-beta")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -122,9 +129,7 @@ public class EstablishmentController : BaseController
     public async Task<IActionResult> UpdatePrivateBeta(
        UpdateEstablishmentPrivateBetaRequest request)
     {
-        var updated = await _updateEstablishmentPrivateBetaUseCase.Execute(
-            request.EstablishmentId,
-            request.InPrivateBeta);
+        var updated = await _updateEstablishmentPrivateBetaUseCase.Execute(request.EstablishmentId,request.InPrivateBeta);
 
         if (!updated)
         {

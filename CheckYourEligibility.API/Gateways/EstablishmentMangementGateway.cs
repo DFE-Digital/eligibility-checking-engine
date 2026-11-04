@@ -25,22 +25,19 @@ namespace CheckYourEligibility.API.Gateways
 
             if (model.Urn.HasValue)
             {
-                query = query.Where(x =>
-                    x.EstablishmentID == model.Urn.Value);
+                query = query.Where(x => x.EstablishmentID == model.Urn.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(model.Type))
             {
-                query = query.Where(x =>
-                    x.Type.Contains(model.Type));
+                query = query.Where(x => x.Type.Contains(model.Type));
             }
 
             var queryResults = new List<Domain.Establishment>();
 
             if (!string.IsNullOrWhiteSpace(model.Name))
             {
-                query = query.Where(x =>
-                    x.EstablishmentName.Contains(model.Name));
+                query = query.Where(x => x.EstablishmentName.Contains(model.Name));
 
                 var establishments = await query.ToListAsync();
 
@@ -48,9 +45,7 @@ namespace CheckYourEligibility.API.Gateways
 
                 foreach (var establishment in establishments)
                 {
-                    var distance = lev.Distance(
-                        model.Name.ToUpper(),
-                        establishment.EstablishmentName.ToUpper());
+                    var distance = lev.Distance(model.Name.ToUpper(), establishment.EstablishmentName.ToUpper());
 
                     establishment.LevenshteinDistance = distance;
 
@@ -58,18 +53,16 @@ namespace CheckYourEligibility.API.Gateways
                 }
 
                 queryResults = queryResults
-                    .Where(x =>
-                        x.EstablishmentName.ToUpper()
+                    .Where(x => x.EstablishmentName.ToUpper()
                             .Contains(model.Name.ToUpper()))
-                    .OrderBy(x => x.LevenshteinDistance)
-                    .ThenBy(x => x.EstablishmentName)
-                    .ToList();
+                            .OrderBy(x => x.LevenshteinDistance)
+                            .ThenBy(x => x.EstablishmentName)
+                            .ToList();
             }
             else
             {
                 queryResults = await query
-                    .OrderBy(x => x.EstablishmentName)
-                    .ToListAsync();
+                    .OrderBy(x => x.EstablishmentName).ToListAsync();
             }
 
             var totalRecords = queryResults.Count;
@@ -108,11 +101,10 @@ namespace CheckYourEligibility.API.Gateways
                 Data = pagedResults
             };
         }
-    
 
 
-            public async Task<SupportEstablishmentResponse?> Get(
-            int establishmentId)
+
+        public async Task<SupportEstablishmentResponse?> Get(int establishmentId)
         {
             var establishment = await _db.Establishments
                 .AsNoTracking()
@@ -154,13 +146,10 @@ namespace CheckYourEligibility.API.Gateways
             };
         }
 
-        public async Task<bool> UpdatePrivateBeta(
-                    int establishmentId,
-                    bool inPrivateBeta)
+        public async Task<bool> UpdatePrivateBeta(int establishmentId, bool inPrivateBeta)
         {
             var establishment = await _db.Establishments
-                .FirstOrDefaultAsync(x =>
-                    x.EstablishmentID == establishmentId);
+                .FirstOrDefaultAsync(x => x.EstablishmentID == establishmentId);
 
             if (establishment == null)
             {
