@@ -1,4 +1,5 @@
 using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.Extensions.Logging;
 using Moq;
 

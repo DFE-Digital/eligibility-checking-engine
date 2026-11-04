@@ -2,7 +2,7 @@
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 
-namespace CheckYourEligibility.API
+namespace CheckYourEligibility.Core.Adapters
 {
     public static class HttpClientPolicies
     {

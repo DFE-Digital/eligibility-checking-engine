@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace CheckYourEligibility.API.Filters;
+namespace CheckYourEligibility.Core.Adapters;
 
 /// <summary>
 /// Action filter that validates the inbound client certificate on requests to the eligibility-events endpoint.

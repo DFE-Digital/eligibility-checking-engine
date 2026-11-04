@@ -4,16 +4,8 @@ using Azure.Identity;
 using CheckYourEligibility.API;
 using CheckYourEligibility.API.Telemetry;
 using CheckYourEligibility.Core.Boundary.Requests;
-using CheckYourEligibility.Core.Data.Mappings;
 using CheckYourEligibility.Core.Domain.Middleware;
 using CheckYourEligibility.Core.Extensions;
-using CheckYourEligibility.Core.Gateways.Factories;
-using CheckYourEligibility.Core.Gateways.Factories.Helper;
-using CheckYourEligibility.Core.Services;
-using CheckYourEligibility.Core.UseCases;
-using CheckYourEligibility.Core.UseCases.Internal;
-using FeatureManagement.Domain.Validation;
-using FluentValidation;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
@@ -152,87 +144,7 @@ builder.Services.AddAzureClients(builder.Configuration);
 builder.Services.AddServices();
 builder.Services.AddExternalServices(builder.Configuration);
 builder.Services.AddJwtSettings(builder.Configuration);
-
-// Test Data Configuration and Providers
-var testDataConfig = TestDataConfiguration.CreateFromConfiguration(builder.Configuration);
-builder.Services.AddSingleton(testDataConfig);
-builder.Services.AddSingleton<IStandardCheckTestScenarioFactory, StandardCheckTestScenarioFactory>();
-builder.Services.AddSingleton<IWorkingFamiliesTestScenarioFactory, WorkingFamiliesTestScenarioFactory>();
-
-// Use cases
-builder.Services.AddScoped<ICreateOrUpdateFSMParentUserUseCase, CreateOrUpdateFSMParentUserUseCase>();
-builder.Services.AddScoped<IGetUserRolesUseCase, GetUserRolesUseCase>();
-builder.Services.AddScoped<IAddUserRoleUseCase, AddUserRoleUseCase>();
-builder.Services.AddScoped<IRemoveUserRoleUseCase, RemoveUserRoleUseCase>();
-builder.Services.AddScoped<ISearchUsersUseCase, SearchUsersUseCase>();
-builder.Services.AddScoped<IGetUserUseCase, GetUserUseCase>();
-builder.Services.AddScoped<IUpdateUserEnabledUseCase, UpdateUserEnabledUseCase>();
-builder.Services.AddScoped<IAuthenticateUserUseCase, AuthenticateUserUseCase>();
-builder.Services.AddScoped<IGetCitizenClaimsUseCase, GetCitizenClaimsUseCase>();
-builder.Services.AddScoped<ISearchEstablishmentsUseCase, SearchEstablishmentsUseCase>();
-builder.Services.AddScoped<ICleanUpEligibilityChecksUseCase, CleanUpEligibilityChecksUseCase>();
-builder.Services.AddScoped<IImportEstablishmentsUseCase, ImportEstablishmentsUseCase>();
-builder.Services.AddScoped<IImportMatsUseCase, ImportMatsUseCase>();
-builder.Services.AddScoped<IImportFsmHomeOfficeDataUseCase, ImportFsmHomeOfficeDataUseCase>();
-builder.Services.AddScoped<IImportFsmHMRCDataUseCase, ImportFsmHMRCDataUseCase>();
-builder.Services.AddScoped<IImportWfHMRCDataUseCase, ImportWfHMRCDataUseCase>();
-builder.Services.AddScoped<IUpsertWorkingFamiliesEventUseCase, UpsertWorkingFamiliesEventUseCase>();
-builder.Services.AddScoped<IDeleteWorkingFamiliesEventUseCase, DeleteWorkingFamiliesEventUseCase>();
-builder.Services.AddScoped<IUpdateEstablishmentsPrivateBetaUseCase, UpdateEstablishmentsPrivateBetaUseCase>();
-builder.Services.AddScoped<ICreateApplicationUseCase, CreateApplicationUseCase>();
-builder.Services.AddScoped<ICreateApplicationsFromBulkCheckUseCase, CreateApplicationsFromBulkCheckUseCase>();
-builder.Services.AddScoped<IGetApplicationUseCase, GetApplicationUseCase>();
-builder.Services.AddScoped<ISearchApplicationsUseCase, SearchApplicationsUseCase>();
-builder.Services.AddScoped<IUpdateApplicationUseCase, UpdateApplicationUseCase>();
-builder.Services.AddScoped<IImportApplicationsUseCase, ImportApplicationsUseCase>();
-builder.Services.AddScoped<IDeleteApplicationUseCase, DeleteApplicationUseCase>();
-builder.Services.AddScoped<IRestoreArchivedApplicationStatusUseCase, RestoreArchivedApplicationStatusUseCase>();
-builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibilityBulkCheckUseCase>();
-builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
-builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
-builder.Services.AddScoped<IPreviewFosterFamilyCodeUseCase, PreviewFosterFamilyCodeUseCase>();
-builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
-builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
-builder.Services.AddScoped<IGetBulkCheckSummaryUseCase, GetBulkCheckSummaryUseCase>();
-builder.Services.AddScoped<IGetEligibilityCheckReportingUseCase, GetEligibilityCheckReportingUseCase>();
-builder.Services.AddScoped<IGetEligibilityReportStatusUseCase, GetEligibilityReportStatusUseCase>();
-builder.Services.AddScoped<IGetEligibilityCheckReportItemsUseCase, GetEligibilityCheckReportItemsUseCase>();
-builder.Services.AddScoped<IGetEligibilityReportHistoryUseCase, GetEligibilityReportHistoryUseCase>();
-builder.Services.AddScoped<IDeleteEligibilityCheckReportUseCase, DeleteEligibilityCheckReportUseCase>();
-builder.Services.AddScoped<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase, GetAllWorkingFamiliesEventsByEligibilityCodeUseCase>();
-builder.Services.AddScoped<IGetBulkUploadProgressUseCase, GetBulkUploadProgressUseCase>();
-builder.Services.AddScoped<ILocalAuthoritiesUseCase, LocalAuthoritiesUseCase>();
-builder.Services.AddScoped<IGetEstablishmentsByLocalAuthorityIdUseCase, GetEstablishmentsByLocalAuthorityIdUseCase>();
-builder.Services.AddScoped<IGetEstablishmentsByMultiAcademyTrustIdUseCase, GetEstablishmentsByMultiAcademyTrustIdIdUseCase>();
-builder.Services.AddScoped<IGetBulkUploadResultsUseCase, GetBulkUploadResultsUseCase>();
-builder.Services.AddScoped<IGetEligibilityCheckStatusUseCase, GetEligibilityCheckStatusUseCase>();
-builder.Services.AddScoped<IUpdateEligibilityCheckStatusUseCase, UpdateEligibilityCheckStatusUseCase>();
-builder.Services.AddScoped<IProcessEligibilityCheckUseCase, ProcessEligibilityCheckUseCase>();
-builder.Services.AddScoped<IGetEligibilityCheckItemUseCase, GetEligibilityCheckItemUseCase>();
-builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
-builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
-builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
-builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEventsUseCase>();
-builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
-builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
-builder.Services.AddScoped<IUpdateFosterCarerUseCase, UpdateFosterCarerUseCase>();
-builder.Services.AddScoped<IDeleteFosterCarerUseCase, DeleteFosterCarerUseCase>();
-builder.Services.AddScoped<IDeleteFosterPartnerUseCase, DeleteFosterPartnerUseCase>();
-builder.Services.AddScoped<ISearchFosterFamiliesUseCase, SearchFosterFamiliesUseCase>();
-builder.Services.AddScoped<IGetFosterChildUseCase, GetFosterChildUseCase>();
-builder.Services.AddScoped<ICreateFosterChildUseCase, CreateFosterChildUseCase>();
-builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>();
-builder.Services.AddScoped<IReconfirmFosterChildUseCase, ReconfirmFosterChildUseCase>();
-builder.Services.AddScoped<IPreviewReconfirmFosterChildUseCase, PreviewReconfirmFosterChildUseCase>();
-builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
-
-builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
-builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
-builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
-builder.Services.AddScoped<ITemporaryCodeUploadUseCase, TemporaryCodeUploadUseCase>();
-builder.Services.AddScoped<IGetTemporaryCodeUploadsUseCase, GetTemporaryCodeUploadsUseCase>();
-builder.Services.AddScoped<IGetWorkingFamiliesCorrectionUseCase, GetWorkingFamiliesCorrectionUseCase>();
-builder.Services.AddScoped<IUpdateWorkingFamiliesCorrectionUseCase, UpdateWorkingFamiliesCorrectionUseCase>();
+builder.Services.AddTestFactories(builder.Configuration);
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });
@@ -240,9 +152,6 @@ builder.Services.Configure<KestrelServerOptions>(options =>
 {
     options.Limits.MaxRequestBodySize = int.MaxValue; // Default is 30 MB
 });
-
-// Add AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Add Authorization
 builder.Services.AddAuthorization(builder.Configuration);

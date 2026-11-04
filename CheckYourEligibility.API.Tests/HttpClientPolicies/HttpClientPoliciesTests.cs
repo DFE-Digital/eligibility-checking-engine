@@ -44,11 +44,11 @@ namespace CheckYourEligibility.API.Tests.HttpClientPolicies
 		{
 			var factory = sp.GetRequiredService<ILoggerFactory>();
 			var logger = factory.CreateLogger("PollyRetryTests");
-			return API.HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
+			return Core.Adapters.HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
 		})
 
 
-				.AddPolicyHandler(API.HttpClientPolicies.GetCircuitBreakerPolicy());
+				.AddPolicyHandler(Core.Adapters.HttpClientPolicies.GetCircuitBreakerPolicy());
 
 			var provider = services.BuildServiceProvider();
 			var clientFactory = provider.GetRequiredService<IHttpClientFactory>();

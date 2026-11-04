@@ -1,6 +1,4 @@
 ﻿using CheckYourEligibility.API.Extensions.Authorization;
-using CheckYourEligibility.API.Filters;
-using CheckYourEligibility.Core.Adapters;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Authorization;
 using CheckYourEligibility.Core.Domain.Enums;
@@ -9,8 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 namespace CheckYourEligibility.API;
 
@@ -18,80 +14,6 @@ namespace CheckYourEligibility.API;
 public static class ProgramExtensions
 {
     
-    private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
-        HttpRequestMessage httpRequestMsg,
-        X509Certificate2 certificate,
-        X509Chain x509Chain,
-        SslPolicyErrors policyErrors)
-    {
-        return true;
-    }
-    public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
-    {
-
-
-        // Register HttpClient normally
-        services.AddHttpClient("Dwp", client =>
-        {
-            client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
-        }).ConfigurePrimaryHttpMessageHandler(() =>
-        {
-
-            var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
-            var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
-            var handler = new HttpClientHandler();
-            handler.ClientCertificates.Add(cert);
-            handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
-            return handler;
-        })
-    .AddPolicyHandler((sp, msg) =>
-    {
-        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-        return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
-    }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-
-        // Register DwpAdapter as singleton, inject IHttpClientFactory
-        services.AddSingleton<IDwpAdapter>(sp =>
-        {
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient("Dwp");
-            var config = sp.GetRequiredService<IConfiguration>();
-            return new DwpAdapter(loggerFactory, httpClient, config);
-        });
-
-        // Register ECS Eligibility Events adapter for forwarding to ECS via Barracuda
-        var ecsBaseUrl = configuration["Ecs:EligibilityEvents:BaseUrl"];
-        if (!string.IsNullOrEmpty(ecsBaseUrl))
-        {
-            services.AddHttpClient("EcsEligibilityEvents", client =>
-            {
-                client.BaseAddress = new Uri(ecsBaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(30);
-
-            }).AddPolicyHandler((sp, msg) =>
-            {
-                var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-                return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "ECS");
-            })
-
-            .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-
-            services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
-            {
-                var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();
-                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                var httpClient = httpClientFactory.CreateClient("EcsEligibilityEvents");
-                var config = sp.GetRequiredService<IConfiguration>();
-                return new EcsEligibilityEventsAdapter(logger, httpClient, config);
-            });
-        }
-
-        // Register client certificate validation filter
-        services.AddScoped<ClientCertificateValidationFilter>();
-
-        return services;
-    }
 
     public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
     {

@@ -2,37 +2,40 @@ using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 
-public interface IGetEstablishmentsByMultiAcademyTrustIdUseCase
+namespace CheckYourEligibility.Core.UseCases
 {
-    Task<EstablishmentResponse> Execute(int multiAcademyTrustId);
-}
-
-public class GetEstablishmentsByMultiAcademyTrustIdIdUseCase : IGetEstablishmentsByMultiAcademyTrustIdUseCase
-{
-    private readonly IMultiAcademyTrust _multiAcademyTrustGateway;
-    private readonly ILogger<GetEstablishmentsByMultiAcademyTrustIdIdUseCase> _logger;
-
-    public GetEstablishmentsByMultiAcademyTrustIdIdUseCase(IMultiAcademyTrust multiAcademyTrustGateway, ILogger<GetEstablishmentsByMultiAcademyTrustIdIdUseCase> logger)
+    public interface IGetEstablishmentsByMultiAcademyTrustIdUseCase
     {
-        _multiAcademyTrustGateway = multiAcademyTrustGateway;
-        _logger = logger;
+        Task<EstablishmentResponse> Execute(int multiAcademyTrustId);
     }
 
-    public async Task<EstablishmentResponse> Execute(int multiAcademyTrustId)
+    public class GetEstablishmentsByMultiAcademyTrustIdIdUseCase : IGetEstablishmentsByMultiAcademyTrustIdUseCase
     {
-        if (multiAcademyTrustId <= 0)
-        {
-            _logger.LogWarning("Invalid multiAcademyTrustId received: {multiAcademyTrustId}", multiAcademyTrustId);
+        private readonly IMultiAcademyTrust _multiAcademyTrustGateway;
+        private readonly ILogger<GetEstablishmentsByMultiAcademyTrustIdIdUseCase> _logger;
 
-            throw new NotFoundException("Invalid Multi Academy Trust");
+        public GetEstablishmentsByMultiAcademyTrustIdIdUseCase(IMultiAcademyTrust multiAcademyTrustGateway, ILogger<GetEstablishmentsByMultiAcademyTrustIdIdUseCase> logger)
+        {
+            _multiAcademyTrustGateway = multiAcademyTrustGateway;
+            _logger = logger;
         }
 
-        var data = await _multiAcademyTrustGateway
-            .GetEstablishmentsByMultiAcademyTrustId(multiAcademyTrustId);
-
-        return new EstablishmentResponse
+        public async Task<EstablishmentResponse> Execute(int multiAcademyTrustId)
         {
-            Data = data
-        };
+            if (multiAcademyTrustId <= 0)
+            {
+                _logger.LogWarning("Invalid multiAcademyTrustId received: {multiAcademyTrustId}", multiAcademyTrustId);
+
+                throw new NotFoundException("Invalid Multi Academy Trust");
+            }
+
+            var data = await _multiAcademyTrustGateway
+                .GetEstablishmentsByMultiAcademyTrustId(multiAcademyTrustId);
+
+            return new EstablishmentResponse
+            {
+                Data = data
+            };
+        }
     }
 }

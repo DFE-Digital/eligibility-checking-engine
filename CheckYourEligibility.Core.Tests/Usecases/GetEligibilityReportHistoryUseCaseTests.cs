@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoFixture;
 using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -1,9 +1,6 @@
 using AutoMapper;
 using Azure.Storage.Queues;
-using CheckYourEligibility.Core.Adapters;
 using CheckYourEligibility.Core.Gateways.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

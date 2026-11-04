@@ -1,5 +1,6 @@
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;

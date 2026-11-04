@@ -1,4 +1,3 @@
-using AutoFixture;
 using CheckYourEligibility.Core.Domain.CsvImport;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;

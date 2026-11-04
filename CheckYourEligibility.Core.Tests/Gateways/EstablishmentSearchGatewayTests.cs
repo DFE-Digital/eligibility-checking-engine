@@ -1,8 +1,6 @@
 using AutoFixture;
 using CheckYourEligibility.Core.Domain;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.Core.Tests.Gateways;

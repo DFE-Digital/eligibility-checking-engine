@@ -1,8 +1,6 @@
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework.Internal;

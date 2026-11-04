@@ -1,4 +1,5 @@
 using CheckYourEligibility.API.Filters;
+using CheckYourEligibility.Core.Adapters;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace CheckYourEligibility.API.Tests.Filters;
+namespace CheckYourEligibility.Core.Tests.Filters;
 
 [TestFixture]
 public class ClientCertificateValidationFilterTests

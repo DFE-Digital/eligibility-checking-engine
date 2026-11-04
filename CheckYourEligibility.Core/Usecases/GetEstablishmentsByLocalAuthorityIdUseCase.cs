@@ -2,37 +2,40 @@ using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Exceptions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 
-public interface IGetEstablishmentsByLocalAuthorityIdUseCase
+namespace CheckYourEligibility.Core.UseCases
 {
-    Task<EstablishmentResponse> Execute(int localAuthorityId);
-}
-
-public class GetEstablishmentsByLocalAuthorityIdUseCase : IGetEstablishmentsByLocalAuthorityIdUseCase
-{
-    private readonly ILocalAuthority _localAuthorityGateway;
-    private readonly ILogger<IGetEstablishmentsByLocalAuthorityIdUseCase> _logger;
-
-    public GetEstablishmentsByLocalAuthorityIdUseCase(ILocalAuthority localAuthorityGateway, ILogger<GetEstablishmentsByLocalAuthorityIdUseCase> logger)
+    public interface IGetEstablishmentsByLocalAuthorityIdUseCase
     {
-        _localAuthorityGateway = localAuthorityGateway;
-        _logger = logger;
+        Task<EstablishmentResponse> Execute(int localAuthorityId);
     }
 
-    public async Task<EstablishmentResponse> Execute(int localAuthorityId)
+    public class GetEstablishmentsByLocalAuthorityIdUseCase : IGetEstablishmentsByLocalAuthorityIdUseCase
     {
-        if (localAuthorityId <= 0)
-        {
-            _logger.LogWarning("Invalid localAuthorityId received: {LocalAuthorityId}", localAuthorityId);
+        private readonly ILocalAuthority _localAuthorityGateway;
+        private readonly ILogger<IGetEstablishmentsByLocalAuthorityIdUseCase> _logger;
 
-            throw new NotFoundException("Invalid local authority");
+        public GetEstablishmentsByLocalAuthorityIdUseCase(ILocalAuthority localAuthorityGateway, ILogger<GetEstablishmentsByLocalAuthorityIdUseCase> logger)
+        {
+            _localAuthorityGateway = localAuthorityGateway;
+            _logger = logger;
         }
 
-        var data = await _localAuthorityGateway
-            .GetEstablishmentsByLocalAuthorityId(localAuthorityId);
-
-        return new EstablishmentResponse
+        public async Task<EstablishmentResponse> Execute(int localAuthorityId)
         {
-            Data = data
-        };
+            if (localAuthorityId <= 0)
+            {
+                _logger.LogWarning("Invalid localAuthorityId received: {LocalAuthorityId}", localAuthorityId);
+
+                throw new NotFoundException("Invalid local authority");
+            }
+
+            var data = await _localAuthorityGateway
+                .GetEstablishmentsByLocalAuthorityId(localAuthorityId);
+
+            return new EstablishmentResponse
+            {
+                Data = data
+            };
+        }
     }
 }
