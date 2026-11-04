@@ -123,7 +123,7 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
                 DiscretionaryValidityStartDate = "2025-01-01",
                 ValidityEndDate = "2025-12-31",
                 GracePeriodEndDate = "2026-03-31",
-                DateOfBirth = "2022-01-01"
+                DateOfBirth = "2019-01-01"
             };
 
             _checkGateway
@@ -143,6 +143,7 @@ namespace CheckYourEligibility.API.Tests.UseCases.Internal
             result.Data.TermValidity.Should().NotBeNull();
             result.Data.ReconfirmationProperties.Should().NotBeNull();
             result.Data.ChildTooYoung.Should().BeFalse();
+            result.Data.ChildTooOld.Should().BeTrue();
         }
 
     }

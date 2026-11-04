@@ -29,9 +29,7 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
     [SetUp]
     public void Setup()
     {
-        _dbContextOptions = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
+        _dbContextOptions = TestDbOptions.Create();
 
         _dbContextFactory = new TestDbContextFactory(_dbContextOptions);
 
@@ -105,7 +103,8 @@ public class CreateApplicationsFromBulkCheckUseCaseTests
                     ChildLastName = "Tester",
                     ChildDateOfBirth = "2015-01-01",
                     ChildSchoolURN = "123456",
-                    EmailAddress = "parent@example.com"
+                    EmailAddress = "parent@example.com",
+                    Reference = "BATCH-001"
                 })
             }
         };

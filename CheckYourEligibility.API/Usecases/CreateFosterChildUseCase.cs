@@ -13,10 +13,12 @@ public interface ICreateFosterChildUseCase
 public class CreateFosterChildUseCase : ICreateFosterChildUseCase
 {
     private readonly IFosterFamilies _gateway;
+    private readonly bool _enforceSubmissionDateWindow;
 
-    public CreateFosterChildUseCase(IFosterFamilies gateway)
+    public CreateFosterChildUseCase(IFosterFamilies gateway, IConfiguration? configuration = null)
     {
         _gateway = gateway;
+        _enforceSubmissionDateWindow = configuration?.GetValue("FosterFamilies:EnforceSubmissionDateWindow", true) ?? true;
     }
 
     public async Task<FosterChildResponse> Execute(FosterChildRequest request, int localAuthorityId, Guid fosterCarerId, DateTime submissionDate)
@@ -26,7 +28,7 @@ public class CreateFosterChildUseCase : ICreateFosterChildUseCase
 
         ArgumentNullException.ThrowIfNull(request);
 
-        var validator = new FosterChildRequestValidator();
+        var validator = new FosterChildRequestValidator(_enforceSubmissionDateWindow);
         var validationResult = validator.Validate(request);
 
         if (!validationResult.IsValid)

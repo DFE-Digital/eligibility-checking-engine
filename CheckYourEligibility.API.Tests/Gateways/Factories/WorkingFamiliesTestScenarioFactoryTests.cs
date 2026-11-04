@@ -51,7 +51,7 @@ public class WorkingFamiliesTestScenarioFactoryTests
                 Assert.That(result.ValidityStartDate, Is.GreaterThan(currentTerm.StartDate));
                 Assert.That(result.ValidityEndDate, Is.EqualTo(checkDate.AddMonths(3)));
                 Assert.That(result.GracePeriodEndDate,
-                    Is.EqualTo(WorkingFamiliesEventHelper.GetGracePeriodEndDate(result.ValidityEndDate)));
+                    Is.EqualTo(WorkingFamiliesEventHelper.GetGracePeriodEndDate(result.SubmissionDate, result.ValidityEndDate, result.ValidityEndDate.AddYears(-3))));
                 break;
             case "701": // valid for this term only
                 Assert.That(result.ValidityStartDate,

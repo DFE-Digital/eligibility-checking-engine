@@ -47,6 +47,8 @@
     <ItemGroup>
         <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent.xlsm" />
         <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent_invalid.xlsm" />
+        <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent_empty.xlsm" />
+      <EmbeddedResource Include="Resources\HMRCManualEligibilityEvent_NoStyleOnEligibilityCodes.xlsm" />
     </ItemGroup>
 
 </Project>

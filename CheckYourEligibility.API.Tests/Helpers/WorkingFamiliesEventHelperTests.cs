@@ -5,6 +5,9 @@ namespace CheckYourEligibility.API.Tests.Helpers;
 
 public class WorkingFamiliesEventHelperTests
 {
+    // Turns five on 7 Jun 2027, outside every 2026 validity term used below
+    private static readonly DateTime ChildDob = new(2022, 6, 7);
+
     [Test]
     public void ParseWorkingFamilyFromFosterFamily_MapsFamilyDetailsAndCalculatedDates()
     {
@@ -69,8 +72,8 @@ public class WorkingFamiliesEventHelperTests
     {
         var submissionDate = new DateTime(2026, 8, 20);
         var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
-            new FosterCarer(), 
-            new FosterChild(), 
+            new FosterCarer(),
+            new FosterChild(),
             "code",
             submissionDate,
             submissionDate
@@ -154,6 +157,44 @@ public class WorkingFamiliesEventHelperTests
     }
 
 
+    [Test]
+    public void ParseWorkingFamiliesEvent_ChildTurnsFiveDuringValidityTerm_UsesTermEndAsGracePeriodEndDate()
+    {
+        var headers = new List<string>
+        {
+            "Eligibility Code", "Validity Start Date", "Validity End Date", "Submission Date",
+            "Parent NINO", "Parent Forename", "Parent Surname", "Parent DOB",
+            "Child Forename", "Child Surname", "Child Postcode", "Child DOB",
+            "Partner NINO", "Partner Forename", "Partner Surname", "Partner DOB"
+        };
+        var values = new List<string>
+        {
+            "70100000000", new DateTime(2026, 9, 5).ToOADate().ToString(), new DateTime(2026, 12, 5).ToOADate().ToString(),
+            new DateTime(2026, 8, 30).ToOADate().ToString(), "AB123456C", "Alex", "Foster",
+            new DateTime(1980, 2, 3).ToOADate().ToString(), "Casey", "Foster", "AB1 2CD",
+            new DateTime(2021, 10, 15).ToOADate().ToString(), "", "", "", ""
+        };
+
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamiliesEvent(values, headers);
+
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(new DateTime(2026, 12, 31)));
+    }
+
+    [Test]
+    public void ParseWorkingFamilyFromFosterFamily_ChildTurnsFiveDuringValidityTerm_UsesTermEndAsGracePeriodEndDate()
+    {
+        var submissionDate = new DateTime(2026, 8, 20);
+        var result = WorkingFamiliesEventHelper.ParseWorkingFamilyEventFromFosterFamily(
+            new FosterCarer(),
+            new FosterChild { DateOfBirth = new DateTime(2021, 10, 15) },
+            "code",
+            submissionDate,
+            submissionDate);
+
+        Assert.That(result.ValidityEndDate, Is.EqualTo(new DateTime(2026, 11, 20)));
+        Assert.That(result.GracePeriodEndDate, Is.EqualTo(new DateTime(2026, 12, 31)));
+    }
+
     //If VED >= 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
     //If VED >= 11 Feb and VED <= 26 May then GPED = 31-Aug 
     //If VED >= 27 May and VED <= 31 August then GPED  = 31-Dec 
@@ -173,8 +214,9 @@ public class WorkingFamiliesEventHelperTests
     public void GetGracePeriodEndDate_ReturnsExpectedTermEnd(
         int month, int day, int expectedYear, int expectedMonth, int expectedDay)
     {
-        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, month, day));
-
+        var validityEndDate = new DateTime(2026, month, day);
+        var submissionDate = validityEndDate.AddDays(-31);
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(submissionDate, validityEndDate, ChildDob);
         Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
     }
 
@@ -187,13 +229,69 @@ public class WorkingFamiliesEventHelperTests
         int month, int day, int expectedYear, int expectedMonth, int expectedDay)
     {
         var validityEndDate = new DateTime(2026, month, day, 23, 59, 59);
+        var submissionDate = validityEndDate.AddDays(-31);
 
-        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(validityEndDate);
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(submissionDate, validityEndDate, ChildDob);
 
         Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
     }
 
-    [TestCase(2026, 1, 1,2025, 12, 31, 2025, 12, 31)]
+    // Child's 5th birthday falls inside the term containing the VED => GPED is that term's end date
+    [TestCase(2026, 11, 20, 2021, 10, 15, 2026, 12, 31, Description = "Autumn: birthday mid-term")]
+    [TestCase(2026, 11, 20, 2021, 9, 1, 2026, 12, 31, Description = "Autumn: birthday on term start")]
+    [TestCase(2026, 11, 20, 2021, 12, 31, 2026, 12, 31, Description = "Autumn: birthday on term end")]
+    [TestCase(2026, 10, 22, 2021, 11, 5, 2026, 12, 31, Description = "Autumn: VED would normally give next March")]
+    [TestCase(2026, 2, 20, 2021, 3, 1, 2026, 3, 31, Description = "Spring: VED would normally give 31 Aug")]
+    [TestCase(2026, 1, 15, 2021, 1, 1, 2026, 3, 31, Description = "Spring: birthday on term start")]
+    [TestCase(2026, 6, 15, 2021, 7, 1, 2026, 8, 31, Description = "Summer: VED would normally give 31 Dec")]
+    [TestCase(2026, 6, 15, 2021, 8, 31, 2026, 8, 31, Description = "Summer: birthday on term end")]
+    [TestCase(2026, 4, 1, 2021, 4, 1, 2026, 8, 31, Description = "Summer: VED and birthday on term start")]
+    [TestCase(2025, 2, 20, 2020, 2, 29, 2025, 3, 31, Description = "Leap-day birthday resolves to 28 Feb")]
+    public void GetGracePeriodEndDate_ChildTurnsFiveDuringTerm_ReturnsTermEndDate(
+        int vedYear, int vedMonth, int vedDay,
+        int dobYear, int dobMonth, int dobDay,
+        int expectedYear, int expectedMonth, int expectedDay)
+    {
+        var validityEndDate = new DateTime(vedYear, vedMonth, vedDay);
+        var submissionDate = validityEndDate.AddDays(-31);
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(
+            submissionDate, validityEndDate, new DateTime(dobYear, dobMonth, dobDay));
+
+        Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
+    }
+
+    // Child's 5th birthday is outside the term containing the VED => normal VED range rules apply
+    [TestCase(2026, 11, 20, 2021, 8, 31, 2027, 3, 31, Description = "Birthday day before Autumn starts")]
+    [TestCase(2026, 11, 20, 2022, 1, 1, 2027, 3, 31, Description = "Birthday day after Autumn ends")]
+    [TestCase(2026, 11, 20, 2020, 1, 1, 2027, 3, 31, Description = "Already turned five before the term")]
+    [TestCase(2026, 11, 20, 2024, 6, 7, 2027, 3, 31, Description = "Turns five in a later year")]
+    [TestCase(2026, 2, 20, 2021, 4, 1, 2026, 8, 31, Description = "Birthday on first day of next term")]
+    [TestCase(2026, 6, 15, 2021, 9, 1, 2026, 12, 31, Description = "Birthday on first day of next term (Autumn)")]
+    public void GetGracePeriodEndDate_ChildDoesNotTurnFiveDuringTerm_UsesValidityEndDateRules(
+        int vedYear, int vedMonth, int vedDay,
+        int dobYear, int dobMonth, int dobDay,
+        int expectedYear, int expectedMonth, int expectedDay)
+    {
+        var validityEndDate = new DateTime(vedYear, vedMonth, vedDay);
+        var submissionDate = validityEndDate.AddDays(-31);
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(
+            submissionDate, validityEndDate, new DateTime(dobYear, dobMonth, dobDay));
+
+        Assert.That(result, Is.EqualTo(new DateTime(expectedYear, expectedMonth, expectedDay)));
+    }
+
+    [Test]
+    public void GetGracePeriodEndDate_ChildTurnsFiveDuringTerm_IgnoresVedTimeComponent()
+    {
+        var submissionDate = new DateTime(2026, 08, 15);
+        var validityEndDate = new DateTime(2026, 12, 31, 23, 59, 59);
+        var childDOB = new DateTime(2021, 12, 31, 10, 30, 0);
+        var result = WorkingFamiliesEventHelper.GetGracePeriodEndDate(submissionDate, validityEndDate, childDOB);
+
+        Assert.That(result, Is.EqualTo(new DateTime(2026, 12, 31)));
+    }
+
+    [TestCase(2026, 1, 1, 2025, 12, 31, 2025, 12, 31)]
     [TestCase(2026, 4, 14, 2026, 3, 31, 2026, 3, 31)]
     [TestCase(2026, 9, 14, 2026, 8, 31, 2026, 8, 31)]
     public void GetDiscretionaryStartDate_DuringTermOpeningWindow_UsesPreviousTermEnd(
@@ -201,7 +299,7 @@ public class WorkingFamiliesEventHelperTests
         int submissionDateYear, int submissionDateMonth, int submissionDateDay)
     {
         var validityStartDate = new DateTime(year, month, day);
-        var submissionDate =  new DateTime(submissionDateYear, submissionDateMonth, submissionDateDay);
+        var submissionDate = new DateTime(submissionDateYear, submissionDateMonth, submissionDateDay);
 
         var result = WorkingFamiliesEventHelper.GetDiscretionaryStartDate(validityStartDate, submissionDate);
 
@@ -285,7 +383,7 @@ public class WorkingFamiliesEventHelperTests
 
         Assert.That(result, Is.SameAs(eventSummary));
         Assert.That(eventSummary.LastUpdatedDate, Is.EqualTo(DateTime.UtcNow.Date));
-        Assert.That(eventSummary.LatestSubmissionDate,  Is.EqualTo(incomingEvent.SubmissionDate));
+        Assert.That(eventSummary.LatestSubmissionDate, Is.EqualTo(incomingEvent.SubmissionDate));
         Assert.That(eventSummary.ValidityEndDate, Is.EqualTo(incomingEvent.ValidityEndDate));
         Assert.That(eventSummary.GracePeriodEndDate, Is.EqualTo(incomingEvent.GracePeriodEndDate));
         Assert.That(eventSummary.FirstEventDate, Is.EqualTo(eventSummary.FirstEventDate));
@@ -297,6 +395,7 @@ public class WorkingFamiliesEventHelperTests
     [TestCase("Casey-Test")]
     public void MapWorkingFamiliesEventToNewSummaryRecord_CreatesSummaryFromIncomingEvent(string childFirstName)
     {
+        var submissionDate = new DateTime(2026, 8, 20);
         var incomingEvent = new WorkingFamiliesEvent
         {
             EligibilityCode = "70100000000",
@@ -305,11 +404,11 @@ public class WorkingFamiliesEventHelperTests
             ParentNationalInsuranceNumber = "AB123456C",
             PartnerNationalInsuranceNumber = "CD654321E",
             ChildPostCode = "AB1 2CD",
-            SubmissionDate = new DateTime(2026, 8, 20),
-            ValidityStartDate = new DateTime(2026, 8, 20),
+            SubmissionDate = submissionDate,
+            ValidityStartDate = submissionDate,
             ValidityEndDate = new DateTime(2026, 11, 20),
-            DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 20))
+            DiscretionaryValidityStartDate = submissionDate,
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(submissionDate, new DateTime(2026, 11, 20), new DateTime(2022, 6, 7))
         };
 
         var result = WorkingFamiliesEventHelper.MapWorkingFamiliesEventToNewSummaryRecord(incomingEvent);
@@ -327,10 +426,10 @@ public class WorkingFamiliesEventHelperTests
         Assert.That(result.HasCodeBeenCheckedByOwningLA, Is.False);
         Assert.That(result.LastCheckDate, Is.Null);
         Assert.That(result.LastUpdatedDate, Is.EqualTo(DateTime.UtcNow.Date));
-        Assert.That(result.LatestSubmissionDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.LatestSubmissionDate, Is.EqualTo(submissionDate));
         Assert.That(result.GracePeriodEndDate, Is.EqualTo(new DateTime(2027, 3, 31)));
-        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
-        Assert.That(result.ValidityStartDate, Is.EqualTo(new DateTime(2026, 8, 20)));
+        Assert.That(result.DiscretionaryValidityStartDate, Is.EqualTo(submissionDate));
+        Assert.That(result.ValidityStartDate, Is.EqualTo(submissionDate));
         Assert.That(result.ValidityEndDate, Is.EqualTo(new DateTime(2026, 11, 20)));
     }
 
@@ -347,7 +446,7 @@ public class WorkingFamiliesEventHelperTests
             ChildPostCode = "NT4 9TS",
         };
         var summaryRecord = new WorkingFamiliesEventSummary();
-        var result = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(summaryRecord,incomingEvent);
+        var result = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(summaryRecord, incomingEvent);
 
         Assert.That(result.ChildDateOfBirth, Is.EqualTo(new DateTime(2022, 6, 7)));
         Assert.That(result.ParentNationalInsuranceNumber, Is.EqualTo("AB123456C"));
@@ -361,6 +460,7 @@ public class WorkingFamiliesEventHelperTests
     [Test]
     public void EvaluateContiguityForCodeFromIncomingEvent_WhenNoSummaryRecord_CreatesNewSummary()
     {
+        var submissionDate = new DateTime(2026, 8, 20);
         var incomingEvent = new WorkingFamiliesEvent
         {
             EligibilityCode = "70100000000",
@@ -368,11 +468,11 @@ public class WorkingFamiliesEventHelperTests
             ChildFirstName = "Casey",
             ParentNationalInsuranceNumber = "AB123456C",
             ChildPostCode = "AB1 2CD",
-            SubmissionDate = new DateTime(2026, 8, 20),
-            ValidityStartDate = new DateTime(2026, 8, 20),
+            SubmissionDate = submissionDate,
+            ValidityStartDate = submissionDate,
             ValidityEndDate = new DateTime(2026, 11, 20),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 20))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(submissionDate, new DateTime(2026, 11, 20), new DateTime(2022, 6, 7))
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, null, 0);
@@ -398,7 +498,7 @@ public class WorkingFamiliesEventHelperTests
         {
             EligibilityCode = "50100000000",
             ValidityEndDate = new DateTime(2026, 6, 30),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 6, 30)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 1, 2), new DateTime(2026, 6, 30), ChildDob),
             FirstEventDate = new DateTime(2026, 1, 10),
             ValidityStartDate = new DateTime(2026, 1, 2),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
@@ -412,7 +512,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 6, 30),
             ValidityEndDate = new DateTime(2026, 12, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 6, 30),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 1))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 7, 1), new DateTime(2026, 12, 1), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
@@ -432,18 +532,18 @@ public class WorkingFamiliesEventHelperTests
             EligibilityCode = "501000000001",
             ValidityStartDate = new DateTime(2026, 9, 2),
             ValidityEndDate = new DateTime(2026, 11, 30),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 30)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 2), new DateTime(2026, 11, 30), ChildDob),
             DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
             FirstEventDate = new DateTime(2026, 9, 2)
         };
         var incomingEvent = new WorkingFamiliesEvent
         {
             EligibilityCode = "501000000001",
-            SubmissionDate = new DateTime(2026, 12,1),
+            SubmissionDate = new DateTime(2026, 12, 1),
             ValidityStartDate = new DateTime(2026, 12, 1),
             ValidityEndDate = new DateTime(2027, 2, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 12, 1),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2027, 2, 1))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 1), new DateTime(2027, 2, 1), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
@@ -463,7 +563,7 @@ public class WorkingFamiliesEventHelperTests
             EligibilityCode = "70100000000",
             ValidityStartDate = new DateTime(2026, 8, 20),
             ValidityEndDate = new DateTime(2026, 9, 1),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 1)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 8, 20), new DateTime(2026, 9, 1), ChildDob),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 20),
             FirstEventDate = new DateTime(2026, 1, 10)
         };
@@ -473,7 +573,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 9, 2),
             ValidityEndDate = new DateTime(2026, 12, 2),
             DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 2))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 2), new DateTime(2026, 12, 2), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
@@ -495,7 +595,7 @@ public class WorkingFamiliesEventHelperTests
             EligibilityCode = "70100000000",
             ValidityStartDate = new DateTime(2026, 9, 2),
             ValidityEndDate = new DateTime(2026, 10, 30),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 10, 30)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 2), new DateTime(2026, 10, 30), ChildDob),
             DiscretionaryValidityStartDate = new DateTime(2026, 9, 2),
             FirstEventDate = new DateTime(2026, 9, 2)
         };
@@ -505,7 +605,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 10, 31),
             ValidityEndDate = new DateTime(2027, 2, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 10, 31),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2027, 2, 1))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 10, 30), new DateTime(2027, 2, 1), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 1);
@@ -526,7 +626,7 @@ public class WorkingFamiliesEventHelperTests
             EligibilityCode = "50100000000",
             ValidityStartDate = new DateTime(2026, 1, 2),
             ValidityEndDate = new DateTime(2026, 6, 30),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 6, 30)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 1, 2), new DateTime(2026, 6, 30), ChildDob),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
             FirstEventDate = new DateTime(2026, 1, 10)
         };
@@ -537,7 +637,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 8, 31),
             ValidityEndDate = new DateTime(2026, 11, 30),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 31),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 30))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 8, 31), new DateTime(2026, 11, 30), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
@@ -559,7 +659,7 @@ public class WorkingFamiliesEventHelperTests
             EligibilityCode = "70100000000",
             ValidityStartDate = new DateTime(2026, 1, 2),
             ValidityEndDate = new DateTime(2026, 5, 26),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 5, 26)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 1, 2), new DateTime(2026, 5, 26), ChildDob),
             FirstEventDate = new DateTime(2026, 1, 10),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
             LatestSubmissionDate = new DateTime(2026, 6, 15)
@@ -572,7 +672,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 9, 1),
             ValidityEndDate = new DateTime(2026, 12, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 9, 1),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 12, 1))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 9, 1), new DateTime(2026, 12, 1), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);
@@ -591,7 +691,7 @@ public class WorkingFamiliesEventHelperTests
         {
             EligibilityCode = "70100000000",
             ValidityEndDate = new DateTime(2026, 7, 31),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 7, 31)),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 1, 2), new DateTime(2026, 7, 31), ChildDob),
             FirstEventDate = new DateTime(2026, 1, 10),
             ValidityStartDate = new DateTime(2026, 1, 2),
             DiscretionaryValidityStartDate = new DateTime(2026, 1, 2),
@@ -605,7 +705,7 @@ public class WorkingFamiliesEventHelperTests
             ValidityStartDate = new DateTime(2026, 8, 1),
             ValidityEndDate = new DateTime(2026, 11, 1),
             DiscretionaryValidityStartDate = new DateTime(2026, 8, 1),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 11, 1))
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(new DateTime(2026, 8, 10), new DateTime(2026, 11, 1), ChildDob)
         };
 
         var result = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(incomingEvent, summary, 2);

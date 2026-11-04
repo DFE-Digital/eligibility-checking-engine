@@ -1,6 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 public interface IEligibilityCheckContext
@@ -31,6 +30,7 @@ public interface IEligibilityCheckContext
     DbSet<UserRole> UserRoles { get; set; }
     DbSet<EligibilityCodeRange> EligibilityCodeRanges { get; set; }
     DbSet<WorkingFamiliesDualRunningCheck> WorkingFamiliesDualRunningChecks { get; set; }
+    DbSet<TemporaryCodeUpload> TemporaryCodeUploads { get; set; }
 
     void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data, int? expireCachedResultsDays = null);
     Task<int> SaveChangesAsync();

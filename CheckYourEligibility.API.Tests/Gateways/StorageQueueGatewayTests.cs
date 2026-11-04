@@ -14,8 +14,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class StorageQueueGatewayTests : TestBase.TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private IConfiguration _configuration;
     private IEligibilityCheckContext _fakeInMemoryDb;
     private HashGateway _hashGateway;
@@ -32,11 +30,7 @@ public class StorageQueueGatewayTests : TestBase.TestBase
     [SetUp]
     public async Task Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(StorageQueueGatewayTests),
-                InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(StorageQueueGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

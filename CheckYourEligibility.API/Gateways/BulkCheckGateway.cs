@@ -68,13 +68,26 @@ public class BulkCheckGateway : IBulkCheck
 
     public async Task<BulkStatus?> GetBulkStatus(string guid)
     {
+
+        var bulkCheck = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == guid);
+
+        if (bulkCheck == null) { 
+
+            return null;
+        }
+
+        string bulkCheckStatus = bulkCheck.Status.ToString();
+        
         var results = _db.CheckEligibilities
             .Where(x => x.BulkCheckID == guid && x.IsDeleted == false)
             .GroupBy(n => n.Status)
             .Select(n => new { Status = n.Key, ct = n.Count() });
+
         if (results.Any())
+
             return new BulkStatus
             {
+                Status = bulkCheckStatus,
                 Total = results.Sum(s => s.ct),
                 Complete = results.Where(a => a.Status != CheckEligibilityStatus.queuedForProcessing).Sum(s => s.ct)
             };
@@ -82,16 +95,15 @@ public class BulkCheckGateway : IBulkCheck
         // EligibilityCheck rows are inserted asynchronously after the BulkCheck record
         // is created. If none exist yet, fall back to the BulkChecks table so that
         // progress returns "0 of N complete" rather than 404.
-        var bulkCheck = await _db.BulkChecks
-            .FirstOrDefaultAsync(x => x.BulkCheckID == guid);
-        if (bulkCheck != null)
-            return new BulkStatus
-            {
-                Total = bulkCheck.NumberOfRecords,
-                Complete = 0
-            };
 
-        return null;
+        return new BulkStatus
+        {
+            Status = bulkCheckStatus,
+            Total = bulkCheck.NumberOfRecords,
+            Complete = 0
+        };
+
+
     }
 
     /// <summary>

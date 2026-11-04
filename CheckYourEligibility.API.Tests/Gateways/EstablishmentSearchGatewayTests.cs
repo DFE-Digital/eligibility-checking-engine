@@ -15,14 +15,10 @@ public class EstablishmentSearchGatewayTests : TestBase.TestBase
     private IEligibilityCheckContext _fakeInMemoryDb;
     private EstablishmentSearchGateway _sut;
     private Establishment Establishment;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(EstablishmentSearchGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(EstablishmentSearchGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

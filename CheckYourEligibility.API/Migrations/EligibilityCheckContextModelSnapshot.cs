@@ -701,6 +701,42 @@ namespace CheckYourEligibility.API.Migrations
                     b.ToTable("RateLimitEvents");
                 });
 
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.TemporaryCodeUpload", b =>
+                {
+                    b.Property<Guid>("TemporaryCodeUploadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DateImported")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Filename")
+                        .IsRequired()
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("FirstCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(12)");
+
+                    b.Property<string>("ImportedBy")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(12)");
+
+                    b.Property<int>("NumberOfCodes")
+                        .HasColumnType("int");
+
+                    b.HasKey("TemporaryCodeUploadId");
+
+                    b.HasIndex("ImportedBy");
+
+                    b.ToTable("TemporaryCodeUploads");
+                });
+
             modelBuilder.Entity("CheckYourEligibility.API.Domain.User", b =>
                 {
                     b.Property<string>("UserID")
@@ -768,11 +804,11 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ChildFirstName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildLastName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildPostCode")
                         .HasColumnType("nvarchar(9)");
@@ -807,11 +843,11 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ParentFirstName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentLastName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentNationalInsuranceNumber")
                         .HasColumnType("varchar(10)");
@@ -820,10 +856,10 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PartnerFirstName")
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PartnerLastName")
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PartnerNationalInsuranceNumber")
                         .HasColumnType("varchar(10)");
@@ -860,7 +896,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ChildFirstNameTruncated")
                         .IsRequired()
-                        .HasColumnType("nvarchar(26)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildPostCode")
                         .IsRequired()
@@ -1335,6 +1371,15 @@ namespace CheckYourEligibility.API.Migrations
                     b.Navigation("Establishment");
 
                     b.Navigation("MultiAcademyTrust");
+                });
+
+            modelBuilder.Entity("CheckYourEligibility.API.Domain.TemporaryCodeUpload", b =>
+                {
+                    b.HasOne("CheckYourEligibility.API.Domain.User", "ImportedByUser")
+                        .WithMany()
+                        .HasForeignKey("ImportedBy");
+
+                    b.Navigation("ImportedByUser");
                 });
 
             modelBuilder.Entity("EligibilityCheckReport", b =>

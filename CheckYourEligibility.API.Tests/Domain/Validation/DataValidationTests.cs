@@ -171,10 +171,39 @@ public class DataValidationTests
         result.Errors.Should().Contain(e => e.PropertyName.Contains("ChildFirstName"));
     }
 
+    [Test]
+    public void FirstName_with_trailing_newline_fails_validation()
+    {
+        var request = ValidRequestWithOptionalApplicationData();
+        request.FirstName = "Alex\n";
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should()
+            .Contain(error => error.PropertyName == "FirstName");
+    }
+
+    [Test]
+    public void Working_families_eligibility_code_with_trailing_newline_fails_validation()
+    {
+        var request = new CheckEligibilityRequestWorkingFamiliesData
+        {
+            EligibilityCode = "50000375201\n",
+            DateOfBirth = "2000-01-01",
+            NationalInsuranceNumber = "AB123456C"
+        };
+
+        var result = _validator.Validate(request);
+
+        result.Errors.Should()
+            .Contain(error => error.PropertyName == "EligibilityCode");
+    }
+
     [TestCase("123456789", true)]
     [TestCase("12345678", false)]
     [TestCase("1234567890", false)]
     [TestCase("12/34/56789", false)]
+    [TestCase("123456789\n", false)]
     public void Asylum_seeker_reference_number_must_be_nine_digits(string referenceNumber, bool expectedIsValid)
     {
         var request = ValidRequestWith("Smith");

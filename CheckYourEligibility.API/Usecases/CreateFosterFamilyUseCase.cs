@@ -14,17 +14,19 @@ public interface ICreateFosterFamilyUseCase
 public class CreateFosterFamilyUseCase : ICreateFosterFamilyUseCase
 {
     private readonly IFosterFamilies _gateway;
+    private readonly bool _enforceSubmissionDateWindow;
 
-    public CreateFosterFamilyUseCase(IFosterFamilies gateway)
+    public CreateFosterFamilyUseCase(IFosterFamilies gateway, IConfiguration? configuration = null)
     {
         _gateway = gateway;
+        _enforceSubmissionDateWindow = configuration?.GetValue("FosterFamilies:EnforceSubmissionDateWindow", true) ?? true;
     }
 
     public async Task<FosterFamilyCreatedResponse> Execute(FosterFamilyRequest request, int localAuthorityId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var validator = new FosterFamilyRequestValidator();
+        var validator = new FosterFamilyRequestValidator(_enforceSubmissionDateWindow);
         var validationResult = validator.Validate(request);
 
         if (!validationResult.IsValid)

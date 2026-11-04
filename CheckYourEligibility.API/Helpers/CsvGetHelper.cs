@@ -1,9 +1,8 @@
 using DocumentFormat.OpenXml.Spreadsheet;
-
+using System.Globalization;
 
 public static class CsvGetHelper
 {
-
     public static List<string> GetColumnHeaders(Row headerRow, SharedStringTable sharedStrings)
     {
         List<string> columnHeaders = [];
@@ -34,7 +33,11 @@ public static class CsvGetHelper
             CellFormat style = cellStyles[int.Parse(cell.StyleIndex.InnerText)];
             if (style.NumberFormatId == 14)
             {
-                value = DateTime.ParseExact(value, "dd/MM/yyyy", null).ToOADate().ToString();
+                if (DateTime.TryParseExact(value, "dd/MM/yyyy", null,
+                    DateTimeStyles.None, out var date))
+                {
+                    value = date.ToOADate().ToString();
+                }
             }
         }
         return value;

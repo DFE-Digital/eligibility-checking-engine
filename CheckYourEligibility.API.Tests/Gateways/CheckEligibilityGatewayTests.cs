@@ -36,15 +36,10 @@ public class CheckEligibilityGatewayTests : TestBase.TestBase
     private Mock<IDwpAdapter> _moqDwpGateway;
     private Mock<IStorageQueue> _moqStorageQueueGateway;
     private CheckEligibilityGateway _sut;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public async Task Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(CheckEligibilityGatewayTests), InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbOptions.Create(nameof(CheckEligibilityGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
         await _fakeInMemoryDb.Database.EnsureDeletedAsync();

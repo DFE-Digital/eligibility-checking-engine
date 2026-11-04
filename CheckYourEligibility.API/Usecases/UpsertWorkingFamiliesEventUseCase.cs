@@ -75,7 +75,7 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
             ValidityEndDate = eventData.ValidityEndDate,
             DiscretionaryValidityStartDate = WorkingFamiliesEventHelper.GetDiscretionaryStartDate(
                 eventData.ValidityStartDate, eventData.SubmissionDate!.Value),
-            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(eventData.ValidityEndDate),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(eventData.SubmissionDate!.Value, eventData.ValidityEndDate, eventData.Child.Dob),
             IsDeleted = false,
             DeletedDateTime = null,
             // Set CreatedDateTime only for new records; gateway preserves it on updates
@@ -94,7 +94,7 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
             // The count includes the incoming event because events are persisted before
             // contiguity is evaluated, ensuring no third-party event data is lost.
             // Subtract one so the helper evaluates only the previously existing events.
-            int historicEventRecordsCount = existingSummaryRecord == null ? 0 
+            int historicEventRecordsCount = existingSummaryRecord == null ? 0
                 : Math.Max(0, await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(result.EligibilityCode) - 1);
 
 
@@ -105,13 +105,15 @@ public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseC
             {
                 await _workingFamiliesEventGateway.CreateWorkingFamiliesSummaryRecordAsync(mappedEventSummaryRecord);
             }
-            else {
+            else
+            {
                 mappedEventSummaryRecord = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(mappedEventSummaryRecord, result);
                 await _workingFamiliesEventGateway.UpdateWorkingFamiliesSummaryRecordAsync(mappedEventSummaryRecord);
             }
 
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             _logger.LogError("UpsertWorkingFamiliesSummaryRecord", ex);
             throw;
         }

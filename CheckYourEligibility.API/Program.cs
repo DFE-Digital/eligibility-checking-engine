@@ -190,7 +190,6 @@ builder.Services.AddScoped<IProcessEligibilityBulkCheckUseCase, ProcessEligibili
 builder.Services.AddScoped<ICheckEligibilityUseCase, CheckEligibilityUseCase>();
 builder.Services.AddScoped<ICheckEligibilityBulkUseCase, CheckEligibilityBulkUseCase>();
 builder.Services.AddScoped<IPreviewFosterFamilyCodeUseCase, PreviewFosterFamilyCodeUseCase>();
-
 builder.Services.AddScoped<IGetBulkCheckStatusesUseCase, GetBulkCheckStatusesUseCase>();
 builder.Services.AddScoped<IGetAllBulkChecksUseCase, GetAllBulkChecksUseCase>();
 builder.Services.AddScoped<IGetBulkCheckSummaryUseCase, GetBulkCheckSummaryUseCase>();
@@ -213,7 +212,6 @@ builder.Services.AddScoped<IDeleteBulkCheckUseCase, DeleteBulkCheckUseCase>();
 builder.Services.AddScoped<ISendNotificationUseCase, SendNotificationUseCase>();
 builder.Services.AddScoped<ICreateRateLimitEventUseCase, CreateRateLimitEventUseCase>();
 builder.Services.AddScoped<ICleanUpRateLimitEventsUseCase, CleanUpRateLimitEventsUseCase>();
-
 builder.Services.AddScoped<IGetFosterFamilyUseCase, GetFosterFamilyUseCase>();
 builder.Services.AddScoped<ICreateFosterFamilyUseCase, CreateFosterFamilyUseCase>();
 builder.Services.AddScoped<IUpdateFosterCarerUseCase, UpdateFosterCarerUseCase>();
@@ -228,13 +226,15 @@ builder.Services.AddScoped<IPreviewReconfirmFosterChildUseCase, PreviewReconfirm
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
 
 builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
-
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
-
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
 builder.Services.AddScoped<ISupportSearchEstablishmentUseCase, SupportSearchEstablishmentUseCase>();
 builder.Services.AddScoped<ISupportGetEstablishmentUseCase, SupportGetEstablishmentUseCase>();
 builder.Services.AddScoped<IUpdateEstablishmentPrivateBetaUseCase, UpdateEstablishmentPrivateBetaUseCase>();
+builder.Services.AddScoped<ITemporaryCodeUploadUseCase, TemporaryCodeUploadUseCase>();
+builder.Services.AddScoped<IGetTemporaryCodeUploadsUseCase, GetTemporaryCodeUploadsUseCase>();
+builder.Services.AddScoped<IGetWorkingFamiliesCorrectionUseCase, GetWorkingFamiliesCorrectionUseCase>();
+builder.Services.AddScoped<IUpdateWorkingFamiliesCorrectionUseCase, UpdateWorkingFamiliesCorrectionUseCase>();
 
 // Configure IIS and Kestrel server options
 builder.Services.Configure<IISServerOptions>(options => { options.MaxRequestBodySize = int.MaxValue; });

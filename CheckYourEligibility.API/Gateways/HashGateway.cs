@@ -1,7 +1,9 @@
 ﻿using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace CheckYourEligibility.API.Gateways;
 
@@ -44,6 +46,85 @@ public class HashGateway : IHash
         return await _db.EligibilityCheckHashes.FirstOrDefaultAsync(x => x.Hash == hash && x.TimeStamp >= age);
     }
 
+    public async Task<CheckProcessData?> GetCachedCheckDataAsync(
+        CheckProcessData checkData,
+        EligibilityCheckHash hashResult)
+    {
+        var type = checkData.Type;
+        if ((type != CheckEligibilityType.WorkingFamilies && type != CheckEligibilityType.FreeSchoolMeals) ||
+            (hashResult.Outcome != CheckEligibilityStatus.eligible && hashResult.Outcome != CheckEligibilityStatus.notEligible))
+        {
+            return null;
+        }
+
+        try
+        {
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    var matchingChecks = _db.CheckEligibilities
+                        .Where(x => x.EligibilityCheckHashID == hashResult.EligibilityCheckHashID && x.Status == hashResult.Outcome)
+                        .AsNoTracking();
+                    var orderedChecks = type == CheckEligibilityType.WorkingFamilies
+                        ? matchingChecks.OrderBy(x => x.Created)
+                        : matchingChecks.OrderByDescending(x => x.Created);
+                    var firstValidCheck = await orderedChecks.FirstOrDefaultAsync();
+
+                    if (firstValidCheck != null)
+                    {
+                        var cachedCheckData = JsonConvert.DeserializeObject<CheckProcessData>(firstValidCheck.CheckData);
+                        var mergedCheckData = type == CheckEligibilityType.WorkingFamilies
+                            ? MergeWorkingFamiliesCheckData(cachedCheckData, checkData)
+                            : MergeFreeSchoolMealsCheckData(cachedCheckData, checkData);
+                        _logger.LogInformation($"Action: Retrieve check with HashID:{hashResult.EligibilityCheckHashID}, Status:Found, Attempt:{attempt}");
+                        return mergedCheckData;
+                    }
+
+                    _logger.LogWarning($"Action: Retrieve check with HashID:{hashResult.EligibilityCheckHashID}, Status:NotFound, Attempt:{attempt}");
+                }
+                catch (SqlException ex) when (ex.Number == -2) // SQL timeout
+                {
+                    _logger.LogWarning($"Action: Retrieve check with HashID:{hashResult.EligibilityCheckHashID}, Status:SQLTimeout, Attempt:{attempt}");
+                }
+
+                await Task.Delay(1000);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating check with ID: {hashResult.EligibilityCheckHashID}");
+            throw ex;
+        }
+        return null;
+    }
+
+    private static CheckProcessData MergeWorkingFamiliesCheckData(
+        CheckProcessData cachedCheckData,
+        CheckProcessData checkData)
+    {
+        cachedCheckData.ClientIdentifier = checkData.ClientIdentifier;
+        cachedCheckData.Order = checkData.Order;
+        cachedCheckData.Reference = checkData.Reference;
+        return cachedCheckData;
+    }
+
+    private static CheckProcessData MergeFreeSchoolMealsCheckData(
+        CheckProcessData cachedCheckData,
+        CheckProcessData checkData)
+    {
+        cachedCheckData.ClientIdentifier = checkData.ClientIdentifier;
+        cachedCheckData.Order = checkData.Order;
+        cachedCheckData.Reference = checkData.Reference;
+        cachedCheckData.FirstName = checkData.FirstName;
+        cachedCheckData.ChildFirstName = checkData.ChildFirstName;
+        cachedCheckData.ChildLastName = checkData.ChildLastName;
+        cachedCheckData.ChildDateOfBirth = checkData.ChildDateOfBirth;
+        cachedCheckData.ChildSchoolURN = checkData.ChildSchoolURN;
+        cachedCheckData.EmailAddress = checkData.EmailAddress;
+        return cachedCheckData;
+    }
+
     /// <summary>
     ///     Create the hash item and audit
     /// </summary>
@@ -55,7 +136,7 @@ public class HashGateway : IHash
     /// <returns></returns>
     /// <remarks>NOTE there is no save, Context should be saved in calling service</remarks>
     public async Task<string> Create(CheckProcessData item, CheckEligibilityStatus outcome, EligibilityTier? tier,
-        ProcessEligibilityCheckSource source,EligibilityCheckContext dbContextFactory = null )
+        ProcessEligibilityCheckSource source, EligibilityCheckContext dbContextFactory = null)
     {
         var hash = item.GetHash();
 

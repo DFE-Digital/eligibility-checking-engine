@@ -8,6 +8,28 @@ describe('GET eligibility bulk check Results ', () => {
     cy.createEligibilityBulkCheckAndGetResults('/oauth2/token', validLoginRequestBody, 'bulk-check/working-families', validRequestBody);
   });
 
+  it('Verify progress response contains all expected properties', () => {
+    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+      cy.apiRequest('POST', 'bulk-check/working-families', validRequestBody, token).then((createResponse) => {
+        cy.verifyApiResponseCode(createResponse, 202);
+
+        const progressUrl = createResponse.body.links.get_Progress_Check;
+        const resultsUrl = createResponse.body.links.get_BulkCheck_Results;
+
+        cy.waitForBulkCompletion(progressUrl, token).then(() => {
+          cy.apiRequest('GET', progressUrl, {}, token).then((response) => {
+            cy.verifyApiResponseCode(response, 200);
+            expect(response.body).to.have.all.keys('data', 'links');
+            expect(response.body.data).to.have.all.keys('status', 'total', 'complete');
+            expect(response.body.links).to.have.all.keys('get_BulkCheck_Results');
+            expect(response.body.links.get_BulkCheck_Results).to.equal(resultsUrl);
+            expect(resultsUrl).to.equal(progressUrl.replace(/\/progress$/, '/'));
+          });
+        });
+      });
+    });
+  });
+
   it('Verify 404 Not Found response is returned with invalid guid', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('GET', 'bulk-check/7fc12dc9-5a9d-4155-887c-d2b3d60384e/progress', {}, token).then((response) => {

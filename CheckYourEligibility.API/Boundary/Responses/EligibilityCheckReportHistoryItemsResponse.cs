@@ -15,6 +15,8 @@ namespace CheckYourEligibility.API.Boundary.Responses
         public string Outcome { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? Tier { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string? AsylumSeekerReference { get; set; }
         public string CheckType { get; set; }
         public string ProcessingType { get; set; }
         public string CheckedBy { get; set; }

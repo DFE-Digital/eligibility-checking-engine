@@ -19,8 +19,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class HashGatewayTests : TestBase.TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private readonly int _hashCheckDays = 7;
     private readonly int _hashCheckDaysWF = 1;
     private IConfiguration _configuration;
@@ -31,9 +29,7 @@ public class HashGatewayTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(HashGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(HashGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
         _fakeInMemoryDb.Database.EnsureDeleted();

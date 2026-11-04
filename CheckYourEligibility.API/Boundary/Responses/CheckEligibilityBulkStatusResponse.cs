@@ -19,8 +19,10 @@ public class BulkCheckResponseLinks
 
 public class BulkStatus
 {
+    public string Status { get; set; }
     public int Total { get; set; }
     public int Complete { get; set; }
+
 }
 
 public class BulkCheck : BulkCheckResponseLinks

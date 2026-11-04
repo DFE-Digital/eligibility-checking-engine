@@ -18,8 +18,6 @@ namespace CheckYourEligibility.API.Tests.UseCases;
 [TestFixture]
 public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private Mock<IStorageQueue> _mockGateway;
     private Mock<ILogger<ProcessEligibilityBulkCheckUseCase>> _mockLogger;
     private Mock<IConfiguration> _mockConf;
@@ -41,11 +39,7 @@ public class ProcessEligibilityBulkCheckUseCaseBulkTests : TestBase.TestBase
         _mockDbContextFactory = new Mock<IDbContextFactory<EligibilityCheckContext>>(MockBehavior.Strict);
         _mockProcessEligibilityCheckUseCase = new Mock<IProcessEligibilityCheckUseCase>(MockBehavior.Strict);
 
-        _dbOptions = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(ProcessEligibilityBulkCheckUseCaseBulkTests),
-                InMemoryDatabaseRoot)
-            .Options;
+        _dbOptions = TestDbOptions.Create(nameof(ProcessEligibilityBulkCheckUseCaseBulkTests));
 
         using (var db = new EligibilityCheckContext(_dbOptions))
         {

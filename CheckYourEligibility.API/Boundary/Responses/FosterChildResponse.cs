@@ -1,9 +1,5 @@
-using System.Text.Json.Serialization;
-using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
-
 namespace CheckYourEligibility.API.Boundary.Responses
 {
-
     public class FosterChildResponse
     {
         // Eligibility Code Details
@@ -24,6 +20,7 @@ namespace CheckYourEligibility.API.Boundary.Responses
         
         public bool ChildTooYoung { get; set; }
 
+        public bool ChildTooOld { get; set; }
 
         // Child
         public Guid FosterChildId { get; set; }

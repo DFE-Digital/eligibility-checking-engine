@@ -12,8 +12,6 @@ namespace CheckYourEligibility.API.Tests;
 
 public class LocalAuthorityGatewayTests : TestBase.TestBase
 {
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     private IEligibilityCheckContext _fakeInMemoryDb;
     private LocalAuthorityGateway _sut;
     private Mock<ILogger<LocalAuthorityGateway>> _mockLogger = null!;
@@ -21,14 +19,7 @@ public class LocalAuthorityGatewayTests : TestBase.TestBase
     [SetUp]
     public async Task Setup()
     {
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(
-                nameof(LocalAuthorityGatewayTests),
-                InMemoryDatabaseRoot)
-            .ConfigureWarnings(x => x.Ignore(
-                Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId
-                    .TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbOptions.Create(nameof(LocalAuthorityGatewayTests));
 
         _fakeInMemoryDb = new EligibilityCheckContext(options);
 

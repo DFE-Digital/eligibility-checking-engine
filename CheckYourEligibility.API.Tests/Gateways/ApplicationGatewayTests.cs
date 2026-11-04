@@ -23,17 +23,13 @@ public class ApplicationGatewayTests : TestBase.TestBase
     private IConfiguration _configuration = null!;
     private EligibilityCheckContext _dbContext = null!;
     private ApplicationGateway _sut = null!;
-    private static readonly InMemoryDatabaseRoot InMemoryDatabaseRoot = new();
-
     [SetUp]
     public void Setup()
     {
         _mockLogger = new Mock<ILogger<ApplicationGateway>>();
 
         // Setup in-memory database
-        var options = new DbContextOptionsBuilder<EligibilityCheckContext>()
-            .UseInMemoryDatabase(nameof(ApplicationGatewayTests), InMemoryDatabaseRoot)
-            .Options;
+        var options = TestDbOptions.Create(nameof(ApplicationGatewayTests));
 
         _dbContext = new EligibilityCheckContext(options);
 

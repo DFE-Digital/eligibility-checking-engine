@@ -366,10 +366,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         foreach (var item in records)
         {
             // Calculate child too young
-            item.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(
-                item.ChildDateOfBirth,
-                checkDate
-            );
+            item.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(item.ChildDateOfBirth, checkDate);
+
+            // Calculate child too old
+            item.ChildTooOld = WorkingFamiliesCheckHelper.ChildIsTooOld(item.ChildDateOfBirth, checkDate);
 
             // Calculate term validity
             item.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
@@ -457,10 +457,10 @@ public class FosterFamiliesGateway : IFosterFamilies
         var checkDate = GetCheckDate();
 
         // Calculate child too young
-        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(
-            result.ChildDateOfBirth,
-            checkDate
-        );
+        result.ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(result.ChildDateOfBirth, checkDate);
+
+        // Calculate child too old
+        result.ChildTooOld = WorkingFamiliesCheckHelper.ChildIsTooOld(result.ChildDateOfBirth, checkDate);
 
         // Calculate term validity
         result.TermValidity = WorkingFamiliesCheckHelper.SetTermValidity(
@@ -684,7 +684,8 @@ public class FosterFamiliesGateway : IFosterFamilies
             ReconfirmationProperties = reconfirmation,
             GracePeriodEndDate = existingSummaryRecord.GracePeriodEndDate.Value,
             IsGracePeriodEndDateApplied = existingSummaryRecord.GracePeriodEndDateApplied,
-            ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(fosterChild.DateOfBirth, submissionDate)
+            ChildTooYoung = WorkingFamiliesCheckHelper.ChildIsTooYoung(fosterChild.DateOfBirth, submissionDate),
+            ChildTooOld = WorkingFamiliesCheckHelper.ChildIsTooOld(fosterChild.DateOfBirth, submissionDate)
         };
         return response;
     }
