@@ -60,6 +60,7 @@ namespace CheckYourEligibility.Core.UseCases
                         CheckSubmittedDate = check.Created.ToString("yyyy-MM-dd"),
                         Outcome = check.Status.ToString(),
                         Tier = check.Tier?.ToString(),
+                        AsylumSeekerReference = checkData.NationalAsylumSeekerServiceNumber ?? "",
                         CheckType = check.Type.ToString(),
                         ProcessingType = check.BulkCheckID != null ? "Batch" : "Individual",
                         CheckedBy = check.UserName ?? ""
