@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Infrastructure;
@@ -48,6 +49,7 @@ public class WorkingFamiliesCorrectionGatewayTests
 
         var summary = CreateSummary();
         summary.LatestSubmissionDate = expectedEvent.SubmissionDate;
+        summary.GracePeriodEndDateApplied = true;
 
         await using (var setupContext = SqlServerFixture.CreateContext())
         {
@@ -77,6 +79,11 @@ public class WorkingFamiliesCorrectionGatewayTests
             .Be(summary.DiscretionaryValidityStartDate);
         result.GracePeriodEndDate.Should().Be(summary.GracePeriodEndDate);
         result.LastUpdatedDate.Should().Be(summary.LastUpdatedDate);
+
+        result.LatestSubmissionDate.Should().Be(expectedEvent.SubmissionDate);
+        result.GracePeriodEndDateApplied.Should().BeTrue();
+        result.EligibilityCodeType.Should().Be(EligibilityCodeType.Standard);
+        result.TermValidity.Should().NotBeNull();
 
         result.Partner.Should().BeNull();
         result.HasPartner.Should().BeFalse();
