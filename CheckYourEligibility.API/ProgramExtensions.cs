@@ -13,8 +13,6 @@ namespace CheckYourEligibility.API;
 [ExcludeFromCodeCoverage(Justification = "extension of program")]
 public static class ProgramExtensions
 {
-    
-
     public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddTransient(provider =>

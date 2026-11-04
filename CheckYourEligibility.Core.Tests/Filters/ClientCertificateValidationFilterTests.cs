@@ -1,4 +1,3 @@
-using CheckYourEligibility.API.Filters;
 using CheckYourEligibility.Core.Adapters;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
