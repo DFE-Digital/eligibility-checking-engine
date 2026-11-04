@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
-using CheckYourEligibility.API.Domain.Authorization;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;

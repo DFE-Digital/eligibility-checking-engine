@@ -1,7 +1,7 @@
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,7 +10,7 @@ using ValidationException = FluentValidation.ValidationException;
 
 namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
+public class WorkingFamiliesReportingControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private Mock<IGetAllWorkingFamiliesEventsByEligibilityCodeUseCase> _mockGetAllWorkingFamiliesEventsByEligibilityCodeUseCase;
@@ -45,14 +45,14 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         var eligibilityCode = "TEST123";
 
         // single app
-        var expectedResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
+        var expectedResponse = new WorkingFamilyEventByEligibilityCodeResponse
         {
-            Data = new List<WorkingFamilyEventByEligibilityCodeRepsonseItem>
+            Data = new List<WorkingFamilyEventByEligibilityCodeResponseItem>
         {
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "X1",
                 }
@@ -80,15 +80,19 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         // Arrange
         var eligibilityCode = "TEST-MULTI-BLOCK";
 
-        var multiBlockResponse = new WorkingFamilyEventByEligibilityCodeRepsonse
+        // Setup controller with local authority claims
+        var localAuthorityIds = new List<int> { 1 };
+        SetupControllerWithLocalAuthorityIds(_sut, localAuthorityIds);
+
+        var multiBlockResponse = new WorkingFamilyEventByEligibilityCodeResponse
         {
-            Data = new List<WorkingFamilyEventByEligibilityCodeRepsonseItem>
+            Data = new List<WorkingFamilyEventByEligibilityCodeResponseItem>
         {
             // BLOCK 3 (newest)
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C3-A",
                     SubmissionDate = new DateTime(2025,08,01)
@@ -97,7 +101,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Reconfirm,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C3-R1",
                     SubmissionDate = new DateTime(2025,08,10)
@@ -108,7 +112,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C2-A",
                     SubmissionDate = new DateTime(2024,12,15)
@@ -117,7 +121,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Reconfirm,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C2-R1",
                     SubmissionDate = new DateTime(2024,12,20)
@@ -128,7 +132,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
             new()
             {
                 Event = WorkingFamilyEventType.Application,
-                Record = new WorkingFamiliesEventEligibilityCodeRepsonseRecord
+                Record = new WorkingFamiliesEventEligibilityCodeResponseRecord
                 {
                     EventId = "C1-A",
                     SubmissionDate = new DateTime(2024,06,01)
@@ -149,7 +153,7 @@ public class WorkingFamiliesReportingControllerTests : TestBase.TestBase
         result.Should().NotBeNull();
         result!.StatusCode.Should().Be(200);
 
-        var returned = result.Value as WorkingFamilyEventByEligibilityCodeRepsonse;
+        var returned = result.Value as WorkingFamilyEventByEligibilityCodeResponse;
         returned.Should().NotBeNull();
         returned!.Data.Should().HaveCount(5);
 

@@ -1,384 +1,330 @@
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.Tests.Properties;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Constants;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class AdministrationControllerTests : TestBase.TestBase
+public class AdministrationControllerTests : ControllerTestBase
 {
-    private Mock<IAudit> _mockAuditGateway;
-    private Mock<ICleanUpEligibilityChecksUseCase> _mockCleanUpEligibilityChecksUseCase;
-    private Mock<ICleanUpRateLimitEventsUseCase> _mockCleanUpRateLimitEventsUseCase;
-    private Mock<IImportEstablishmentsUseCase> _mockImportEstablishmentsUseCase;
-    private Mock<IImportMatsUseCase> _mockImportMatsUseCase;
-    private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
-    private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
-    private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
-    private Mock<IUpdateEstablishmentsPrivateBetaUseCase> _mockUpdateEstablishmentsPrivateBetaUseCase;
-    private ILogger<AdministrationController> _mockLogger;
-    private AdministrationController _sut;
+	private Mock<IAudit> _mockAuditGateway;
 
-    [SetUp]
-    public void Setup()
-    {
-        _mockCleanUpEligibilityChecksUseCase = new Mock<ICleanUpEligibilityChecksUseCase>(MockBehavior.Strict);
-        _mockCleanUpRateLimitEventsUseCase = new Mock<ICleanUpRateLimitEventsUseCase>(MockBehavior.Strict);
-        _mockImportEstablishmentsUseCase = new Mock<IImportEstablishmentsUseCase>(MockBehavior.Strict);
-        _mockImportMatsUseCase = new Mock<IImportMatsUseCase>(MockBehavior.Strict);
-        _mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
-        _mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
-        _mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
-        _mockUpdateEstablishmentsPrivateBetaUseCase = new Mock<IUpdateEstablishmentsPrivateBetaUseCase>(MockBehavior.Strict);
-        _mockLogger = Mock.Of<ILogger<AdministrationController>>();
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new AdministrationController(
-            _mockCleanUpEligibilityChecksUseCase.Object,
-            _mockCleanUpRateLimitEventsUseCase.Object,
-            _mockImportEstablishmentsUseCase.Object,
-            _mockImportMatsUseCase.Object,
-            _mockImportFsmHomeOfficeDataUseCase.Object,
-            _mockImportFsmHMRCDataUseCase.Object,
-            _mockImportWfHMRCDataUseCase.Object,
-            _mockUpdateEstablishmentsPrivateBetaUseCase.Object,
-            _mockAuditGateway.Object);
-    }
+	private Mock<ICleanUpEligibilityChecksUseCase> _mockCleanUpEligibilityChecksUseCase;
 
-    [TearDown]
-    public void Teardown()
-    {
-        _mockCleanUpEligibilityChecksUseCase.VerifyAll();
-        _mockImportEstablishmentsUseCase.VerifyAll();
-        _mockImportMatsUseCase.VerifyAll();
-        _mockImportFsmHomeOfficeDataUseCase.VerifyAll();
-        _mockImportFsmHMRCDataUseCase.VerifyAll();
-        _mockUpdateEstablishmentsPrivateBetaUseCase.VerifyAll();
-    }
+	private Mock<ICleanUpRateLimitEventsUseCase> _mockCleanUpRateLimitEventsUseCase;
 
-    [Test]
-    public async Task Given_CleanUpRateLimitEvents_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockCleanUpRateLimitEventsUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
+	private Mock<IImportEstablishmentsUseCase> _mockImportEstablishmentsUseCase;
 
-        var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
-            { StatusCode = StatusCodes.Status200OK };
+	private Mock<IImportFsmHMRCDataUseCase> _mockImportFsmHMRCDataUseCase;
 
-        // Act
-        var response = await _sut.CleanUpRateLimitEvents();
+	private Mock<IImportFsmHomeOfficeDataUseCase> _mockImportFsmHomeOfficeDataUseCase;
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+	private Mock<IImportMatsUseCase> _mockImportMatsUseCase;
 
-    [Test]
-    public async Task Given_ImportEstablishments_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockImportEstablishmentsUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+	private Mock<IImportWfHMRCDataUseCase> _mockImportWfHMRCDataUseCase;
 
-        var content = Resources.small_gis;
-        var fileName = "test.csv";
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(content);
-        writer.Flush();
-        stream.Position = 0;
+	private Mock<IUpdateEstablishmentsPrivateBetaUseCase> _mockUpdateEstablishmentsPrivateBetaUseCase;
 
-        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "text/csv"
-        };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+	private AdministrationController _sut;
 
-        // Act
-        var response = await _sut.ImportEstablishments(file);
+	[Test]
+	public async Task Given_CleanUpRateLimitEvents_Should_Return_Status200OK()
+	{
+		// Arrange
+		_mockCleanUpRateLimitEventsUseCase.Setup(cs => cs.Execute()).Returns(Task.CompletedTask);
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		var expectedResult = new ObjectResult(new MessageResponse { Data = $"{Admin.RateLimitEventCleanse}" })
+		{ StatusCode = StatusCodes.Status200OK };
 
-    [Test]
-    public async Task Given_ImportEstablishments_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		// Act
+		var response = await _sut.CleanUpRateLimitEvents();
 
-        // Setup mock to throw InvalidDataException
-        _mockImportEstablishmentsUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportEstablishments(null);
+	[Test]
+	public async Task Given_ImportEstablishments_Should_Return_Status200OK()
+	{
+		// Arrange
+		_mockImportEstablishmentsUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		var content = Resources.small_gis;
+		var fileName = "test.csv";
+		var stream = new MemoryStream();
+		var writer = new StreamWriter(stream);
+		writer.Write(content);
+		writer.Flush();
+		stream.Position = 0;
 
-    [Test]
-    public async Task Given_ImportMats_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockImportMatsUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+		var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+		{
+			Headers = new HeaderDictionary(),
+			ContentType = "text/csv"
+		};
+		var expectedResult =
+			new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentFileProcessed}" })
+			{ StatusCode = StatusCodes.Status200OK };
 
-        var content = Resources.small_gis;
-        var fileName = "test.csv";
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(content);
-        writer.Flush();
-        stream.Position = 0;
+		// Act
+		var response = await _sut.ImportEstablishments(file);
 
-        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "text/csv"
-        };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportMultiAcademyTrusts(file);
+	[Test]
+	public async Task Given_ImportEstablishments_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		// Setup mock to throw InvalidDataException
+		_mockImportEstablishmentsUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
 
-    [Test]
-    public async Task Given_ImportMats_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		// Act
+		var response = await _sut.ImportEstablishments(null);
 
-        // Setup mock to throw InvalidDataException
-        _mockImportMatsUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportMultiAcademyTrusts(null);
+	[TestCase(41, 0, "test.csv - HomeOffice File Processed. 41 rows imported.")]
+	[TestCase(1, 0, "test.csv - HomeOffice File Processed. 1 row imported.")]
+	[TestCase(7, 1, "test.csv - HomeOffice File Processed. 7 rows imported (1 without a family name).")]
+	public async Task Given_ImportFsmHomeOfficeData_Should_Return_Status200OK(
+		int rowsImported, int rowsWithoutFamilyName, string expectedMessage)
+	{
+		// Arrange
+		_mockImportFsmHomeOfficeDataUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>()))
+			.ReturnsAsync(new HomeOfficeImportResult(rowsImported, rowsWithoutFamilyName));
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		var content = Resources.HO_Data_small;
+		var fileName = "test.csv";
+		var stream = new MemoryStream();
+		var writer = new StreamWriter(stream);
+		writer.Write(content);
+		writer.Flush();
+		stream.Position = 0;
 
-    [TestCase(41, 0, "test.csv - HomeOffice File Processed. 41 rows imported.")]
-    [TestCase(1, 0, "test.csv - HomeOffice File Processed. 1 row imported.")]
-    [TestCase(7, 1, "test.csv - HomeOffice File Processed. 7 rows imported (1 without a family name).")]
-    public async Task Given_ImportFsmHomeOfficeData_Should_Return_Status200OK(
-        int rowsImported, int rowsWithoutFamilyName, string expectedMessage)
-    {
-        // Arrange
-        _mockImportFsmHomeOfficeDataUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>()))
-            .ReturnsAsync(new HomeOfficeImportResult(rowsImported, rowsWithoutFamilyName));
+		var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+		{
+			Headers = new HeaderDictionary(),
+			ContentType = "text/csv"
+		};
+		var expectedResult =
+		   new ObjectResult(new MessageResponse { Data = expectedMessage })
+		   { StatusCode = StatusCodes.Status200OK };
 
-        var content = Resources.HO_Data_small;
-        var fileName = "test.csv";
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(content);
-        writer.Flush();
-        stream.Position = 0;
+		// Act
+		var response = await _sut.ImportFsmHomeOfficeData(file);
 
-        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "text/csv"
-        };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = expectedMessage })
-                { StatusCode = StatusCodes.Status200OK };
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportFsmHomeOfficeData(file);
+	[Test]
+	public async Task Given_ImportFsmHMRCData_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		// Setup mock to throw InvalidDataException
+		_mockImportFsmHMRCDataUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.XmlfileRequired}"));
 
-    [Test]
-    public async Task Given_ImportFsmHomeOfficeData_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		// Act
+		var response = await _sut.ImportFsmHMRCData(null);
 
-        // Setup mock to throw InvalidDataException
-        _mockImportFsmHomeOfficeDataUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportFsmHomeOfficeData(null);
+	[Test]
+	public async Task Given_ImportFsmHomeOfficeData_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		// Setup mock to throw InvalidDataException
+		_mockImportFsmHomeOfficeDataUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
 
-    [Test]
-    public async Task Given_ImportFsmHMRCData_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockImportFsmHMRCDataUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+		// Act
+		var response = await _sut.ImportFsmHomeOfficeData(null);
 
-        var content = Resources.exampleHMRC;
-        var fileName = "test.xml";
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(content);
-        writer.Flush();
-        stream.Position = 0;
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "text/xml"
-        };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.HMRCFileProcessed}" })
-                { StatusCode = StatusCodes.Status200OK };
+	[Test]
+	public async Task Given_ImportMats_Should_Return_Status200OK()
+	{
+		// Arrange
+		_mockImportMatsUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
 
-        // Act
-        var response = await _sut.ImportFsmHMRCData(file);
+		var content = Resources.small_gis;
+		var fileName = "test.csv";
+		var stream = new MemoryStream();
+		var writer = new StreamWriter(stream);
+		writer.Write(content);
+		writer.Flush();
+		stream.Position = 0;
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+		{
+			Headers = new HeaderDictionary(),
+			ContentType = "text/csv"
+		};
+		var expectedResult =
+			new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.MatFileProcessed}" })
+			{ StatusCode = StatusCodes.Status200OK };
 
-    [Test]
-    public async Task Given_ImportFsmHMRCData_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		// Act
+		var response = await _sut.ImportMultiAcademyTrusts(file);
 
-        // Setup mock to throw InvalidDataException
-        _mockImportFsmHMRCDataUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.XmlfileRequired}"));
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.ImportFsmHMRCData(null);
+	[Test]
+	public async Task Given_ImportMats_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
-    
-    [Test]
-    public async Task Given_ImportWfHMRCData_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		// Setup mock to throw InvalidDataException
+		_mockImportMatsUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
 
-        // Setup mock to throw InvalidDataException
-        _mockImportWfHMRCDataUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.XmlfileRequired}"));
+		// Act
+		var response = await _sut.ImportMultiAcademyTrusts(null);
 
-        // Act
-        var response = await _sut.ImportWfHMRCData(null);
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+	[Test]
+	public async Task Given_ImportWfHMRCData_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.XmlfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-    [Test]
-    public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status200OK()
-    {
-        // Arrange
-        _mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
+		// Setup mock to throw InvalidDataException
+		_mockImportWfHMRCDataUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.XmlfileRequired}"));
 
-        var content = "EstablishmentId,InPrivateBeta\n100718,true\n142364,false";
-        var fileName = "test.csv";
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(content);
-        writer.Flush();
-        stream.Position = 0;
+		// Act
+		var response = await _sut.ImportWfHMRCData(null);
 
-        var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "text/csv"
-        };
-        var expectedResult =
-            new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
-                { StatusCode = StatusCodes.Status200OK };
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Act
-        var response = await _sut.UpdateEstablishmentsPrivateBeta(file);
+	[Test]
+	public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status200OK()
+	{
+		// Arrange
+		_mockUpdateEstablishmentsPrivateBetaUseCase.Setup(cs => cs.Execute(It.IsAny<IFormFile>())).Returns(Task.CompletedTask);
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+		var content = "EstablishmentId,InPrivateBeta\n100718,true\n142364,false";
+		var fileName = "test.csv";
+		var stream = new MemoryStream();
+		var writer = new StreamWriter(stream);
+		writer.Write(content);
+		writer.Flush();
+		stream.Position = 0;
 
-    [Test]
-    public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status400BadRequest()
-    {
-        // Arrange
-        var expectedResult =
-            new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
-                { StatusCode = StatusCodes.Status400BadRequest };
+		var file = new FormFile(stream, 0, stream.Length, fileName, fileName)
+		{
+			Headers = new HeaderDictionary(),
+			ContentType = "text/csv"
+		};
+		var expectedResult =
+			new ObjectResult(new MessageResponse { Data = $"{file.FileName} - {Admin.EstablishmentPrivateBetaUpdated}" })
+			{ StatusCode = StatusCodes.Status200OK };
 
-        // Setup mock to throw InvalidDataException
-        _mockUpdateEstablishmentsPrivateBetaUseCase
-            .Setup(u => u.Execute(It.IsAny<IFormFile>()))
-            .Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
+		// Act
+		var response = await _sut.UpdateEstablishmentsPrivateBeta(file);
 
-        // Act
-        var response = await _sut.UpdateEstablishmentsPrivateBeta(null);
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Assert
-        response.Should().BeEquivalentTo(expectedResult);
-    }
+	[Test]
+	public async Task Given_UpdateEstablishmentsPrivateBeta_Should_Return_Status400BadRequest()
+	{
+		// Arrange
+		var expectedResult =
+			new ObjectResult(new ErrorResponse { Errors = [new Error { Title = $"{Admin.CsvfileRequired}" }] })
+			{ StatusCode = StatusCodes.Status400BadRequest };
 
-    [Test]
-    public async Task Given_UpdateEstablishmentsPrivateBeta_When_EstablishmentDoesNotExist_Should_Return_Status404NotFound()
-    {
-        // Arrange
-        const string errorMessage = "Establishment with URN 2147483647 not found";
+		// Setup mock to throw InvalidDataException
+		_mockUpdateEstablishmentsPrivateBetaUseCase
+			.Setup(u => u.Execute(It.IsAny<IFormFile>()))
+			.Throws(new InvalidDataException($"{Admin.CsvfileRequired}"));
 
-        _mockUpdateEstablishmentsPrivateBetaUseCase
-            .Setup(x => x.Execute(It.IsAny<IFormFile>()))
-            .ThrowsAsync(new NotFoundException(errorMessage));
+		// Act
+		var response = await _sut.UpdateEstablishmentsPrivateBeta(null);
 
-        // Act
-        var response = await _sut.UpdateEstablishmentsPrivateBeta(Mock.Of<IFormFile>());
+		// Assert
+		response.Should().BeEquivalentTo(expectedResult);
+	}
 
-        // Assert
-        var result = response.Should()
-            .BeOfType<NotFoundObjectResult>()
-            .Subject;
+	[SetUp]
+	public void Setup()
+	{
+		_mockCleanUpEligibilityChecksUseCase = new Mock<ICleanUpEligibilityChecksUseCase>(MockBehavior.Strict);
+		_mockCleanUpRateLimitEventsUseCase = new Mock<ICleanUpRateLimitEventsUseCase>(MockBehavior.Strict);
+		_mockImportEstablishmentsUseCase = new Mock<IImportEstablishmentsUseCase>(MockBehavior.Strict);
+		_mockImportMatsUseCase = new Mock<IImportMatsUseCase>(MockBehavior.Strict);
+		_mockImportFsmHomeOfficeDataUseCase = new Mock<IImportFsmHomeOfficeDataUseCase>(MockBehavior.Strict);
+		_mockImportFsmHMRCDataUseCase = new Mock<IImportFsmHMRCDataUseCase>(MockBehavior.Strict);
+		_mockImportWfHMRCDataUseCase = new Mock<IImportWfHMRCDataUseCase>(MockBehavior.Strict);
+		_mockUpdateEstablishmentsPrivateBetaUseCase = new Mock<IUpdateEstablishmentsPrivateBetaUseCase>(MockBehavior.Strict);
+		_mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
+		_sut = new AdministrationController(
+			_mockCleanUpEligibilityChecksUseCase.Object,
+			_mockCleanUpRateLimitEventsUseCase.Object,
+			_mockImportEstablishmentsUseCase.Object,
+			_mockImportMatsUseCase.Object,
+			_mockImportFsmHomeOfficeDataUseCase.Object,
+			_mockImportFsmHMRCDataUseCase.Object,
+			_mockImportWfHMRCDataUseCase.Object,
+			_mockUpdateEstablishmentsPrivateBetaUseCase.Object,
+			_mockAuditGateway.Object);
+	}
 
-        result.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-
-        var errorResponse = result.Value.Should()
-            .BeOfType<ErrorResponse>()
-            .Subject;
-
-        errorResponse.Errors.Should().ContainSingle();
-        errorResponse.Errors[0].Status.Should().Be(StatusCodes.Status404NotFound);
-        errorResponse.Errors[0].Title.Should().Be(errorMessage);
-    }
+	[TearDown]
+	public void Teardown()
+	{
+		_mockCleanUpEligibilityChecksUseCase.VerifyAll();
+		_mockImportEstablishmentsUseCase.VerifyAll();
+		_mockImportMatsUseCase.VerifyAll();
+		_mockImportFsmHomeOfficeDataUseCase.VerifyAll();
+		_mockImportFsmHMRCDataUseCase.VerifyAll();
+		_mockUpdateEstablishmentsPrivateBetaUseCase.VerifyAll();
+	}
 }

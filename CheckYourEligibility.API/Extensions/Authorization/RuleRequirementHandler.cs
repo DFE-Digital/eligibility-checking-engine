@@ -1,4 +1,4 @@
-using CheckYourEligibility.API.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Authorization;
 using Microsoft.AspNetCore.Authorization;
 
 namespace CheckYourEligibility.API.Extensions.Authorization;

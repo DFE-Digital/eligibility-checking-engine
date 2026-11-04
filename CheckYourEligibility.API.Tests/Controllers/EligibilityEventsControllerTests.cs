@@ -1,9 +1,9 @@
-using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +12,10 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Net;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
 [TestFixture]
-public class EligibilityEventsControllerTests : TestBase.TestBase
+public class EligibilityEventsControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway = null!;
     private Mock<IUpsertWorkingFamiliesEventUseCase> _mockUpsertUseCase = null!;

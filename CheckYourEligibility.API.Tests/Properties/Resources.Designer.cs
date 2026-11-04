@@ -61,22 +61,6 @@ namespace CheckYourEligibility.API.Tests.Properties {
             }
         }
 
-        internal static string exampleHMRC
-        {
-            get
-            {
-                return ResourceManager.GetString("exampleHMRC", resourceCulture);
-            }
-        }
-
-        internal static string exampleHMRC_empty
-        {
-            get
-            {
-                return ResourceManager.GetString("exampleHMRC_empty", resourceCulture);
-            }
-        }
-
         internal static string HO_Data_small
         {
             get
@@ -93,12 +77,5 @@ namespace CheckYourEligibility.API.Tests.Properties {
             }
         }
 
-        internal static string small_mat
-        {
-            get
-            {
-                return ResourceManager.GetString("small_mat", resourceCulture);
-            }
-        }
     }
 }

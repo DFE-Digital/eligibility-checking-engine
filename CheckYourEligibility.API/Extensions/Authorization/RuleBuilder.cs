@@ -1,5 +1,5 @@
-using CheckYourEligibility.API.Domain.Authorization;
-using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
 
 namespace CheckYourEligibility.API.Extensions.Authorization;
 

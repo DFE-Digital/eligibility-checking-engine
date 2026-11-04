@@ -22,7 +22,7 @@ stages:
       - task: UseDotNet@2
         inputs:
           packageType: 'sdk'
-          version: '8.0.x'
+          version: '10.0.x'
 
       - task: DotNetCoreCLI@2
         displayName: 'Restore'
@@ -38,7 +38,7 @@ stages:
           script: |
             export PATH="$PATH:$HOME/.dotnet/tools"
             dotnet tool install --global dotnet-ef --version ${{ parameters.dotnetEfVersion }}
-            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.API/CheckYourEligibility.API.csproj
+            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.Core/CheckYourEligibility.Core.csproj
             mv efbundle $(Build.ArtifactStagingDirectory)
           failOnStderr: true
 
@@ -50,10 +50,10 @@ stages:
           arguments: '--configuration $(buildConfiguration) --verbosity minimal'
 
       - task: DotNetCoreCLI@2
-        displayName: 'Run tests'
+        displayName: 'Run core tests'
         inputs:
           command: 'test'
-          projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
+          projects: 'CheckYourEligibility.Core.Tests/CheckYourEligibility.Core.Tests.csproj'
           arguments: '--configuration $(buildConfiguration) --verbosity minimal'
           publishTestResults: true
           testRunTitle: 'Unit Tests'
@@ -63,10 +63,19 @@ stages:
         condition: and(succeeded(), eq(${{ parameters.isDeployRun }}, false))
         inputs:
           command: 'test'
-          projects: 'CheckYourEligibility.API.IntegrationTests/CheckYourEligibility.API.IntegrationTests.csproj'
+          projects: 'CheckYourEligibility.Core.IntegrationTests/CheckYourEligibility.Core.IntegrationTests.csproj'
           arguments: '--configuration $(buildConfiguration) --no-build --verbosity minimal'
           publishTestResults: true
           testRunTitle: 'SQL Server Integration Tests'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run API tests'
+        inputs:
+          command: 'test'
+          projects: 'CheckYourEligibility.API.Tests/CheckYourEligibility.API.Tests.csproj'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'Unit Tests'
 
       - task: DotNetCoreCLI@2
         inputs:

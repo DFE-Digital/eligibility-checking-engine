@@ -1,21 +1,22 @@
 using System.Security.Claims;
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class UserControllerTests : TestBase.TestBase
+public class UserControllerTests : ControllerTestBase
 {
     private Mock<IAudit> _mockAuditGateway;
     private Mock<ICreateOrUpdateFSMParentUserUseCase> _mockCreateOrUpdateUserUseCase;
@@ -198,6 +199,6 @@ public class UserControllerTests : TestBase.TestBase
             .Cast<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>()
             .Single();
 
-        attr.Policy.Should().Be(CheckYourEligibility.API.Domain.Authorization.PolicyNames.RequireUserManagementRole);
+        attr.Policy.Should().Be(PolicyNames.RequireUserManagementRole);
     }
 }

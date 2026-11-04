@@ -1,0 +1,100 @@
+﻿// Ignore Spelling: Fsm
+
+using CheckYourEligibility.Core.Domain.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
+
+namespace CheckYourEligibility.Core.Domain;
+
+/// <summary>
+/// Represents an individual eligibility check
+/// </summary>
+[ExcludeFromCodeCoverage(Justification = "Data Model.")]
+public class EligibilityCheck
+{
+    /// <summary>
+    /// The unique identifier for the eligibility check
+    /// </summary>
+    public string EligibilityCheckID { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The type of eligibility check
+    /// </summary>
+    [Column(TypeName = "varchar(100)")] public CheckEligibilityType Type { get; set; }
+
+    /// <summary>
+    /// The current status of the eligibility check
+    /// </summary>
+    [Column(TypeName = "varchar(100)")] public CheckEligibilityStatus Status { get; set; }
+
+    /// <summary>
+    /// The date and time when the check was created
+    /// </summary>
+    public DateTime Created { get; set; }
+
+    /// <summary>
+    /// The date and time when the check was last updated
+    /// </summary>
+    public DateTime Updated { get; set; }
+
+    /// <summary>
+    /// The hash ID associated with this eligibility check
+    /// </summary>
+    public string? EligibilityCheckHashID { get; set; }
+
+    /// <summary>
+    /// The eligibility check hash entity
+    /// </summary>
+    public virtual EligibilityCheckHash? EligibilityCheckHash { get; set; }
+
+    /// <summary>
+    /// The group identifier for bulk operations
+    /// </summary>
+    public string? BulkCheckID { get; set; }
+
+    /// <summary>
+    /// The bulk check entity if this is part of a bulk operation
+    /// </summary>
+    public virtual BulkCheck? BulkCheck { get; set; }
+
+    /// <summary>
+    /// The serialized check data
+    /// </summary>
+    public string CheckData { get; set; } = string.Empty;
+    /// <summary>
+    /// Source of check
+    /// </summary>
+    [Column(TypeName = "varchar(50)")]
+    public string? Source { get; set; }
+
+    /// <summary>
+    /// API username or portal user email address
+    /// </summary>
+    [Column(TypeName = "varchar(254)")]
+    public string? UserName { get; set; }
+    /// <summary>
+    /// ID of Organisation if found in scope
+    /// else OrganisationID = 0
+    /// </summary>
+    [Column(TypeName = "int")]
+    public int? OrganisationID { get; set; }
+
+    /// <summary>
+    /// What type of organisation is making the check
+    /// It can be local-authority, establishment multi-academy-trust
+    /// else it will be set to NULL
+    /// </summary>
+    [Column(TypeName = "nvarchar(20)")]
+    public string? OrganisationType { get; set; }
+
+    /// <summary>
+    /// Soft delete flag - if true, the record is considered deleted and should be ignored in queries
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Expanded FSM tiers support - targeted/expanded
+    /// </summary>
+    [Column(TypeName = "nvarchar(50)")]
+    public EligibilityTier? Tier {get; set;}
+}

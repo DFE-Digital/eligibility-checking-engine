@@ -1,0 +1,51 @@
+﻿using CheckYourEligibility.Core.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+
+namespace CheckYourEligibility.Core.Database;
+
+public interface IEligibilityCheckContext
+{
+    DbSet<CAPIAudit> CAPIAudits { get; set; }
+    DbSet<ECSConflict> ECSConflicts { get; set; }
+    DbSet<WorkingFamiliesEvent> WorkingFamiliesEvents { get; set; }
+	DbSet<WorkingFamiliesEventSummary> WorkingFamiliesEventSummaries { get; set; }
+	DbSet<EligibilityCheck> CheckEligibilities { get; set; }
+    DbSet<EligibilityCheckReport> EligibilityCheckReports { get; set; }
+    DbSet<EligibilityCheckReportItem> EligibilityCheckReportItem { get; set; }
+    DbSet<BulkCheck> BulkChecks { get; set; }
+    DbSet<FreeSchoolMealsHMRC> FreeSchoolMealsHMRC { get; set; }
+    DbSet<FreeSchoolMealsHO> FreeSchoolMealsHO { get; set; }
+    DbSet<Establishment> Establishments { get; set; }
+    DbSet<MultiAcademyTrust> MultiAcademyTrusts { get; set; }
+    DbSet<MultiAcademyTrustEstablishment> MultiAcademyTrustEstablishments { get; set; }
+    DbSet<LocalAuthority> LocalAuthorities { get; set; }
+    DbSet<Application> Applications { get; set; }
+    DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
+    DbSet<EligibilityCheckHash> EligibilityCheckHashes { get; set; }
+    DbSet<RateLimitEvent> RateLimitEvents { get; set; }
+    DbSet<User> Users { get; set; }
+    DbSet<Audit> Audits { get; set; }
+    DbSet<FosterCarer> FosterCarers { get; set; }
+    DbSet<FosterChild> FosterChildren { get; set; }
+    DbSet<EligibilityPolicy> EligibilityPolicies { get; set; }
+    DbSet<UserRole> UserRoles { get; set; }
+    DbSet<EligibilityCodeRange> EligibilityCodeRanges { get; set; }
+    DbSet<WorkingFamiliesDualRunningCheck> WorkingFamiliesDualRunningChecks { get; set; }
+    DbSet<TemporaryCodeUpload> TemporaryCodeUploads { get; set; }
+
+    void BulkInsert_FreeSchoolMealsHO(IEnumerable<FreeSchoolMealsHO> data, int? expireCachedResultsDays = null);
+    Task<int> SaveChangesAsync();
+    DatabaseFacade Database { get; }
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    int SaveChanges();
+    void BulkInsert_FreeSchoolMealsHMRC(IEnumerable<FreeSchoolMealsHMRC> data);
+    void BulkInsert_Applications(IEnumerable<Application> data, IEnumerable<ApplicationStatus> statusHistory);
+    void BulkInsert_WorkingFamiliesEvent(IEnumerable<WorkingFamiliesEvent> data);
+    void BulkInsert_MultiAcademyTrusts(IEnumerable<MultiAcademyTrust> trustData, IEnumerable<MultiAcademyTrustEstablishment> schoolData);
+    void BulkInsertOrUpdate_Establishment(IEnumerable<Establishment> data);
+    void BulkInsertOrUpdate_LocalAuthority(IEnumerable<LocalAuthority> data);
+    void BulkInsert_EligibilityCheck(IEnumerable<EligibilityCheck> data);
+    void BulkInsert_EligibilityCheckReportItems(IEnumerable<EligibilityCheckReportItem> data);
+    void BulkInsertOrUpdate_WorkingFamiliesEventSummary(IEnumerable<WorkingFamiliesEventSummary> data);
+}

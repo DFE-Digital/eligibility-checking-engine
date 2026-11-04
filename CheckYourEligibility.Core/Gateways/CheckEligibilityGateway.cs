@@ -1,0 +1,368 @@
+﻿using AutoMapper;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Microsoft.Data.SqlClient;
+
+namespace CheckYourEligibility.Core.Gateways;
+
+public class CheckEligibilityGateway : ICheckEligibility
+{
+    private readonly IConfiguration _configuration;
+    private readonly IEligibilityCheckContext _db;
+
+    private readonly IHash _hashGateway;
+    private readonly IStorageQueue _storageQueueGateway;
+    private readonly ILogger _logger;
+    protected readonly IMapper _mapper;
+    private string _groupId;
+
+    public CheckEligibilityGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
+        IConfiguration configuration, IHash hashGateway, IStorageQueue storageQueueGateway)
+    {
+        _logger = logger.CreateLogger("ServiceCheckEligibility");
+        _db = dbContext;
+        _mapper = mapper;
+        _hashGateway = hashGateway;
+        _storageQueueGateway = storageQueueGateway;
+        _configuration = configuration;
+    }
+
+    private string GetBulkQueueName(
+    CheckEligibilityType type,
+    string source)
+    {
+        return type switch
+        {
+            CheckEligibilityType.FreeSchoolMeals
+                when source == "free-school-meals-admin"
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Frontend"],
+
+            CheckEligibilityType.FreeSchoolMeals
+                    => _configuration["Queue:Bulk:FreeSchoolMeals:Api"],
+
+            _ => _configuration[$"Queue:Bulk:{type}"]
+        };
+    }
+
+    public async Task PostCheck<T>(T data, string groupId, CheckMetaData meta) where T : IEnumerable<IEligibilityServiceType>
+    {
+        _groupId = groupId;
+        List<EligibilityCheck> mappedBulkedChecks = new();
+        foreach (var d in data)
+        {
+
+            var item = await MapCheck(d, meta);
+            mappedBulkedChecks.Add(item);
+        }
+
+        // Insert all rows into the DB BEFORE sending any queue messages,
+        // so the engine never processes a message for a row that doesn't exist yet.
+        try
+        {
+            _db.BulkInsert_EligibilityCheck(mappedBulkedChecks);
+            // Now send queue messages for records that weren't resolved from the hash cache.
+            // Reuse a single QueueClient for all bulk messages — they share the same queue.
+            var queuedBulkItems = mappedBulkedChecks.Where(x => x.Status == CheckEligibilityStatus.queuedForProcessing).ToList();
+
+            if (queuedBulkItems.Any())
+            {
+
+                string bulkQueueName = GetBulkQueueName(queuedBulkItems.First().Type, meta.Source);
+
+                foreach (var item in queuedBulkItems)
+                {
+                    await _storageQueueGateway.SendMessage(item, bulkQueueName);
+                }
+            }
+            else
+            {
+                var bulkCheck = await _db.BulkChecks
+                    .FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+
+                if (bulkCheck != null)
+                {
+                    bulkCheck.Status = BulkCheckStatus.Completed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
+                    await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    var logEvent = JsonConvert.SerializeObject(new
+                    {
+                        BulkCheckId = bulkCheck.BulkCheckID,
+                        Status = bulkCheck.Status.ToString(),
+                        SubmittedDate = bulkCheck.SubmittedDate,
+                        CompletedDate = bulkCheck.CompletedDate,
+                        ElapsedMilliseconds = elapsedTime.TotalMilliseconds,
+                        NumberOfRecords = bulkCheck.NumberOfRecords,
+                        OrganisationID = bulkCheck.OrganisationID
+                    });
+
+                    _logger.LogInformation("{BulkCheckEvent}", logEvent);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+
+            _logger.LogError(e,
+                    "Bulk insert failed for BulkCheck {BulkCheckId}",
+                    groupId);
+
+            try
+            {
+
+                var bulkCheck = await _db.BulkChecks
+                    .FirstOrDefaultAsync(x => x.BulkCheckID == groupId);
+
+                if (bulkCheck != null)
+                {
+                    bulkCheck.Status = BulkCheckStatus.Failed;
+                    bulkCheck.CompletedDate = DateTime.UtcNow;
+
+                    await _db.SaveChangesAsync();
+
+                    var elapsedTime = bulkCheck.CompletedDate.Value - bulkCheck.SubmittedDate;
+
+                    var logEvent = JsonConvert.SerializeObject(new
+                    {
+                        BulkCheckId = bulkCheck.BulkCheckID,
+                        Status = bulkCheck.Status.ToString(),
+                        SubmittedDate = bulkCheck.SubmittedDate,
+                        CompletedDate = bulkCheck.CompletedDate,
+                        ElapsedMilliseconds = elapsedTime.TotalMilliseconds,
+                        NumberOfRecords = bulkCheck.NumberOfRecords,
+                        OrganisationID = bulkCheck.OrganisationID
+                    });
+
+                    _logger.LogInformation("{BulkCheckEvent}", logEvent);
+                }
+            }
+            catch (Exception statusUpdateEx)
+            {
+                _logger.LogError(statusUpdateEx,
+                    "Unable to mark BulkCheck {BulkCheckId} as Failed",
+                    groupId);
+            }
+
+            throw;
+
+        }
+
+    }
+
+    public async Task<PostCheckResult> PostCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
+    {
+
+        var item = await MapCheck(data, meta);
+        await _db.CheckEligibilities.AddAsync(item);
+        await _db.SaveChangesAsync();
+
+        // Send queue message after the row is committed to the DB.
+        if (item.Status == CheckEligibilityStatus.queuedForProcessing)
+        {
+            var singleQueueName = _configuration[$"Queue:Single:{item.Type}"];
+            await _storageQueueGateway.SendMessage(item, singleQueueName);
+        }
+
+        return new PostCheckResult { Id = item.EligibilityCheckID, Status = item.Status, Tier = item.Tier };
+
+    }
+    public async Task<EligibilityCheck> MapCheck<T>(T data, CheckMetaData meta) where T : IEligibilityServiceType
+    {
+        var item = _mapper.Map<EligibilityCheck>(data);
+
+        try
+        {
+
+            var baseType = data as CheckEligibilityRequestDataBase;
+
+            item.CheckData = JsonConvert.SerializeObject(data);
+
+            item.Type = baseType.Type;
+
+            item.BulkCheckID = _groupId;
+            item.EligibilityCheckID = Guid.NewGuid().ToString();
+            item.Created = DateTime.UtcNow;
+            item.Updated = DateTime.UtcNow;
+            item.Status = CheckEligibilityStatus.queuedForProcessing;
+
+            if (meta != null)
+            {
+                item.OrganisationID = meta.OrganisationID;
+                item.OrganisationType = !string.IsNullOrEmpty(meta.OrganisationType) ? meta.OrganisationType : null;
+                item.Source = meta.Source;
+                item.UserName = meta.UserName;
+            }
+            var checkData = JsonConvert.DeserializeObject<CheckProcessData>(item.CheckData);
+
+            //TODO: The hashing logic should sit in the use case, targeting the hash gateway
+            try
+            {
+                var checkHashResult = ShouldUseHash(checkData)
+                    ? await _hashGateway.Exists(checkData)
+                    : null;
+                if (checkHashResult != null)
+                {
+                    CheckEligibilityStatus hashedStatus = checkHashResult.Outcome;
+                    item.Status = hashedStatus;
+                    item.Tier = checkHashResult.Tier;
+                    item.EligibilityCheckHashID = checkHashResult.EligibilityCheckHashID;
+                    item.EligibilityCheckHash = checkHashResult;
+
+                    if ((data.Type == CheckEligibilityType.WorkingFamilies || data.Type == CheckEligibilityType.FreeSchoolMeals) &&
+                        (hashedStatus == CheckEligibilityStatus.eligible || hashedStatus == CheckEligibilityStatus.notEligible))
+                    {
+                        var cachedCheckData = await _hashGateway.GetCachedCheckDataAsync(checkData, checkHashResult);
+                        if (cachedCheckData != null)
+                        {
+                            item.CheckData = JsonConvert.SerializeObject(cachedCheckData);
+                        }
+                    }
+                }
+            }
+            catch (SqlException ex) when (ex.Number == -2) // SQL timeout
+            {
+                // Catch SQL timeout during hash processing/lookup and revert to just re-doing the check
+                _logger.LogError(ex, $"Error processing hash lookup for check: {item.EligibilityCheckHashID}");
+
+                item.Status = CheckEligibilityStatus.queuedForProcessing;
+                item.Tier = null;
+                item.EligibilityCheckHashID = null;
+            }
+
+            return item;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error caught during MapCheck");
+            throw;
+        }
+    }
+
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?, string?)> GetStatusAsync(
+        string guid,
+        CheckEligibilityType type)
+    {
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x =>
+            x.EligibilityCheckID == guid &&
+            (type == CheckEligibilityType.None || type == x.Type) &&
+            x.IsDeleted == false);
+
+        if (result != null)
+        {
+            var checkData = string.IsNullOrWhiteSpace(result.CheckData)
+                ? null
+                : JsonConvert.DeserializeObject<CheckProcessData>(result.CheckData);
+
+            return (result.Status, result.Tier, checkData?.ErrorCode);
+        }
+
+        return (null, null, null);
+    }
+
+    public async Task<CheckEligibilityBulkDeleteResponseData> DeleteByBulkCheckId(string bulkCheckId)
+    {
+        if (string.IsNullOrEmpty(bulkCheckId)) throw new ValidationException(null, "Invalid Request, group ID is required.");
+
+        var response = new CheckEligibilityBulkDeleteResponseData
+        {
+            Id = bulkCheckId,
+        };
+
+        try
+        {
+            _logger.LogInformation($"Attempting to soft delete EligibilityChecks and BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
+            var bulkCheckLimit = _configuration.GetValue<int>("BulkEligibilityCheckLimit");
+
+            var records = await _db.CheckEligibilities
+                .Where(x => x.BulkCheckID == bulkCheckId)
+                .ToListAsync();
+
+            if (!records.Any())
+            {
+                _logger.LogWarning(
+                    $"Bulk upload with ID {bulkCheckId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "")} not found or already deleted");
+                throw new NotFoundException(bulkCheckId);
+            }
+
+            // Soft delete the EligibilityCheck records by setting IsDeleted to true, and updating the Updated timestamp
+            foreach (var record in records)
+            {
+                if (record.Status == CheckEligibilityStatus.queuedForProcessing)
+                {
+                    record.Status = CheckEligibilityStatus.deleted;
+                }
+
+                record.IsDeleted = true;
+                record.Updated = DateTime.UtcNow;
+            }
+
+            // set bulk check record to deleted
+            var bulkCheckRecord = await _db.BulkChecks.FirstOrDefaultAsync(x => x.BulkCheckID == bulkCheckId);
+            if (bulkCheckRecord != null)
+                bulkCheckRecord.Status = BulkCheckStatus.Deleted;
+
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Soft deleted {records.Count} EligibilityChecks and associated BulkCheck for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
+
+            response.Status = "Success";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting EligibilityChecks for Group: {bulkCheckId?.Replace(Environment.NewLine, "")}");
+
+            response.Status = "Error";
+        }
+
+        return response;
+    }
+    public async Task<EligibilityCheck> GetItem(string guid)
+    {
+        var result = await _db.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.IsDeleted == false);
+
+        return result;
+    }
+
+    public async Task<CheckEligibilityStatusResponse> UpdateEligibilityCheckStatus(string guid,
+        EligibilityCheckStatusData data, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid && x.IsDeleted == false);
+        if (result != null)
+        {
+            result.Status = data.Status;
+            result.Updated = DateTime.UtcNow;
+            var updates = await context.SaveChangesAsync();
+            return new CheckEligibilityStatusResponse { Data = new StatusValue { Status = result.Status.ToString() } };
+        }
+
+        return null;
+    }
+
+    private bool ShouldUseHash(CheckProcessData checkData)
+    {
+        var isHomeOfficeCheck = string.IsNullOrWhiteSpace(checkData.NationalInsuranceNumber)
+            && !string.IsNullOrWhiteSpace(checkData.NationalAsylumSeekerServiceNumber);
+
+        return !isHomeOfficeCheck
+            || _configuration.GetValue<bool>($"HomeOffice:CheckTypes:{checkData.Type}");
+    }
+
+    // Delegate to CheckProcessData.GetHash() so hashes created at check time and read at
+    // application time always use identical normalisation (ELIG-3639) instead of a diverging copy.
+    public static string GetHash(CheckProcessData item)
+    {
+        return item.GetHash();
+    }
+
+}
