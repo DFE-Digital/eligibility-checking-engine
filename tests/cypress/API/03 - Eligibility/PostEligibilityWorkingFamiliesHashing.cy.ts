@@ -1,6 +1,6 @@
 import { getandVerifyBearerToken } from "../../support/apiHelpers";
 import {
-  validLoginRequestBody,
+  validLoginRequestBodyTelford,
   validWorkingFamiliesRequestBodyEligible,
 } from "../../support/requestBodies";
 
@@ -18,7 +18,7 @@ describe("Working Families Check - Hashing Behaviour", () => {
   ];
 
   it("persists all Working Families check data from the original hashed check", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         const createAndGetCheck = () =>
           cy.apiRequest("POST", "check/working-families", request, token)
@@ -28,7 +28,6 @@ describe("Working Families Check - Hashing Behaviour", () => {
               const checkId = checkUrl.substring(checkUrl.lastIndexOf("/") + 1);
               return cy.pollCheckStatus(checkId, token, 10)
                 .then((statusResponse) => {
-                  cy.log(`statusResponse: ${statusResponse}`);
                   return cy
                     .apiRequest("GET", `check/${checkId}`, null, token)
                     .then((checkResponse) =>
@@ -44,7 +43,6 @@ describe("Working Families Check - Hashing Behaviour", () => {
             });
 
         createAndGetCheck().then((originalCheck) => {
-          cy.log(`Original check status: ${originalCheck.status}`);
           expect(originalCheck.status).to.be.oneOf(["eligible", "notEligible"]);
           createAndGetCheck().then((hashedCheck) => {
             expect(hashedCheck.status).to.equal(originalCheck.status);

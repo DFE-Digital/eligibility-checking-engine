@@ -9,6 +9,12 @@ export const validLoginRequestBody = "client_id=".concat(
   encodeURIComponent(Cypress.env("JWT_PASSWORD")),
   "&scope=local_authority check application admin bulk_check establishment user engine",
 );
+export const validLoginRequestBodyTelford = "client_id=".concat(
+  Cypress.env("JWT_USERNAME"),
+  "&client_secret=",
+  encodeURIComponent(Cypress.env("JWT_PASSWORD")),
+  "&scope=local_authority:894 check application bulk_check",
+);
 
 export const validLoginRequestBodyFosterFamilies = "client_id=".concat(
   Cypress.env("JWT_USERNAME"),
@@ -36,59 +42,52 @@ export const validSupportPortalLoginRequestBody = "client_id=eligibility-checkin
   "&scope=user admin support",
 );
 
-export function validHMRCRequestBody() {
+function generateHMRCRequestArrayBody(count = 1, prefix = '') {
+  // Generate an array of HMRC request bodies based on the count parameter
+  const data = [];
+  for (let i = 1; i <= count; i++) {
+    data.push(generateHMRCRequestSingleBody(prefix));
+  }
+  return data;
+}
+
+function generateHMRCRequestSingleBody(prefix = '') {
+  // Generate a request body for a single HMRC request
+  // - use supplied prefix, if blank then pick random prefix from NE or NA,
+  if (prefix == '') { prefix = (Math.random() < 0.5 ? "NE" : "NA"); }
+  // - generate unique number segment
+  const number = `${'1' + (String(Math.floor(Math.random() * 10000)).padStart(5, "0"))}`;
+  // - generate unique DOB
+  const dob = new Date("2001-01-01");
+  dob.setDate(dob.getDate() + Math.floor(Math.random() * 3000));
+  const dobString = dob.toISOString().split("T")[0];
   return {
-    data: {
-      nationalInsuranceNumber: "NN123456C",
-      //lastName: Cypress.env("lastName"),
-      lastName: "TESTER",
-      dateOfBirth: "2001-01-01",
-      nationalAsylumSeekerServiceNumber: "",
-    },
+    nationalInsuranceNumber: `${prefix}${number}C`,
+    lastName: "TESTER",
+    dateOfBirth: dobString,
+    nationalAsylumSeekerServiceNumber: '',
   };
+}
+
+export function validFSMRequest() {
+  return { data: generateHMRCRequestSingleBody() };
 }
 export function validFSMTieredExpanded() {
-  return {
-    data: {
-      nationalInsuranceNumber: "NE123456C",
-      //lastName: Cypress.env("lastName"),
-      lastName: "TESTER",
-      dateOfBirth: "2001-01-01",
-      nationalAsylumSeekerServiceNumber: "",
-    },
-  };
+  return { data: generateHMRCRequestSingleBody('NE') };
 }
 export function validFSMTieredTargeted() {
-  return {
-    data: {
-      nationalInsuranceNumber: "NA123456C",
-      //lastName: Cypress.env("lastName"),
-      lastName: "TESTER",
-      dateOfBirth: "2001-01-01",
-      nationalAsylumSeekerServiceNumber: "",
-    },
-  };
+  return { data: generateHMRCRequestSingleBody('NA') };
 }
-
-
-
 export function invalidHMRCRequestBody() {
-  return {
-    data: {
-      nationalInsuranceNumber: "PPG123456C",
-      //lastName: Cypress.env("lastName"),
-      lastName: "TESTER",
-      dateOfBirth: "2000-01-01",
-      nationalAsylumSeekerServiceNumber: "",
-    },
-  };
+  var body = generateHMRCRequestSingleBody('PP');
+  body.nationalInsuranceNumber += 'X';
+  return { data: body };
 }
 
 export function validHomeOfficeRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "",
-      //lastName: Cypress.env("lastName"),
       lastName: "TESTER",
       dateOfBirth: "1990-01-01",
       nationalAsylumSeekerServiceNumber: "111111111",
@@ -154,7 +153,6 @@ export function validApplicationSupportRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "NE668767B",
-      //lastName: Cypress.env("lastName"),
       lastName: "TESTER",
       dateOfBirth: "1967-03-07",
       nationalAsylumSeekerServiceNumber: "",
@@ -177,7 +175,6 @@ export function validApplicationRequestBody() {
       type: "FreeSchoolMeals",
       Establishment: 123456,
       ParentFirstName: "Lebb",
-      //ParentLastName: Cypress.env("lastName"),
       ParentLastName: "TESTER",
       ParentNationalInsuranceNumber: "NE668767B",
       ParentNationalAsylumSeekerServiceNumber: null,
@@ -278,14 +275,18 @@ export function invalidLastNameWorkingFamiliesRequestBody() {
 //  bulk check requests
 export function validBulkRequestBody() {
   return {
-    data: [validHMRCRequestBody().data, validHomeOfficeRequestBody().data],
+    data: generateHMRCRequestArrayBody(5).concat([validHomeOfficeRequestBody().data]),
+  };
+}
+export function validBulkRequestBodyLarge() {
+  return {
+    data: generateHMRCRequestArrayBody(500).concat([validHomeOfficeRequestBody().data]),
   };
 }
 export function invalidNinoRequestBody() {
   return {
     data: {
       nationalInsuranceNumber: "QQ123456A",
-      //lastName: Cypress.env("lastName"),
       lastName: "TESTER",
       dateOfBirth: "2000-01-01",
       nationalAsylumSeekerServiceNumber: "",
@@ -299,25 +300,29 @@ export function invalidMultiChecksBulkRequestBody() {
 }
 export function invalidDateOfBirthBulkCheckRequestBody() {
   return {
-    data: [validHMRCRequestBody().data, invalidDOBRequestBody().data],
+    data: generateHMRCRequestArrayBody().concat([invalidDOBRequestBody().data]),
   };
 }
 export function invalidLastNameBulkCheckRequestBody() {
   return {
-    data: [validHMRCRequestBody().data, invalidLastNameRequestBody().data],
+    data: generateHMRCRequestArrayBody().concat([invalidLastNameRequestBody().data]),
   };
 }
 export function invalidNinoBulkRequestBody() {
   return {
-    data: [invalidNinoRequestBody().data, validHMRCRequestBody().data],
+    data: [invalidNinoRequestBody().data].concat(generateHMRCRequestArrayBody(5)),
   };
 }
 
 // Report requests
 export function validPostEligibilityReportRequest() {
+  // Generate date range for last 30 days up to current time 
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
   return {
-    startDate: "2025-12-04",
-    endDate: "2026-02-18",
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
     generatedBy: "Cypress Test",
     localAuthorityID: 894,
     checkType: 0, // 0 for all check
@@ -505,7 +510,7 @@ export function invalidUpdateFosterChildRequestBody() {
   };
 }
 
-export function validFosterChildReconfirmBody(){
+export function validFosterChildReconfirmBody() {
   return {
     eligibilityCode: 10000000,
     submissionDate: "2026-01-14"
@@ -581,6 +586,6 @@ export function generateValidNi(): string {
   const digits = Math.floor(Math.random() * 1_000_000)
     .toString()
     .padStart(6, "0");
-    
+
   return `AA${digits}A`;
 }
