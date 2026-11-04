@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>CheckYourEligibility.Core</PackageId>
-    <Version>0.1.9</Version>
+    <Version>0.1.10</Version>
     <Authors>Various</Authors>
     <Company>Department for Education</Company>
   </PropertyGroup>

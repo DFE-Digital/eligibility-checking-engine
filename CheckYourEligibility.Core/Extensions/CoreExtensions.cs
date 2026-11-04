@@ -17,6 +17,7 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using FluentValidation;
 using CheckYourEligibility.Core.Gateways.Factories.Helper;
 using CheckYourEligibility.Core.Gateways.Factories;
+using CheckYourEligibility.Core.Domain;
 
 namespace CheckYourEligibility.Core.Extensions;
 
@@ -241,4 +242,18 @@ public static class CoreExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddTransient(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var jwtSettings = new JwtSettings();
+            config.GetSection("Jwt").Bind(jwtSettings);
+            return jwtSettings;
+        });
+
+        return services;
+    }
+
 }
