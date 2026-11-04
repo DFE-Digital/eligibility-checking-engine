@@ -8,7 +8,6 @@ using CheckYourEligibility.Core.Domain.Middleware;
 using CheckYourEligibility.Core.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -81,7 +80,7 @@ builder.Services.AddSwaggerGen(c =>
             Version = "v1.4",
             Description =
                 "DFE Eligibility Checking Engine: API to perform Checks determining eligibility for entitlements via integration with OGDs" +
-                (!builder.Configuration.GetValue<string>("TestData:SampleData").IsNullOrEmpty()
+                (!string.IsNullOrEmpty(builder.Configuration.GetValue<string>("TestData:SampleData"))
                     ? "<br /><br />Test data can be downloaded <a href='" +
                       builder.Configuration.GetValue<string>("TestData:SampleData") + "'>here</a>."
                     : ""

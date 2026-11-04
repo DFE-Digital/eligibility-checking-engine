@@ -149,10 +149,10 @@ public class ApplicationController : BaseController
     {
         try
         {
-            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName);
-            var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName);
-            var establishmentIds = User.GetSpecificScopeIds(_establishmentScopeName);
-            if (localAuthorityIds.IsNullOrEmpty() && multiAcademyTrustIds.IsNullOrEmpty() && establishmentIds.IsNullOrEmpty())
+            var localAuthorityIds = User.GetSpecificScopeIds(_localAuthorityScopeName) ?? [];
+            var multiAcademyTrustIds = User.GetSpecificScopeIds(_multiAcademyTrustScopeName) ?? [];
+            var establishmentIds = User.GetSpecificScopeIds(_establishmentScopeName) ?? [];
+            if (!localAuthorityIds.Any() && !multiAcademyTrustIds.Any() && !establishmentIds.Any())
             {
                 return BadRequest(new ErrorResponse
                 {
