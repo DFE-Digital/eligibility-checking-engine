@@ -19,26 +19,29 @@ describe('GET eligibility soft check by Guid', () => {
             const requestBody = validApplicationSupportRequestBody();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
+                cy.extractGuid(response);
                 cy.apiRequest('POST', '/user', validUserRequestBody(), token).then((response) => {
-                    validApplicationRequest.Data.UserId = response.Data;                
-                    cy.wait(5000);
+                    validApplicationRequest.Data.UserId = response.Data;
+                    cy.get('@Guid').then((eligibilityCheckId) => {
+                        cy.pollCheckStatus(`${eligibilityCheckId}`, token, 10).then(() => {
+                            //Make post request for eligibility check
+                            cy.log(JSON.stringify(validApplicationRequest));
+                            cy.apiRequest('POST', 'application', validApplicationRequest, token).then((response) => {
+                                cy.verifyApiResponseCode(response, 201);
+                                //extract Guid
+                                cy.extractGuid(response);
 
-                    //Make post request for eligibility check
-                    cy.log(JSON.stringify(validApplicationRequest));
-                    cy.apiRequest('POST', 'application', validApplicationRequest, token).then((response) => {
-                        cy.verifyApiResponseCode(response, 201);
-                        //extract Guid
-                        cy.extractGuid(response);
-
-                        //make get request using the guid 
-                        cy.get('@Guid').then((Guid) => {
-                            cy.apiRequest('GET', `application/${Guid}`, {}, token).then((newResponse) => {
-                                // Assert the response 
-                                cy.verifyApiResponseCode(newResponse, 200)
-                                cy.log(JSON.stringify(validApplicationRequest))
-                                cy.log(JSON.stringify(newResponse))
-                                cy.verifyGetApplicationResponse(newResponse, validApplicationRequest)
-                            })
+                                //make get request using the guid
+                                cy.get('@Guid').then((Guid) => {
+                                    cy.apiRequest('GET', `application/${Guid}`, {}, token).then((newResponse) => {
+                                        // Assert the response
+                                        cy.verifyApiResponseCode(newResponse, 200)
+                                        cy.log(JSON.stringify(validApplicationRequest))
+                                        cy.log(JSON.stringify(newResponse))
+                                        cy.verifyGetApplicationResponse(newResponse, validApplicationRequest)
+                                    })
+                                });
+                            });
                         });
                     });
                 });

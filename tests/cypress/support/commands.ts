@@ -13,7 +13,18 @@ declare namespace Cypress {
     ): Chainable<any>;
     verifyPostEligibilityCheckResponse(response: any): Chainable<any>;
 
-    waitForBulkCompletion(statusUrl: string, token: string): Chainable<any>;
+    waitForBulkCompletion(
+      statusUrl: string,
+      token: string,
+      maxRetries?: number,
+    ): Chainable<any>;
+    pollApiResponse(
+      url: string,
+      token: string,
+      expectedStatus: number,
+      maxRetries?: number,
+      waitTime?: number,
+    ): Chainable<any>;
     verifyBulkResults(results: any[], requestData: any[]): Chainable<void>;
 
     pollCheckStatus(
@@ -220,9 +231,9 @@ Cypress.Commands.add("extractGuid", (response) => {
 
 Cypress.Commands.add(
   "waitForBulkCompletion",
-  (progress: string, token: string) => {
+  (progress: string, token: string, maxRetries: number = 15) => {
     const checkBulkStatusUntilCompleted = (
-      retries = 15,
+      retries = maxRetries,
     ): Cypress.Chainable<any> => {
       // using js closure, statusUrl + token come from outer function. no need to pass in.
 
@@ -249,6 +260,33 @@ Cypress.Commands.add(
     };
 
     return checkBulkStatusUntilCompleted();
+  },
+);
+
+Cypress.Commands.add(
+  "pollApiResponse",
+  (
+    url: string,
+    token: string,
+    expectedStatus: number,
+    maxRetries: number = 10,
+    waitTime: number = 1000,
+  ) => {
+    const poll = (retry = 0): Cypress.Chainable<any> => {
+      return cy.apiRequest("GET", url, null, token, false).then((response) => {
+        if (response.status === expectedStatus) {
+          return cy.wrap(response);
+        }
+        if (retry >= maxRetries) {
+          throw new Error(
+            `Expected status ${expectedStatus} from ${url} after ${maxRetries} retries, received ${response.status}`,
+          );
+        }
+        return cy.wait(waitTime).then(() => poll(retry + 1));
+      });
+    };
+
+    return poll();
   },
 );
 
@@ -555,21 +593,28 @@ Cypress.Commands.add(
           .then((response) => {
             cy.verifyApiResponseCode(response, 202);
             cy.extractGuid(response);
-            cy.wait(40000);
-            return cy.get("@Guid").then((eligibilityCheckId) => {
-              return cy
-                .apiRequest(
-                  "GET",
-                  `bulk-check/${eligibilityCheckId}`,
-                  {},
-                  token,
-                )
-                .then((newResponse) => {
-                  cy.verifyApiResponseCode(newResponse, 200);
-                  const data = newResponse.body.data;
-                  cy.wrap(data).as("data");
+            return cy
+              .waitForBulkCompletion(
+                response.body.links.get_Progress_Check,
+                token,
+                20,
+              )
+              .then(() => {
+                return cy.get("@Guid").then((eligibilityCheckId) => {
+                  return cy
+                    .apiRequest(
+                      "GET",
+                      `bulk-check/${eligibilityCheckId}`,
+                      {},
+                      token,
+                    )
+                    .then((newResponse) => {
+                      cy.verifyApiResponseCode(newResponse, 200);
+                      const data = newResponse.body.data;
+                      cy.wrap(data).as("data");
+                    });
                 });
-            });
+              });
           });
       });
   },

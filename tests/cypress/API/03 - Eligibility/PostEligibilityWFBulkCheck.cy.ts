@@ -38,11 +38,11 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
     });
   });
 
-  it('Verify 400 Bad Request response is returned with invalid National Insurance number', () => {
+  it('Verify 400 Bad Request response is returned with Enter a National Insurance number in the correct format', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'bulk-check/working-families', invalidNinoBulkRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'Invalid National Insurance Number');
+        expect(response.body.errors[0]).to.have.property('title', 'Enter a National Insurance number in the correct format');
       });
     });
   });
