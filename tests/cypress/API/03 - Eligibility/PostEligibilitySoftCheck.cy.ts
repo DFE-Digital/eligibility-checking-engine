@@ -120,7 +120,7 @@ describe('Post Eligibility Check - Invalid Requests', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
       cy.apiRequest('POST', 'check/free-school-meals', noNIAndNASSRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'National Insurance Number or National Asylum Seeker Service Number is required');
+        expect(response.body.errors[0]).to.have.property('title', 'National Insurance number or Asylum support reference number is required');
       });
     });
   });
