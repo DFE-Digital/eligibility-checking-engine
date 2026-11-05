@@ -73,6 +73,7 @@ public static class ProgramExtensions
         services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
         services.AddTransient<ITemporaryCodeUpload, TemporaryCodeUploadGateway>();
+        services.AddTransient<IWorkingFamiliesCorrection, WorkingFamiliesCorrectionGateway>();
         return services;
     }
 
@@ -292,6 +293,16 @@ public static class ProgramExtensions
                         )
                     )
                     .Build());
+            });
+
+            options.AddPolicy(PolicyNames.ManageWorkingFamiliesCorrections, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.Requirements.Add(
+                    RuleBuilder.And(
+                        RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
+                        RuleBuilder.Role(UserRoleName.Support_CodeManagement)
+                    ).Build());
             });
 
             options.AddPolicy(PolicyNames.RequireUserManagementRole, policy =>

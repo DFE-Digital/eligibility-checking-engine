@@ -20,7 +20,6 @@ export const getAuthResponse = (url: string, requestBody: any): Cypress.Chainabl
 };
 
 export const getandVerifyBearerToken = (url: string, requestBody: any): Cypress.Chainable<string> => {
-    cy.log(requestBody);
     return cy.apiRequest('POST', url, requestBody, null, null, 'application/x-www-form-urlencoded').then((response) => {
         expect(response.status).to.equal(200);
         expect(response.body).to.have.property('access_token');

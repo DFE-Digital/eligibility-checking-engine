@@ -804,11 +804,11 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ChildFirstName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildLastName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildPostCode")
                         .HasColumnType("nvarchar(9)");
@@ -843,11 +843,11 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ParentFirstName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentLastName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentNationalInsuranceNumber")
                         .HasColumnType("varchar(10)");
@@ -856,10 +856,10 @@ namespace CheckYourEligibility.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PartnerFirstName")
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PartnerLastName")
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PartnerNationalInsuranceNumber")
                         .HasColumnType("varchar(10)");
@@ -896,7 +896,7 @@ namespace CheckYourEligibility.API.Migrations
 
                     b.Property<string>("ChildFirstNameTruncated")
                         .IsRequired()
-                        .HasColumnType("nvarchar(26)");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ChildPostCode")
                         .IsRequired()
