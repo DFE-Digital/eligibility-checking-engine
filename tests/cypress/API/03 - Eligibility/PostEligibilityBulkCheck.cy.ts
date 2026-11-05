@@ -4,8 +4,10 @@ import {
   validLoginRequestBody,
   validBulkRequestBody,
   invalidNinoBulkRequestBody,
+  invalidNassBulkRequestBody,
   invalidLastNameBulkCheckRequestBody,
   invalidMultiChecksBulkRequestBody,
+  validHMRCRequestBody,
 } from "../../support/requestBodies";
 
 const endpoints = [
@@ -13,16 +15,24 @@ const endpoints = [
   "early-year-pupil-premium",
   "two-year-offer",
 ];
+const endpointsSupportingNass = endpoints.filter(
+  (endpoint) => endpoint !== "two-year-offer",
+);
 describe("Post Eligibility Bulk Check - Valid Requests", () => {
   const validBulkRequest = validBulkRequestBody();
   endpoints.forEach((endpoint) => {
     it(`Verify 202 Accepted response is returned with valid data for ${endpoint}`, () => {
+      const requestBody =
+        endpoint === "two-year-offer"
+          ? { data: [validHMRCRequestBody().data] }
+          : validBulkRequest;
+
       getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
         (token) => {
           cy.apiRequest(
             "POST",
             `bulk-check/${endpoint}`,
-            validBulkRequest,
+            requestBody,
             token,
           ).then((response) => {
             // Assert the status and statusText
@@ -39,11 +49,12 @@ describe("Post Eligibility Bulk Check - Valid Requests", () => {
 
 describe("Post Eligibility Bulk Check - Invalid Requests", () => {
   const invalidNinoBulkRequest = invalidNinoBulkRequestBody();
+  const invalidNassBulkRequest = invalidNassBulkRequestBody();
   const invalidDobBulkRequest = invalidDateOfBirthBulkCheckRequestBody();
   const invalidLastNameBulkRequest = invalidLastNameBulkCheckRequestBody();
   const invalidMultiCheckBulkRequest = invalidMultiChecksBulkRequestBody();
   endpoints.forEach((endpoint) => {
-    it(`Verify 400 Bad Request response is returned with invalid National Insurance number for ${endpoint}`, () => {
+    it(`Verify 400 Bad Request response is returned with Enter a National Insurance number in the correct format for ${endpoint}`, () => {
       getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
         (token) => {
           cy.apiRequest(
@@ -55,7 +66,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
             cy.verifyApiResponseCode(response, 400);
             expect(response.body.errors[0]).to.have.property(
               "title",
-              "Invalid National Insurance Number",
+              "Enter a National Insurance number in the correct format",
             );
           });
         },
@@ -113,7 +124,27 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
             );
             expect(response.body.errors[1]).to.have.property(
               "title",
-              "Invalid National Insurance Number",
+              "Enter a National Insurance number in the correct format",
+            );
+          });
+        },
+      );
+    });
+  });
+  endpointsSupportingNass.forEach((endpoint) => {
+    it(`Verify 400 Bad Request response is returned with invalid National Asylum Seeker Service Number for ${endpoint}`, () => {
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+        (token) => {
+          cy.apiRequest(
+            "POST",
+            `bulk-check/${endpoint}`,
+            invalidNassBulkRequest,
+            token,
+          ).then((response) => {
+            cy.verifyApiResponseCode(response, 400);
+            expect(response.body.errors[0]).to.have.property(
+              "title",
+              "Invalid National Asylum Seeker Service Number",
             );
           });
         },

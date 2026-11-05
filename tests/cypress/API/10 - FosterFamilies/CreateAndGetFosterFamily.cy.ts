@@ -17,15 +17,12 @@ describe("GET & POST Foster Family - Happy path", () => {
           // Verify the created family
           cy.verifyApiResponseCode(createResponse, 201);
 
-          cy.wait(3000); // wait to save
-
           const fosterCarerId = createResponse.body.fosterCarerId;
 
-          cy.apiRequest(
-            "GET",
+          cy.pollApiResponse(
             `/foster-family/${fosterCarerId}`,
-            null,
             token,
+            200,
           ).then((response) => {
             cy.verifyApiResponseCode(response, 200);
             cy.verifyFosterFamilyCreatedAndReturned(response, request);

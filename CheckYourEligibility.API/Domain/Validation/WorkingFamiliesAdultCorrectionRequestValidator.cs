@@ -42,7 +42,7 @@ public class WorkingFamiliesAdultCorrectionRequestValidator
             .NotEmpty()
             .WithMessage(ValidationMessages.ParentNINumberEmpty)
             .Must(value => DataValidation.BeAValidNi(value))
-            .WithMessage(ValidationMessages.NI);
+            .WithMessage(ValidationMessages.InvalidNI);
 
         RuleFor(x => x.ExpectedVersion)
             .NotEmpty()
