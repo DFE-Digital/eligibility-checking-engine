@@ -312,6 +312,17 @@ export function invalidNinoBulkRequestBody() {
     data: [invalidNinoRequestBody().data, validHMRCRequestBody().data],
   };
 }
+export function invalidNassBulkRequestBody() {
+  return {
+    data: [
+      {
+        ...validHomeOfficeRequestBody().data,
+        nationalAsylumSeekerServiceNumber: "123",
+      },
+      validHMRCRequestBody().data,
+    ],
+  };
+}
 
 // Report requests
 export function validPostEligibilityReportRequest() {

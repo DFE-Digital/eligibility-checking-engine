@@ -109,7 +109,7 @@ public class CheckEligibilityRequestDataValidator : AbstractValidator<IEligibili
                     {
                         RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)
                             .Must(DataValidation.BeAValidNass)
-                            .WithMessage(ValidationMessages.NASS);
+                            .WithMessage(ValidationMessages.InvalidNASS);
                     });
 
                     RuleFor(x => ((CheckEligibilityRequestData)x).NationalAsylumSeekerServiceNumber)

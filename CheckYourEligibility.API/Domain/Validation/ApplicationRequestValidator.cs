@@ -48,7 +48,7 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
             {
                 RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                     .Must(DataValidation.BeAValidNass)
-                    .WithMessage(ValidationMessages.NASS);
+                    .WithMessage(ValidationMessages.InvalidNASS);
             });
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .NotEmpty()
