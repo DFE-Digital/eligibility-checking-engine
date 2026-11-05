@@ -291,13 +291,13 @@ string value)
     }
 
     private CheckEligibilityRequestData ValidRequestWithNINO(string lastName) =>
-                                                                        new CheckEligibilityRequestData
-                                                                        {
-                                                                            LastName = lastName,
-                                                                            DateOfBirth = "2000-01-01",
-                                                                            NationalInsuranceNumber = "AB123456C",
-                                                                            Type = CheckEligibilityType.FreeSchoolMeals
-                                                                        };
+    new CheckEligibilityRequestData
+    {
+        LastName = lastName,
+        DateOfBirth = "2000-01-01",
+        NationalInsuranceNumber = "AB123456C",
+        Type = CheckEligibilityType.FreeSchoolMeals
+    };
 
     private CheckEligibilityRequestData ValidRequestWithOptionalApplicationData() =>
     new CheckEligibilityRequestData
