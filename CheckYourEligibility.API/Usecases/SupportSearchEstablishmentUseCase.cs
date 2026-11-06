@@ -1,9 +1,8 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
 using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Gateways.Interfaces;
 
-namespace CheckYourEligibility.API.Usecases;
+namespace CheckYourEligibility.API.UseCases;
 
 public interface ISupportSearchEstablishmentUseCase
 {

@@ -1,5 +1,5 @@
 ﻿using CheckYourEligibility.API.Gateways.Interfaces;
-namespace CheckYourEligibility.API.Usecases
+namespace CheckYourEligibility.API.UseCases
 {
     public interface IUpdateEstablishmentPrivateBetaUseCase
     {

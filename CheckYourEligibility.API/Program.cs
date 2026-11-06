@@ -8,7 +8,6 @@ using CheckYourEligibility.API.Gateways.Factories;
 using CheckYourEligibility.API.Gateways.Factories.Helper;
 using CheckYourEligibility.API.Services;
 using CheckYourEligibility.API.Telemetry;
-using CheckYourEligibility.API.Usecases;
 using CheckYourEligibility.API.UseCases;
 using CheckYourEligibility.API.UseCases.Internal;
 using FeatureManagement.Domain.Validation;
