@@ -1563,6 +1563,42 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         status.Should().Be(
             CheckEligibilityStatus.notFound);
     }
+
+    [TestCase("Parent")]
+    [TestCase("Partner")]
+    [TestCase("Child")]
+    public async Task Given_ParentPartnerOrChildSurnameMatchesCaseInsensitively_Process_Should_Return_Eligible(
+        string matchingSurnameField)
+    {
+        var item = CreateWorkingFamiliesCheck("50012345678");
+        var wfEvent = CreateWorkingFamiliesEvent(item);
+
+        wfEvent.ParentFirstName = "Alex";
+        wfEvent.ChildFirstName = "Sam";
+        wfEvent.ParentLastName = matchingSurnameField == "Parent" ? "SMITH" : "DOE";
+        wfEvent.PartnerLastName = matchingSurnameField == "Partner" ? "SMITH" : "DOE";
+        wfEvent.ChildLastName = matchingSurnameField == "Child" ? "SMITH" : "DOE";
+        wfEvent.PartnerNationalInsuranceNumber = null;
+
+        _fakeInMemoryDb.CheckEligibilities.Add(item);
+        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
+
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        _moqEcsGateway
+            .Setup(x => x.UseEcsforChecksWF)
+            .Returns("false");
+
+        _moqAudit
+            .Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null))
+            .ReturnsAsync("");
+
+        var (status, _) = await _sut.ProcessCheckAsync(
+            item.EligibilityCheckID);
+
+        status.Should().Be(CheckEligibilityStatus.eligible);
+    }
+
     [Test]
     public async Task Given_Contiguous_WF_Events_Request_Should_Return_Earliest_VSD_single_event()
     {
