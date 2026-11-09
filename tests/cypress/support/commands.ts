@@ -309,7 +309,7 @@ Cypress.Commands.add("verifyPostEligibilityReportResponse", (response) => {
   expect(data.reportID).to.be.a("string").and.not.be.empty;
 
   expect(data).to.have.property("status");
-  expect(data.status).to.be.oneOf(["New", "Processing", "Completed", "Failed"]);
+  expect(data.status).to.be.oneOf(["New", "Generating", "Complete", "Failed"]);
 });
 
 Cypress.Commands.add("verifyEligibilityReportHistoryResponse", (response) => {

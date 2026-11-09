@@ -1,8 +1,8 @@
 // /FreeSchoolMeals/{guid
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validLoginRequestBody, validHMRCRequestBody, notEligibleHomeOfficeRequestBody } from '../../support/requestBodies';
+import { validLoginRequestBody, validFSMRequest, notEligibleHomeOfficeRequestBody } from '../../support/requestBodies';
 
-const validRequestBody = validHMRCRequestBody();
+const validRequestBody = validFSMRequest();
 const notEligibleRequestBody = notEligibleHomeOfficeRequestBody();
 
 describe('GET eligibility soft check  Status ', () => {
@@ -35,13 +35,9 @@ describe('GET eligibility soft check Status with type', () => {
   });
 });
 
-
 describe('Verify Eligibility Check Statuses', () => {
-
-
   it('Verify Eligible status is returned', () => {
-    var eligibleBody = validHMRCRequestBody();
-    eligibleBody.data.lastName = "Tester";
+    const eligibleBody = validFSMRequest();
     cy.createEligibilityCheckAndGetStatus('/oauth2/token', validLoginRequestBody, 'check/free-school-meals', eligibleBody)
     cy.get('@status').then((status: any) => {
       expect(status).to.equal('eligible')
@@ -61,7 +57,6 @@ describe('Verify Eligibility Check Statuses', () => {
       cy.get('@status').then((status: any) => {
         expect(status).to.equal('queuedForProcessing')
       })
-
     })
   })
 })

@@ -24,7 +24,6 @@ describe('GET eligibility soft check by Guid', () => {
                     cy.wait(5000);
 
                     //Make post request for eligibility check
-                    cy.log(JSON.stringify(validApplicationRequest));
                     cy.apiRequest('POST', 'application', validApplicationRequest, token).then((response) => {
                         cy.verifyApiResponseCode(response, 201);
                         //extract Guid
@@ -35,8 +34,6 @@ describe('GET eligibility soft check by Guid', () => {
                             cy.apiRequest('GET', `application/${Guid}`, {}, token).then((newResponse) => {
                                 // Assert the response 
                                 cy.verifyApiResponseCode(newResponse, 200)
-                                cy.log(JSON.stringify(validApplicationRequest))
-                                cy.log(JSON.stringify(newResponse))
                                 cy.verifyGetApplicationResponse(newResponse, validApplicationRequest)
                             })
                         });

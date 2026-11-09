@@ -86,7 +86,10 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
         const int BatchSize = 500;
         var batch = new List<EligibilityCheckReportItem>(BatchSize);
         var totalResults = 0;
-        string? lastProcessedCheckId = null;
+        DateTime? lastProcessedCreated = null;
+        // IDs already written for the last seen Created timestamp, used to skip them when the next
+        // query re-reads that timestamp (Created >= last) instead of tie-breaking on the ID in SQL
+        var seenAtLastCreated = new HashSet<string>();
 
         // Apply extended command timeout for this process
         int priorTimeout = _db.Database.GetCommandTimeout() ?? 30;
@@ -100,27 +103,32 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 var query = GetCheckQuery(report, source);
 
                 // only apply filter after first batch
-                if (lastProcessedCheckId != null)
+                if (lastProcessedCreated.HasValue)
                 {
-                    query = query.Where(c => string.Compare(c.EligibilityCheckID, lastProcessedCheckId) > 0);
+                    var lastCreated = lastProcessedCreated.Value;
+                    query = query.Where(c => c.Created >= lastCreated);
                 }
 
+                // Over-fetch by the number of already-seen rows so a full batch always contains
+                // BatchSize new rows, even if many rows share one timestamp
                 var checks = await query
                         .Where(c => c.Type == eligiblityCheckType)
-                        .OrderBy(e => e.EligibilityCheckID)
-                        .Take(BatchSize)
+                        .OrderBy(e => e.Created)
+                        .Take(BatchSize + seenAtLastCreated.Count)
                         .Select(e => new CheckResult(
                             e.EligibilityCheckID,
-                            e.BulkCheckID != null))
+                            e.BulkCheckID != null,
+                            e.Created))
                         .ToListAsync(cancellationToken);
 
+                var newChecks = checks.Where(c => !seenAtLastCreated.Contains(c.EligibilityCheckID)).ToList();
 
                 // if no more checks, break the loop
-                if (checks.Count == 0)
+                if (newChecks.Count == 0)
                     break;
 
                 // add the checks to the batch
-                batch.AddRange(checks.Select(check => new EligibilityCheckReportItem
+                batch.AddRange(newChecks.Select(check => new EligibilityCheckReportItem
                 {
                     EligibilityCheckReportId = report.EligibilityCheckReportId,
                     EligibilityCheckID = check.EligibilityCheckID,
@@ -132,10 +140,13 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
                 batch.Clear();
 
                 // update the total results count
-                totalResults += checks.Count;
+                totalResults += newChecks.Count;
 
-                // update the last processed check id
-                lastProcessedCheckId = checks[^1].EligibilityCheckID;
+                // track the IDs seen at the newest timestamp
+                var newLastCreated = newChecks[^1].Created;
+                if (newLastCreated != lastProcessedCreated) { seenAtLastCreated.Clear(); }
+                foreach (var c in newChecks.Where(c => c.Created == newLastCreated)) { seenAtLastCreated.Add(c.EligibilityCheckID); }
+                lastProcessedCreated = newLastCreated;
             }
 
             report.Status = ReportStatus.Complete;
@@ -276,7 +287,8 @@ public sealed class EligibilityCheckReportingGateway : IEligibilityCheckReportin
 
     private sealed record CheckResult(
         string EligibilityCheckID,
-        bool IsBulk
+        bool IsBulk,
+        DateTime Created
     );
 
     // public to allow testing
