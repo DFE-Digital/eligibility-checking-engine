@@ -149,6 +149,10 @@ public static class CoreExtensions
         services.AddScoped<IReconfirmFosterChildUseCase, ReconfirmFosterChildUseCase>();
         services.AddScoped<IPreviewReconfirmFosterChildUseCase, PreviewReconfirmFosterChildUseCase>();
         services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
+        services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
+        services.AddScoped<ISupportSearchEstablishmentUseCase, SupportSearchEstablishmentUseCase>();
+        services.AddScoped<ISupportGetEstablishmentUseCase, SupportGetEstablishmentUseCase>();
+        services.AddScoped<IUpdateEstablishmentPrivateBetaUseCase, UpdateEstablishmentPrivateBetaUseCase>();
         services.AddScoped<ITemporaryCodeUploadUseCase, TemporaryCodeUploadUseCase>();
         services.AddScoped<IGetTemporaryCodeUploadsUseCase, GetTemporaryCodeUploadsUseCase>();
         services.AddScoped<IGetWorkingFamiliesCorrectionUseCase, GetWorkingFamiliesCorrectionUseCase>();

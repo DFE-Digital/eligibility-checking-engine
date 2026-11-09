@@ -1,5 +1,4 @@
 ﻿using CheckYourEligibility.API.Extensions.Authorization;
-using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Authorization;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Extensions;
@@ -120,6 +119,12 @@ public static class ProgramExtensions
             {
                 policy.Requirements.Add(RuleBuilder.UserType(UserType.ChildcareAdmin).Build());
             });
+            options.AddPolicy(PolicyNames.RequireEstablishmentManagementRole, policy =>
+            {
+                policy.Requirements.Add(
+                    RuleBuilder.Role(UserRoleName.Support_EstablishmentManagement)
+                        .Build());
+            });
 
             // Compound authorization rules
 
@@ -158,6 +163,14 @@ public static class ProgramExtensions
                     RuleBuilder.And(
                         RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
                         RuleBuilder.Role(UserRoleName.Support_UserManagement)
+                    ).Build());
+            });
+            options.AddPolicy(PolicyNames.RequireEstablishmentManagementRole, policy =>
+            {
+                policy.Requirements.Add(
+                    RuleBuilder.And(
+                        RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
+                        RuleBuilder.Role(UserRoleName.Support_EstablishmentManagement)
                     ).Build());
             });
         });
