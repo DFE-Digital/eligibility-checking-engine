@@ -62,7 +62,7 @@ public class AuthenticateUserUseCase : IAuthenticateUserUseCase
         if (credentials.grant_type != null && credentials.grant_type != "client_credentials")
             _logger.LogWarning($"Unsupported grant_type: {credentials.grant_type}".Replace(Environment.NewLine, ""));
 
-        if (credentials.client_id.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(credentials.client_id))
         {
             _logger.LogError($"Invalid client identifier: {credentials.client_id.Replace(Environment.NewLine, "")}");
             throw new InvalidClientException("Invalid client identifier");
