@@ -72,6 +72,7 @@ public static class ProgramExtensions
         services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
         services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
+        services.AddTransient<IEstablishmentManagement, EstablishmentManagementGateway>();
         services.AddTransient<ITemporaryCodeUpload, TemporaryCodeUploadGateway>();
         services.AddTransient<IWorkingFamiliesCorrection, WorkingFamiliesCorrectionGateway>();
         return services;
@@ -273,6 +274,12 @@ public static class ProgramExtensions
             {
                 policy.Requirements.Add(RuleBuilder.UserType(UserType.ChildcareAdmin).Build());
             });
+            options.AddPolicy(PolicyNames.RequireEstablishmentManagementRole, policy =>
+            {
+                policy.Requirements.Add(
+                    RuleBuilder.Role(UserRoleName.Support_EstablishmentManagement)
+                        .Build());
+            });
 
             // Compound authorization rules
 
@@ -311,6 +318,14 @@ public static class ProgramExtensions
                     RuleBuilder.And(
                         RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
                         RuleBuilder.Role(UserRoleName.Support_UserManagement)
+                    ).Build());
+            });
+            options.AddPolicy(PolicyNames.RequireEstablishmentManagementRole, policy =>
+            {
+                policy.Requirements.Add(
+                    RuleBuilder.And(
+                        RuleBuilder.UserType(UserType.EligibilityCheckingEngineSupport),
+                        RuleBuilder.Role(UserRoleName.Support_EstablishmentManagement)
                     ).Build());
             });
         });

@@ -227,6 +227,9 @@ builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>(
 builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
 builder.Services.AddScoped<IValidator<IEligibilityServiceType>, CheckEligibilityRequestDataValidator>();
+builder.Services.AddScoped<ISupportSearchEstablishmentUseCase, SupportSearchEstablishmentUseCase>();
+builder.Services.AddScoped<ISupportGetEstablishmentUseCase, SupportGetEstablishmentUseCase>();
+builder.Services.AddScoped<IUpdateEstablishmentPrivateBetaUseCase, UpdateEstablishmentPrivateBetaUseCase>();
 builder.Services.AddScoped<ITemporaryCodeUploadUseCase, TemporaryCodeUploadUseCase>();
 builder.Services.AddScoped<IGetTemporaryCodeUploadsUseCase, GetTemporaryCodeUploadsUseCase>();
 builder.Services.AddScoped<IGetWorkingFamiliesCorrectionUseCase, GetWorkingFamiliesCorrectionUseCase>();
