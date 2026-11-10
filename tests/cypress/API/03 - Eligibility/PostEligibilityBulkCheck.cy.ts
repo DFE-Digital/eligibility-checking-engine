@@ -1,8 +1,9 @@
 import { getandVerifyBearerToken } from "../../support/apiHelpers";
 import {
   invalidDateOfBirthBulkCheckRequestBody,
-  validLoginRequestBody,
+  validLoginRequestBodyTelford,
   validBulkRequestBody,
+  validBulkRequestBodyLarge,
   invalidNinoBulkRequestBody,
   invalidNassBulkRequestBody,
   invalidLastNameBulkCheckRequestBody,
@@ -27,7 +28,7 @@ describe("Post Eligibility Bulk Check - Valid Requests", () => {
           ? { data: [validHMRCRequestBody().data] }
           : validBulkRequest;
 
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",
@@ -54,8 +55,8 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
   const invalidLastNameBulkRequest = invalidLastNameBulkCheckRequestBody();
   const invalidMultiCheckBulkRequest = invalidMultiChecksBulkRequestBody();
   endpoints.forEach((endpoint) => {
-    it(`Verify 400 Bad Request response is returned with Enter a National Insurance number in the correct format for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    it(`Verify 400 Bad Request response is returned with invalid National Insurance number for ${endpoint}`, () => {
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",
@@ -73,7 +74,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
       );
     });
     it(`Verify 400 Bad Request response is returned with invalid date of birth for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",
@@ -91,7 +92,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
       );
     });
     it(`Verify 400 Bad Request response is returned with invalid last name for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",
@@ -109,7 +110,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
       );
     });
     it(`Verify 400 Bad Request response is returned with multiple invalid checks for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",

@@ -58,7 +58,6 @@ describe('Search Application', () => {
             //Make post request for eligibility check
             cy.apiRequest('POST', 'application/search', body, token).then((response) => {
                 // Assert the status and statusText
-                cy.log(JSON.stringify(response));
                 cy.verifyApiResponseCode(response, 200);
                 cy.verifyApplicationSearchResponse(response, expectedApplicationsData)
             })

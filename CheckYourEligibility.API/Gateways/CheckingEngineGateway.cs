@@ -19,31 +19,53 @@ namespace CheckYourEligibility.API.Gateways;
 public class CheckingEngineGateway : ICheckingEngine
 {
     private const int SurnameCheckCharachters = 3;
+
     private readonly IConfiguration _configuration;
+
     private readonly IEligibilityCheckContext _db;
 
     private readonly IEcsAdapter _ecsAdapter;
+
     private readonly ILocalAuthority _localAuthority;
+
     private readonly IDwpAdapter _dwpAdapter;
+
     private readonly IHash _hashGateway;
+
     private readonly ILogger _logger;
+
     private readonly IEligibilityPolicy _eligibilityPolicy;
+
     private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
+
     private readonly IWorkingFamiliesTestScenarioFactory _workingFamiliesTestScenarioFactory;
+
     private readonly IStandardCheckTestScenarioFactory _standardCheckTestScenarioFactory;
+
     private readonly IWorkingFamiliesDualRunningCheck _workingFamiliesDualRunningCheck;
-    private string _groupId;
-    private QueueClient _queueClientBulk;
-    private QueueClient _queueClientStandard;
 
     private readonly string isEligiblePrefix;
+
     private readonly string isInGracePeriodPrefix;
+
     private readonly string isNotYetEligiblePrefix;
+
     private readonly string isExpiredPrefix;
+
     private readonly bool RecordNonConflictResults;
+
     private readonly bool workingFamiliesDualRunningEnabled;
+
     private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new();
+
     private readonly Dictionary<CheckEligibilityType, string> _DWP_ApiCriteria = new();
+
+    private string _groupId;
+
+    private QueueClient _queueClientBulk;
+
+    private QueueClient _queueClientStandard;
+
     public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
         IConfiguration configuration,
         IEcsAdapter ecsAdapter,
@@ -98,6 +120,7 @@ public class CheckingEngineGateway : ICheckingEngine
             }
         }
     }
+
     public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
@@ -107,7 +130,6 @@ public class CheckingEngineGateway : ICheckingEngine
 
         if (result != null)
         {
-
             var checkData = MapCheckDataHelper.MapCheckDataBasedOnType(result.Type, result.CheckData);
             //TODO: This should live in the use case
             switch (result.Type)
@@ -119,6 +141,7 @@ public class CheckingEngineGateway : ICheckingEngine
                         await Process_StandardCheck(result, checkData, dbContextFactory);
                     }
                     break;
+
                 case CheckEligibilityType.WorkingFamilies:
                     {
                         await Process_WorkingFamilies_StandardCheck(result, checkData, dbContextFactory);
@@ -133,6 +156,72 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     #region Private
+
+    public async Task<CAPIClaimResponseBase> DwpCitizenCheck(CheckProcessData data,
+            CheckEligibilityStatus checkResult, string correlationId, EligibilityPolicy eligibilityPolicy)
+    {
+        var citizenRequest = new CitizenMatchRequest
+        {
+            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
+            Data = new CitizenMatchRequest.CitizenMatchRequest_Data
+            {
+                Type = "Match",
+                Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
+                {
+                    LastName = data.LastName,
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length - 5, 4),
+                    DateOfBirth = data.DateOfBirth
+                }
+            }
+        };
+        _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
+        var citizenResponse = await _dwpAdapter.GetCitizen(citizenRequest, data.Type, correlationId);
+
+        if (string.IsNullOrEmpty(citizenResponse.Guid))
+        {
+            _logger.LogInformation("Dwp after not finding citizen ResponseStatusCode:{code}, \n" +
+                "DWPcorrelationId: {correlationId} \n" +
+                "NINO:{nino} \n" +
+                "LastName:{lastName}\n" +
+                "DateOfBirth:{dateOfBirth}",
+                citizenResponse.ResponseCode,
+                correlationId,
+                data.NationalInsuranceNumber,
+                data.LastName,
+                data.DateOfBirth);
+            return citizenResponse;
+        }
+        // Guid returned = citizen found
+        else
+        {
+            _logger.LogInformation("Dwp has valid citizen, correlationId:{correlationId}", correlationId);
+
+            // Perform a benefit check
+            var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
+            _logger.LogInformation("Dwp after getting claim,correlationId:{correlationId}", correlationId);
+
+            if (result.ResponseCode == HttpStatusCode.OK)
+            {
+                result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
+                _logger.LogInformation("Dwp is eligible correlationId:{correlationId}", correlationId);
+            }
+            else if (result.ResponseCode == HttpStatusCode.NotFound)
+            {
+                result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
+
+                _logger.LogInformation("Dwp is not found correlationId:{correlationId}", correlationId);
+            }
+            else
+            {
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.ResponseCode}.");
+                result.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            }
+
+            return result;
+        }
+    }
+
     /// <summary>
     /// Logic to find a match in Working families events' table
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
@@ -179,10 +268,10 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         return null;
     }
+
     private async Task<(WorkingFamiliesEvent?, bool)> Check_Working_Families_EventRecord(string dateOfBirth,
        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
     {
-
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
@@ -195,6 +284,7 @@ public class CheckingEngineGateway : ICheckingEngine
             var latestEvent = wfRecords.FirstOrDefault();
             bool surnameMatches = string.IsNullOrEmpty(lastName) ||
                 string.Equals(latestEvent.ParentLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(latestEvent.ChildLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
                 (!string.IsNullOrEmpty(latestEvent.PartnerLastName) &&
                 string.Equals(latestEvent.PartnerLastName, lastName, StringComparison.OrdinalIgnoreCase));
 
@@ -205,16 +295,15 @@ public class CheckingEngineGateway : ICheckingEngine
             if (isMatch)
             {
                 return WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(wfRecords);
-
             }
-
         }
         return (null, true);
     }
+
     /// <summary>
     /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
-    /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or 
+    /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or
     /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
     /// Else change status to 'notEligible'
     /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
@@ -297,7 +386,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 isGracePeriodEndDateApplied);
         }
 
-
         // Update check data for response
         if (hasProcessedEvent && wfEvent != null)
         {
@@ -336,6 +424,7 @@ public class CheckingEngineGateway : ICheckingEngine
 
         await context.SaveChangesAsync();
     }
+
     /// <summary>
     /// If UseEcsforChecksWF is true - Run check against ECE
     /// Else run check against ECS
@@ -378,7 +467,6 @@ public class CheckingEngineGateway : ICheckingEngine
             ecsResponseBody = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
             eceResponseBody = eceResponse;
         }
-
         else
         {
             eceStatus = check.Status;
@@ -455,15 +543,14 @@ public class CheckingEngineGateway : ICheckingEngine
         checkData.EcsErrorCode = innerResult != null ? innerResult.ErrorCode : null; // map error code for dual record
 
         return (wfEvent, status);
-
     }
+
     private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
     {
-
         if (organisationType == Domain.Constants.OrganisationType.local_authority && orgId is int LaId && LaId != 0)
         {
             int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type, dbContextFactory);
-            // get policy for the LA          
+            // get policy for the LA
             if (policyID != 0)
                 return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID, dbContextFactory);
         }
@@ -476,8 +563,8 @@ public class CheckingEngineGateway : ICheckingEngine
             UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[type],
             IsDeleted = false
         };
-
     }
+
     private async Task Process_StandardCheck(EligibilityCheck result,
         CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
     {
@@ -502,10 +589,8 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         else
         {
-
             if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
             {
-
                 var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type, dbContextFactory);
                 //To ensure correct LA ID is passed when using ECS for checks
 
@@ -525,7 +610,6 @@ public class CheckingEngineGateway : ICheckingEngine
                     }
                     else if (_ecsAdapter.UseEcsforChecks == "false")
                     {
-
                         capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
 
                         checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
@@ -550,12 +634,10 @@ public class CheckingEngineGateway : ICheckingEngine
                         }
                         catch (Exception ex)
                         {
-
                             _logger.LogError(ex, " Check:{checkId} Action:AddToCAPIAudits Status:Failed", result.EligibilityCheckID);
                         }
 
                         _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
-
                     }
                     else // do both checks
                     {
@@ -572,9 +654,7 @@ public class CheckingEngineGateway : ICheckingEngine
                         {
                             source = ProcessEligibilityCheckSource.ECS_CONFLICT;
                         }
-
                     }
-
                 }
             }
             else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
@@ -648,16 +728,15 @@ public class CheckingEngineGateway : ICheckingEngine
                     CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
                     Reason = capiClaimResponse.Reason,
                     CAPIResponseCode = capiClaimResponse.ResponseCode
-
                 };
                 await context.ECSConflicts.AddAsync(ecsConflictRecord);
-
             }
         }
         await context.SaveChangesAsync();
 
         var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
     }
+
     //TODO: These two could be adapters
     private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
     {
@@ -690,7 +769,6 @@ public class CheckingEngineGateway : ICheckingEngine
             {
                 return CheckEligibilityStatus.eligible;
             }
-
             else if (checkType != CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" &&
                      (string.IsNullOrEmpty(result.Qualifier) || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
             {
@@ -700,7 +778,6 @@ public class CheckingEngineGateway : ICheckingEngine
             // We need to check the type of the check before setting status as notFound/notligible status response from ECS is different between WF and the rest of the checks
             else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier))
             {
-
                 if (string.IsNullOrEmpty(result.ValidityStartDate) && string.IsNullOrEmpty(result.ValidityEndDate) && string.IsNullOrEmpty(result.GracePeriodEndDate))
                 {
                     return CheckEligibilityStatus.notFound;
@@ -709,7 +786,6 @@ public class CheckingEngineGateway : ICheckingEngine
                 {
                     return CheckEligibilityStatus.notEligible;
                 }
-
             }
             else if (result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA" && result.Status == "0" && result.ErrorCode == "0")
             {
@@ -736,74 +812,6 @@ public class CheckingEngineGateway : ICheckingEngine
         return convertEcsResultStatus(result);
     }
 
-    public async Task<CAPIClaimResponseBase> DwpCitizenCheck(CheckProcessData data,
-        CheckEligibilityStatus checkResult, string correlationId, EligibilityPolicy eligibilityPolicy)
-    {
-
-        var citizenRequest = new CitizenMatchRequest
-        {
-            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
-            Data = new CitizenMatchRequest.CitizenMatchRequest_Data
-            {
-                Type = "Match",
-                Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
-                {
-                    LastName = data.LastName,
-                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length - 5, 4),
-                    DateOfBirth = data.DateOfBirth
-                }
-            }
-        };
-        _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
-        var citizenResponse = await _dwpAdapter.GetCitizen(citizenRequest, data.Type, correlationId);
-
-        if (string.IsNullOrEmpty(citizenResponse.Guid))
-        {
-            _logger.LogInformation("Dwp after not finding citizen ResponseStatusCode:{code}, \n" +
-                "DWPcorrelationId: {correlationId} \n" +
-                "NINO:{nino} \n" +
-                "LastName:{lastName}\n" +
-                "DateOfBirth:{dateOfBirth}",
-                citizenResponse.ResponseCode,
-                correlationId,
-                data.NationalInsuranceNumber,
-                data.LastName,
-                data.DateOfBirth);
-            return citizenResponse;
-        }
-        // Guid returned = citizen found
-        else
-        {
-            _logger.LogInformation("Dwp has valid citizen, correlationId:{correlationId}", correlationId);
-
-            // Perform a benefit check
-            var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
-                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
-            _logger.LogInformation("Dwp after getting claim,correlationId:{correlationId}", correlationId);
-
-            if (result.ResponseCode == HttpStatusCode.OK)
-            {
-                result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
-                _logger.LogInformation("Dwp is eligible correlationId:{correlationId}", correlationId);
-
-            }
-            else if (result.ResponseCode == HttpStatusCode.NotFound)
-            {
-                result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
-
-                _logger.LogInformation("Dwp is not found correlationId:{correlationId}", correlationId);
-            }
-            else
-            {
-                _logger.LogError($"Dwp Error unknown Response status code:-{result.ResponseCode}.");
-                result.CheckEligibilityStatus = CheckEligibilityStatus.error;
-            }
-
-            return result;
-        }
-
-    }
-
     private CheckEligibilityStatus CheckSurname(string lastNamePartial, IQueryable<string> validData)
     {
         if (validData.Any())
@@ -815,5 +823,5 @@ public class CheckingEngineGateway : ICheckingEngine
         return CheckEligibilityStatus.parentNotFound;
     }
 
-    #endregion
+    #endregion Private
 }

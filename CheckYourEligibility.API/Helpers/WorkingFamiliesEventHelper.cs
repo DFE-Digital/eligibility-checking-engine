@@ -1,8 +1,6 @@
-using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Helpers;
 using CheckYourEligibility.API.Domain.Validation;
-
+using CheckYourEligibility.API.Helpers;
 
 public static class WorkingFamiliesEventHelper
 {
@@ -44,6 +42,7 @@ public static class WorkingFamiliesEventHelper
 
         return wfEvent;
     }
+
     /// <summary>
     /// Maps dates from the newest event to a summary record.
     /// </summary>
@@ -53,7 +52,6 @@ public static class WorkingFamiliesEventHelper
     /// <returns></returns>
     public static WorkingFamiliesEventSummary MapWorkingFamiliesEventUpdateDatesToSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent, WorkingFamiliesEventSummary eventSummary, bool isContiguous = false)
     {
-
         DateTime today = DateTime.UtcNow.Date;
 
         eventSummary.LastUpdatedDate = today;
@@ -67,13 +65,12 @@ public static class WorkingFamiliesEventHelper
             eventSummary.FirstEventDate = today;
             eventSummary.DiscretionaryValidityStartDate = workingFamiliesEvent.DiscretionaryValidityStartDate;
             eventSummary.ValidityStartDate = workingFamiliesEvent.ValidityStartDate;
-
         }
         return eventSummary;
     }
+
     public static WorkingFamiliesEventSummary MapWorkingFamiliesEventToNewSummaryRecord(WorkingFamiliesEvent workingFamiliesEvent)
     {
-
         DateTime today = DateTime.UtcNow.Date;
         var currentTerm = WorkingFamiliesCheckHelper.GetTerms(today).Current;
         WorkingFamiliesEventSummary newEventSummary = new WorkingFamiliesEventSummary()
@@ -86,7 +83,7 @@ public static class WorkingFamiliesEventHelper
             PartnerLastName = workingFamiliesEvent.PartnerLastName,
             ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber ?? string.Empty, // why do we allow null for the event but not for the summary ? ,
             PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber,
-            ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?          
+            ChildPostCode = workingFamiliesEvent.ChildPostCode ?? string.Empty, // why do we allow null for the event but not for the summary ?
             ChildFirstNameTruncated = workingFamiliesEvent.ChildFirstName.Replace("-", " ").Split(" ").First().ToLower().Trim(),
             FirstEventDate = today,
             HasCodeBeenCheckedByOwningLA = false,
@@ -100,7 +97,6 @@ public static class WorkingFamiliesEventHelper
             GracePeriodEndDateApplied = WorkingFamiliesCheckHelper.IsGracePeriodEndDateApplied(workingFamiliesEvent.DiscretionaryValidityStartDate, workingFamiliesEvent.ValidityEndDate, 1, workingFamiliesEvent.ChildDateOfBirth, today)
         };
         return newEventSummary;
-
     }
 
     /// <summary>
@@ -110,7 +106,6 @@ public static class WorkingFamiliesEventHelper
     /// <returns></returns>
     public static WorkingFamiliesEventSummary MapPIWorkingFamilySummaryFromWorkingFamilyEvent(WorkingFamiliesEventSummary eventSummary, WorkingFamiliesEvent workingFamiliesEvent)
     {
-
         eventSummary.ChildDateOfBirth = workingFamiliesEvent.ChildDateOfBirth;
         eventSummary.ParentNationalInsuranceNumber = workingFamiliesEvent.ParentNationalInsuranceNumber;
         eventSummary.PartnerNationalInsuranceNumber = workingFamiliesEvent.PartnerNationalInsuranceNumber;
@@ -136,6 +131,7 @@ public static class WorkingFamiliesEventHelper
             return DateTime.FromOADate(oaDate);
         return ImportDateValues.InvalidDate;
     }
+
     public static DateTime? ParseOptionalImportDate(string? dateValue)
     {
         if (string.IsNullOrWhiteSpace(dateValue))
@@ -144,6 +140,7 @@ public static class WorkingFamiliesEventHelper
             return DateTime.FromOADate(oaDate);
         return ImportDateValues.InvalidDate;
     }
+
     public static WorkingFamiliesEvent ParseWorkingFamiliesEvent(List<string> eventProps, List<string> columnHeaders)
     {
         var validityStartDate = ParseImportDate(eventProps[columnHeaders.IndexOf("Validity Start Date")]);
@@ -179,8 +176,8 @@ public static class WorkingFamiliesEventHelper
     }
 
     //If VED >= 1 Jan  and VED <= 10 Feb then GPED = 31-Mar
-    //If VED >= 11 Feb and VED <= 26 May then GPED = 31-Aug 
-    //If VED >= 27 May and VED <= 31 August then GPED  = 31-Dec 
+    //If VED >= 11 Feb and VED <= 26 May then GPED = 31-Aug
+    //If VED >= 27 May and VED <= 31 August then GPED  = 31-Dec
     //If VED >= 1 September and VED <= 21 October then GPED = 31-Dec
     //If VED >= 22 October and VED <= 31 Dec then GPED  31-Mar following year
     public static DateTime GetGracePeriodEndDate(DateTime submissionDate, DateTime validityEndDate, DateTime childDateOfBirth)
@@ -242,6 +239,7 @@ public static class WorkingFamiliesEventHelper
         // Else use VSD
         return validityStartDate;
     }
+
     /// <summary>
     /// Determines if the contiguity of an event is broken:
     /// If only one historic event is found and the reconfirmation(new event submission date) has happened after the historicEvent VED and the earlier record VSD and VED fall within the same term (code has never been valid).
@@ -253,7 +251,6 @@ public static class WorkingFamiliesEventHelper
     /// <returns></returns>
     public static WorkingFamiliesEventSummary EvaluateContiguityForCodeFromIncomingEvent(WorkingFamiliesEvent incomingEvent, WorkingFamiliesEventSummary? summaryRecord, int historicEventRecordCount)
     {
-
         //if older events found (summary record is not null), initiate contiguous logic
         if (summaryRecord != null)
         {

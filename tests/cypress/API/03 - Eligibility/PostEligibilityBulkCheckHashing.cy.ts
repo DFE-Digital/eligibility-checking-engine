@@ -3,7 +3,7 @@ import {
   BulkResultItem,
 } from "../../support/interfaces";
 import { getandVerifyBearerToken } from "../../support/apiHelpers";
-import { validLoginRequestBody } from "../../support/requestBodies";
+import { validLoginRequestBodyTelford } from "../../support/requestBodies";
 
 describe("Bulk Check - Hashing Behaviour", () => {
   const request = {
@@ -24,7 +24,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
   };
 
   it("Batch submitted with all new checks → all processed", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         cy.apiRequest(
           "POST",
@@ -55,7 +55,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
   });
 
   it("Batch submitted with all hashed checks → reused results", () => {
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         cy.apiRequest("POST", `bulk-check/free-school-meals`, request, token)
           .then((response) => {
@@ -102,7 +102,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       ],
     };
 
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         // first run
         cy.apiRequest("POST", `bulk-check/free-school-meals`, request, token)
@@ -163,7 +163,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       ],
     };
 
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         cy.apiRequest(
           "POST",
@@ -257,7 +257,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       ],
     };
 
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         // create hash
         cy.apiRequest("POST", "bulk-check/free-school-meals", smallBase, token)
@@ -331,7 +331,7 @@ describe("Bulk Check - Hashing Behaviour", () => {
       ],
     };
 
-    getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+    getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
       (token) => {
         // create hash
         cy.apiRequest("POST", "bulk-check/free-school-meals", small, token)
