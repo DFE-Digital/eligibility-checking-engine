@@ -114,7 +114,7 @@ describe('GET eligibility soft check by Guid', () => {
             });
         });
     });
-})
+
 it('Verify 404 Not Found response is returned with invalid guid', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         cy.apiRequest('GET', 'check/7fc12dc9-5a9d-4155-887c-d2b3d60384e', {}, token).then((response) => {
