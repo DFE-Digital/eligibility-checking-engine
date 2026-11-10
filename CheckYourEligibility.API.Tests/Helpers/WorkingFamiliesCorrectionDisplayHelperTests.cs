@@ -1,5 +1,7 @@
 ﻿using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
+using CheckYourEligibility.API.Domain;
+using System.Text.Json;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;
 
@@ -111,6 +113,69 @@ public class WorkingFamiliesCorrectionDisplayHelperTests
         result.ReconfirmationStatus.Should().Be(ReconfirmationStatus.NotApplicable);
         result.ReconfirmFrom.Should().BeNull();
         result.ReconfirmTo.Should().BeNull();
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Confirmation_uses_current_contiguous_chain_without_changing_source_records(bool breakChain)
+    {
+        var record = CreateRecord();
+        record.Version = "existing-version";
+        record.ValidityStartDate = new DateTime(2026, 11, 1);
+        record.DiscretionaryValidityStartDate = new DateTime(2026, 11, 1);
+
+        var earliest = new WorkingFamiliesEvent
+        {
+            SubmissionDate = new DateTime(2026, 1, 10),
+            ValidityStartDate = new DateTime(2026, 1, 10),
+            DiscretionaryValidityStartDate = new DateTime(2026, 1, 9),
+            ValidityEndDate = new DateTime(2026, 4, 10),
+            GracePeriodEndDate = new DateTime(2026, 8, 31),
+            ChildDateOfBirth = record.Child.DateOfBirth
+        };
+
+        var middleStartDate = breakChain
+            ? new DateTime(2026, 9, 1)
+            : new DateTime(2026, 7, 1);
+
+        var middle = new WorkingFamiliesEvent
+        {
+            SubmissionDate = middleStartDate,
+            ValidityStartDate = middleStartDate,
+            DiscretionaryValidityStartDate = middleStartDate,
+            ValidityEndDate = new DateTime(2026, 10, 1),
+            GracePeriodEndDate = new DateTime(2027, 3, 31),
+            ChildDateOfBirth = record.Child.DateOfBirth
+        };
+
+        var latest = new WorkingFamiliesEvent
+        {
+            SubmissionDate = new DateTime(2026, 11, 1),
+            ValidityStartDate = new DateTime(2026, 11, 1),
+            DiscretionaryValidityStartDate = new DateTime(2026, 11, 1),
+            ValidityEndDate = new DateTime(2027, 2, 1),
+            GracePeriodEndDate = new DateTime(2027, 3, 31),
+            ChildDateOfBirth = record.Child.DateOfBirth
+        };
+
+        // Deliberately unordered to verify submission-date ordering.
+        var events = new[] { latest, earliest, middle };
+        var beforeEvents = JsonSerializer.Serialize(events);
+
+        var result = WorkingFamiliesCorrectionDisplayHelper.SetEligibilityConfirmationProperties(record, events);
+
+        var expectedConfirmationDate = breakChain
+            ? new DateTime(2026, 9, 1)
+            : new DateTime(2026, 1, 10);
+
+        result.EligibilityConfirmedOn.Should().Be(expectedConfirmationDate);
+        result.IsDiscretionaryValidityStartDateApplied.Should().Be(!breakChain);
+
+        result.ValidityStartDate.Should().Be(new DateTime(2026, 11, 1));
+        result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2026, 11, 1));
+        result.Version.Should().Be("existing-version");
+
+        JsonSerializer.Serialize(events).Should().Be(beforeEvents);
     }
 
     private static WorkingFamiliesCorrectionRecord CreateRecord()

@@ -24,6 +24,8 @@ public class WorkingFamiliesCorrectionRecord
     public DateTime DiscretionaryValidityStartDate { get; set; }
     public DateTime? GracePeriodEndDate { get; set; }
     public DateTime LastUpdatedDate { get; set; }
+    public DateTime EligibilityConfirmedOn { get; set; }
+    public bool IsDiscretionaryValidityStartDateApplied { get; set; }
     public string Version { get; set; } = string.Empty;
     public EligibilityCodeType EligibilityCodeType { get; set; }
     public DateTime? LatestSubmissionDate { get; set; }

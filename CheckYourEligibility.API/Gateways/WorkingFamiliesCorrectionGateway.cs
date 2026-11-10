@@ -23,21 +23,15 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
     }
 
     public async Task<WorkingFamiliesCorrectionRecord?> GetByEligibilityCode(
-     string eligibilityCode,
-     CancellationToken cancellationToken = default)
+     string eligibilityCode, CancellationToken cancellationToken = default)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
-            cancellationToken);
+            IsolationLevel.Serializable, cancellationToken);
 
-        var selected = await SelectRecord(
-            eligibilityCode,
-            trackChanges: false,
-            cancellationToken: cancellationToken);
+        var selected = await SelectRecord(eligibilityCode, trackChanges: false, cancellationToken: cancellationToken);
 
-        var record = selected.HasValue
-            ? MapRecord(selected.Value.Summary, selected.Value.LatestEvent)
-            : null;
+        var record = selected.HasValue ? MapRecord(selected.Value.Summary, selected.Value.LatestEvent,
+            selected.Value.Events) : null;
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -198,7 +192,8 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
 
         var record = MapRecord(
             persisted.Value.Summary,
-            persisted.Value.LatestEvent);
+            persisted.Value.LatestEvent,
+            persisted.Value.Events);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -206,7 +201,9 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
     }
 
     private async Task<(
-        WorkingFamiliesEventSummary Summary, WorkingFamiliesEvent LatestEvent)?> SelectRecord(
+        WorkingFamiliesEventSummary Summary,
+        WorkingFamiliesEvent LatestEvent,
+        List<WorkingFamiliesEvent> Events)?> SelectRecord(
         string eligibilityCode,
         bool trackChanges,
         CancellationToken cancellationToken)
@@ -234,7 +231,6 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
 
         var events = await eventQuery
             .OrderByDescending(x => x.SubmissionDate)
-            .Take(2)
             .ToListAsync(cancellationToken);
 
         if (summaries.Count == 0 && events.Count == 0)
@@ -255,12 +251,13 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
                 "Multiple events share the latest submission date.");
         }
 
-        return (summaries[0], events[0]);
+        return (summaries[0], events[0], events);
     }
 
     private static WorkingFamiliesCorrectionRecord MapRecord(
         WorkingFamiliesEventSummary summary,
-        WorkingFamiliesEvent latestEvent)
+        WorkingFamiliesEvent latestEvent,
+        List<WorkingFamiliesEvent> events)
     {
         var record = new WorkingFamiliesCorrectionRecord
         {
@@ -303,6 +300,8 @@ public class WorkingFamiliesCorrectionGateway : IWorkingFamiliesCorrection
             LatestSubmissionDate = summary.LatestSubmissionDate,
             GracePeriodEndDateApplied = summary.GracePeriodEndDateApplied
         };
+
+        WorkingFamiliesCorrectionDisplayHelper.SetEligibilityConfirmationProperties(record, events);
         return WorkingFamiliesCorrectionDisplayHelper.SetDisplayProperties(record, DateTime.UtcNow.Date);
     }
 
