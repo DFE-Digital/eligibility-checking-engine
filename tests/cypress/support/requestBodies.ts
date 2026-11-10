@@ -78,7 +78,7 @@ export function validFSMTieredExpanded() {
 export function validFSMTieredTargeted() {
   return { data: generateHMRCRequestSingleBody('NA') };
 }
-export function invalidHMRCRequestBody() {
+export function invalidFSMRequest() {
   var body = generateHMRCRequestSingleBody('PP');
   body.nationalInsuranceNumber += 'X';
   return { data: body };
@@ -94,7 +94,16 @@ export function validHomeOfficeRequestBody() {
     },
   };
 }
-
+export function invalidHomeOfficeRequestBody() {
+  return {
+    data: {
+      nationalInsuranceNumber: "",
+      lastName: "TESTER",
+      dateOfBirth: "1990-01-01",
+      nationalAsylumSeekerServiceNumber: "invalid-nass",
+    },
+  };
+}
 export function notEligibleHomeOfficeRequestBody() {
   return {
     data: {
@@ -105,6 +114,7 @@ export function notEligibleHomeOfficeRequestBody() {
     },
   };
 }
+
 
 export function invalidDOBRequestBody() {
   return {
@@ -317,10 +327,9 @@ export function invalidNassBulkRequestBody() {
   return {
     data: [
       {
-        ...validHomeOfficeRequestBody().data,
-        nationalAsylumSeekerServiceNumber: "123",
+        ...invalidHomeOfficeRequestBody().data,
       },
-      validHMRCRequestBody().data,
+      validFSMRequest().data,
     ],
   };
 }

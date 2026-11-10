@@ -8,7 +8,7 @@ import {
   invalidNassBulkRequestBody,
   invalidLastNameBulkCheckRequestBody,
   invalidMultiChecksBulkRequestBody,
-  validHMRCRequestBody,
+  validFSMRequest,
 } from "../../support/requestBodies";
 
 const endpoints = [
@@ -25,7 +25,7 @@ describe("Post Eligibility Bulk Check - Valid Requests", () => {
     it(`Verify 202 Accepted response is returned with valid data for ${endpoint}`, () => {
       const requestBody =
         endpoint === "two-year-offer"
-          ? { data: [validHMRCRequestBody().data] }
+          ? { data: [validFSMRequest().data] }
           : validBulkRequest;
 
       getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
@@ -134,7 +134,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
   });
   endpointsSupportingNass.forEach((endpoint) => {
     it(`Verify 400 Bad Request response is returned with invalid National Asylum Seeker Service Number for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBody).then(
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",

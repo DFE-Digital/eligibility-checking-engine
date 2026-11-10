@@ -1,11 +1,11 @@
 ///FreeSchoolMeals
 import { getandVerifyBearerToken } from '../../support/apiHelpers';
-import { validWorkingFamiliesRequestBody, validLoginRequestBodyTelford, validHomeOfficeRequestBody, invalidHMRCRequestBody, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody, validWorkingFamiliesNullLastnameRequestBody, validCurlyApostropheLastNameRequestBody, validFSMRequest } from '../../support/requestBodies';
+import { validWorkingFamiliesRequestBody, validLoginRequestBodyTelford, validHomeOfficeRequestBody, invalidFSMRequest, invalidDOBRequestBody, invalidLastNameRequestBody, noNIAndNASSNRequestBody, invalidEligiblityCodeRequestBody, validWorkingFamiliesNullLastnameRequestBody, validCurlyApostropheLastNameRequestBody, validFSMRequest } from '../../support/requestBodies';
 
 
 describe('Post Eligibility Check - Valid Requests', () => {
 
-  const validHMRCRequest = validFSMRequest();
+  const validFSMRequestBodyData = validFSMRequest();
   const validHomeOfficeRequest = validHomeOfficeRequestBody();
   const validWorkingFamiliesRequest = validWorkingFamiliesRequestBody();
   const validWorkingFamiliesNullLastnameRequest = validWorkingFamiliesNullLastnameRequestBody();
@@ -35,7 +35,7 @@ describe('Post Eligibility Check - Valid Requests', () => {
 
   it('Verify 202 Accepted response is returned with valid HMRC data', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
-      cy.apiRequest('POST', 'check/free-school-meals', validHMRCRequest, token).then((response) => {
+      cy.apiRequest('POST', 'check/free-school-meals', validFSMRequestBodyData, token).then((response) => {
         // Assert the status and statusText
         cy.verifyApiResponseCode(response, 202)
         // Assert the response body data
@@ -68,7 +68,7 @@ describe('Post Eligibility Check - Valid Requests', () => {
 })
 
 describe('Post Eligibility Check - Invalid Requests', () => {
-  const invalidHMRCRequest = invalidHMRCRequestBody();
+  const invalidFSMRequestBody = invalidFSMRequest();
   const invalidDOBRequest = invalidDOBRequestBody();
   const invalidLastNameRequest = invalidLastNameRequestBody();
   const noNIAndNASSRequest = noNIAndNASSNRequestBody();
@@ -84,7 +84,7 @@ describe('Post Eligibility Check - Invalid Requests', () => {
 
   it('Verify 400 Bad Request response is returned with invalid National Insurance number', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
-      cy.apiRequest('POST', 'check/free-school-meals', invalidHMRCRequest, token).then((response) => {
+      cy.apiRequest('POST', 'check/free-school-meals', invalidFSMRequestBody, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
         expect(response.body.errors[0]).to.have.property('title', 'Enter a National Insurance number in the correct format');
       });
