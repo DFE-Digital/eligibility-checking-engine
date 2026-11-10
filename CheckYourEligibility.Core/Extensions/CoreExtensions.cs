@@ -80,6 +80,8 @@ public static class CoreExtensions
         services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
         services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
         services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
+        // Support portal specific gateways
+        services.AddTransient<IEstablishmentManagement, EstablishmentManagementGateway>();
         services.AddTransient<ITemporaryCodeUpload, TemporaryCodeUploadGateway>();
         services.AddTransient<IWorkingFamiliesCorrection, WorkingFamiliesCorrectionGateway>();
 
