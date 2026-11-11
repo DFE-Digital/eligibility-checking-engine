@@ -1,0 +1,32 @@
+root = true
+
+[*.cs]
+# Indentation
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+# File whitespace
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Usings: alphabetical, without special treatment for System
+dotnet_sort_system_directives_first = false
+dotnet_separate_import_directive_groups = false
+
+# Braces and indentation
+csharp_new_line_before_open_brace = all
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+# Basic spacing
+csharp_space_around_binary_operators = before_and_after
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+
+# Preserve existing compact blocks and statements
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
