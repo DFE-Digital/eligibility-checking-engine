@@ -9,13 +9,11 @@ public interface ICleanUpRateLimitEventsUseCase
 
 public class CleanUpRateLimitEventsUseCase : ICleanUpRateLimitEventsUseCase
 {
-    private readonly IAudit _auditGateway;
     private readonly IRateLimit _gateway;
 
-    public CleanUpRateLimitEventsUseCase(IRateLimit Gateway, IAudit auditGateway)
+    public CleanUpRateLimitEventsUseCase(IRateLimit Gateway)
     {
         _gateway = Gateway;
-        _auditGateway = auditGateway;
     }
 
     public async Task Execute()

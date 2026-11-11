@@ -1,6 +1,7 @@
 using CheckYourEligibility.Core.Database;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace CheckYourEligibility.Core.Gateways;
 
@@ -67,13 +68,23 @@ public class RateLimitGateway : IRateLimit
     /// <returns></returns>
     public async Task CleanUpRateLimitEvents()
     {
-        var retentionDays = _configuration.GetValue<int>("RateLimit:RetentionDays");
-        if (retentionDays > 0)
+        try
         {
-            var retentionCutOff = DateTime.UtcNow.AddDays(-retentionDays);
-            var items = _db.RateLimitEvents.Where(x => x.TimeStamp < retentionCutOff);
-            _db.RateLimitEvents.RemoveRange(items);
-            await _db.SaveChangesAsync();
+            var retentionDays = _configuration.GetValue<int>("RateLimit:RetentionDays");
+            if (retentionDays > 0)
+            {
+                var retentionCutOff = DateTime.UtcNow.AddDays(-retentionDays);
+                _logger.LogInformation($"Cleaning up rate limit events older than {retentionCutOff}");
+
+                var rowsDeleted = await _db.RateLimitEvents
+                    .Where(x => x.TimeStamp < retentionCutOff)
+                    .ExecuteDeleteAsync();
+                _logger.LogInformation($"Deleted {rowsDeleted} rate limit events older than {retentionCutOff}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while cleaning up rate limit events");
         }
     }
 }

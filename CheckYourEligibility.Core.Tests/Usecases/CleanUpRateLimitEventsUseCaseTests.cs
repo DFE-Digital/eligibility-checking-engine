@@ -11,19 +11,16 @@ public class CleanUpRateLimitEventsChecksUseCaseTests : TestBase
     public void Setup()
     {
         _mockGateway = new Mock<IRateLimit>(MockBehavior.Strict);
-        _mockAuditGateway = new Mock<IAudit>(MockBehavior.Strict);
-        _sut = new CleanUpRateLimitEventsUseCase(_mockGateway.Object, _mockAuditGateway.Object);
+        _sut = new CleanUpRateLimitEventsUseCase(_mockGateway.Object);
     }
 
     [TearDown]
     public void Teardown()
     {
         _mockGateway.VerifyAll();
-        _mockAuditGateway.VerifyAll();
     }
 
     private Mock<IRateLimit> _mockGateway;
-    private Mock<IAudit> _mockAuditGateway;
     private CleanUpRateLimitEventsUseCase _sut;
 
     [Test]
