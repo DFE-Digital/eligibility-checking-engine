@@ -2,7 +2,6 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Extensions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.Core.Gateways;
 
@@ -32,7 +31,7 @@ public class NotifyGateway : INotify
     private void Deliver(string templateId, string email, Dictionary<string, object> personalisation)
     {
         var apiKey = GetApiKey();
-        if (apiKey.IsNullOrEmpty()) return;
+        if (string.IsNullOrEmpty(apiKey)) return;
 
         _notificationClientFactory.CreateClient(apiKey).SendEmail(email, templateId, personalisation);
     }
@@ -58,7 +57,7 @@ public class NotifyGateway : INotify
             if (isTestModeClient)
             {
                 var testKey = _configuration.GetValue<string>("Notify:TestKey");
-                if (!testKey.IsNullOrEmpty()) return testKey;
+                if (!string.IsNullOrEmpty(testKey)) return testKey;
 
                 // Fail closed: never fall back to the live key for a test-mode client, that would defeat
                 // the point of Notify:TestModeClients and could send real emails from automated test runs.

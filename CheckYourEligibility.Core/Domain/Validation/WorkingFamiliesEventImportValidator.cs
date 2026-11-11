@@ -4,7 +4,6 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.Core.Domain.Validation;
 using FluentValidation;
-using Microsoft.IdentityModel.Tokens;
 
 namespace FeatureManagement.Domain.Validation;
 
@@ -85,7 +84,7 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
 				.WithMessage(ValidationMessages.ChildPostCodeInvalid);
 
 		//Partner - Optional cells when present must be valid
-		When(x => !x.PartnerNationalInsuranceNumber.IsNullOrEmpty(), () =>
+		When(x => !string.IsNullOrEmpty(x.PartnerNationalInsuranceNumber), () =>
 		{
 			RuleFor(x => x.PartnerNationalInsuranceNumber) //isValid
 				.Must(DataValidation.BeAValidNi)

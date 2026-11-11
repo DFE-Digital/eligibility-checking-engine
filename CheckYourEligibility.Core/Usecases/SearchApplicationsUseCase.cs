@@ -1,8 +1,6 @@
 using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
-using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.Core.UseCases;
 
@@ -107,7 +105,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             // There is a matching establishment scope
             return;
         }
-        else if (!allowedEstablishmentIds.IsNullOrEmpty())
+        else if (allowedEstablishmentIds.Count > 0)
         {
             //If an establishment scope was provided which didn't allow the establishment Id in the request
             throw new UnauthorizedAccessException(
@@ -122,7 +120,7 @@ public class SearchApplicationsUseCase : ISearchApplicationsUseCase
             return;
         }
         //Else if there was an attempt to use a multi_academy_trust scope which didn't correspond to the establishment
-        else if (!allowedEstablishmentIds.IsNullOrEmpty() && !allowedEstablishmentIds.Contains(0))
+        else if (allowedEstablishmentIds.Count > 0 && !allowedEstablishmentIds.Contains(0))
         {
             //If an establishment scope was provided which didn't allow the establishment Id in the request
             throw new UnauthorizedAccessException(

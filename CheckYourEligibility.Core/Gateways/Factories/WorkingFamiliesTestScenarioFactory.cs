@@ -3,7 +3,6 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.Core.Gateways.Factories.Helper;
 using CheckYourEligibility.Core.Helpers;
-using Microsoft.IdentityModel.Tokens;
 using static CheckYourEligibility.Core.Helpers.WorkingFamiliesCheckHelper;
 
 namespace CheckYourEligibility.Core.Gateways.Factories
@@ -57,22 +56,22 @@ namespace CheckYourEligibility.Core.Gateways.Factories
             int.TryParse(eligibilityCode.Substring(7, 2), out var gpedOffset);
 
             // Apply date offsets based on scenario type
-            if (!_testDataConfig.EligiblePrefix.IsNullOrEmpty() &&
+            if (!string.IsNullOrEmpty(_testDataConfig.EligiblePrefix) &&
                 eligibilityCode.StartsWith(_testDataConfig.EligiblePrefix))
             {
                 wfEvent = CreateEligibleScenario(vsdOffset, vedOffset, gpedOffset);
             }
-            else if (!_testDataConfig.InGracePeriodPrefix.IsNullOrEmpty() &&
+            else if (!string.IsNullOrEmpty(_testDataConfig.InGracePeriodPrefix) &&
                      eligibilityCode.StartsWith(_testDataConfig.InGracePeriodPrefix))
             {
                 wfEvent = CreateInGracePeriod(vsdOffset, vedOffset, gpedOffset);
             }
-            else if (!_testDataConfig.NotYetEligiblePrefix.IsNullOrEmpty() &&
+            else if (!string.IsNullOrEmpty(_testDataConfig.NotYetEligiblePrefix) &&
                      eligibilityCode.StartsWith(_testDataConfig.NotYetEligiblePrefix))
             {
                 wfEvent = CreateNotYetEligible(vsdOffset, vedOffset, gpedOffset);
             }
-            else if (!_testDataConfig.ExpiredPrefix.IsNullOrEmpty() &&
+            else if (!string.IsNullOrEmpty(_testDataConfig.ExpiredPrefix) &&
                      eligibilityCode.StartsWith(_testDataConfig.ExpiredPrefix))
             {
                 wfEvent = CreateExpired(vsdOffset, vedOffset, gpedOffset);

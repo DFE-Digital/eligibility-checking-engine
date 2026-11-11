@@ -6,7 +6,6 @@ using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -291,7 +290,7 @@ public class DwpAdapter : IDwpAdapter
     private bool CheckStandardBenefitType(string citizenId, DwpClaimsResponse claims, DwpBenefitType benefitType)
     {
         var benefit = claims.data.FirstOrDefault(x => x.attributes.benefitType == benefitType.ToString()
-                                                      && x.attributes.endDate.IsNullOrEmpty());
+                                                      && string.IsNullOrEmpty(x.attributes.endDate));
         if (benefit != null)
         {
             _logger.LogInformation($"Dwp {benefitType} found for CitizenId:-{citizenId}");

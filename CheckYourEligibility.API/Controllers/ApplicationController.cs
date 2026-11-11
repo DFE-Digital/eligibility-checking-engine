@@ -7,7 +7,6 @@ using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using ValidationException = FluentValidation.ValidationException;
 

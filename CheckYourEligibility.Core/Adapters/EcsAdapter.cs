@@ -3,7 +3,6 @@ using System.Text;
 using System.Xml.Linq;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Enums;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace CheckYourEligibility.Core.Adapters;
@@ -158,7 +157,7 @@ public class EcsAdapter : IEcsAdapter
         soapMessage = soapMessage.Replace("{{NiNo}}", eligibilityCheck.NationalInsuranceNumber);
         soapMessage = soapMessage.Replace("{{EligibilityCode}}", eligibilityCheck.EligibilityCode);
 
-        if (!eligibilityCheck.LastName.IsNullOrEmpty())
+        if (!string.IsNullOrEmpty(eligibilityCheck.LastName))
         {
             soapMessage = soapMessage.Replace("<ns:Surname/>",
                 $"<ns:Surname>{eligibilityCheck.LastName}</ns:Surname>");

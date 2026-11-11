@@ -6,7 +6,6 @@ using CheckYourEligibility.Core.Extensions;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.Helpers;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.Core.UseCases;
 
@@ -50,7 +49,7 @@ public class CreateRateLimitEventUseCase : ICreateRateLimitEventUseCase
     {
         var localAuthorityIds = _httpContextAccessor.HttpContext?.User.GetSpecificScopeIds("local_authority");
         //Early exit if no LA id
-        if (localAuthorityIds.IsNullOrEmpty() || localAuthorityIds.SequenceEqual([0]))
+        if (localAuthorityIds == null || localAuthorityIds.Count == 0 || localAuthorityIds.SequenceEqual([0]))
         {
             return true;
         }

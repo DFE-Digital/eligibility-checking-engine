@@ -1,7 +1,5 @@
 using CheckYourEligibility.Core.Boundary.Responses;
-using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.Core.UseCases;
 
@@ -23,7 +21,7 @@ public class SearchEstablishmentsUseCase : ISearchEstablishmentsUseCase
 
     public async Task<IEnumerable<Establishment>> Execute(string query, string? la, string? mat)
     {
-        if (query.IsNullOrEmpty()) throw new ArgumentException();
+        if (string.IsNullOrEmpty(query)) throw new ArgumentException();
         if (query.Length < 3 || query.Length > int.MaxValue) throw new ArgumentException();
 
         var results = await _gateway.Search(query, la, mat);

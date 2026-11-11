@@ -9,7 +9,6 @@ using CheckYourEligibility.Core.Gateways.Factories;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
@@ -590,7 +589,7 @@ public class CheckingEngineGateway : ICheckingEngine
         }
         else
         {
-            if (!checkData.NationalInsuranceNumber.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(checkData.NationalInsuranceNumber))
             {
                 var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type, dbContextFactory);
                 //To ensure correct LA ID is passed when using ECS for checks
@@ -658,7 +657,7 @@ public class CheckingEngineGateway : ICheckingEngine
                     }
                 }
             }
-            else if (!checkData.NationalAsylumSeekerServiceNumber.IsNullOrEmpty())
+            else if (!string.IsNullOrEmpty(checkData.NationalAsylumSeekerServiceNumber))
             {
                 var useHomeOfficeData =
                     _configuration.GetValue<bool>($"HomeOffice:CheckTypes:{result.Type}");

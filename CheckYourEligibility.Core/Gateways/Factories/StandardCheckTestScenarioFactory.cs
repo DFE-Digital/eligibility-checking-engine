@@ -1,6 +1,5 @@
 ﻿using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Factories.Helper;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CheckYourEligibility.Core.Gateways.Factories
 {
@@ -19,12 +18,12 @@ namespace CheckYourEligibility.Core.Gateways.Factories
         }
         public bool IsTestCase(string? nino, string? nass) {
 
-            if (!nino.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(nino))
             {
                 return _testDataConfiguration.NinoTestScenarios.Keys.Any(prefix => nino.StartsWith(prefix));
             }
 
-            if (!nass.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(nass))
             {
                 var nassPrefix = nass.Substring(2, 2);
                 return _testDataConfiguration.NassTestScenarios.Keys.Any(prefix => nassPrefix == prefix);
@@ -37,7 +36,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
         public (CheckEligibilityStatus, EligibilityTier?) TestDataCheck(string? nino, string? nass, CheckEligibilityType checkType)
         {
 
-            if (!nino.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(nino))
             {
                 if (checkType == CheckEligibilityType.FreeSchoolMeals) {
 
@@ -53,7 +52,7 @@ namespace CheckYourEligibility.Core.Gateways.Factories
                 var scenario = _testDataConfiguration.NinoTestScenarios.FirstOrDefault(x => nino.StartsWith(x.Key));
                 return scenario.Value;
             }
-            if (!nass.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(nass))
                
             {
                 var nassPrefix = nass.Substring(2, 2);
