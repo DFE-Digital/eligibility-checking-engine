@@ -1,0 +1,108 @@
+trigger:
+  - main
+
+pr: none
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+stages:
+## -- build and test -- ##
+  - stage: BuildAndTest
+    displayName: 'Build and Test Core Package'
+    jobs:
+    - job: BuildCorePackage
+      displayName: 'Build Core Package'
+      pool:
+        name: Azure Pipelines
+        vmImage: 'ubuntu-latest'
+      steps:
+      - task: UseDotNet@2
+        inputs:
+          packageType: 'sdk'
+          version: '10.0.x'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore'
+        inputs:
+          command: 'restore'
+          projects: '$(solution)'
+          verbosityRestore: 'Minimal'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Build solution'
+        inputs:
+          command: 'build'
+          projects: '$(solution)'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run core unit tests'
+        inputs:
+          command: 'test'
+          projects: 'CheckYourEligibility.Core.Tests/CheckYourEligibility.Core.Tests.csproj'
+          arguments: '--configuration $(buildConfiguration) --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'Core Unit Tests'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run core integration tests'
+        inputs:
+          command: 'test'
+          projects: 'CheckYourEligibility.Core.IntegrationTests/CheckYourEligibility.Core.IntegrationTests.csproj'
+          arguments: '--configuration $(buildConfiguration) --no-build --verbosity minimal'
+          publishTestResults: true
+          testRunTitle: 'Core Integration Tests'
+
+## -- pack and publish -- ##
+  - stage: PackAndPublish
+    displayName: 'Pack and Publish NuGet Package'
+    dependsOn: BuildAndTest
+    condition: succeeded()
+    jobs:
+    - job: PublishNuGet
+      displayName: 'Publish to Azure Artifacts'
+      pool:
+        name: Azure Pipelines
+        vmImage: 'ubuntu-latest'
+      steps:
+      - task: UseDotNet@2
+        inputs:
+          packageType: 'sdk'
+          version: '10.0.x'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore'
+        inputs:
+          command: 'restore'
+          projects: 'CheckYourEligibility.Core/CheckYourEligibility.Core.csproj'
+          verbosityRestore: 'Minimal'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Pack NuGet package'
+        env:
+          Build_BuildNumber: $(Build.BuildNumber)
+        inputs:
+          command: 'pack'
+          packagesToPack: 'CheckYourEligibility.Core/CheckYourEligibility.Core.csproj'
+          configuration: '$(buildConfiguration)'
+          packDirectory: '$(Build.ArtifactStagingDirectory)'
+          versioningScheme: 'off'
+
+      - task: NuGetCommand@2
+        displayName: 'Push to Azure Artifacts'
+        inputs:
+          command: 'push'
+          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+          nuGetFeedType: 'internal'
+          publishVstsFeed: 's203-ece'
+          allowPackageConflicts: true
+          verbosityPush: 'Detailed'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish NuGet artifacts'
+        inputs:
+          pathToPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: 'nuget-packages'

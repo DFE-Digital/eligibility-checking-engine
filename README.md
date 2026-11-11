@@ -4,7 +4,7 @@ This repo contains shared business logic and the API for the Eligibility Checkin
 
 ## Setup
 
-This is a .NET 8 project - you'll need the latest .NET SDK etc to run it locally.
+This is a .NET 10.0 project - you'll need the latest .NET SDK etc to run it locally.
 
 ### Config
 
@@ -56,6 +56,9 @@ cd CheckYourEligibility.API.Tests
 dotnet test
 `
 
+### Core NuGet package
+
+See [Core NuGet package details](docs/core-nuget-package.md) for details
 
 ### Cypress
 Assuming you have NPM installed.
@@ -100,27 +103,9 @@ Establishment Data -> Establishment Fields CSV.
 
 The contents is then POSTed to `/importEstablishments`
 
-## Resources
-
-### Architecture
-
-![Architecture](docs/images/api-infrastructure.png)
-
-### Data flow
-
-![Data flow](docs/images/api-data.png)
-
-### Data structure
-
-![Data structure](docs/images/api-database.png)
-
-### Deployment
-
-![Deployment](docs/images/api-pipeline.png)
-
 ### Migrations
 
-Entity Framework migrations are should be performed from the CheckYourEligibility.API project directory, however the migration code is stored in the CheckYourEligibility.Core project in the CheckYourEligibility.Core.Migrations namespace.
+Entity Framework migrations are should be performed from the `CheckYourEligibility.API` project directory, however the migration code is stored in the `CheckYourEligibility.Core` project in the `CheckYourEligibility.Core.Migrations` namespace.
 
 #### Run Latest migration
 

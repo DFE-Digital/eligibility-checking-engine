@@ -5,7 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>CheckYourEligibility.Core</PackageId>
-    <Version>0.1.10</Version>
+    <!-- Base version - update this when bumping major/minor versions -->
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <!-- Use build number in pipeline, fall back to base version for local builds -->
+    <Version Condition="'$(Build_BuildNumber)' != ''">$(VersionPrefix).$(Build_BuildNumber)</Version>
+    <Version Condition="'$(Build_BuildNumber)' == ''">$(VersionPrefix)-local</Version>
     <Authors>Various</Authors>
     <Company>Department for Education</Company>
   </PropertyGroup>
