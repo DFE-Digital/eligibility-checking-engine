@@ -8,7 +8,7 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.IntegrationTests;
 using CheckYourEligibility.Core.Database;
 
-namespace CheckYourEligibility.Core.IntegrationTests;
+namespace CheckYourEligibility.Core.IntegrationTests.Gateways;
 
 [TestFixture]
 [NonParallelizable]
