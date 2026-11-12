@@ -7,11 +7,16 @@
     <PackageId>CheckYourEligibility.Core</PackageId>
     <!-- Base version - update this when bumping major/minor versions -->
     <VersionPrefix>0.1.0</VersionPrefix>
-    <!-- Use build number in pipeline, fall back to base version for local builds -->
-    <Version Condition="'$(Build_BuildNumber)' != ''">$(VersionPrefix).$(Build_BuildNumber)</Version>
-    <Version Condition="'$(Build_BuildNumber)' == ''">$(VersionPrefix)-local</Version>
     <Authors>Various</Authors>
     <Company>Department for Education</Company>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Build_BuildNumber)' != ''">
+    <Version>$(VersionPrefix).$(Build_BuildNumber)</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Build_BuildNumber)' == ''">
+    <Version>$(VersionPrefix)-local</Version>
   </PropertyGroup>
 
   <ItemGroup>
