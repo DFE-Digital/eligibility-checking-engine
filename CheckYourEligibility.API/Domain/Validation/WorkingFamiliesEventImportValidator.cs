@@ -70,7 +70,7 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
 		RuleFor(x => x.ChildLastName)
 			.NotEmpty()
 				.WithMessage(ValidationMessages.ChildLastNameEmpty);
-		
+
 		RuleFor(x => x.ChildDateOfBirth)
 			.Cascade(CascadeMode.Stop)
 			.Must(x => x != ImportDateValues.EmptyDate)
@@ -85,17 +85,26 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
 			.Must(DataValidation.BeAValidPostcode)
 				.WithMessage(ValidationMessages.ChildPostCodeInvalid);
 
-		//Partner - Optional cells when present must be valid
-		When(x => !x.PartnerNationalInsuranceNumber.IsNullOrEmpty(), () =>
+		//Partner - Optional cells when any are present all fields must be valid
+		When(x => HasAnyPartnerDetail(x), () =>
 		{
-			RuleFor(x => x.PartnerNationalInsuranceNumber) //isValid
+			RuleFor(x => x.PartnerFirstName)
+				.NotEmpty()
+				.WithMessage(ValidationMessages.PartnerFirstNameEmpty);
+
+			RuleFor(x => x.PartnerLastName)
+				.NotEmpty()
+				.WithMessage(ValidationMessages.PartnerLastNameEmpty);
+
+			RuleFor(x => x.PartnerNationalInsuranceNumber)
+				.Cascade(CascadeMode.Stop)
+				.NotEmpty()
+					.WithMessage(ValidationMessages.PartnerNINumberEmpty)
 				.Must(DataValidation.BeAValidNi)
 					.WithMessage(ValidationMessages.PartnerNINumberInvalid);
-		});
 
-		When(x => x.PartnerDateOfBirth.HasValue, () =>
-		{
 			RuleFor(x => x.PartnerDateOfBirth)
+				.NotNull()
 				.Must(x => x != ImportDateValues.InvalidDate)
 				.WithMessage(ValidationMessages.PartnerDOBInvalid);
 		});
@@ -109,5 +118,13 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
 				.WithMessage(ValidationMessages.SubmissionDateInvalid)
 			.Must(DataValidation.BeAPastDate)
 				.WithMessage(ValidationMessages.SubmissionDateInFuture);
+	}
+	private static bool HasAnyPartnerDetail(WorkingFamiliesEvent x)
+	{
+		return
+			!string.IsNullOrWhiteSpace(x.PartnerFirstName) ||
+			!string.IsNullOrWhiteSpace(x.PartnerLastName) ||
+			x.PartnerDateOfBirth.HasValue ||
+			!string.IsNullOrWhiteSpace(x.PartnerNationalInsuranceNumber);
 	}
 }
