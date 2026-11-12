@@ -1,3 +1,4 @@
+using AutoFixture;
 using CheckYourEligibility.Core.Database;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Gateways;
@@ -9,11 +10,13 @@ namespace CheckYourEligibility.Core.IntegrationTests.Gateways;
 
 public class RateLimitGatewayTests 
 {
+    private readonly Fixture _fixture = new();
     private IEligibilityCheckContext _fakeInMemoryDb;
     private RateLimitGateway _sut;
     [SetUp]
     public void Setup()
     {
+
         _fakeInMemoryDb = SqlServerFixture.CreateContext();       
     
         var configForRLCleanUp = new Dictionary<string, string?>
@@ -31,10 +34,8 @@ public class RateLimitGatewayTests
     public async Task Given_Create_Should_Store_Event()
     {
         // Arrange
-        var checkEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString()
-        };
+        var checkEvent = _fixture.Create<RateLimitEvent>();
+
         // Act
         await _sut.Create(checkEvent);
         // Assert
@@ -45,11 +46,9 @@ public class RateLimitGatewayTests
     public async Task Given_Existing_Event_Update_Return_Pass()
     {
         // Arrange
-        var mockEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString(),
-            Accepted = true
-        };
+        var mockEvent = _fixture.Build<RateLimitEvent>()
+                                .With(x => x.Accepted, true)
+                                .Create();
         _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         // Act
@@ -88,13 +87,11 @@ public class RateLimitGatewayTests
     {
         // Arrange
         string _partitionName = "test-partition";
-        var checkEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString(),
-            QuerySize = 1,
-            PartitionName = _partitionName,
-            TimeStamp = DateTime.UtcNow.AddMinutes(-30)
-        };
+        var checkEvent = _fixture.Build<RateLimitEvent>()
+                                .With(x => x.QuerySize, 1)
+                                .With(x => x.PartitionName, _partitionName)
+                                .With(x => x.TimeStamp, DateTime.UtcNow.AddMinutes(-30))
+                                .Create();
         var bulkEvent = new RateLimitEvent
         {
             RateLimitEventID = Guid.NewGuid().ToString(),
@@ -130,11 +127,9 @@ public class RateLimitGatewayTests
     public async Task Given_CleanUpRateLimitEvents_Should_Remove_Old_Events()
     {
         // Arrange
-        var checkEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString(),
-            TimeStamp = DateTime.UtcNow.AddDays(-10)
-        };
+        var checkEvent = _fixture.Build<RateLimitEvent>()
+                                .With(x => x.TimeStamp, DateTime.UtcNow.AddDays(-10))
+                                .Create();
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
@@ -149,11 +144,9 @@ public class RateLimitGatewayTests
     public async Task Given_CleanUpRateLimitEvents_Should_Keep_Current_Events()
     {
         // Arrange
-        var checkEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString(),
-            TimeStamp = DateTime.UtcNow.AddDays(-6)
-        };
+        var checkEvent = _fixture.Build<RateLimitEvent>()
+                                .With(x => x.TimeStamp, DateTime.UtcNow.AddDays(-6))
+                                .Create();
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
@@ -168,11 +161,9 @@ public class RateLimitGatewayTests
     public async Task Given_CleanUpRateLimitEvents_No_Config_Should_Keep_All()
     {
         // Arrange
-        var checkEvent = new RateLimitEvent
-        {
-            RateLimitEventID = Guid.NewGuid().ToString(),
-            TimeStamp = DateTime.UtcNow.AddDays(-10)
-        };
+        var checkEvent = _fixture.Build<RateLimitEvent>()
+                                .With(x => x.TimeStamp, DateTime.UtcNow.AddDays(-10))
+                                .Create();
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
