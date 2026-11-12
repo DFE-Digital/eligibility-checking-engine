@@ -55,7 +55,7 @@ public sealed class TemporaryCodeUploadGateway : ITemporaryCodeUpload
 	{
 		try
 		{
-			var cutoffDate = DateTime.UtcNow.Date.AddDays(-30);
+			var cutoffDate = DateTime.UtcNow.Date.AddDays(-60);
 
 			// Base query to get non-deleted temoraryCodeUploads
 			var query = _db.TemporaryCodeUploads
