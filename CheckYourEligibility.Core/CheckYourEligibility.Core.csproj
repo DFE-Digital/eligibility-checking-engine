@@ -11,12 +11,12 @@
     <Company>Department for Education</Company>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Build_BuildNumber)' != ''">
-    <Version>$(VersionPrefix).$(Build_BuildNumber)</Version>
+  <PropertyGroup Condition="'$(Build_BuildId)' != ''">
+    <Version>$(VersionPrefix)</Version>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Build_BuildNumber)' == ''">
-    <Version>$(VersionPrefix)-local</Version>
+  <PropertyGroup Condition="'$(Build_BuildId)' != ''">
+    <PackageVersion>$(VersionPrefix).$(Build_BuildId)</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
