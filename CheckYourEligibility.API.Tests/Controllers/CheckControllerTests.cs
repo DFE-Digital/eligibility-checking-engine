@@ -1,12 +1,11 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
-using CheckYourEligibility.API.UseCases.Internal;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +14,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
+using CheckYourEligibility.Core.UseCases.Internal;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class CheckControllerTests : TestBase.TestBase
+public class CheckControllerTests : ControllerTestBase
 {
     private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
@@ -44,6 +44,8 @@ public class CheckControllerTests : TestBase.TestBase
     [SetUp]
     public void Setup()
     {
+        TestClaimIdentifier = "unit-test-check-controller";
+
         _mockCheckEligibilityBulkUseCase = new Mock<ICheckEligibilityBulkUseCase>(MockBehavior.Strict);
         _mockCheckEligibilityUseCase = new Mock<ICheckEligibilityUseCase>(MockBehavior.Strict);
         _mockProcessEligibilityBulkCheckUseCase = new Mock<IProcessEligibilityBulkCheckUseCase>(MockBehavior.Strict);
@@ -88,7 +90,7 @@ public class CheckControllerTests : TestBase.TestBase
             HttpContext = httpContext
         };
         // Setup user context
-        SetupControllerWithLocalAuthorityIds([1]);
+        SetupControllerWithLocalAuthorityIds(_sut, [1]);
     }
 
     [TearDown]
@@ -107,27 +109,6 @@ public class CheckControllerTests : TestBase.TestBase
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }
-
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-        claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "unit-test-check-controller"));
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Test]

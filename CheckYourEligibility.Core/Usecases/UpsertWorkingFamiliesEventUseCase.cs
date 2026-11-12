@@ -1,0 +1,126 @@
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Helpers;
+
+namespace CheckYourEligibility.Core.UseCases;
+
+public interface IUpsertWorkingFamiliesEventUseCase
+{
+    Task<WorkingFamiliesEvent> Execute(string hmrcId, EligibilityEventRequest request);
+}
+
+public class UpsertWorkingFamiliesEventUseCase : IUpsertWorkingFamiliesEventUseCase
+{
+    private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
+    private readonly IAudit _auditGateway;
+    private readonly ILogger<UpsertWorkingFamiliesEventUseCase> _logger;
+
+    public UpsertWorkingFamiliesEventUseCase(
+        IWorkingFamiliesEvent gateway,
+        IAudit auditGateway,
+        ILogger<UpsertWorkingFamiliesEventUseCase> logger)
+    {
+        _workingFamiliesEventGateway = gateway;
+        _auditGateway = auditGateway;
+        _logger = logger;
+    }
+
+    public async Task<WorkingFamiliesEvent> Execute(string hmrcId, EligibilityEventRequest request)
+    {
+        var eventData = request.EligibilityEvent!;
+
+        // Conflict check: same HMRC id but different DERN → 409
+        var existing = await _workingFamiliesEventGateway.GetByHMRCId(hmrcId);
+        if (existing != null && existing.EligibilityCode.Trim() != eventData.Dern.Trim())
+            throw new InvalidOperationException("CONFLICT");
+
+        // Overlap check: different HMRC id, same DERN, overlapping validity dates → 400
+        var overlapping = await _workingFamiliesEventGateway.GetOverlappingEventsByDern(
+            eventData.Dern, hmrcId, eventData.ValidityStartDate, eventData.ValidityEndDate);
+        if (overlapping.Count > 0)
+        {
+            var overlaps = overlapping.Select(o => new OverlapDetail
+            {
+                EligibilityEventId = o.HMRCEligibilityEventId!,
+                Dern = o.EligibilityCode.Trim(),
+                ValidityStartDate = o.ValidityStartDate,
+                ValidityEndDate = o.ValidityEndDate
+            }).ToList();
+
+            throw new DernOverlapException(
+                hmrcId, eventData.Dern,
+                eventData.ValidityStartDate, eventData.ValidityEndDate,
+                overlaps);
+        }
+
+        var domain = new WorkingFamiliesEvent
+        {
+            WorkingFamiliesEventID = existing?.WorkingFamiliesEventID ?? Guid.NewGuid().ToString(),
+            HMRCEligibilityEventId = hmrcId,
+            EligibilityCode = eventData.Dern,
+            ChildFirstName = eventData.Child!.Forename,
+            ChildLastName = eventData.Child.Surname,
+            ChildDateOfBirth = eventData.Child.Dob,
+            ChildPostCode = eventData.Child.PostCode,
+            ParentFirstName = eventData.Parent!.Forename,
+            ParentLastName = eventData.Parent.Surname,
+            ParentNationalInsuranceNumber = eventData.Parent.Nino,
+            ParentDateOfBirth = eventData.Parent.Dob ?? DateTime.MinValue,
+            PartnerFirstName = eventData.Partner?.Forename ?? string.Empty,
+            PartnerLastName = eventData.Partner?.Surname ?? string.Empty,
+            PartnerNationalInsuranceNumber = eventData.Partner?.Nino,
+            PartnerDateOfBirth = eventData.Partner?.Dob ?? DateTime.MinValue,
+            SubmissionDate = eventData.SubmissionDate!.Value,
+            ValidityStartDate = eventData.ValidityStartDate,
+            ValidityEndDate = eventData.ValidityEndDate,
+            DiscretionaryValidityStartDate = WorkingFamiliesEventHelper.GetDiscretionaryStartDate(
+                eventData.ValidityStartDate, eventData.SubmissionDate!.Value),
+            GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(eventData.SubmissionDate!.Value, eventData.ValidityEndDate, eventData.Child.Dob),
+            IsDeleted = false,
+            DeletedDateTime = null,
+            // Set CreatedDateTime only for new records; gateway preserves it on updates
+            CreatedDateTime = existing == null ? DateTime.UtcNow : existing.CreatedDateTime,
+            EventDateTime = eventData.EventDateTime
+        };
+        // save incoming events first so we do not lose third-party data
+        var result = await _workingFamiliesEventGateway.UpsertWorkingFamiliesEvent(domain);
+
+        try
+        {
+            WorkingFamiliesEventSummary mappedEventSummaryRecord = new();
+            // Check for existing records in the working families events table
+            // Check for existing summary record for that event
+            var existingSummaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(result.EligibilityCode);
+            // The count includes the incoming event because events are persisted before
+            // contiguity is evaluated, ensuring no third-party event data is lost.
+            // Subtract one so the helper evaluates only the previously existing events.
+            int historicEventRecordsCount = existingSummaryRecord == null ? 0
+                : Math.Max(0, await _workingFamiliesEventGateway.GetWorkingFamiliesEventsCount(result.EligibilityCode) - 1);
+
+
+            // Evaluate contiguity for event
+            mappedEventSummaryRecord = WorkingFamiliesEventHelper.EvaluateContiguityForCodeFromIncomingEvent(result, existingSummaryRecord, historicEventRecordsCount);
+
+            if (existingSummaryRecord == null)
+            {
+                await _workingFamiliesEventGateway.CreateWorkingFamiliesSummaryRecordAsync(mappedEventSummaryRecord);
+            }
+            else
+            {
+                mappedEventSummaryRecord = WorkingFamiliesEventHelper.MapPIWorkingFamilySummaryFromWorkingFamilyEvent(mappedEventSummaryRecord, result);
+                await _workingFamiliesEventGateway.UpdateWorkingFamiliesSummaryRecordAsync(mappedEventSummaryRecord);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("UpsertWorkingFamiliesSummaryRecord", ex);
+            throw;
+        }
+        var safeId = hmrcId?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        _logger.LogInformation("Working families event upserted for HMRC id {HMRCId}", safeId);
+
+        return result;
+    }
+}

@@ -44,7 +44,7 @@ accurately without real infrastructure.
 
 ## Current repository implementation
 
-The integration-test project is `CheckYourEligibility.API.IntegrationTests`.
+The integration-test project is `CheckYourEligibility.Core.IntegrationTests`.
 
 It currently:
 
@@ -56,7 +56,7 @@ It currently:
 - runs separately from the unit-test suite in the pull-request pipeline.
 
 Local setup and execution instructions are documented in
-[`CheckYourEligibility.API.IntegrationTests/README.md`](../CheckYourEligibility.API.IntegrationTests/README.md).
+[`CheckYourEligibility.Core.IntegrationTests/README.md`](../CheckYourEligibility.Core.IntegrationTests/README.md).
 
 ## Test design principles
 
@@ -113,7 +113,7 @@ Before adding a test, confirm that the scenario genuinely requires SQL Server.
 
 Then:
 
-1. Add the test to `CheckYourEligibility.API.IntegrationTests`.
+1. Add the test to `CheckYourEligibility.Core.IntegrationTests`.
 2. Reuse the shared SQL Server fixture.
 3. Apply or reuse the application migrations.
 4. Arrange only the data required by the scenario.
@@ -194,7 +194,7 @@ atomic allocation approach and now protect the complete concurrent
 foster-family creation path.
 
 Working Families correction is another reference scenario. Its
-[SQL-backed tests](../CheckYourEligibility.API.IntegrationTests/WorkingFamiliesCorrectionGatewayTests.cs)
+[SQL-backed tests](../CheckYourEligibility.Core.IntegrationTests/WorkingFamiliesCorrectionGatewayTests.cs)
 check that the summary and latest event update together, and that a stale
 record version is rejected without saving. This complements the allocation
 example with atomic correction and optimistic concurrency.

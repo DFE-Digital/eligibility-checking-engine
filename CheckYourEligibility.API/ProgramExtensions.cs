@@ -1,172 +1,17 @@
-﻿using CheckYourEligibility.API.Adapters;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Authorization;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Extensions;
-using CheckYourEligibility.API.Extensions.Authorization;
-using CheckYourEligibility.API.Filters;
-using CheckYourEligibility.API.Gateways;
-using CheckYourEligibility.API.Gateways.Interfaces;
+﻿using CheckYourEligibility.API.Extensions.Authorization;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 namespace CheckYourEligibility.API;
 
 [ExcludeFromCodeCoverage(Justification = "extension of program")]
 public static class ProgramExtensions
 {
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
-    {
-        var connectionString = configuration.GetValue<string>("ConnectionString");
-
-        services.AddDbContextFactory<EligibilityCheckContext>(options =>
-          options.UseSqlServer(
-              connectionString,
-              x => x.MigrationsAssembly("CheckYourEligibility.API")), lifetime: ServiceLifetime.Scoped);
-
-        services.AddDbContext<IEligibilityCheckContext, EligibilityCheckContext>(options =>
-            options.UseSqlServer(
-                connectionString,
-                x => x.MigrationsAssembly("CheckYourEligibility.API"))
-
-        );
-
-        return services;
-    }
-
-    public static IServiceCollection AddAzureClients(this IServiceCollection services, IConfiguration configuration)
-    {
-        var connectionString = configuration.GetValue<string>("Queue:ConnectionString");
-        services.AddAzureClients(builder => { builder.AddQueueServiceClient(connectionString); });
-        return services;
-    }
-
-    public static IServiceCollection AddServices(this IServiceCollection services)
-    {
-        services.AddTransient<ICheckEligibility, CheckEligibilityGateway>();
-        services.AddTransient<IEligibilityCheckReporting, EligibilityCheckReportingGateway>();
-        services.AddTransient<IBulkCheck, BulkCheckGateway>();
-        services.AddTransient<ICreateApplicationsFromBulkCheck, CreateApplicationsFromBulkCheckGateway>();
-        services.AddTransient<ICheckingEngine, CheckingEngineGateway>();
-        services.AddTransient<IStorageQueue, StorageQueueGateway>();
-        services.AddTransient<IApplication, ApplicationGateway>();
-        services.AddTransient<ILocalAuthority, LocalAuthorityGateway>();
-        services.AddTransient<IAdministration, AdministrationGateway>();
-        services.AddTransient<INotify, NotifyGateway>();
-        services.AddSingleton<INotificationClientFactory, NotificationClientFactory>();
-        services.AddTransient<IEcsAdapter, EcsAdapter>();
-        services.AddTransient<IEstablishmentSearch, EstablishmentSearchGateway>();
-        services.AddTransient<IUsers, UsersGateway>();
-        services.AddTransient<IAudit, AuditGateway>();
-        services.AddTransient<IHash, HashGateway>();
-        services.AddTransient<IRateLimit, RateLimitGateway>();
-        services.AddTransient<IWorkingFamiliesReporting, WorkingFamiliesReportingGateway>();
-        services.AddTransient<IWorkingFamiliesDualRunningCheck, WorkingFamiliesDualRunningCheckGateway>();
-        services.AddTransient<IWorkingFamiliesEvent, WorkingFamiliesEventGateway>();
-        services.AddTransient<IMultiAcademyTrust, MultiAcademyTrustGateway>();
-        services.AddTransient<IEligibilityPolicy, EligibilityPolicyGateway>();
-        services.AddTransient<IFosterFamilies, FosterFamiliesGateway>();
-        services.AddTransient<IEstablishmentManagement, EstablishmentManagementGateway>();
-        services.AddTransient<ITemporaryCodeUpload, TemporaryCodeUploadGateway>();
-        services.AddTransient<IWorkingFamiliesCorrection, WorkingFamiliesCorrectionGateway>();
-        return services;
-    }
-
-
-    private static bool ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild(
-        HttpRequestMessage httpRequestMsg,
-        X509Certificate2 certificate,
-        X509Chain x509Chain,
-        SslPolicyErrors policyErrors)
-    {
-        return true;
-    }
-    public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
-    {
-
-
-        // Register HttpClient normally
-        services.AddHttpClient("Dwp", client =>
-        {
-            client.BaseAddress = new Uri(configuration["Dwp:BaseUrl"]);
-        }).ConfigurePrimaryHttpMessageHandler(() =>
-        {
-
-            var privateKeyBytes = Convert.FromBase64String(configuration["Dwp:ApiCertificate"]);
-            var cert = new X509Certificate2(privateKeyBytes, (string)null, X509KeyStorageFlags.MachineKeySet);
-            var handler = new HttpClientHandler();
-            handler.ClientCertificates.Add(cert);
-            handler.ServerCertificateCustomValidationCallback = ByPassCertErrorsForTestPurposesDoNotDoThisInTheWild;
-            return handler;
-        })
-    .AddPolicyHandler((sp, msg) =>
-    {
-        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-        return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "DWP");
-    }).AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-
-        // Register DwpAdapter as singleton, inject IHttpClientFactory
-        services.AddSingleton<IDwpAdapter>(sp =>
-        {
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient("Dwp");
-            var config = sp.GetRequiredService<IConfiguration>();
-            return new DwpAdapter(loggerFactory, httpClient, config);
-        });
-
-        // Register ECS Eligibility Events adapter for forwarding to ECS via Barracuda
-        var ecsBaseUrl = configuration["Ecs:EligibilityEvents:BaseUrl"];
-        if (!string.IsNullOrEmpty(ecsBaseUrl))
-        {
-            services.AddHttpClient("EcsEligibilityEvents", client =>
-            {
-                client.BaseAddress = new Uri(ecsBaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(30);
-
-            }).AddPolicyHandler((sp, msg) =>
-            {
-                var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyRetry");
-                return HttpClientPolicies.GetRetryPolicyWithJitter(logger, "ECS");
-            })
-
-            .AddPolicyHandler(HttpClientPolicies.GetCircuitBreakerPolicy());
-
-            services.AddSingleton<IEcsEligibilityEventsAdapter>(sp =>
-            {
-                var logger = sp.GetRequiredService<ILogger<EcsEligibilityEventsAdapter>>();
-                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                var httpClient = httpClientFactory.CreateClient("EcsEligibilityEvents");
-                var config = sp.GetRequiredService<IConfiguration>();
-                return new EcsEligibilityEventsAdapter(logger, httpClient, config);
-            });
-        }
-
-        // Register client certificate validation filter
-        services.AddScoped<ClientCertificateValidationFilter>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddJwtSettings(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddTransient(provider =>
-        {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var jwtSettings = new JwtSettings();
-            config.GetSection("Jwt").Bind(jwtSettings);
-            return jwtSettings;
-        });
-
-        return services;
-    }
-
     public static IServiceCollection AddAuthorization(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

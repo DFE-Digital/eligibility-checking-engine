@@ -1,18 +1,18 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Responses.Internal;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Extensions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases.Internal;
-using CheckYourEligibility.API.UseCases;
+using System.Net;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Responses.Internal;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Extensions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
+using CheckYourEligibility.Core.UseCases.Internal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
-using System.Net;
-using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
-using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
-using CheckYourEligibility.API.Domain.Authorization;
+using NotFoundException = CheckYourEligibility.Core.Domain.Exceptions.NotFoundException;
+using ValidationException = CheckYourEligibility.Core.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
 

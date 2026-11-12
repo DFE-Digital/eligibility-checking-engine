@@ -1,0 +1,326 @@
+using AutoFixture;
+using AutoMapper;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.CsvImport;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+
+namespace CheckYourEligibility.Core.Tests.Gateways;
+
+[ExcludeFromCodeCoverage]
+public class AdministrationGatewayTests : TestBase
+{
+    private IConfiguration _configuration;
+    private IEligibilityCheckContext _fakeInMemoryDb;
+    private AdministrationGateway _sut;
+    [SetUp]
+    public void Setup()
+    {
+        var options = TestDbOptions.Create(nameof(AdministrationGatewayTests));
+
+        _fakeInMemoryDb = new EligibilityCheckContext(options);
+
+        _fakeInMemoryDb.Database.EnsureDeleted();
+        _fakeInMemoryDb.Database.EnsureCreated();
+
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var configForSmsApi = new Dictionary<string, string>
+        {
+            { $"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.eligible}", "7" },
+            { $"DataCleanseDaysSoftCheck_Status_{CheckEligibilityStatus.parentNotFound}", "3" }
+        };
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configForSmsApi)
+            .Build();
+        var webJobsConnection =
+            "DefaultEndpointsProtocol=https;AccountName=none;AccountKey=none;EndpointSuffix=core.windows.net";
+
+
+        _sut = new AdministrationGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
+    }
+
+    [TearDown]
+    public void Teardown()
+    {
+    }
+
+    [Test]
+    public void Given_CleanUpEligibilityChecks_Should_Return_Pass()
+    {
+        // Arrange
+
+        // Act
+        _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_Should_Remove_Old_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-10);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(0);
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_Should_Keep_Recent_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-1);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(1);
+    }
+
+    [Test]
+    public async Task Given_CleanUpEligibilityChecks_NotConfigured_Should_Keep_Checks()
+    {
+        // Arrange
+        var eligibilityCheck = _fixture.Create<EligibilityCheck>();
+        eligibilityCheck.Created = DateTime.UtcNow.AddDays(-1);
+        _fakeInMemoryDb.CheckEligibilities.Add(eligibilityCheck);
+        _fakeInMemoryDb.SaveChanges();
+
+        var _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
+        _sut = new AdministrationGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
+
+        // Act
+        await _sut.CleanUpEligibilityChecks();
+
+        // Assert
+        _fakeInMemoryDb.CheckEligibilities.Count().Should().Be(1);
+    }
+
+    [Test]
+    public void Given_ImportEstablishments_Should_Return_Pass()
+    {
+        var data = _fixture.CreateMany<EstablishmentRow>().ToList();
+        //Make a duplicate la
+        var existingData = data.First();
+        var la = new LocalAuthority
+        {
+            LocalAuthorityID = existingData.LaCode,
+            LaName = existingData.LaName
+        };
+        _fakeInMemoryDb.LocalAuthorities.Add(la);
+        _fakeInMemoryDb.Establishments.Add(new Establishment
+        {
+            EstablishmentID = existingData.Urn,
+            EstablishmentName = existingData.EstablishmentName,
+            LocalAuthority = la,
+            County = existingData.County,
+            Postcode = existingData.Postcode,
+            Locality = existingData.Locality,
+            Street = existingData.Street,
+            Town = existingData.Town,
+            StatusOpen = true,
+            Type = existingData.Type
+        });
+
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        _sut.ImportEstablishments(data);
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public void Given_ImportEstablishments_When_LocalAuthorityExists_Should_PreservePolicySettings()
+    {
+        var data = _fixture.CreateMany<EstablishmentRow>(1).ToList();
+
+        var row = data.First();
+        row.LaCode = 213;
+        row.LaName = "Westminster";
+
+        var existingLocalAuthority = new LocalAuthority
+        {
+            LocalAuthorityID = 213,
+            LaName = "Westminster",
+            SchoolCanReviewEvidence = true,
+            EarlyYearsPupilPremiumPolicyID = 2,
+            FreeSchoolMealsPolicyID = 4,
+            TwoYearPolicyID = 3
+        };
+
+        _fakeInMemoryDb.LocalAuthorities.Add(existingLocalAuthority);
+        _fakeInMemoryDb.SaveChanges();
+
+        // Act
+        _sut.ImportEstablishments(data);
+
+        // Assert
+        var localAuthority = _fakeInMemoryDb.LocalAuthorities.Single(x => x.LocalAuthorityID == 213);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(localAuthority.SchoolCanReviewEvidence, Is.True);
+            Assert.That(localAuthority.EarlyYearsPupilPremiumPolicyID, Is.EqualTo(2));
+            Assert.That(localAuthority.FreeSchoolMealsPolicyID, Is.EqualTo(4));
+            Assert.That(localAuthority.TwoYearPolicyID, Is.EqualTo(3));
+        });
+    }
+
+    /// <summary>
+    ///     Calling multiple times will generate concurrency errors, which is a limitation of in memory db
+    /// </summary>
+    /// <returns></returns>
+    [Test]
+    public async Task Given_ImportEstablishments_DuplicatesShould_Return_Pass()
+    {
+        // Arrange
+        var data = _fixture.CreateMany<EstablishmentRow>();
+
+        // Act
+        await _sut.ImportEstablishments(data);
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [TestCase("true", 8)]
+    [TestCase("false", null)]
+    [TestCase(null, null)]
+    public async Task Given_ImportHomeOfficeData_Should_Pass_CachedResultsExpiry_Based_On_Setting(
+        string? setting, int? expectedExpiryDays)
+    {
+        // Arrange
+        var settings = new Dictionary<string, string?> { ["HashCheckDays"] = "7" };
+        if (setting != null) settings["HomeOffice:ExpireCachedResultsOnImport"] = setting;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+        var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
+        db.Setup(x => x.BulkInsert_FreeSchoolMealsHO(It.IsAny<IEnumerable<FreeSchoolMealsHO>>(), expectedExpiryDays));
+        var sut = new AdministrationGateway(new NullLoggerFactory(), db.Object, configuration);
+        var data = _fixture.CreateMany<FreeSchoolMealsHO>().ToList();
+
+        // Act
+        await sut.ImportHomeOfficeData(data);
+
+        // Assert
+        db.Verify(x => x.BulkInsert_FreeSchoolMealsHO(data, expectedExpiryDays), Times.Once);
+    }
+
+    [Test]
+    public void Given_ImportHomeOfficeData_Should_Return_Pass()
+    {
+        // Arrange
+        var data = _fixture.CreateMany<FreeSchoolMealsHO>();
+
+        // Act
+        _sut.ImportHomeOfficeData(data);
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public void Given_ImportHMRCData_Should_Return_Pass()
+    {
+        // Arrange
+        var data = _fixture.CreateMany<FreeSchoolMealsHMRC>();
+
+        // Act
+        _sut.ImportHMRCData(data);
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public void Given_ImportWfHMRCData_Should_Return_Pass()
+    {
+        // Arrange
+        var data = _fixture.CreateMany<WorkingFamiliesEvent>();
+
+        // Act
+        _sut.BulkImportWorkingFamiliesEventHMRCData(data);
+
+        // Assert
+        Assert.Pass();
+    }
+
+    [Test]
+    public async Task Given_UpdateEstablishmentsPrivateBeta_When_EstablishmentDoesNotExist_Should_Throw_WithoutUpdating()
+    {
+        // Arrange
+        const int existingUrn = 100718;
+        const int missingUrn = 2147483647;
+
+        var localAuthority = new LocalAuthority
+        {
+            LocalAuthorityID = 213,
+            LaName = "Westminster"
+        };
+
+        var establishment = new Establishment
+        {
+            EstablishmentID = existingUrn,
+            EstablishmentName = "Existing school",
+            LocalAuthorityID = localAuthority.LocalAuthorityID,
+            LocalAuthority = localAuthority,
+            County = "London",
+            Postcode = "SW1A 1AA",
+            Locality = "Westminster",
+            Street = "Test Street",
+            Town = "London",
+            StatusOpen = true,
+            Type = "Community school",
+            InPrivateBeta = false
+        };
+
+        _fakeInMemoryDb.Establishments.Add(establishment);
+        await _fakeInMemoryDb.SaveChangesAsync();
+
+        var updates = new List<EstablishmentPrivateBetaRow>
+        {
+            new()
+            {
+                EstablishmentId = existingUrn,
+                InPrivateBeta = true
+            },
+            new()
+            {
+                EstablishmentId = missingUrn,
+                InPrivateBeta = true
+            }
+        };
+
+        // Act
+        var act = () => _sut.UpdateEstablishmentsPrivateBeta(updates);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage($"Establishment with URN {missingUrn} not found");
+
+        var unchangedEstablishment = await _fakeInMemoryDb.Establishments
+            .SingleAsync(x => x.EstablishmentID == existingUrn);
+
+        unchangedEstablishment.InPrivateBeta.Should().BeFalse();
+    }
+}

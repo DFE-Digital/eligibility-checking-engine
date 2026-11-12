@@ -1,10 +1,11 @@
 ﻿using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +13,9 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using System.Security.Claims;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class MultiAcademyTrustsControllerTests : TestBase.TestBase
+public class MultiAcademyTrustsControllerTests : ControllerTestBase
 {
     private Mock<IMultiAcademyTrust> _mockMultiAcademyTrust;
     private Mock<IGetEstablishmentsByMultiAcademyTrustIdUseCase> _getEstablismentsByMultiAcademyTrustId;

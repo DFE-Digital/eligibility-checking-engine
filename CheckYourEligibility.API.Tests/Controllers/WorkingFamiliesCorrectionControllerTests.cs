@@ -1,8 +1,8 @@
-﻿using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.UseCases;
+﻿using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
@@ -530,7 +530,7 @@ public class WorkingFamiliesCorrectionControllerTests
         var request = new WorkingFamiliesChildCorrectionRequest();
 
         var failure =
-            new CheckYourEligibility.API.Domain.Exceptions.ValidationException(
+            new CheckYourEligibility.Core.Domain.Exceptions.ValidationException(
                 new List<Error>
                 {
                 new()
