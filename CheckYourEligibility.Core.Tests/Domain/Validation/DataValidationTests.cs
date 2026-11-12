@@ -1,6 +1,7 @@
 using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.Core.Domain.Enums;
-using FeatureManagement.Domain.Validation;
+using CheckYourEligibility.Core.Domain.Validation;
 using FluentAssertions;
 
 namespace CheckYourEligibility.Core.Tests.Validators;
@@ -212,7 +213,7 @@ string value)
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.InvalidNI);
+            e.ErrorMessage == ValidationMessages.InvalidNI);
     }
 
     [TestCase(CheckEligibilityType.FreeSchoolMeals)]
@@ -227,7 +228,7 @@ string value)
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI_and_NASS);
+            e.ErrorMessage == ValidationMessages.NI_and_NASS);
     }
 
     [Test]
@@ -241,7 +242,7 @@ string value)
 
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.RequiredNI);
+            e.ErrorMessage == ValidationMessages.RequiredNI);
     }
 
     [Test]
@@ -256,7 +257,7 @@ string value)
 
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.RequiredNI);
+            e.ErrorMessage == ValidationMessages.RequiredNI);
         result.Errors.Should().NotContain(e =>
             e.PropertyName == nameof(request.NationalAsylumSeekerServiceNumber));
     }
@@ -287,7 +288,7 @@ string value)
 
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(request.NationalInsuranceNumber) &&
-            e.ErrorMessage == CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.InvalidNI);
+            e.ErrorMessage == ValidationMessages.InvalidNI);
     }
 
     private CheckEligibilityRequestData ValidRequestWithNINO(string lastName) =>

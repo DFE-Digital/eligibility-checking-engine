@@ -1,11 +1,7 @@
-// Ignore Spelling: Validator
-
-using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
-using CheckYourEligibility.Core.Domain.Validation;
 using FluentValidation;
 
-namespace FeatureManagement.Domain.Validation;
+namespace CheckYourEligibility.Core.Domain.Validation;
 
 public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFamiliesEvent>
 {

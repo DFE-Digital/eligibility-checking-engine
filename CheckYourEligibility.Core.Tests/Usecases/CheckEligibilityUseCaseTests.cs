@@ -3,6 +3,7 @@ using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Validation;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
@@ -320,7 +321,7 @@ public class CheckEligibilityUseCaseTests : TestBase
         var sut = new CheckEligibilityUseCase(
             _mockCheckGateway.Object,
             _mockAuditGateway.Object,
-            new FeatureManagement.Domain.Validation.CheckEligibilityRequestDataValidator(),
+            new CheckEligibilityRequestDataValidator(),
             _mockLogger.Object);
 
         var meta = _fixture.Create<CheckMetaData>();
@@ -375,7 +376,7 @@ public class CheckEligibilityUseCaseTests : TestBase
         var sut = new CheckEligibilityUseCase(
             _mockCheckGateway.Object,
             _mockAuditGateway.Object,
-            new FeatureManagement.Domain.Validation.CheckEligibilityRequestDataValidator(),
+            new CheckEligibilityRequestDataValidator(),
             _mockLogger.Object);
 
         var meta = _fixture.Create<CheckMetaData>();

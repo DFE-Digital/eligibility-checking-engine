@@ -5,7 +5,6 @@ using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.Helpers;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using FeatureManagement.Domain.Validation;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 

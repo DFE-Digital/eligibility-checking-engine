@@ -4,7 +4,6 @@ using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Enums;
 using CheckYourEligibility.Core.Gateways.Interfaces;
-using FeatureManagement.Domain.Validation;
 using FluentValidation;
 
 namespace CheckYourEligibility.Core.UseCases;

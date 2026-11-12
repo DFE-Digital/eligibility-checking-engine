@@ -1,11 +1,8 @@
-﻿// Ignore Spelling: Validator
-
-using CheckYourEligibility.Core.Boundary.Requests;
+﻿using CheckYourEligibility.Core.Boundary.Requests;
 using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
-using CheckYourEligibility.Core.Domain.Validation;
 using FluentValidation;
 
-namespace FeatureManagement.Domain.Validation;
+namespace CheckYourEligibility.Core.Domain.Validation;
 
 public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
 {

@@ -4,6 +4,7 @@ using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Domain.Constants;
 using CheckYourEligibility.Core.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Domain.Validation;
 using CheckYourEligibility.Core.Gateways.Interfaces;
 using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
@@ -332,7 +333,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase
     public async Task Execute_rejects_forbidden_nino_prefix_before_creating_bulk_check()
     {
         const string submittedNino = "bg-12.34/56c";
-        var validator = new FeatureManagement.Domain.Validation.CheckEligibilityRequestDataValidator();
+        var validator = new CheckEligibilityRequestDataValidator();
         _sut = new CheckEligibilityBulkUseCase(
             validator,
             _mockCheckGateway.Object,

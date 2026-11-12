@@ -12,12 +12,12 @@ using CheckYourEligibility.Core.Data.Mappings;
 using CheckYourEligibility.Core.UseCases;
 using CheckYourEligibility.Core.UseCases.Internal;
 using CheckYourEligibility.Core.Services;
-using FeatureManagement.Domain.Validation;
 using CheckYourEligibility.Core.Boundary.Requests;
 using FluentValidation;
 using CheckYourEligibility.Core.Gateways.Factories.Helper;
 using CheckYourEligibility.Core.Gateways.Factories;
 using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Validation;
 
 namespace CheckYourEligibility.Core.Extensions;
 
