@@ -76,11 +76,23 @@ namespace CheckYourEligibility.API.UseCases
 				var eventRows = from row in headerRow.ElementsAfter()
 								where row.Elements<Cell>().ElementAt(1).CellValue is not null
 								select row;
+				// If the number of data rows exceeds the maximum allowed, add a validation error and dont process further.
+				bool exceedsLimit = eventRows.Skip(1500).Any();
+				if (exceedsLimit)
+				{
+					validationErrors.Add(new ImportTempCodeValidationError
+					{
+						RowNumber = null,
+						EligibilityCode = null,
+						ErrorMessages = new List<string> { "The selected file must contain fewer than 1500 rows" }
+					});
+					throw new BulkTempCodeValidationException(validationErrors);
+				}
 				foreach (Row row in eventRows)
 				{
-					var nino = row.Elements<Cell>().ElementAt(1);
-					var ninoValueString = CsvGetHelper.getCellValueString(nino, sharedStrings, cellStyles);
-					if (string.IsNullOrEmpty(ninoValueString))
+					var eligibilityCode = row.Elements<Cell>().ElementAt(1);
+					var eligibilityCodeValueString = CsvGetHelper.getCellValueString(eligibilityCode, sharedStrings, cellStyles);
+					if (string.IsNullOrEmpty(eligibilityCodeValueString))
 					{
 						continue;
 					}
@@ -90,7 +102,6 @@ namespace CheckYourEligibility.API.UseCases
 						var cellValueString = CsvGetHelper.getCellValueString(cell, sharedStrings, cellStyles);
 						eventProps.Add(cellValueString);
 					}
-
 					var wfEvent = WorkingFamiliesEventHelper.ParseWorkingFamiliesEvent(eventProps, columnHeaders);
 					var validationResults = validator.Validate(wfEvent);
 					//if wfEvent has a valid eligibility code then check wfevents table to confirm eligibility code does not already exist
