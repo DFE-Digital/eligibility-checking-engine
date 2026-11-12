@@ -1,0 +1,11 @@
+# Private keys - DO NOT COMMIT
+*.key
+*.pem
+
+# Configuration files
+*.conf
+
+# Certificates (optional - keep for reference)
+# *.csr
+# *.cer
+# *.crt
