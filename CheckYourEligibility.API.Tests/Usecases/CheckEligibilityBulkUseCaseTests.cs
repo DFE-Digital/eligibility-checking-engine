@@ -354,7 +354,7 @@ public class CheckEligibilityBulkUseCaseTests : TestBase.TestBase
         validator.Validate((IEligibilityServiceType)item).Errors
             .Should().Contain(e =>
                 e.ErrorMessage ==
-                CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.NI);
+                CheckYourEligibility.API.Domain.Constants.ErrorMessages.ValidationMessages.InvalidNI);
 
         Func<Task> act = () => _sut.Execute(
             model,

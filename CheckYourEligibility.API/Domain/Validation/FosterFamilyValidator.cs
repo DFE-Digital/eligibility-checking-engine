@@ -51,7 +51,7 @@ public class FosterCarerRequestValidator
         RuleFor(x => x.CarerNationalInsuranceNumber)
             .NotEmpty()
             .Must(DataValidation.BeAValidNi)
-            .WithMessage(ValidationMessages.NI);
+            .WithMessage(ValidationMessages.InvalidNI);
     }
 }
 
@@ -76,7 +76,7 @@ public class FosterPartnerRequestValidator
         RuleFor(x => x.PartnerNationalInsuranceNumber)
             .NotEmpty()
             .Must(DataValidation.BeAValidNi)
-            .WithMessage(ValidationMessages.NI);
+            .WithMessage(ValidationMessages.InvalidNI);
     }
 }
 

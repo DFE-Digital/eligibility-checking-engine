@@ -740,9 +740,10 @@ public class CheckingEngineGateway : ICheckingEngine
     //TODO: These two could be adapters
     private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
     {
+        var normalisedNass = data.NationalAsylumSeekerServiceNumber.Replace("/", "");
         var context = dbContextFactory ?? _db;
         var checkReults = context.FreeSchoolMealsHO.Where(x =>
-                x.NASS == data.NationalAsylumSeekerServiceNumber
+                x.NASS == normalisedNass
                 && x.DateOfBirth == DateTime.ParseExact(data.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None))
             .Select(x => x.LastName);
 

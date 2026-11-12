@@ -9,17 +9,20 @@ describe('Verify POST application responses', () => {
             const requestBody = validApplicationSupportRequestBody();
             cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
                 cy.verifyApiResponseCode(response, 202);
+                cy.extractGuid(response);
                 cy.apiRequest('POST', '/user', validUserRequestBody(), token).then((response) => {
                     validBaseApplicationRequest.Data.UserId = response.Data;
-                    cy.wait(5000);
+                    cy.get('@Guid').then((eligibilityCheckId) => {
+                        cy.pollCheckStatus(`${eligibilityCheckId}`, token, 10).then(() => {
+                            //Make post request for eligibility check
+                            cy.apiRequest('POST', 'application', validBaseApplicationRequest, token).then((response) => {
+                                // Assert the status and statusText
+                                cy.verifyApiResponseCode(response, 201);
 
-                    //Make post request for eligibility check
-                    cy.apiRequest('POST', 'application', validBaseApplicationRequest, token).then((response) => {
-                        // Assert the status and statusText
-                        cy.verifyApiResponseCode(response, 201);
-
-                        // Assert the response body data
-                        cy.verifyPostApplicationResponse(response, validBaseApplicationRequest);
+                                // Assert the response body data
+                                cy.verifyPostApplicationResponse(response, validBaseApplicationRequest);
+                            });
+                        });
                     });
                 });
             });

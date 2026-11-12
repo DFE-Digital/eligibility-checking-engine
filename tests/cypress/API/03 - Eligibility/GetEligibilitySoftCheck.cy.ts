@@ -16,7 +16,6 @@ describe('GET eligibility soft check by Guid', () => {
                 //make get request using the guid 
                 cy.get('@Guid').then((Guid) => {
                     cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
-                        // Assert the response 
                         cy.verifyApiResponseCode(newResponse, 200)
                         // requestBody.data.lastName = requestBody.data.lastName.toUpperCase();
                         cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody)
@@ -33,23 +32,16 @@ describe('GET eligibility soft check by Guid', () => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
 
-                const pollCheck = (retries = 0, waitTime = 2000) => {
-                    cy.get('@Guid').then((Guid) => {
+                cy.get('@Guid').then((Guid) => {
+                    cy.pollCheckStatus(`${Guid}`, token, 10).then(() => {
                         cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
                             cy.verifyApiResponseCode(newResponse, 200);
-                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
-                                cy.wait(waitTime).then(() => {
-                                    pollCheck(retries + 1, waitTime + 1000);
-                                });
-                            } else {
-                                cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
-                                expect(newResponse.body.data.status).to.eq('eligible');
-                                expect(newResponse.body.data.tier).to.eq('expanded');
-                            }
+                            cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
+                            expect(newResponse.body.data.status).to.eq('eligible');
+                            expect(newResponse.body.data.tier).to.eq('expanded');
                         });
                     });
-                };
-                pollCheck();
+                });
             });
         });
     });
@@ -61,23 +53,16 @@ describe('GET eligibility soft check by Guid', () => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
 
-                const pollCheck = (retries = 0, waitTime = 2000) => {
-                    cy.get('@Guid').then((Guid) => {
+                cy.get('@Guid').then((Guid) => {
+                    cy.pollCheckStatus(`${Guid}`, token, 10).then(() => {
                         cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
                             cy.verifyApiResponseCode(newResponse, 200);
-                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 2) {
-                                cy.wait(waitTime).then(() => {
-                                    pollCheck(retries + 1, waitTime + 1000);
-                                });
-                            } else {
-                                cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
-                                expect(newResponse.body.data.status).to.eq('eligible');
-                                expect(newResponse.body.data.tier).to.eq('targeted');
-                            }
+                            cy.verifyGetEligibilityCheckResponseData(newResponse, requestBody, true);
+                            expect(newResponse.body.data.status).to.eq('eligible');
+                            expect(newResponse.body.data.tier).to.eq('targeted');
                         });
                     });
-                };
-                pollCheck();
+                });
             });
         });
     });
@@ -90,45 +75,46 @@ describe('GET eligibility soft check by Guid', () => {
                 cy.verifyApiResponseCode(response, 202);
                 cy.extractGuid(response);
 
-                const pollCheck = (retries = 0, waitTime = 2000) => {
-                    cy.get('@Guid').then((Guid) => {
+                cy.get('@Guid').then((Guid) => {
+                    cy.pollCheckStatus(`${Guid}`, token, 10).then(() => {
                         cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
                             cy.verifyApiResponseCode(newResponse, 200);
-                            if (newResponse.body.data.status === "queuedForProcessing" && retries < 3) {
-                                cy.wait(waitTime).then(() => {
-                                    pollCheck(retries + 1, waitTime + 1000);
-                                });
-                            } else {
-                                cy.verifyGetEligibilityWFCheckResponseDataNotFound(newResponse, requestBody);
-                            }
+                            cy.verifyGetEligibilityWFCheckResponseDataNotFound(newResponse, requestBody);
                         });
                     });
-                };
-                pollCheck();
+                });
             });
         });
     });
 });
-it('Verify 200 Success response is returned with valid guid Working Families found', function () {
-    getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
-        //Make post request for eligibility check
-        const requestBody = validWorkingFamiliesRequestBodyEligible();
-        cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
-            cy.verifyApiResponseCode(response, 202);
-            //extract Guid
-            cy.extractGuid(response);
-            cy.wait(5000);
-            //make get request using the guid 
-            cy.get('@Guid').then((Guid) => {
-                cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
-                    // Assert the response 
-                    cy.verifyApiResponseCode(newResponse, 200)
-                    cy.verifyGetEligibilityWFCheckResponseDataFound(newResponse, requestBody)
-                })
+    it('Verify 200 Success response is returned with valid guid Working Families found',function () {
+        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+            //Make post request for eligibility check
+            cy.log(Cypress.env('lastName'));
+            const requestBody = validWorkingFamiliesRequestBodyEligible();
+            cy.apiRequest('POST', 'check/working-families', requestBody, token).then((response) => {
+                cy.verifyApiResponseCode(response, 202);
+                //extract Guid
+                cy.extractGuid(response);
+                cy.get('@Guid').then((Guid) => {
+                    cy.pollCheckStatus(`${Guid}`, token, 10).then(() => {
+                        cy.apiRequest('GET', `check/${Guid}`, {}, token).then((newResponse) => {
+                            cy.verifyApiResponseCode(newResponse, 200)
+                            cy.verifyGetEligibilityWFCheckResponseDataFound(newResponse, requestBody)
+                        })
+                    })
+                });
+            });
+        });
+    })
+    it('Verify 404 Not Found response is returned with invalid guid', () => {
+        getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
+            cy.apiRequest('GET', 'check/7fc12dc9-5a9d-4155-887c-d2b3d60384e', {}, token).then((response) => {
+                cy.verifyApiResponseCode(response, 404)
             });
         });
     });
-})
+
 it('Verify 404 Not Found response is returned with invalid guid', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBody).then((token) => {
         cy.apiRequest('GET', 'check/7fc12dc9-5a9d-4155-887c-d2b3d60384e', {}, token).then((response) => {

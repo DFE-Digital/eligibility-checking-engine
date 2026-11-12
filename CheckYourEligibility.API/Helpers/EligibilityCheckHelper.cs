@@ -14,8 +14,6 @@ namespace CheckYourEligibility.API.Helpers
         /// <returns></returns>
         public static string GetOrganisationIdOFTypeLocalAuthority(string? organisationType, int? organisationId)
         {
-
-
             if (organisationType != OrganisationType.local_authority || organisationId is null || organisationId == 0)
             {
                 return string.Empty;
@@ -23,6 +21,7 @@ namespace CheckYourEligibility.API.Helpers
 
             return organisationId.Value.ToString();
         }
+
         /// <summary>
         /// Extract LA Id from scope if it exists
         /// else return an empty string.
@@ -46,34 +45,30 @@ namespace CheckYourEligibility.API.Helpers
                 {
                     laId = scope.Substring(LaIdStartIndex, LaIdendIndex - LaIdStartIndex).Trim();
                 }
-
             }
             return laId;
         }
-
 
         /// <summary>
         ///  Calculate EligibilityEndDate for FSM
         ///  If check is created before or on the 31st of may
         ///  then eligibilityEndDate = 31st of july the same year the check is created
-        ///  If check is created before or after the 1st of June 
+        ///  If check is created on or after the 1st of June
         ///  then eligibilityEndDate = 31st of July next year
         /// </summary>
         public static DateTime GetEligibilityEndDateFSM(DateTime createdDate)
         {
-
             DateTime eligibilityEndDate = new();
 
             if (createdDate <= new DateTime(createdDate.Year, 5, 31))
             {
                 eligibilityEndDate = new DateTime(createdDate.Year, 7, 31);
             }
-            if (createdDate >= new DateTime(createdDate.Year, 5, 31))
+            if (createdDate > new DateTime(createdDate.Year, 5, 31))
             {
                 eligibilityEndDate = new DateTime(createdDate.Year + 1, 7, 31);
             }
             return eligibilityEndDate;
         }
-
     }
 }

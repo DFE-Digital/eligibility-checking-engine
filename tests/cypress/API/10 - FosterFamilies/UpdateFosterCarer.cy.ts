@@ -18,9 +18,9 @@ describe("Update Foster Carer - happy paths", () => {
         validFosterFamilyRequestBody(),
         token,
       ).then((createResponse) => {
-        cy.wait(3000);
-
         const fosterCarerId = createResponse.body.fosterCarerId;
+
+        cy.pollApiResponse(`/foster-family/${fosterCarerId}`, token, 200);
 
         // update carer
         cy.apiRequest(
