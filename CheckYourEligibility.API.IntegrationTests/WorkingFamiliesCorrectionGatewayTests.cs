@@ -1,4 +1,5 @@
 ﻿using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Infrastructure;
@@ -48,6 +49,7 @@ public class WorkingFamiliesCorrectionGatewayTests
 
         var summary = CreateSummary();
         summary.LatestSubmissionDate = expectedEvent.SubmissionDate;
+        summary.GracePeriodEndDateApplied = true;
 
         await using (var setupContext = SqlServerFixture.CreateContext())
         {
@@ -77,6 +79,11 @@ public class WorkingFamiliesCorrectionGatewayTests
             .Be(summary.DiscretionaryValidityStartDate);
         result.GracePeriodEndDate.Should().Be(summary.GracePeriodEndDate);
         result.LastUpdatedDate.Should().Be(summary.LastUpdatedDate);
+
+        result.LatestSubmissionDate.Should().Be(expectedEvent.SubmissionDate);
+        result.GracePeriodEndDateApplied.Should().BeTrue();
+        result.EligibilityCodeType.Should().Be(EligibilityCodeType.Standard);
+        result.TermValidity.Should().NotBeNull();
 
         result.Partner.Should().BeNull();
         result.HasPartner.Should().BeFalse();
@@ -1004,6 +1011,75 @@ public class WorkingFamiliesCorrectionGatewayTests
                 savedSummary.PartnerLastName.Should().Be(lastName);
                 break;
         }
+    }
+
+    [Test]
+    public async Task Lookup_derives_confirmation_from_full_non_deleted_history()
+    {
+        var earliest = CreateEvent("Earliest", new DateTime(2025, 1, 1));
+        earliest.DiscretionaryValidityStartDate = new DateTime(2024, 12, 31);
+
+        var middle = CreateEvent("Middle", new DateTime(2025, 2, 1));
+        middle.ValidityStartDate = new DateTime(2025, 2, 1);
+        middle.DiscretionaryValidityStartDate = new DateTime(2025, 2, 1);
+
+        var latest = CreateEvent("Latest", new DateTime(2025, 3, 1));
+        latest.ValidityStartDate = new DateTime(2025, 3, 1);
+        latest.DiscretionaryValidityStartDate = new DateTime(2025, 3, 1);
+
+        var deleted = CreateEvent("Deleted", new DateTime(2024, 12, 1));
+        deleted.ValidityStartDate = new DateTime(2024, 12, 1);
+        deleted.DiscretionaryValidityStartDate = new DateTime(2024, 12, 1);
+        deleted.IsDeleted = true;
+        deleted.DeletedDateTime = new DateTime(2025, 1, 1);
+
+        var summary = CreateSummary();
+        summary.ValidityStartDate = latest.ValidityStartDate;
+        summary.DiscretionaryValidityStartDate = latest.DiscretionaryValidityStartDate;
+        summary.LatestSubmissionDate = latest.SubmissionDate;
+
+        await using (var setupContext = SqlServerFixture.CreateContext())
+        {
+            setupContext.WorkingFamiliesEventSummaries.Add(summary);
+            setupContext.WorkingFamiliesEvents.AddRange(latest, deleted, earliest, middle);
+
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var lookupContext = SqlServerFixture.CreateContext();
+        var gateway = new WorkingFamiliesCorrectionGateway(lookupContext);
+
+        var result = await gateway.GetByEligibilityCode(EligibilityCode);
+
+        result.Should().NotBeNull();
+        result!.LatestEventId.Should().Be(latest.WorkingFamiliesEventID);
+        result.Child.FirstName.Should().Be("Latest");
+
+        result.EligibilityConfirmedOn.Should().Be(new DateTime(2025, 1, 1));
+        result.IsDiscretionaryValidityStartDateApplied.Should().BeTrue();
+
+        result.ValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
+        result.DiscretionaryValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
+
+        var repeatedLookup = await gateway.GetByEligibilityCode(EligibilityCode);
+        repeatedLookup.Should().NotBeNull();
+        repeatedLookup!.Version.Should().Be(result.Version);
+
+        await using var verificationContext = SqlServerFixture.CreateContext();
+
+        var persistedLatest = await verificationContext.WorkingFamiliesEvents
+            .AsNoTracking()
+            .SingleAsync(item => item.WorkingFamiliesEventID == latest.WorkingFamiliesEventID);
+
+        persistedLatest.ValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
+        persistedLatest.DiscretionaryValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
+
+        var persistedSummary = await verificationContext.WorkingFamiliesEventSummaries
+            .AsNoTracking()
+            .SingleAsync(item => item.WorkingFamiliesEventSummaryID == summary.WorkingFamiliesEventSummaryID);
+
+        persistedSummary.ValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
+        persistedSummary.DiscretionaryValidityStartDate.Should().Be(new DateTime(2025, 3, 1));
     }
 
     #endregion
