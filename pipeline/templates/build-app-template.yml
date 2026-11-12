@@ -24,6 +24,19 @@ stages:
           packageType: 'sdk'
           version: '10.0.x'
 
+      - task: CmdLine@2
+        displayName: 'Print Git Commit Details'
+        inputs:
+          script: |
+            echo "=== Current Git Commit ==="
+            git log -1 --pretty=format:"Commit: %H%nAuthor: %an%nDate: %ai%nMessage: %s"
+            echo ""
+            echo "=== CheckYourEligibility.Core.csproj Details ==="
+            git log -1 --pretty=format:"Last modified by: %an on %ai" -- CheckYourEligibility.Core/CheckYourEligibility.Core.csproj
+            echo ""
+            echo "=== File Encoding Check ==="
+            file CheckYourEligibility.Core/CheckYourEligibility.Core.csproj || echo "file command not available"
+
       - task: DotNetCoreCLI@2
         displayName: 'Restore'
         inputs:
