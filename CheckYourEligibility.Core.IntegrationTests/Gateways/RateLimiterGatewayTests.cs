@@ -31,47 +31,45 @@ public class RateLimitGatewayTests
     public async Task Given_Create_Should_Store_Event()
     {
         // Arrange
-        var guid = Guid.NewGuid().ToString();
         var checkEvent = new RateLimitEvent
         {
-            RateLimitEventID = guid
+            RateLimitEventID = Guid.NewGuid().ToString()
         };
         // Act
         await _sut.Create(checkEvent);
         // Assert
-        _fakeInMemoryDb.RateLimitEvents.Find(guid).Should().Be(checkEvent);
+        _fakeInMemoryDb.RateLimitEvents.Find(checkEvent.RateLimitEventID).Should().Be(checkEvent);
     }
 
     [Test]
     public async Task Given_Existing_Event_Update_Return_Pass()
     {
         // Arrange
-        var guid = Guid.NewGuid().ToString();
         var mockEvent = new RateLimitEvent
         {
-            RateLimitEventID = guid,
+            RateLimitEventID = Guid.NewGuid().ToString(),
             Accepted = true
         };
         _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
         // Act
-        await _sut.UpdateStatus(guid, false);
+        await _sut.UpdateStatus(mockEvent.RateLimitEventID, false);
         // Assert        
-        _fakeInMemoryDb.RateLimitEvents.Find(guid)?.Accepted.Should().BeFalse();
+        _fakeInMemoryDb.RateLimitEvents.Find(mockEvent.RateLimitEventID)?.Accepted.Should().BeFalse();
     }
 
     [Test]
     public void Given_NonExisting_Event_Update_Should_Return_Null()
     {
         // Arrange
-        var guid = Guid.NewGuid().ToString();
+        var nonExistingEventId = Guid.NewGuid().ToString();
 
         // Act
-        var response = _sut.UpdateStatus(guid, false);
+        var response = _sut.UpdateStatus(nonExistingEventId, false);
 
         // Assert
         response.Should().Be(Task.CompletedTask);
-        _fakeInMemoryDb.RateLimitEvents.Find(guid).Should().BeNull();
+        _fakeInMemoryDb.RateLimitEvents.Find(nonExistingEventId).Should().BeNull();
 
     }
 
@@ -92,12 +90,14 @@ public class RateLimitGatewayTests
         string _partitionName = "test-partition";
         var checkEvent = new RateLimitEvent
         {
+            RateLimitEventID = Guid.NewGuid().ToString(),
             QuerySize = 1,
             PartitionName = _partitionName,
             TimeStamp = DateTime.UtcNow.AddMinutes(-30)
         };
         var bulkEvent = new RateLimitEvent
         {
+            RateLimitEventID = Guid.NewGuid().ToString(),
             QuerySize = 4,
             PartitionName = _partitionName,
             TimeStamp = DateTime.UtcNow.AddMinutes(-20)
@@ -132,6 +132,7 @@ public class RateLimitGatewayTests
         // Arrange
         var checkEvent = new RateLimitEvent
         {
+            RateLimitEventID = Guid.NewGuid().ToString(),
             TimeStamp = DateTime.UtcNow.AddDays(-10)
         };
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
@@ -150,6 +151,7 @@ public class RateLimitGatewayTests
         // Arrange
         var checkEvent = new RateLimitEvent
         {
+            RateLimitEventID = Guid.NewGuid().ToString(),
             TimeStamp = DateTime.UtcNow.AddDays(-6)
         };
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
@@ -168,6 +170,7 @@ public class RateLimitGatewayTests
         // Arrange
         var checkEvent = new RateLimitEvent
         {
+            RateLimitEventID = Guid.NewGuid().ToString(),
             TimeStamp = DateTime.UtcNow.AddDays(-10)
         };
         _fakeInMemoryDb.RateLimitEvents.Add(checkEvent);
