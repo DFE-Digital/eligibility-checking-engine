@@ -128,7 +128,7 @@ public class ImportApplicationsUseCaseTests : TestBase
         result.FailedImports.Should().Be(1);
         result.TotalRecords.Should().Be(2);
         result.Errors.Should().ContainSingle()
-            .Which.Should().Be("Row 1: Invalid National Insurance Number");
+            .Which.Should().Be("Row 1: Enter a National Insurance number in the correct format");
 
         capturedApplications.Should().ContainSingle();
         capturedApplications.Single().ParentNationalInsuranceNumber

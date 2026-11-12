@@ -41,14 +41,14 @@ public class ApplicationRequestValidator : AbstractValidator<ApplicationRequest>
             RuleFor(x => x.Data.ParentNationalInsuranceNumber)
                 .NotEmpty()
                 .Must(DataValidation.BeAValidNi)
-                .WithMessage(ValidationMessages.NI);
+                .WithMessage(ValidationMessages.InvalidNI);
         }).Otherwise(() =>
         {
             When(x => !string.IsNullOrEmpty(x.Data.ParentNationalAsylumSeekerServiceNumber), () =>
             {
                 RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                     .Must(DataValidation.BeAValidNass)
-                    .WithMessage(ValidationMessages.NASS);
+                    .WithMessage(ValidationMessages.InvalidNASS);
             });
             RuleFor(x => x.Data.ParentNationalAsylumSeekerServiceNumber)
                 .NotEmpty()

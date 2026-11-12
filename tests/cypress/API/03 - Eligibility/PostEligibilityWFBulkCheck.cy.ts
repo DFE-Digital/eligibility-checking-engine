@@ -42,7 +42,7 @@ describe('Post Eligibility Bulk Check - Invalid Requests', () => {
     getandVerifyBearerToken('/oauth2/token', validLoginRequestBodyTelford).then((token) => {
       cy.apiRequest('POST', 'bulk-check/working-families', invalidNinoBulkRequest, token).then((response) => {
         cy.verifyApiResponseCode(response, 400)
-        expect(response.body.errors[0]).to.have.property('title', 'Invalid National Insurance Number');
+        expect(response.body.errors[0]).to.have.property('title', 'Enter a National Insurance number in the correct format');
       });
     });
   });

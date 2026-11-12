@@ -5,8 +5,10 @@ import {
   validBulkRequestBody,
   validBulkRequestBodyLarge,
   invalidNinoBulkRequestBody,
+  invalidNassBulkRequestBody,
   invalidLastNameBulkCheckRequestBody,
   invalidMultiChecksBulkRequestBody,
+  validFSMRequest,
 } from "../../support/requestBodies";
 
 const endpoints = [
@@ -14,39 +16,24 @@ const endpoints = [
   "early-year-pupil-premium",
   "two-year-offer",
 ];
-describe("Post Eligibility Bulk Check - Valid Requests (small batch)", () => {
+const endpointsSupportingNass = endpoints.filter(
+  (endpoint) => endpoint !== "two-year-offer",
+);
+describe("Post Eligibility Bulk Check - Valid Requests", () => {
   const validBulkRequest = validBulkRequestBody();
   endpoints.forEach((endpoint) => {
     it(`Verify 202 Accepted response is returned with valid data for ${endpoint}`, () => {
-      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
-        (token) => {
-          cy.apiRequest(
-            "POST",
-            `bulk-check/${endpoint}`,
-            validBulkRequest,
-            token,
-          ).then((response) => {
-            // Assert the status and statusText
-            cy.verifyApiResponseCode(response, 202);
-            // Assert the response body data
-            cy.verifyPostEligibilityBulkCheckResponse(response);
-          });
-        },
-      );
-    });
-  });
-});
+      const requestBody =
+        endpoint === "two-year-offer"
+          ? { data: [validFSMRequest().data] }
+          : validBulkRequest;
 
-describe("Post Eligibility Bulk Check - Valid Requests (large batch)", () => {
-  const validBulkRequest = validBulkRequestBodyLarge();
-  endpoints.forEach((endpoint) => {
-    it(`Verify 202 Accepted response is returned with valid data for ${endpoint}`, () => {
       getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
         (token) => {
           cy.apiRequest(
             "POST",
             `bulk-check/${endpoint}`,
-            validBulkRequest,
+            requestBody,
             token,
           ).then((response) => {
             // Assert the status and statusText
@@ -63,6 +50,7 @@ describe("Post Eligibility Bulk Check - Valid Requests (large batch)", () => {
 
 describe("Post Eligibility Bulk Check - Invalid Requests", () => {
   const invalidNinoBulkRequest = invalidNinoBulkRequestBody();
+  const invalidNassBulkRequest = invalidNassBulkRequestBody();
   const invalidDobBulkRequest = invalidDateOfBirthBulkCheckRequestBody();
   const invalidLastNameBulkRequest = invalidLastNameBulkCheckRequestBody();
   const invalidMultiCheckBulkRequest = invalidMultiChecksBulkRequestBody();
@@ -79,7 +67,7 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
             cy.verifyApiResponseCode(response, 400);
             expect(response.body.errors[0]).to.have.property(
               "title",
-              "Invalid National Insurance Number",
+              "Enter a National Insurance number in the correct format",
             );
           });
         },
@@ -137,7 +125,27 @@ describe("Post Eligibility Bulk Check - Invalid Requests", () => {
             );
             expect(response.body.errors[1]).to.have.property(
               "title",
-              "Invalid National Insurance Number",
+              "Enter a National Insurance number in the correct format",
+            );
+          });
+        },
+      );
+    });
+  });
+  endpointsSupportingNass.forEach((endpoint) => {
+    it(`Verify 400 Bad Request response is returned with invalid National Asylum Seeker Service Number for ${endpoint}`, () => {
+      getandVerifyBearerToken("/oauth2/token", validLoginRequestBodyTelford).then(
+        (token) => {
+          cy.apiRequest(
+            "POST",
+            `bulk-check/${endpoint}`,
+            invalidNassBulkRequest,
+            token,
+          ).then((response) => {
+            cy.verifyApiResponseCode(response, 400);
+            expect(response.body.errors[0]).to.have.property(
+              "title",
+              "Invalid National Asylum Seeker Service Number",
             );
           });
         },

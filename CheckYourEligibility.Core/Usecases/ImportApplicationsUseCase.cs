@@ -421,7 +421,7 @@ public class ImportApplicationsUseCase : IImportApplicationsUseCase
         else if (!NinoValidation.IsValidInput(row.ParentNino))
         {
             result.IsValid = false;
-            result.ErrorMessages.Add(ValidationMessages.NI);
+            result.ErrorMessages.Add(ValidationMessages.InvalidNI);
         }
 
         if (string.IsNullOrWhiteSpace(row.ChildFirstName))

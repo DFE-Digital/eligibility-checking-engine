@@ -13,30 +13,33 @@ describe('Update Application Status', () => {
           const requestBody = validApplicationSupportRequestBody();
           cy.apiRequest('POST', 'check/free-school-meals', requestBody, token).then((response) => {
               cy.verifyApiResponseCode(response, 202);
+              cy.extractGuid(response);
               cy.apiRequest('POST', '/user', validUserRequestBody(), token).then((response) => {
                   validBaseApplicationRequest.Data.UserId = response.Data;
-                  cy.wait(5000);
+                  cy.get('@Guid').then((eligibilityCheckId) => {
+                    cy.pollCheckStatus(`${eligibilityCheckId}`, token, 10).then(() => {
+                      cy.apiRequest('POST', 'application', validBaseApplicationRequest, token).then((response) => {
+                          // Assert the status and statusText
+                          cy.verifyApiResponseCode(response, 201);
 
-                  cy.apiRequest('POST', 'application', validBaseApplicationRequest, token).then((response) => {
-                      // Assert the status and statusText
-                      cy.verifyApiResponseCode(response, 201);
+                          // Assert the response body data
+                          cy.verifyPostApplicationResponse(response, validBaseApplicationRequest);
 
-                      // Assert the response body data
-                      cy.verifyPostApplicationResponse(response, validBaseApplicationRequest);
+                          const applicationId = response.body.data.id;
 
-                      const applicationId = response.body.data.id;
+                          const updatedRequestBody = {
+                              "data": {
+                                  status: "EvidenceNeeded"
+                              }
+                          };
 
-                      const updatedRequestBody = {
-                          "data": {
-                              status: "EvidenceNeeded"
-                          }
-                      };
+                          cy.apiRequest('PATCH', `application/${applicationId}`, updatedRequestBody, token).then((patchResponse) => {
+                              cy.verifyApiResponseCode(patchResponse, 200);
 
-                      cy.apiRequest('PATCH', `application/${applicationId}`, updatedRequestBody, token).then((patchResponse) => {
-                          cy.verifyApiResponseCode(patchResponse, 200);
-
-                          expect(patchResponse.body.data).to.have.property('status', 'EvidenceNeeded');
-                      })
+                              expect(patchResponse.body.data).to.have.property('status', 'EvidenceNeeded');
+                          })
+                      });
+                    });
                   });
               });
           });
