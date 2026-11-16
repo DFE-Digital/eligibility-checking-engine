@@ -3,21 +3,27 @@ using CheckYourEligibility.Core.Database;
 using CheckYourEligibility.Core.Domain;
 using CheckYourEligibility.Core.Gateways;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CheckYourEligibility.Core.IntegrationTests.Gateways;
 
+[NonParallelizable]
 public class RateLimitGatewayTests 
 {
     private readonly Fixture _fixture = new();
-    private IEligibilityCheckContext _fakeInMemoryDb;
+
+    private EligibilityCheckContext _fakeInMemoryDb = null!;
+
     private RateLimitGateway _sut;
+
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
 
-        _fakeInMemoryDb = SqlServerFixture.CreateContext();       
+        _fakeInMemoryDb = SqlServerFixture.CreateContext();
+        await _fakeInMemoryDb.RateLimitEvents.ExecuteDeleteAsync();
     
         var configForRLCleanUp = new Dictionary<string, string?>
         {
@@ -30,6 +36,23 @@ public class RateLimitGatewayTests
         _sut = new RateLimitGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration);
     }
 
+    [TearDown]
+    public async Task TearDown()
+    {
+        if (_fakeInMemoryDb is null)
+            return;
+
+        try
+        {
+            await _fakeInMemoryDb.RateLimitEvents.ExecuteDeleteAsync();
+        }
+        finally
+        {
+            await _fakeInMemoryDb.DisposeAsync();
+            _fakeInMemoryDb = null!;
+        }
+    }
+
     [Test]
     public async Task Given_Create_Should_Store_Event()
     {
@@ -38,6 +61,7 @@ public class RateLimitGatewayTests
 
         // Act
         await _sut.Create(checkEvent);
+
         // Assert
         _fakeInMemoryDb.RateLimitEvents.Find(checkEvent.RateLimitEventID).Should().Be(checkEvent);
     }
@@ -51,8 +75,10 @@ public class RateLimitGatewayTests
                                 .Create();
         _fakeInMemoryDb.RateLimitEvents.Add(mockEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
+
         // Act
         await _sut.UpdateStatus(mockEvent.RateLimitEventID, false);
+
         // Assert        
         _fakeInMemoryDb.RateLimitEvents.Find(mockEvent.RateLimitEventID)?.Accepted.Should().BeFalse();
     }
@@ -69,7 +95,6 @@ public class RateLimitGatewayTests
         // Assert
         response.Should().Be(Task.CompletedTask);
         _fakeInMemoryDb.RateLimitEvents.Find(nonExistingEventId).Should().BeNull();
-
     }
 
     [Test]
@@ -112,18 +137,6 @@ public class RateLimitGatewayTests
     }
 
     [Test]
-    public async Task Given_CleanUpRateLimitEvents_Should_Return_Pass()
-    {
-        // Arrange
-
-        // Act
-        await _sut.CleanUpRateLimitEvents();
-
-        // Assert
-        Assert.Pass();
-    }
-
-    [Test]
     public async Task Given_CleanUpRateLimitEvents_Should_Remove_Old_Events()
     {
         // Arrange
@@ -137,7 +150,9 @@ public class RateLimitGatewayTests
         await _sut.CleanUpRateLimitEvents();
 
         // Assert
-        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(0);
+        await using var verificationContext = SqlServerFixture.CreateContext();
+        (await verificationContext.RateLimitEvents.AnyAsync(x => x.RateLimitEventID == checkEvent.RateLimitEventID))
+            .Should().BeFalse();
     }
 
     [Test]
@@ -154,7 +169,9 @@ public class RateLimitGatewayTests
         await _sut.CleanUpRateLimitEvents();
 
         // Assert
-        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(1);
+        await using var verificationContext = SqlServerFixture.CreateContext();
+        (await verificationContext.RateLimitEvents.AnyAsync(x => x.RateLimitEventID == checkEvent.RateLimitEventID))
+            .Should().BeTrue();
     }
     
     [Test]
@@ -177,6 +194,8 @@ public class RateLimitGatewayTests
         await _sut.CleanUpRateLimitEvents();
 
         // Assert
-        _fakeInMemoryDb.RateLimitEvents.Count().Should().Be(1);
+        await using var verificationContext = SqlServerFixture.CreateContext();
+        (await verificationContext.RateLimitEvents.AnyAsync(x => x.RateLimitEventID == checkEvent.RateLimitEventID))
+            .Should().BeTrue();
     }
 }
