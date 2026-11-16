@@ -2,8 +2,8 @@
 {
 	public class ImportTempCodeValidationError
 	{
-		public int RowNumber { get; set; }
-		public string EligibilityCode { get; set; } = string.Empty;
+		public int? RowNumber { get; set; }
+		public string? EligibilityCode { get; set; } = string.Empty;
 		public List<string> ErrorMessages { get; set; } = new();
 	}
 }

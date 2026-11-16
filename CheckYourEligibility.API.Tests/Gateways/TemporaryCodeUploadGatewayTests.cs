@@ -145,7 +145,7 @@ namespace CheckYourEligibility.API.Tests.Gateways
 		}
 
 		[Test]
-		public async Task GetTemporaryCodeUploads_Should_Exclude_Records_Older_Than_30_Days()
+		public async Task GetTemporaryCodeUploads_Should_Exclude_Records_Older_Than_60_Days()
 		{
 			// Arrange
 			_fakeInMemoryDb.TemporaryCodeUploads.AddRange(
@@ -168,7 +168,7 @@ namespace CheckYourEligibility.API.Tests.Gateways
 					NumberOfCodes = 10,
 					FirstCode = "CODE011",
 					LastCode = "CODE020",
-					DateImported = DateTime.UtcNow.AddDays(-40),
+					DateImported = DateTime.UtcNow.AddDays(-70),
 					ImportedBy = _user.UserID,
 					ImportedByUser = _user,
 					IsDeleted = false
