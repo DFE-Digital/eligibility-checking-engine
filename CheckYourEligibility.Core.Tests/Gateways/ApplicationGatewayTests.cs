@@ -17,7 +17,6 @@ namespace CheckYourEligibility.Core.Tests.Gateways;
 public class ApplicationGatewayTests : TestBase
 {
     private Mock<ILogger<ApplicationGateway>> _mockLogger = null!;
-    private IConfiguration _configuration = null!;
     private EligibilityCheckContext _dbContext = null!;
     private ApplicationGateway _sut = null!;
     [SetUp]
@@ -40,10 +39,6 @@ public class ApplicationGatewayTests : TestBase
             { "HashCheckDaysWF", "1" }
         };
 
-        _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
         // Setup AutoMapper with the real mapping profile
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         var mapper = config.CreateMapper();
@@ -51,8 +46,7 @@ public class ApplicationGatewayTests : TestBase
         _sut = new ApplicationGateway(
             Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
             _dbContext,
-            mapper,
-            _configuration);
+            mapper);
     }
 
     [TearDown]
@@ -386,8 +380,7 @@ public class ApplicationGatewayTests : TestBase
         var sut = new ApplicationGateway(
             Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
             db.Object,
-            mapper,
-            _configuration);
+            mapper);
 
         // Act
         await sut.BulkImportApplications(applications);
@@ -414,8 +407,7 @@ public class ApplicationGatewayTests : TestBase
         var sut = new ApplicationGateway(
             Mock.Of<ILoggerFactory>(f => f.CreateLogger(It.IsAny<string>()) == _mockLogger.Object),
             db.Object,
-            mapper,
-            _configuration);
+            mapper);
 
         // Act
         await sut.BulkImportApplications(new List<Application>());
@@ -531,7 +523,7 @@ public class ApplicationGatewayTests : TestBase
             Reference = _fixture.Create<string>().PadRight(8)[..8], // Limit length
             Type = CheckEligibilityType.FreeSchoolMeals,
             Status = Core.Domain.Enums.ApplicationStatus.Entitled,
-            Tier =  EligibilityTier.expanded,
+            Tier = EligibilityTier.expanded,
             ParentFirstName = _fixture.Create<string>().PadRight(20)[..20],
             ParentLastName = _fixture.Create<string>().PadRight(20)[..20],
             ParentNationalInsuranceNumber = _fixture.Create<string>().PadRight(9)[..9],

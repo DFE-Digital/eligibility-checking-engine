@@ -20,21 +20,16 @@ public class ApplicationGateway : IApplication
     private const int referenceMaxValue = 99999999;
     private static Random randomNumber;
     private readonly IEligibilityCheckContext _db;
-    private readonly int _hashCheckDays;
-    private readonly int _hashCheckDaysWF;
     private readonly ILogger _logger;
     protected readonly IMapper _mapper;
 
-    public ApplicationGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
-        IConfiguration configuration)
+    public ApplicationGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper)
     {
         _logger = logger.CreateLogger("ServiceCheckEligibility");
         _db = dbContext;
         _mapper = mapper;
 
         randomNumber ??= new Random(referenceMaxValue);
-        _hashCheckDays = configuration.GetValue<short>("HashCheckDays");
-        _hashCheckDaysWF = configuration.GetValue<short>("HashCheckDaysWF");
     }
 
     public async Task<ApplicationResponse> PostApplication(ApplicationRequestData data)
@@ -56,7 +51,7 @@ public class ApplicationGateway : IApplication
             else
                 item.Status = ApplicationStatus.SentForReview;
             item.Tier = hashCheck.Tier;
-            
+
             // If status is Entitled, calculate and set EligibilityEndDate
             if (item.Status == ApplicationStatus.Entitled)
             {

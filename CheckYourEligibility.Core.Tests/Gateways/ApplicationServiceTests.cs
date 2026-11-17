@@ -52,7 +52,7 @@ public class ApplicationServiceTests : TestBase
 
         _moqAudit = new Mock<IAudit>(MockBehavior.Strict);
         _HashGateway = new HashGateway(new NullLoggerFactory(), _fakeInMemoryDb, _configuration, _moqAudit.Object);
-        _sut = new ApplicationGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper, _configuration);
+        _sut = new ApplicationGateway(new NullLoggerFactory(), _fakeInMemoryDb, _mapper);
     }
 
     [TearDown]
@@ -65,7 +65,7 @@ public class ApplicationServiceTests : TestBase
     {
         // Arrange
         var db = new Mock<IEligibilityCheckContext>(MockBehavior.Strict);
-        var svc = new ApplicationGateway(new NullLoggerFactory(), db.Object, _mapper, _configuration);
+        var svc = new ApplicationGateway(new NullLoggerFactory(), db.Object, _mapper);
         db.Setup(x => x.Applications.AddAsync(It.IsAny<Application>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception());
         var request = _fixture.Create<ApplicationRequestData>();
@@ -398,7 +398,7 @@ public class ApplicationServiceTests : TestBase
         // Create an application
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         var appResponse = await _sut.PostApplication(request);
-        
+
         // Archive the application
         await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
@@ -423,7 +423,7 @@ public class ApplicationServiceTests : TestBase
         // Create and archive an application
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         var appResponse = await _sut.PostApplication(request);
-        
+
         await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
             Status = ApplicationStatus.Archived
@@ -456,7 +456,7 @@ public class ApplicationServiceTests : TestBase
         // Create an application
         var request = await CreateApplication(CheckEligibilityType.FreeSchoolMeals, CheckEligibilityStatus.notEligible);
         var appResponse = await _sut.PostApplication(request);
-        
+
         // Archive the application
         await _sut.UpdateApplication(appResponse.Id, new ApplicationUpdateData
         {
@@ -565,7 +565,7 @@ public class ApplicationServiceTests : TestBase
     private async Task AddHash(CheckProcessData request,
         CheckEligibilityStatus status = CheckEligibilityStatus.eligible)
     {
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(),null)).ReturnsAsync("");
+        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
         var processItem = new CheckProcessData
         {
@@ -575,7 +575,7 @@ public class ApplicationServiceTests : TestBase
             NationalInsuranceNumber = request.NationalInsuranceNumber,
             Type = new CheckEligibilityRequestData().Type
         };
-        var hashId = await _HashGateway.Create(processItem, status,null, ProcessEligibilityCheckSource.HO);
+        var hashId = await _HashGateway.Create(processItem, status, null, ProcessEligibilityCheckSource.HO);
     }
 
     private async Task CreateUserEstablishmentAndLa()
