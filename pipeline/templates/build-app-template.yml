@@ -8,7 +8,7 @@ parameters:
     type: string
   - name: dotnetEfVersion # Version of dotnet-ef tool to use
     type: string
-    default: '8.0.4'
+    default: '10.0.14'
   
 stages:
   - stage: ${{ parameters.stageName }}
@@ -51,7 +51,7 @@ stages:
           script: |
             export PATH="$PATH:$HOME/.dotnet/tools"
             dotnet tool install --global dotnet-ef --version ${{ parameters.dotnetEfVersion }}
-            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.Core/CheckYourEligibility.Core.csproj
+            dotnet ef migrations bundle --verbose --self-contained -r linux-x64 --project CheckYourEligibility.Core/CheckYourEligibility.Core.csproj --startup-project CheckYourEligibility.API/CheckYourEligibility.API.csproj
             mv efbundle $(Build.ArtifactStagingDirectory)
           failOnStderr: true
 

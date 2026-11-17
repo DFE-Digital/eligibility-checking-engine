@@ -83,7 +83,7 @@ stages:
       - task: DotNetCoreCLI@2
         displayName: 'Pack NuGet package'
         env:
-          Build_BuildNumber: $(Build.BuildNumber)
+          Build_BuildId: $(Build.BuildId)
         inputs:
           command: 'pack'
           packagesToPack: 'CheckYourEligibility.Core/CheckYourEligibility.Core.csproj'
