@@ -1,3 +1,6 @@
 {
-    "dotnet.unitTests.runSettingsPath": ".runsettings"
+    "dotnet.unitTests.runSettingsPath": ".runsettings",
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.formatOnSave": true,
+    "dotnet.formatting.organizeImportsOnFormat": true
 }
