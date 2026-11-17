@@ -112,3 +112,12 @@ The following steps are conducted in the Azure Portal for each environment.
 ## Restarting app services to pick up the new secret
 
 The new secret 'Dwp--ApiCertificate' will not be picked up by the API app service until it is restarted. 
+
+## Cleaning up
+
+Remove any temporary or intermediate files, such as the .pfx and .pfx.base64 files, once they are no longer needed to minimize the risk of exposing the private key. Ensure that any copies of the private key and certificates are securely deleted.
+
+A request should be raised to remove the TXT records from DNS using the same External DNS - AWS Route53 service request:
+https://dfe.service-now.com/mydfe?id=sc_cat_item&sys_id=898db1201bacaed0593ddce7b04bcb42&referrer=recent_items
+
+For removing the TXT records from DNS, provide the same details as when they were created, specifying the domain and record type, and submit the request through the External DNS - AWS Route53 service request link provided above.
