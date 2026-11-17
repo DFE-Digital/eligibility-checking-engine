@@ -1,5 +1,7 @@
 ﻿using CheckYourEligibility.API.Boundary.Requests;
+using CheckYourEligibility.API.Domain;
 using CheckYourEligibility.API.Domain.Enums;
+using CheckYourEligibility.API.Gateways;
 using CheckYourEligibility.API.Helpers;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -40,5 +42,33 @@ public class MapCheckDataHelperTests
             JsonConvert.SerializeObject(request));
 
         result.Order.Should().Be(8);
+    }
+
+    [Test]
+    public void BuildCheckProcessedData_WorkingFamilies_ReturnsLastNameFromCheckData()
+    {
+        var checkData = new CheckProcessData { LastName = "CheckSurname" };
+        var wfEvent = new WorkingFamiliesEvent { ParentLastName = "EventSurname" };
+
+        var result = MapCheckDataHelper.BuildCheckProcessedData_WorkingFamilies(
+            wfEvent,
+            isGracePeriodEndDateApplied: false,
+            checkData);
+
+        result.LastName.Should().Be("CheckSurname");
+    }
+
+    [Test]
+    public void BuildCheckProcessedData_WorkingFamilies_DoesNotReturnLastNameIfNotInRequest()
+    {
+        var checkData = new CheckProcessData();
+        var wfEvent = new WorkingFamiliesEvent { ParentLastName = "EventSurname" };
+
+        var result = MapCheckDataHelper.BuildCheckProcessedData_WorkingFamilies(
+            wfEvent,
+            isGracePeriodEndDateApplied: false,
+            checkData);
+
+        result.LastName.Should().BeNull();
     }
 }
