@@ -1,6 +1,8 @@
 # Private keys - DO NOT COMMIT
 *.key
 *.pem
+*.pfx
+*.pfx.base64
 
 # Configuration files
 *.conf
