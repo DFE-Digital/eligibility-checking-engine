@@ -78,11 +78,11 @@ internal static class DataValidation
 	internal static bool BeAValidPostcode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
-
+ 
         var regexString =
-            @"^(GIR\s?0AA|(?:[A-PR-UWYZ][0-9][0-9]?|[A-PR-UWYZ][A-HK-Y][0-9][0-9]?|[A-PR-UWYZ][0-9][A-HJKPSTUW]|[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRVWXY])\s?[0-9][ABD-HJLNP-UW-Z]{2})$";
+            @"^(GIR\s?0AA|(?:[A-PR-UWYZ][0-9][0-9]?|[A-PR-UWYZ][A-HK-Y][0-9][0-9]?|[A-PR-UWYZ][0-9][A-HJKPSTUW]|[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRVWXY])\s?[0-9][ABD-HJLNP-UW-Z]{2})\z";
         var rg = new Regex(regexString);
-        var res = rg.Match(value);
+        var res = rg.Match(value.ToUpperInvariant());
         return res.Success;
     }
 }
