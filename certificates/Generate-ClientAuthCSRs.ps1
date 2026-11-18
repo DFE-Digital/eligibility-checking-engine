@@ -130,13 +130,23 @@ foreach ($domainConfig in $domains) {
     $configPath = Join-Path $envFolder "$domain.conf"
     
     try {
+        # Never replace an existing key or CSR, even if only one exists.
+        if ((Test-Path -LiteralPath $keyPath) -or (Test-Path -LiteralPath $csrPath)) {
+            throw "Private key or CSR already exists; refusing to overwrite: $keyPath, $csrPath"
+        }
+
         # Write config file
         $config = New-CSRConfig -Domain $domain -Environment $environment
         Set-Content -Path $configPath -Value $config -Encoding ASCII
         
         # Generate private key
         Write-Host " - Generating 2048-bit RSA private key..."
-        & $OpenSSLPath genrsa -out $keyPath 2048 2>&1 | Out-Null
+        $keyOutput = & $OpenSSLPath genrsa -out $keyPath 2048 2>&1
+        $keyExitCode = $LASTEXITCODE
+
+        if ($keyExitCode -ne 0) {
+            throw "Private key generation failed (OpenSSL exit code $keyExitCode): $($keyOutput -join [Environment]::NewLine)"
+        }
         
         if (-not (Test-Path $keyPath)) {
             throw "Failed to generate private key"
@@ -145,7 +155,12 @@ foreach ($domainConfig in $domains) {
         # Generate CSR
         Write-Host " - Creating Certificate Signing Request..."
         $subj = "/C=GB/ST=Greater Manchester/L=Manchester/O=Department for Education/CN=$domain"
-        & $OpenSSLPath req -new -key $keyPath -out $csrPath -config $configPath -subj $subj 2>&1 | Out-Null
+        $csrOutput = & $OpenSSLPath req -new -key $keyPath -out $csrPath -config $configPath -subj $subj 2>&1
+        $csrExitCode = $LASTEXITCODE
+
+        if ($csrExitCode -ne 0) {
+            throw "CSR generation failed (OpenSSL exit code $csrExitCode): $($csrOutput -join [Environment]::NewLine)"
+        }
         
         if (-not (Test-Path $csrPath)) {
             throw "Failed to generate CSR"
@@ -183,6 +198,22 @@ foreach ($domainConfig in $domains) {
     }
     
     Write-Host ""
+}
+
+# Summary
+$failed = @($results | Where-Object { $_.Status -eq "Failed" })
+$succeeded = @($results | Where-Object { $_.Status -eq "Success" })
+
+Write-Host "Summary: $($succeeded.Count) succeeded, $($failed.Count) failed (of $($domains.Count))"
+foreach ($r in $succeeded) {
+    Write-Host "  [Success] $($r.Environment): $($r.Domain)"
+}
+foreach ($r in $failed) {
+    Write-Host "  [Failed]  $($r.Environment): $($r.Domain) - $($r.Error)"
+}
+
+if ($failed.Count -gt 0) {
+    exit 1
 }
 
 exit 0
