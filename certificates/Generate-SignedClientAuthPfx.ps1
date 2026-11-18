@@ -121,6 +121,43 @@ $jobs = foreach ($envName in ($Environment | Select-Object -Unique)) {
     if (($certPublicKey -join "`n") -cne ($keyPublicKey -join "`n")) {
         throw "The first certificate in the $envName PEM bundle does not match its private key."
     }
+
+    $identityCheck = @(& $OpenSSLPath x509 -in $pem -noout -checkhost $domain 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        throw "The first certificate in the $envName PEM bundle does not identify $domain`: $($identityCheck -join [Environment]::NewLine)"
+    }
+
+    $validityOutput = @(& $OpenSSLPath x509 -in $pem -dateopt iso_8601 -noout -startdate -enddate 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cannot read the validity period for the first $envName certificate: $($validityOutput -join [Environment]::NewLine)"
+    }
+    $validityText = $validityOutput -join "`n"
+    $notBeforeMatch = [regex]::Match($validityText, '(?m)^notBefore=(.+)$')
+    $notAfterMatch = [regex]::Match($validityText, '(?m)^notAfter=(.+)$')
+    if (-not $notBeforeMatch.Success -or -not $notAfterMatch.Success) {
+        throw "Could not determine the validity period for the first $envName certificate."
+    }
+    try {
+        $notBefore = [DateTime]::Parse($notBeforeMatch.Groups[1].Value.Trim(), [Globalization.CultureInfo]::InvariantCulture)
+        $notAfter = [DateTime]::Parse($notAfterMatch.Groups[1].Value.Trim(), [Globalization.CultureInfo]::InvariantCulture)
+    }
+    catch {
+        throw "Could not parse the validity period for the first $envName certificate: $($_.Exception.Message)"
+    }
+    $now = [DateTime]::UtcNow
+    if ($now -lt $notBefore.ToUniversalTime() -or $now -ge $notAfter.ToUniversalTime()) {
+        throw "The first certificate in the $envName PEM bundle is not currently valid (valid from $notBefore through $notAfter)."
+    }
+
+    $certificateDetails = @(& $OpenSSLPath x509 -in $pem -noout -text 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cannot inspect extensions for the first $envName certificate: $($certificateDetails -join [Environment]::NewLine)"
+    }
+    $ekuMatch = [regex]::Match(($certificateDetails -join "`n"), '(?is)X509v3 Extended Key Usage:\s*(?<eku>.*?)(?=\r?\n\s*X509v3 [^:\r\n]+:|\r?\n\s*Signature Algorithm:|\z)')
+    if (-not $ekuMatch.Success -or $ekuMatch.Groups['eku'].Value -notmatch '(?i)TLS Web Client Authentication|clientAuth|1\.3\.6\.1\.5\.5\.7\.3\.2') {
+        throw "The first certificate in the $envName PEM bundle does not include the Client Authentication EKU."
+    }
+
     [pscustomobject]@{ Environment = $envName; Domain = $domain; Key = $key; Pem = $pem; Pfx = $pfx; Base64 = $base64Path }
 }
 
