@@ -116,6 +116,8 @@ $jobs = foreach ($envName in ($Environment | Select-Object -Unique)) {
     if ($LASTEXITCODE -ne 0) {
         throw "Cannot read the private key for ${envName}: $($keyPublicKey -join [Environment]::NewLine)"
     }
+    # Compare the public key of the first certificate in the PEM bundle with the public key of the private key to ensure they match.
+    # The first certificate in the PEM bundle should always be the one corresponding to the private key.
     if (($certPublicKey -join "`n") -cne ($keyPublicKey -join "`n")) {
         throw "The first certificate in the $envName PEM bundle does not match its private key."
     }

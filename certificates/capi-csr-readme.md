@@ -1,10 +1,19 @@
 # DWP CAPI client authentication certificate update process
 
+## Pre-requisites
+
+- PowerShell 5.1 or later.
+- OpenSSL available as openssl on PATH (the scripts also check common Git for Windows/OpenSSL locations); otherwise provide -OpenSSLPath.
+
+## Change management
+
+Refer to central ECE documentation for the official change management process. Changes to the production environment require formal approval and adherence to the established change management procedures.
+
 ## Generating CSRs to send to DWP
 
-Run the this script:
+Run this script from the certificates directory:
 ```powershell
-\eligibility-checking-engine\certificates\Generate-ClientAuthCSRs.ps1
+.\Generate-ClientAuthCSRs.ps1
 ```
 
 It will generate the following folder structure and files:
@@ -53,17 +62,17 @@ Respond to the service request from DWP with the generated `.csr` files. Keep th
 
 The CA used by DWP will perform domain validation to ensure that the request is legitimate. This step is necessary to confirm that the requester has control over the domain for which the certificate is being requested.
 
-DWP will provide a list of TXT records that need to be added for domain validation.  This is actioned using the External DNS - AWS Route53 service request:
+DWP will provide a list of TXT record values for each domain that need to be added to allow the CA to perform validation.  This is actioned using the External DNS - AWS Route53 service request:
 https://dfe.service-now.com/mydfe?id=sc_cat_item&sys_id=898db1201bacaed0593ddce7b04bcb42&referrer=recent_items
 
 An example of the request content is shown below:
 
-| Domain | Record Type | Name | Value | TTL |
+| Domain | Record Type | Value | TTL |
 |--------|-------------|------|-------|-----|
-| www.dev.eligibility-checking-engine.education.gov.uk | TXT Record | _t6cq2ncspwhmndrwipn8sv4m9c755vm | 3600 |
-| www.test.eligibility-checking-engine.education.gov.uk | TXT Record | _e0g3qhave2yhv242l58ddzebs98rq33 | 3600 |
-| www.pp.eligibility-checking-engine.education.gov.uk | TXT Record | _vgntzpzbc57g0edkhua5e1eyqxc70fy | 3600 |
-| www.eligibility-checking-engine.education.gov.uk | TXT Record | _vmsun05azaunhabqkjtx0hr14wyd1ls | 3600 |
+| www.dev.eligibility-checking-engine.education.gov.uk | TXT Record | <insert DEV value here> | 3600 |
+| www.test.eligibility-checking-engine.education.gov.uk | TXT Record | <insert TEST value here> | 3600 |
+| www.pp.eligibility-checking-engine.education.gov.uk | TXT Record | <insert PP value here> | 3600 |
+| www.eligibility-checking-engine.education.gov.uk | TXT Record | <insert PROD value here> | 3600 |
 
 Once these DNS entries are created DWP should be notified, whereupon they will verify the domain ownership and proceed with issuing the certificate.
 
@@ -83,7 +92,7 @@ Run this script from the certificates directory:
 .\Generate-SignedClientAuthPfx.ps1
 ```
 
-Each PFX is created next to its key, includes the certificates in the PEM bundle, and is checked before being saved. Existing PFX files are never overwritten.
+The script will generate the signed client authentication PFX file (.pfx) and a base64-encoded version of the PFX (pfx.base64) from the PEM bundles in each environment folder. Each PFX includes the certificates in the PEM bundle, and is checked before being saved. Existing PFX files are never overwritten.
 
 To process selected environments or use a different OpenSSL installation:
 
@@ -111,7 +120,27 @@ The following steps are conducted in the Azure Portal for each environment.
 
 ## Restarting app services to pick up the new secret
 
-The new secret 'Dwp--ApiCertificate' will not be picked up by the API app service until it is restarted. 
+The API service in each environment needs to be restarted to pick up the new 'Dwp--ApiCertificate' secret. Navigate to the relevant app service in the Azure Portal and perform a restart.
+
+| Environment | App Service |
+|-------------|-------------|
+| DEV         | `ece-dev-as-eligibility-checking-engine` |
+| TEST        | `ece-test-as-eligibility-checking-engine` |
+| PP          | `ece-pp-as-eligibility-checking-engine` |
+| PROD        | `ece-as-eligibility-checking-engine` |
+
+## Confirming the new certificate is working
+
+### Submitting a single check using CAPI
+- Use Postman in each environment to POST a single FSM check using 'real' data (i.e. do not use TESTER as a surname or any of the test NI values).
+- Get the result of the check.
+- Any check status other than 'error' indicates a successful outcome.
+
+### Reviewing App Insights logs
+
+Additionally you can search the app insights logs in each environment to verify that requests using the new certificate are being successfully authenticated and to check for any errors related to certificate validation.  Use the search term:
+`Exception occurred while calling CAPI citizen match endpoint`
+If no exact matches for this error are found, it indicates that the client certificate is being used successfully and no certificate validation errors have occurred.
 
 ## Cleaning up
 
