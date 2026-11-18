@@ -23,21 +23,34 @@ using System.Net;
 namespace CheckYourEligibility.Core.Tests.Gateways;
 
 public class CheckingEngineGatewayTests : TestBase
-   
+
 {
     private IConfiguration _configuration;
+
     private IEligibilityCheckContext _fakeInMemoryDb;
+
     private HashGateway _hashGateway;
+
     private Mock<IAudit> _moqAudit;
+
     private Mock<IEcsAdapter> _moqEcsGateway;
+
     private Mock<ILocalAuthority> _localAuthority;
+
     private Mock<IEligibilityPolicy> _eligibilityPolicy;
+
     private Mock<IWorkingFamiliesEvent> _moqWorkingFamiliesEventGateway;
+
     private Mock<IDwpAdapter> _moqDwpGateway;
+
     private Mock<IStorageQueue> _moqStorageQueueGateway;
+
     private Mock<IWorkingFamiliesTestScenarioFactory> _moqWFTestScenarioFactory;
+
     private Mock<IStandardCheckTestScenarioFactory> _moqStandardTestScenarioFactory;
+
     private CheckingEngineGateway _sut;
+
     [SetUp]
     public async Task Setup()
     {
@@ -196,7 +209,6 @@ public class CheckingEngineGatewayTests : TestBase
         tier.Should().BeNull();
     }
 
-
     [Test]
     public async Task Given_validRequest_Process_Should_Return_updatedStatus_parentNotFound()
     {
@@ -264,6 +276,7 @@ public class CheckingEngineGatewayTests : TestBase
         // Assert
         status.Should().Be(CheckEligibilityStatus.parentNotFound);
     }
+
     [Test]
     public async Task Given_validRequest_DWP_Soap_Process_Should_Return_updatedStatus_Eligible()
     {
@@ -284,7 +297,6 @@ public class CheckingEngineGatewayTests : TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "1", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -334,6 +346,7 @@ public class CheckingEngineGatewayTests : TestBase
         // Should return ECS result
         status.Should().Be(CheckEligibilityStatus.eligible);
     }
+
     [Test]
     public async Task Given_validRequest_DWP_Soap_Process_Should_Return_updatedStatus_notEligible()
     {
@@ -353,7 +366,6 @@ public class CheckingEngineGatewayTests : TestBase
         var ecsSoapCheckResponse = new SoapCheckResponse { Status = "0", ErrorCode = "0", Qualifier = "" };
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -438,7 +450,6 @@ public class CheckingEngineGatewayTests : TestBase
         //_moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(result);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
 
-
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
 
@@ -465,7 +476,6 @@ public class CheckingEngineGatewayTests : TestBase
 
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(value: null);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -495,7 +505,6 @@ public class CheckingEngineGatewayTests : TestBase
         _moqEcsGateway.Setup(x => x.EcsCheck(It.IsAny<CheckProcessData>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>())).ReturnsAsync(ecsSoapCheckResponse);
 
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -563,7 +572,6 @@ public class CheckingEngineGatewayTests : TestBase
          It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), It.IsAny<EligibilityPolicy>()))
      .ReturnsAsync(capiClaimResponse);
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -641,7 +649,6 @@ public class CheckingEngineGatewayTests : TestBase
         checkData.Should().NotBeNull();
         checkData!.ErrorCode.Should().Be("STE20");
     }
-
 
     [TestCase(HttpStatusCode.InternalServerError, CheckEligibilityStatus.queuedForProcessing)]
     [TestCase(HttpStatusCode.UnprocessableEntity, CheckEligibilityStatus.parentNotFound)]
@@ -788,7 +795,6 @@ public class CheckingEngineGatewayTests : TestBase
         });
         await _fakeInMemoryDb.SaveChangesAsync();
         _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-
 
         // Act
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
@@ -980,7 +986,6 @@ public class CheckingEngineGatewayTests : TestBase
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
 
-
         var soapResponse = _fixture.Create<SoapCheckResponse>();
         soapResponse.ParentSurname = "smith";
         soapResponse.ValidityStartDate = DateTime.Today.AddDays(-2).ToString();
@@ -1098,7 +1103,7 @@ public class CheckingEngineGatewayTests : TestBase
         persistedCheckData.ValidityStartDate.Should().Be(wfEvent.ValidityStartDate.ToString("yyyy-MM-dd"));
         persistedCheckData.ValidityEndDate.Should().Be(wfEvent.ValidityEndDate.ToString("yyyy-MM-dd"));
         persistedCheckData.GracePeriodEndDate.Should().Be(wfEvent.GracePeriodEndDate.ToString("yyyy-MM-dd"));
-        persistedCheckData.LastName.Should().Be(wfEvent.ParentLastName);
+        persistedCheckData.LastName.Should().Be(submittedCheckData.LastName);
         persistedCheckData.DateOfBirth.Should().Be(submittedCheckData.DateOfBirth);
         persistedCheckData.NationalInsuranceNumber.Should().Be(submittedCheckData.NationalInsuranceNumber);
         persistedCheckData.EligibilityCode.Should().Be(submittedCheckData.EligibilityCode);
@@ -1227,6 +1232,7 @@ public class CheckingEngineGatewayTests : TestBase
         (await _fakeInMemoryDb.WorkingFamiliesDualRunningChecks
             .AnyAsync(x => x.EligibilityCheckID == item.EligibilityCheckID)).Should().BeFalse();
     }
+
     [Test]
     public async Task Given_WorkingFamiliesDualRunningIsEnabled_And_RecordNonConflictResults_Is_False_Should_Persist_Conflict()
     {
@@ -1274,8 +1280,6 @@ public class CheckingEngineGatewayTests : TestBase
         dualRunningCheck.isConflict.Should().BeTrue();
         dualRunningCheck.AreDatesMatching.Should().BeFalse();
     }
-
-
 
     [Test]
     public async Task Given_ClientSideTestScenario_Returns_Event_Process_Should_Return_Eligible()
@@ -1389,7 +1393,6 @@ public class CheckingEngineGatewayTests : TestBase
         wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
         _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
         await _fakeInMemoryDb.SaveChangesAsync();
-
 
         var soapResponse = _fixture.Create<SoapCheckResponse>();
         soapResponse.Status = "1";
@@ -1523,6 +1526,7 @@ public class CheckingEngineGatewayTests : TestBase
         // Assert
         status.Should().Be(CheckEligibilityStatus.eligible);
     }
+
     [Test]
     public async Task Given_SurnameMismatchAndNoPartner_Process_Should_Return_NotFound()
     {
@@ -1865,6 +1869,7 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain(citizenResponse.Reason);
         response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
+
     [Test]
     public async Task Given_Citizen_Request_Failed_Should_Return_Error()
     {
@@ -1876,7 +1881,6 @@ public class CheckingEngineGatewayTests : TestBase
         citizenResponse.CAPIEndpoint = "/v2/citizens/match";
         citizenResponse.Reason = "CAPI failed getting citizen.";
         string correlationId = Guid.NewGuid().ToString();
-
 
         var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
     .With(x => x.ID, 1)
@@ -1895,6 +1899,7 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain(citizenResponse.Reason);
         response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
+
     [Test]
     public async Task Given_Citizen_Has_Possible_Conflict_Should_Return_Error()
     {
@@ -1923,6 +1928,7 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain(citizenResponse.Reason);
         response.ResponseCode.Should().Be(citizenResponse.ResponseCode);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Not_Found_Should_Return_ParentNotFound()
     {
@@ -1953,10 +1959,11 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain(citizenResponse.Reason);
         response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Request_Attempt_Fails_Should_Return_Error()
     {
-        // Arrange     
+        // Arrange
         var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
         .With(x => x.ID, 1)
         .With(x => x.CheckType, CheckEligibilityType.FreeSchoolMeals)
@@ -1967,7 +1974,6 @@ public class CheckingEngineGatewayTests : TestBase
         CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         string correlationId = Guid.NewGuid().ToString();
-
 
         var capiClaimResponse = _fixture.Build<CAPIClaimResponseBase>()
        .With(x => x.ResponseCode, HttpStatusCode.InternalServerError)
@@ -1990,10 +1996,10 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain("ECE failed to POST to CAPI");
         response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Returns_Server_Error_Should_Return_Error()
     {
-
         // Arrange
         var eligibilityPolicy = _fixture.Build<EligibilityPolicy>()
         .With(x => x.ID, 1)
@@ -2027,6 +2033,7 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Contain("Get CAPI citizen claim failed");
         response.ResponseCode.Should().Be(HttpStatusCode.InternalServerError);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Returns_200_Check_Benefit_Logic_Entitlemment_Is_False_Should_Return_Not_Eligible()
     {
@@ -2065,10 +2072,10 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Be("CAPI returned status 200, but no benefits found after using business logic");
         response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Is_Not_Found_Should_Return_Not_Eligible()
     {
-
         // Arrange
         CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
@@ -2102,6 +2109,7 @@ public class CheckingEngineGatewayTests : TestBase
         response.Reason.Should().Be(reason);
         response.ResponseCode.Should().Be(HttpStatusCode.NotFound);
     }
+
     [Test]
     public async Task Given_Citizen_Is_Found_Claim_Is_Found_Result_Should_Return_Eligible_Standard()
     {
@@ -2266,7 +2274,7 @@ public class CheckingEngineGatewayTests : TestBase
         var checkData = new CheckProcessData
         {
             DateOfBirth = "2022-01-01",
-            LastName = "smith",
+            LastName = "SMITH",
             NationalInsuranceNumber = "AB123456C",
             EligibilityCode = eligibilityCode,
             Type = CheckEligibilityType.WorkingFamilies
