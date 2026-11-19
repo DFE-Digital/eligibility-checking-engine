@@ -245,9 +245,9 @@ dotnet build -c Release
 - Verify pipeline YAML has `trigger: - main`
 
 **"Feed not found" error**
-- Check feed name is exactly `s203-ece`
-- Verify build service account has "Contributor" role
-- Check pipeline uses correct feed reference: `publishVstsFeed: 's203-ece'`
+- Check the project-scoped feed exists in project `6e58320b-ee65-44e3-9a4b-5f57f27635b4` and is named `s203-ece`
+- Check the pipeline uses the project-qualified reference: `publishVstsFeed: '6e58320b-ee65-44e3-9a4b-5f57f27635b4/s203-ece'`
+- Verify the pipeline's build service has access to the project and the feed's "Contributor" role
 
 **Tests failed, package not published**
 - This is correct behavior (quality gate)
