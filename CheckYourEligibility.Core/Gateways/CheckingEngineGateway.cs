@@ -1,0 +1,827 @@
+using Azure.Storage.Queues;
+using CheckYourEligibility.Core.Adapters;
+using CheckYourEligibility.Core.Boundary.Requests.DWP;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Factories;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
+
+namespace CheckYourEligibility.Core.Gateways;
+
+public class CheckingEngineGateway : ICheckingEngine
+{
+    private const int SurnameCheckCharachters = 3;
+
+    private readonly IConfiguration _configuration;
+
+    private readonly IEligibilityCheckContext _db;
+
+    private readonly IEcsAdapter _ecsAdapter;
+
+    private readonly ILocalAuthority _localAuthority;
+
+    private readonly IDwpAdapter _dwpAdapter;
+
+    private readonly IHash _hashGateway;
+
+    private readonly ILogger _logger;
+
+    private readonly IEligibilityPolicy _eligibilityPolicy;
+
+    private readonly IWorkingFamiliesEvent _workingFamiliesEventGateway;
+
+    private readonly IWorkingFamiliesTestScenarioFactory _workingFamiliesTestScenarioFactory;
+
+    private readonly IStandardCheckTestScenarioFactory _standardCheckTestScenarioFactory;
+
+    private readonly IWorkingFamiliesDualRunningCheck _workingFamiliesDualRunningCheck;
+
+    private readonly string isEligiblePrefix;
+
+    private readonly string isInGracePeriodPrefix;
+
+    private readonly string isNotYetEligiblePrefix;
+
+    private readonly string isExpiredPrefix;
+
+    private readonly bool RecordNonConflictResults;
+
+    private readonly bool workingFamiliesDualRunningEnabled;
+
+    private readonly Dictionary<CheckEligibilityType, double> _DWP_ApiUniversalCreditThreshold = new();
+
+    private readonly Dictionary<CheckEligibilityType, string> _DWP_ApiCriteria = new();
+
+    private string _groupId;
+
+    private QueueClient _queueClientBulk;
+
+    private QueueClient _queueClientStandard;
+
+    public CheckingEngineGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext,
+        IConfiguration configuration,
+        IEcsAdapter ecsAdapter,
+        IDwpAdapter dwpAdapter,
+        IHash hashGateway,
+        ILocalAuthority
+        localAuthority,
+        IEligibilityPolicy eligibilityPolicy,
+        IWorkingFamiliesTestScenarioFactory workingFamiliesTestScenarioFactory,
+        IStandardCheckTestScenarioFactory standardCheckTestScenarioFactory,
+        IWorkingFamiliesEvent workingFamiliesEventGateway,
+        IWorkingFamiliesDualRunningCheck workingFamiliesDualRunningCheck)
+    {
+        _logger = logger.CreateLogger("ServiceCheckEligibility");
+        _db = dbContext;
+        _ecsAdapter = ecsAdapter;
+        _dwpAdapter = dwpAdapter;
+        _hashGateway = hashGateway;
+        _configuration = configuration;
+        _localAuthority = localAuthority;
+        _eligibilityPolicy = eligibilityPolicy;
+        _workingFamiliesTestScenarioFactory = workingFamiliesTestScenarioFactory;
+        _standardCheckTestScenarioFactory = standardCheckTestScenarioFactory;
+        _workingFamiliesEventGateway = workingFamiliesEventGateway;
+        _workingFamiliesDualRunningCheck = workingFamiliesDualRunningCheck;
+
+        workingFamiliesDualRunningEnabled = _configuration.GetValue<bool>("WorkingFamiliesDualRunning:isEnabled");
+        RecordNonConflictResults = _configuration.GetValue<bool>("WorkingFamiliesDualRunning:RecordNonConflictResults");
+        isEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Eligible");
+        isInGracePeriodPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:InGracePeriod");
+        isNotYetEligiblePrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:NotYetEligible");
+        isExpiredPrefix = _configuration.GetValue<string>("TestData:Outcomes:EligibilityCode:Expired");
+
+        // Use new DefaultEligibilityPolicies config section
+        var defaultPoliciesSection = _configuration.GetSection("Dwp:DefaultEligibilityPolicies");
+
+        if (defaultPoliciesSection.Exists())
+        {
+            foreach (var type in new[] { CheckEligibilityType.FreeSchoolMeals, CheckEligibilityType.EarlyYearPupilPremium, CheckEligibilityType.TwoYearOffer })
+            {
+                var typeName = type.ToString();
+                var policySection = defaultPoliciesSection.GetSection(typeName);
+                if (policySection.Exists())
+                {
+                    var thresholdStr = policySection["Threshold"];
+                    if (double.TryParse(thresholdStr, out var threshold))
+                        _DWP_ApiUniversalCreditThreshold[type] = threshold;
+                    var criteria = policySection["Criteria"];
+                    if (!string.IsNullOrEmpty(criteria))
+                        _DWP_ApiCriteria[type] = criteria;
+                }
+            }
+        }
+    }
+
+    public async Task<(CheckEligibilityStatus?, EligibilityTier?)> ProcessCheckAsync(string guid, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        //TODO: This should come from the other gateway
+        var result = await context.CheckEligibilities.FirstOrDefaultAsync(x => x.EligibilityCheckID == guid &&
+                                                                          x.IsDeleted == false);
+
+        if (result != null)
+        {
+            var checkData = MapCheckDataHelper.MapCheckDataBasedOnType(result.Type, result.CheckData);
+            //TODO: This should live in the use case
+            switch (result.Type)
+            {
+                case CheckEligibilityType.FreeSchoolMeals:
+                case CheckEligibilityType.TwoYearOffer:
+                case CheckEligibilityType.EarlyYearPupilPremium:
+                    {
+                        await Process_StandardCheck(result, checkData, dbContextFactory);
+                    }
+                    break;
+
+                case CheckEligibilityType.WorkingFamilies:
+                    {
+                        await Process_WorkingFamilies_StandardCheck(result, checkData, dbContextFactory);
+                    }
+                    break;
+            }
+
+            return (result.Status, result.Tier);
+        }
+
+        return (null, null);
+    }
+
+    #region Private
+
+    public async Task<CAPIClaimResponseBase> DwpCitizenCheck(CheckProcessData data,
+            CheckEligibilityStatus checkResult, string correlationId, EligibilityPolicy eligibilityPolicy)
+    {
+        var citizenRequest = new CitizenMatchRequest
+        {
+            Jsonapi = new CitizenMatchRequest.CitizenMatchRequest_Jsonapi { Version = "1.0" },
+            Data = new CitizenMatchRequest.CitizenMatchRequest_Data
+            {
+                Type = "Match",
+                Attributes = new CitizenMatchRequest.CitizenMatchRequest_Attributes
+                {
+                    LastName = data.LastName,
+                    NinoFragment = data.NationalInsuranceNumber.Substring(data.NationalInsuranceNumber.Length - 5, 4),
+                    DateOfBirth = data.DateOfBirth
+                }
+            }
+        };
+        _logger.LogInformation(JsonConvert.SerializeObject(citizenRequest));
+        var citizenResponse = await _dwpAdapter.GetCitizen(citizenRequest, data.Type, correlationId);
+
+        if (string.IsNullOrEmpty(citizenResponse.Guid))
+        {
+            _logger.LogInformation("Dwp after not finding citizen ResponseStatusCode:{code}, \n" +
+                "DWPcorrelationId: {correlationId} \n" +
+                "NINO:{nino} \n" +
+                "LastName:{lastName}\n" +
+                "DateOfBirth:{dateOfBirth}",
+                citizenResponse.ResponseCode,
+                correlationId,
+                data.NationalInsuranceNumber,
+                data.LastName,
+                data.DateOfBirth);
+            return citizenResponse;
+        }
+        // Guid returned = citizen found
+        else
+        {
+            _logger.LogInformation("Dwp has valid citizen, correlationId:{correlationId}", correlationId);
+
+            // Perform a benefit check
+            var result = await _dwpAdapter.GetCitizenClaims(citizenResponse.Guid, DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd"),
+                DateTime.Now.ToString("yyyy-MM-dd"), data.Type, correlationId, eligibilityPolicy);
+            _logger.LogInformation("Dwp after getting claim,correlationId:{correlationId}", correlationId);
+
+            if (result.ResponseCode == HttpStatusCode.OK)
+            {
+                result.CheckEligibilityStatus = CheckEligibilityStatus.eligible;
+                _logger.LogInformation("Dwp is eligible correlationId:{correlationId}", correlationId);
+            }
+            else if (result.ResponseCode == HttpStatusCode.NotFound)
+            {
+                result.CheckEligibilityStatus = CheckEligibilityStatus.notEligible;
+
+                _logger.LogInformation("Dwp is not found correlationId:{correlationId}", correlationId);
+            }
+            else
+            {
+                _logger.LogError($"Dwp Error unknown Response status code:-{result.ResponseCode}.");
+                result.CheckEligibilityStatus = CheckEligibilityStatus.error;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Logic to find a match in Working families events' table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// </summary>
+    /// <returns>WorkingFamiliesEventSummary if event matched or null if no match is found</returns>
+    // NOTE: This method will be replacing Check_Working_Families_EventRecord method used for checks.
+    private async Task<WorkingFamiliesEventSummary?> Match_Working_Families_EventSummaryRecord(string dateOfBirth,
+        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // Check if there is a match on the code
+        var latestEventRecord = await context.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().FirstOrDefaultAsync();
+
+        // If record is found retrieve the summary record
+        if (latestEventRecord != null)
+        {
+            bool isMatch =
+            (latestEventRecord.ParentNationalInsuranceNumber == nino || latestEventRecord.PartnerNationalInsuranceNumber == nino) &&
+            (lastName == null || lastName == "" || latestEventRecord.ParentLastName.ToUpper() == lastName || latestEventRecord.PartnerLastName.ToUpper() == lastName) &&
+            latestEventRecord.ChildDateOfBirth == checkDob;
+
+            if (isMatch)
+            {
+                var summaryRecord = await _workingFamiliesEventGateway.GetWorkingFamiliesEventSummaryRecordByEligibilityCode(eligibilityCode);
+
+                // If we have an event for this code but for some reason we do not have a summary record
+                // Return null, status: notFound , for now
+                if (summaryRecord == null) return null;
+
+                // If either ParentLastName or PartnerLastName or GPED is null;
+                // Initiate self healing process and populate the ParentLastName and PartnerLastName and GPED
+                if (summaryRecord.ParentLastName == null || summaryRecord.ParentLastName == null || summaryRecord.GracePeriodEndDate == null)
+                {
+                    summaryRecord.ParentLastName = latestEventRecord.ParentLastName;
+                    summaryRecord.PartnerLastName = latestEventRecord.PartnerLastName;
+                    summaryRecord.GracePeriodEndDate = WorkingFamiliesEventHelper.GetGracePeriodEndDate(latestEventRecord.SubmissionDate, latestEventRecord.ValidityEndDate, latestEventRecord.ChildDateOfBirth);
+                    await _workingFamiliesEventGateway.UpdateWorkingFamiliesSummaryRecordAsync(summaryRecord);
+                }
+                return summaryRecord;
+            }
+        }
+        return null;
+    }
+
+    private async Task<(WorkingFamiliesEvent?, bool)> Check_Working_Families_EventRecord(string dateOfBirth,
+       string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // Check if there is a match on the code
+        var wfRecords = await context.WorkingFamiliesEvents.Where(x =>
+            x.EligibilityCode == eligibilityCode).OrderByDescending(x => x.SubmissionDate).AsNoTracking().ToListAsync();
+
+        if (wfRecords.Any())
+        {
+            var latestEvent = wfRecords.FirstOrDefault();
+            bool surnameMatches = string.IsNullOrEmpty(lastName) ||
+                string.Equals(latestEvent.ParentLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(latestEvent.ChildLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(latestEvent.PartnerLastName) &&
+                string.Equals(latestEvent.PartnerLastName, lastName, StringComparison.OrdinalIgnoreCase));
+
+            bool isMatch = (latestEvent.ParentNationalInsuranceNumber == nino ||
+                latestEvent.PartnerNationalInsuranceNumber == nino) &&
+                surnameMatches && latestEvent.ChildDateOfBirth == checkDob;
+
+            if (isMatch)
+            {
+                return WorkingFamiliesCheckHelper.CalculateContiguousChainForCodeFromEvents(wfRecords);
+            }
+        }
+        return (null, true);
+    }
+
+    /// <summary>
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// If record is found, process logic to determine eligibility
+    /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or
+    /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
+    /// Else change status to 'notEligible'
+    /// If record is not found in WorkingFamiliesEvents table - change status to 'notFound'
+    /// </summary>
+    /// <returns></returns>
+    private async Task Process_WorkingFamilies_StandardCheck(
+      EligibilityCheck? check,
+      CheckProcessData checkData,
+      EligibilityCheckContext dbContextFactory = null)
+    {
+        WorkingFamiliesEvent? wfEvent = null;
+        bool isGracePeriodEndDateApplied = true;
+        var source = ProcessEligibilityCheckSource.HMRC;
+        var hashCheckData = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
+        var context = dbContextFactory ?? _db;
+        var sw = Stopwatch.StartNew();
+
+        // Test scenarios
+        string wfTestCodePrefix = _configuration.GetValue<string>("TestData:WFTestCodePrefix");
+
+        if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+            checkData.EligibilityCode.StartsWith(wfTestCodePrefix))
+        {
+            wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioClientSide(checkData);
+
+            if (wfEvent == null)
+            {
+                check.Status = CheckEligibilityStatus.notFound;
+            }
+        }
+        else if (!string.IsNullOrEmpty(wfTestCodePrefix) &&
+                 checkData.EligibilityCode.StartsWith("7"))
+        {
+            wfEvent = _workingFamiliesTestScenarioFactory.GenerateTestScenarioInternalSide(
+                checkData,
+                DateTime.UtcNow.Date);
+
+            if (wfEvent == null)
+            {
+                check.Status = CheckEligibilityStatus.notFound;
+            }
+        }
+        else
+        {
+            // PRIMARY SOURCE
+            if (_ecsAdapter.UseEcsforChecksWF == "true")
+            {
+                (wfEvent, check.Status) = await Process_WorkingFamiliesCheckWithECS(check, checkData, new WorkingFamiliesEvent());
+                source = ProcessEligibilityCheckSource.ECS;
+
+                _logger.LogInformation(
+                    $"Processing ECS WF check in {sw.ElapsedMilliseconds} ms");
+            }
+            else
+            {
+                (wfEvent, isGracePeriodEndDateApplied) = await Check_Working_Families_EventRecord(
+                    checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
+
+                if (wfEvent == null)
+                {
+                    check.Status = CheckEligibilityStatus.notFound;
+                }
+
+                source = ProcessEligibilityCheckSource.HMRC;
+
+                _logger.LogInformation(
+                    $"Processing ECE WF check in {sw.ElapsedMilliseconds} ms");
+            }
+        }
+
+        var processedCheckData = checkData;
+        var hasProcessedEvent = wfEvent != null && check.Status != CheckEligibilityStatus.error && check.Status != CheckEligibilityStatus.notFound;
+        if (source != ProcessEligibilityCheckSource.ECS && hasProcessedEvent)
+        {
+            check.Status = WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(
+                check.Source,
+                wfEvent.DiscretionaryValidityStartDate,
+                wfEvent.ValidityEndDate,
+                wfEvent.GracePeriodEndDate,
+                isGracePeriodEndDateApplied);
+        }
+
+        // Update check data for response
+        if (hasProcessedEvent && wfEvent != null)
+        {
+            processedCheckData = MapCheckDataHelper.BuildCheckProcessedData_WorkingFamilies(wfEvent, isGracePeriodEndDateApplied, processedCheckData);
+            check.CheckData = JsonConvert.SerializeObject(processedCheckData);
+            context.CheckEligibilities.Update(check);
+        }
+
+        check.Updated = DateTime.UtcNow;
+
+        // if enabled, initiated dual running
+        if (workingFamiliesDualRunningEnabled)
+        {
+            try
+            {
+                var dualRunningRecord = await Process_WorkingFamiliesDualRunningCheck(checkData, check, dbContextFactory);
+
+                if (dualRunningRecord != null)
+                {
+                    await _workingFamiliesDualRunningCheck.Create(dualRunningRecord, dbContextFactory);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Action:WF Dual running,EligibilityCheckID:{check.EligibilityCheckID}");
+            }
+        }
+
+        check.EligibilityCheckHashID =
+            await _hashGateway.Create(
+                hashCheckData,
+                check.Status,
+                check.Tier,
+                source,
+                dbContextFactory);
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// If UseEcsforChecksWF is true - Run check against ECE
+    /// Else run check against ECS
+    /// and record result in the WorkingFamiliesDualRunningChecks table
+    /// </summary>
+    /// <param name="requestCheckData"></param>
+    /// <param name="check"></param>
+    /// <returns></returns>
+    private async Task<WorkingFamiliesDualRunningCheck?> Process_WorkingFamiliesDualRunningCheck(CheckProcessData requestCheckData, EligibilityCheck check, EligibilityCheckContext dbContextFactory)
+    {
+        CheckEligibilityStatus ecsStatus;
+        CheckEligibilityStatus eceStatus;
+
+        CheckProcessData ecsResponseBody;
+        CheckProcessData eceResponseBody;
+
+        if (_ecsAdapter.UseEcsforChecksWF == "true")
+        {
+            var (wfEvent, isGracePeriodEndDateApplied) =
+                await Check_Working_Families_EventRecord(requestCheckData.DateOfBirth, requestCheckData.EligibilityCode, requestCheckData.NationalInsuranceNumber, requestCheckData.LastName, dbContextFactory);
+
+            var eceResponse = requestCheckData;
+
+            if (wfEvent != null)
+            {
+                eceResponse = MapCheckDataHelper.BuildCheckProcessedData_WorkingFamilies(wfEvent, isGracePeriodEndDateApplied, eceResponse);
+            }
+
+            eceStatus = wfEvent == null
+                  ? CheckEligibilityStatus.notFound
+                  : WorkingFamiliesCheckHelper.DetermineWorkingFamiliesCodeEligibility(
+                    check.Source,
+                    wfEvent.DiscretionaryValidityStartDate,
+                    wfEvent.ValidityEndDate,
+                    wfEvent.GracePeriodEndDate,
+                    isGracePeriodEndDateApplied);
+
+            ecsStatus = check.Status;
+
+            ecsResponseBody = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
+            eceResponseBody = eceResponse;
+        }
+        else
+        {
+            eceStatus = check.Status;
+
+            (var ecsWfEvent, ecsStatus) = await Process_WorkingFamiliesCheckWithECS(check, requestCheckData, new WorkingFamiliesEvent());
+
+            var ecsResponse = requestCheckData;
+
+            if (ecsStatus != CheckEligibilityStatus.notFound && ecsStatus != CheckEligibilityStatus.error)
+            {
+                ecsResponse = MapCheckDataHelper.BuildCheckProcessedData_WorkingFamilies(
+                 ecsWfEvent,
+                 isGracePeriodEndDateApplied: true,
+                 checkData: ecsResponse);
+            }
+
+            ecsResponseBody = ecsResponse;
+            eceResponseBody = JsonConvert.DeserializeObject<CheckProcessData>(check.CheckData);
+        }
+
+        bool isConflict = !string.Equals(ecsStatus.ToString(), eceStatus.ToString(), StringComparison.OrdinalIgnoreCase);
+
+        if (!RecordNonConflictResults && !isConflict)
+        {
+            return null;
+        }
+
+        return new WorkingFamiliesDualRunningCheck
+        {
+            Created = DateTime.UtcNow,
+            EligibilityCheckID = check.EligibilityCheckID,
+            EligibilityCode = requestCheckData.EligibilityCode,
+            ECSStatus = ecsStatus.ToString(),
+            ECSQualifier = ecsResponseBody?.Qualifier,
+            ECEStatus = eceStatus.ToString(),
+            ECEResponseBody = JsonConvert.SerializeObject(eceResponseBody),
+            ECSResponseBody = JsonConvert.SerializeObject(ecsResponseBody),
+            isConflict = isConflict,
+            AreDatesMatching = eceResponseBody != null && ecsResponseBody != null && CalculateAreDatesMatching(ecsResponseBody, eceResponseBody)
+        };
+    }
+
+    private bool CalculateAreDatesMatching(CheckProcessData ecsDates, CheckProcessData eceDates)
+    {
+        if (ecsDates.ValidityStartDate != eceDates.DiscretionaryValidityStartDate ||
+            ecsDates.ValidityEndDate != eceDates.ValidityEndDate ||
+            ecsDates.GracePeriodEndDate != eceDates.GracePeriodEndDate)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private async Task<(WorkingFamiliesEvent, CheckEligibilityStatus)> Process_WorkingFamiliesCheckWithECS(EligibilityCheck check, CheckProcessData checkData, WorkingFamiliesEvent wfEvent)
+    {
+        //To ensure correct LA ID is passed when using ECS for checks
+        string laId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(check.OrganisationType, check.OrganisationID);
+        SoapCheckResponse innerResult = await _ecsAdapter.EcsWFCheck(checkData, laId);
+
+        CheckEligibilityStatus status = convertEcsResultStatus(innerResult, CheckEligibilityType.WorkingFamilies);
+
+        if (status != CheckEligibilityStatus.notFound && status != CheckEligibilityStatus.error)
+        {
+            wfEvent.EligibilityCode = checkData.EligibilityCode;
+            wfEvent.ParentLastName = checkData.LastName;  //Return value as submitted in request
+            wfEvent.DiscretionaryValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+            wfEvent.ValidityStartDate = DateTime.Parse(innerResult.ValidityStartDate);
+            wfEvent.ValidityEndDate = DateTime.Parse(innerResult.ValidityEndDate);
+            wfEvent.GracePeriodEndDate = DateTime.Parse(innerResult.GracePeriodEndDate);
+        }
+
+        checkData.Qualifier = innerResult != null ? innerResult.Qualifier : null; // map qualifier for dual record
+        checkData.EcsStatus = innerResult != null ? innerResult.Status : null; // map status for dual record
+        checkData.EcsErrorCode = innerResult != null ? innerResult.ErrorCode : null; // map error code for dual record
+
+        return (wfEvent, status);
+    }
+
+    private async Task<EligibilityPolicy> GetOrganisationEligibilityPolicyAsync(string organisationType, int? orgId, CheckEligibilityType type, EligibilityCheckContext dbContextFactory = null)
+    {
+        if (organisationType == Domain.Constants.OrganisationType.local_authority && orgId is int LaId && LaId != 0)
+        {
+            int policyID = await _localAuthority.GetEligibilityPolicyIdForTypeAsync(LaId, type, dbContextFactory);
+            // get policy for the LA
+            if (policyID != 0)
+                return await _eligibilityPolicy.GeEligibilityPolicyByIdAsync(policyID, dbContextFactory);
+        }
+
+        // Fallback to default policy from appsettings
+        return new EligibilityPolicy
+        {
+            CheckType = type,
+            EligibilityCriteria = Enum.Parse<EligibilityCriteria>(_DWP_ApiCriteria[type]),
+            UniversalCreditThreshold = _DWP_ApiUniversalCreditThreshold[type],
+            IsDeleted = false
+        };
+    }
+
+    private async Task Process_StandardCheck(EligibilityCheck result,
+        CheckProcessData checkData, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        var source = ProcessEligibilityCheckSource.HMRC;
+        var checkStatusResult = CheckEligibilityStatus.parentNotFound;
+        EligibilityTier? checkTierResult = null;
+        var shouldHashResult = true;
+        CAPIClaimResponseBase capiClaimResponse = new();
+        // Variables needed for ECS conflict records
+        var eceCheckResult = CheckEligibilityStatus.parentNotFound;
+
+        // For CAPI request to track request conflicts from DWP side
+        string correlationId = Guid.NewGuid().ToString();
+
+        if (_configuration.GetValue<string>("TestData:LastName") == checkData.LastName)
+        {
+            var (testStatus, testTier) = _standardCheckTestScenarioFactory.TestDataCheck(checkData.NationalInsuranceNumber, checkData.NationalAsylumSeekerServiceNumber, result.Type);
+            checkStatusResult = testStatus;
+            checkTierResult = testTier;
+            source = ProcessEligibilityCheckSource.TEST;
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(checkData.NationalInsuranceNumber))
+            {
+                var eligibilityPolicy = await GetOrganisationEligibilityPolicyAsync(result.OrganisationType, result.OrganisationID, result.Type, dbContextFactory);
+                //To ensure correct LA ID is passed when using ECS for checks
+
+                string localAuthorityId = EligibilityCheckHelper.GetOrganisationIdOFTypeLocalAuthority(result.OrganisationType, result.OrganisationID);
+
+                checkStatusResult = await HMRC_Check(checkData, dbContextFactory);
+                if (checkStatusResult == CheckEligibilityStatus.parentNotFound)
+                {
+                    var sw = Stopwatch.StartNew();
+
+                    //TODO: This should live in the use case
+                    if (_ecsAdapter.UseEcsforChecks == "true")
+                    {
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
+                        source = ProcessEligibilityCheckSource.ECS;
+                        _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
+                    }
+                    else if (_ecsAdapter.UseEcsforChecks == "false")
+                    {
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
+
+                        checkStatusResult = capiClaimResponse.CheckEligibilityStatus;
+                        checkTierResult = capiClaimResponse.EligibilityTier;
+                        checkData.ErrorCode = capiClaimResponse.ErrorCode;
+
+                        source = ProcessEligibilityCheckSource.DWP;
+
+                        var capiAudit = new CAPIAudit(
+                              Guid.Parse(result.EligibilityCheckID),
+                              Guid.Parse(correlationId),
+                              capiClaimResponse.CAPIEndpoint,
+                              capiClaimResponse.RequestBody,
+                              capiClaimResponse.ResponseBody,
+                              capiClaimResponse.ResponseCode,
+                              capiClaimResponse.CAPIResponseCode);
+
+                        try
+                        {
+                            await context.CAPIAudits.AddAsync(capiAudit);
+                            await context.SaveChangesAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, " Check:{checkId} Action:AddToCAPIAudits Status:Failed", result.EligibilityCheckID);
+                        }
+
+                        _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
+                    }
+                    else // do both checks
+                    {
+                        checkStatusResult = await EcsCheck(checkData, localAuthorityId);
+                        source = ProcessEligibilityCheckSource.DWP;
+                        _logger.LogInformation($"Processing ECS check in {sw.ElapsedMilliseconds} ms");
+
+                        sw.Restart();
+                        capiClaimResponse = await DwpCitizenCheck(checkData, checkStatusResult, correlationId, eligibilityPolicy);
+                        eceCheckResult = capiClaimResponse.CheckEligibilityStatus;
+                        _logger.LogInformation($"Processing ECE check in {sw.ElapsedMilliseconds} ms");
+
+                        if (checkStatusResult != eceCheckResult)
+                        {
+                            source = ProcessEligibilityCheckSource.ECS_CONFLICT;
+                        }
+                    }
+                }
+            }
+            else if (!string.IsNullOrEmpty(checkData.NationalAsylumSeekerServiceNumber))
+            {
+                var useHomeOfficeData =
+                    _configuration.GetValue<bool>($"HomeOffice:CheckTypes:{result.Type}");
+                if (useHomeOfficeData)
+                {
+                    checkStatusResult = await HO_Check(checkData, dbContextFactory);
+                    source = ProcessEligibilityCheckSource.HO;
+
+                    if (checkStatusResult == CheckEligibilityStatus.eligible)
+                    {
+                        checkTierResult = EligibilityTier.targeted;
+                    }
+                }
+                else
+                {
+                    shouldHashResult = false;
+                }
+            }
+        }
+
+        if (result.Type == CheckEligibilityType.FreeSchoolMeals && checkStatusResult == CheckEligibilityStatus.eligible)
+        {
+            checkData.EligibilityEndDate = (EligibilityCheckHelper.GetEligibilityEndDateFSM(result.Created)).ToString("yyyy-MM-dd");
+        }
+
+        result.Status = checkStatusResult;
+        result.Tier = checkTierResult;
+        result.Updated = DateTime.UtcNow;
+
+        if (checkStatusResult == CheckEligibilityStatus.error &&
+            string.IsNullOrWhiteSpace(checkData.ErrorCode))
+        {
+            checkData.ErrorCode = "STE50";
+        }
+
+        result.CheckData = JsonConvert.SerializeObject(checkData);
+
+        if (checkStatusResult == CheckEligibilityStatus.error)
+        {
+            // map 422 to not found here
+            result.Status = capiClaimResponse.ResponseCode == HttpStatusCode.UnprocessableEntity
+                ? CheckEligibilityStatus.parentNotFound
+                : CheckEligibilityStatus.queuedForProcessing;
+        }
+        else
+        {
+            if (shouldHashResult)
+            {
+                result.EligibilityCheckHashID =
+                    await _hashGateway.Create(checkData, checkStatusResult, result.Tier, source, dbContextFactory);
+            }
+
+            // If CAPI returns a different result from ECS
+            // Create a record
+            if (source == ProcessEligibilityCheckSource.ECS_CONFLICT)
+            {
+                ECSConflict ecsConflictRecord = new()
+                {
+                    CorrelationID = correlationId,
+                    ECE_Status = eceCheckResult,
+                    ECS_Status = checkStatusResult,
+                    DateOfBirth = checkData.DateOfBirth,
+                    LastName = checkData.LastName,
+                    Nino = checkData.NationalInsuranceNumber,
+                    Type = checkData.Type,
+                    TimeStamp = DateTime.UtcNow,
+                    EligibilityCheckHashID = result.EligibilityCheckHashID,
+                    CAPIEndpoint = capiClaimResponse.CAPIEndpoint,
+                    Reason = capiClaimResponse.Reason,
+                    CAPIResponseCode = capiClaimResponse.ResponseCode
+                };
+                await context.ECSConflicts.AddAsync(ecsConflictRecord);
+            }
+        }
+        await context.SaveChangesAsync();
+
+        var processingTime = (DateTime.Now.ToUniversalTime() - result.Created.ToUniversalTime()).Seconds;
+    }
+
+    //TODO: These two could be adapters
+    private async Task<CheckEligibilityStatus> HO_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
+    {
+        var normalisedNass = data.NationalAsylumSeekerServiceNumber.Replace("/", "");
+        var context = dbContextFactory ?? _db;
+        var checkReults = context.FreeSchoolMealsHO.Where(x =>
+                x.NASS == normalisedNass
+                && x.DateOfBirth == DateTime.ParseExact(data.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None))
+            .Select(x => x.LastName);
+
+        return CheckSurname(data.LastName, checkReults);
+    }
+
+    private async Task<CheckEligibilityStatus> HMRC_Check(CheckProcessData data, EligibilityCheckContext dbContextFactory = null)
+    {
+        var context = dbContextFactory ?? _db;
+        var checkReults = context.FreeSchoolMealsHMRC.Where(x =>
+                x.FreeSchoolMealsHMRCID == data.NationalInsuranceNumber
+                && x.DateOfBirth == DateTime.ParseExact(data.DateOfBirth, "yyyy-MM-dd", null, DateTimeStyles.None))
+            .Select(x => x.Surname);
+
+        return CheckSurname(data.LastName, checkReults);
+    }
+
+    private CheckEligibilityStatus convertEcsResultStatus(SoapCheckResponse? result, CheckEligibilityType checkType = CheckEligibilityType.None)
+    {
+        if (result != null)
+        {
+            if (result.Status == "1")
+            {
+                return CheckEligibilityStatus.eligible;
+            }
+            else if (checkType != CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" &&
+                     (string.IsNullOrEmpty(result.Qualifier) || result.Qualifier.ToUpper() == "PENDING - KEEP CHECKING" || result.Qualifier.ToUpper() == "MANUAL PROCESS"))
+            {
+                return CheckEligibilityStatus.notEligible;
+            }
+            // Since WF checks can only return Qualifier that is empty, or a "Discretionary Start" on Status 1 (eligible)
+            // We need to check the type of the check before setting status as notFound/notligible status response from ECS is different between WF and the rest of the checks
+            else if (checkType == CheckEligibilityType.WorkingFamilies && result.Status == "0" && result.ErrorCode == "0" && string.IsNullOrEmpty(result.Qualifier))
+            {
+                if (string.IsNullOrEmpty(result.ValidityStartDate) && string.IsNullOrEmpty(result.ValidityEndDate) && string.IsNullOrEmpty(result.GracePeriodEndDate))
+                {
+                    return CheckEligibilityStatus.notFound;
+                }
+                else
+                {
+                    return CheckEligibilityStatus.notEligible;
+                }
+            }
+            else if (result.Qualifier.ToUpper() == "NO TRACE - CHECK DATA" && result.Status == "0" && result.ErrorCode == "0")
+            {
+                return CheckEligibilityStatus.parentNotFound;
+            }
+            else
+            {
+                _logger.LogError(
+                    $"Error unknown Response status code:-{result.Status}, error code:-{result.ErrorCode} qualifier:-{result.Qualifier}");
+                return CheckEligibilityStatus.error;
+            }
+        }
+        else
+        {
+            _logger.LogError("Error ECS unknown Response of null");
+            return CheckEligibilityStatus.error;
+        }
+    }
+
+    private async Task<CheckEligibilityStatus> EcsCheck(CheckProcessData data, string LaId)
+    {
+        //check for benefit
+        var result = await _ecsAdapter.EcsCheck(data, data.Type, LaId);
+        return convertEcsResultStatus(result);
+    }
+
+    private CheckEligibilityStatus CheckSurname(string lastNamePartial, IQueryable<string> validData)
+    {
+        if (validData.Any())
+            return validData.FirstOrDefault(x =>
+                x.ToUpper().StartsWith(lastNamePartial.Substring(0, SurnameCheckCharachters).ToUpper())) != null
+                ? CheckEligibilityStatus.eligible
+                : CheckEligibilityStatus.parentNotFound;
+        ;
+        return CheckEligibilityStatus.parentNotFound;
+    }
+
+    #endregion Private
+}

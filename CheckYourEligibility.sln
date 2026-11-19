@@ -1,14 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.8.34525.116
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12224.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheckYourEligibility.API", "CheckYourEligibility.API\CheckYourEligibility.API.csproj", "{19544FF4-3872-4C83-BA0C-F06CDF852E5B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{166B2095-B983-49F3-9F46-CA95EBDEF9A1}"
-	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckYourEligibility.Core", "CheckYourEligibility.Core\CheckYourEligibility.Core.csproj", "{43136036-208B-4787-B8B8-86A22071E29B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{729562A4-B025-4919-8743-EA64B34D590D}"
 EndProject
@@ -16,9 +13,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheckYourEligibility.API.Tests", "CheckYourEligibility.API.Tests\CheckYourEligibility.API.Tests.csproj", "{8457D39B-6591-4EAF-8481-651F1A7215BF}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Acceptance", "Acceptance", "{E3269BAF-DEE4-4DCC-81CE-93FD618C6937}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{166B2095-B983-49F3-9F46-CA95EBDEF9A1}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckYourEligibility.API.IntegrationTests", "CheckYourEligibility.API.IntegrationTests\CheckYourEligibility.API.IntegrationTests.csproj", "{1F23F9CE-645A-4F16-918A-12D48F23CCF8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckYourEligibility.Core.Tests", "CheckYourEligibility.Core.Tests\CheckYourEligibility.Core.Tests.csproj", "{916D25B3-D47C-0D55-C1CE-72A263982EEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckYourEligibility.Core.IntegrationTests", "CheckYourEligibility.Core.IntegrationTests\CheckYourEligibility.Core.IntegrationTests.csproj", "{1F23F9CE-645A-4F16-918A-12D48F23CCF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +44,18 @@ Global
 		{19544FF4-3872-4C83-BA0C-F06CDF852E5B}.Release|x64.Build.0 = Release|Any CPU
 		{19544FF4-3872-4C83-BA0C-F06CDF852E5B}.Release|x86.ActiveCfg = Release|Any CPU
 		{19544FF4-3872-4C83-BA0C-F06CDF852E5B}.Release|x86.Build.0 = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|x64.Build.0 = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Debug|x86.Build.0 = Debug|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|x64.ActiveCfg = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|x64.Build.0 = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|x86.ActiveCfg = Release|Any CPU
+		{43136036-208B-4787-B8B8-86A22071E29B}.Release|x86.Build.0 = Release|Any CPU
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -54,6 +68,18 @@ Global
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Release|x64.Build.0 = Release|Any CPU
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Release|x86.ActiveCfg = Release|Any CPU
 		{8457D39B-6591-4EAF-8481-651F1A7215BF}.Release|x86.Build.0 = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|x64.Build.0 = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Debug|x86.Build.0 = Debug|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|x64.ActiveCfg = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|x64.Build.0 = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|x86.ActiveCfg = Release|Any CPU
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC}.Release|x86.Build.0 = Release|Any CPU
 		{1F23F9CE-645A-4F16-918A-12D48F23CCF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1F23F9CE-645A-4F16-918A-12D48F23CCF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F23F9CE-645A-4F16-918A-12D48F23CCF8}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -73,7 +99,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5F304C0D-7BE2-4912-9AA7-F7FC563B91FC} = {729562A4-B025-4919-8743-EA64B34D590D}
 		{8457D39B-6591-4EAF-8481-651F1A7215BF} = {5F304C0D-7BE2-4912-9AA7-F7FC563B91FC}
-		{E3269BAF-DEE4-4DCC-81CE-93FD618C6937} = {729562A4-B025-4919-8743-EA64B34D590D}
+		{916D25B3-D47C-0D55-C1CE-72A263982EEC} = {5F304C0D-7BE2-4912-9AA7-F7FC563B91FC}
+		{1F23F9CE-645A-4F16-918A-12D48F23CCF8} = {729562A4-B025-4919-8743-EA64B34D590D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {04898F63-3229-4E4B-8AE2-AC035EA9D779}

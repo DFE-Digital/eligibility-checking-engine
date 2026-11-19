@@ -1,10 +1,10 @@
 using AutoFixture;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +14,9 @@ using Moq;
 using System.Security.Claims;
 using ValidationException = FluentValidation.ValidationException;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class EngineControllerTests : TestBase.TestBase
+public class EngineControllerTests : ControllerTestBase
 {
     private IConfigurationRoot _configuration;
     private Mock<IAudit> _mockAuditGateway;
@@ -100,27 +100,6 @@ public class EngineControllerTests : TestBase.TestBase
         _mockDeleteBulkCheckUseCase.VerifyAll();
         _mockGetAllBulkChecksUseCase.VerifyAll();
         _mockAuditGateway.VerifyAll();
-    }
-
-    private void SetupControllerWithLocalAuthorityIds(List<int> localAuthorityIds)
-    {
-        // Create mock HttpContext with ClaimsPrincipal
-        var httpContext = new DefaultHttpContext();
-        var claims = new List<Claim>();
-
-        // Add appropriate scope claims based on localAuthorityIds
-        if (localAuthorityIds.Contains(0))
-        {
-            claims.Add(new Claim("scope", "local_authority"));
-        }
-        else
-        {
-            var scopeValue = string.Join(" ", localAuthorityIds.Select(id => $"local_authority:{id}"));
-            claims.Add(new Claim("scope", scopeValue));
-        }
-
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Test]

@@ -6,7 +6,7 @@ describe('Testing the API', function () {
         // Declarations
         const fileName = 'HMRCDataSubset.xml'; // File name including extension
         const method = 'POST';
-        const url = Cypress.config('baseUrl') + 'admin/import-hmrc-data';
+        const url = Cypress.config('baseUrl') + '/admin/import-hmrc-data';
         const fileType = 'text/xml'; // XML file type     
         const expectedAnswer = '{"data":"HMRCDataSubset.xml - HMRC File Processed."}';
 

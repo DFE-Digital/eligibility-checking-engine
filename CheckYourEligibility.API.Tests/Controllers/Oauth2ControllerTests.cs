@@ -1,18 +1,17 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.Api.Boundary.Responses;
-using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
-using CheckYourEligibility.API.Domain.Exceptions;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Domain.Exceptions;
+using CheckYourEligibility.Core.UseCases;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace CheckYourEligibility.API.Tests;
+namespace CheckYourEligibility.API.Tests.Controllers;
 
-public class Oauth2ControllerTests : TestBase.TestBase
+public class Oauth2ControllerTests : ControllerTestBase
 {
     private Mock<IAuthenticateUserUseCase> _mockAuthenticateUserUseCase;
     private ILogger<Oauth2Controller> _mockLogger;
