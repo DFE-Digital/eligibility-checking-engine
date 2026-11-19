@@ -2,6 +2,8 @@
 
 The Core library is automatically published as a NuGet package to the `s203-ece` Azure Artifacts feed on every commit to `main`.
 
+The publish step uses the .NET CLI as ubuntu agents do not have Mono installed which is required by the usual Nuget published task.
+
 ## Getting Started
 
 ### For Developers (Quick Start)

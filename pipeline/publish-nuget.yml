@@ -91,15 +91,13 @@ stages:
           packDirectory: '$(Build.ArtifactStagingDirectory)'
           versioningScheme: 'off'
 
-      - task: NuGetCommand@2
+      - task: DotNetCoreCLI@2
         displayName: 'Push to Azure Artifacts'
         inputs:
           command: 'push'
           packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
           nuGetFeedType: 'internal'
           publishVstsFeed: 's203-ece'
-          allowPackageConflicts: true
-          verbosityPush: 'Detailed'
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publish NuGet artifacts'
