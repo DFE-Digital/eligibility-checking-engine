@@ -153,7 +153,7 @@ namespace CheckYourEligibility.API.UseCases
 				{
 					throw new BulkTempCodeValidationException(validationErrors);
 				}
-				if (DataLoad == null || DataLoad.Count == 0) throw new InvalidDataException("Invalid file no content.");
+				if (DataLoad == null || DataLoad.Count == 0) throw new InvalidDataException("The selected file is empty");
 				await _administrationGateway.BulkImportWorkingFamiliesEventHMRCData(DataLoad);
 			}
 			catch (BulkTempCodeValidationException)
