@@ -68,7 +68,7 @@ https://dfe.service-now.com/mydfe?id=sc_cat_item&sys_id=898db1201bacaed0593ddce7
 An example of the request content is shown below:
 
 | Domain | Record Type | Value | TTL |
-|--------|-------------|------|-------|-----|
+|--------|-------------|-------|-----|
 | www.dev.eligibility-checking-engine.education.gov.uk | TXT Record | <insert DEV value here> | 3600 |
 | www.test.eligibility-checking-engine.education.gov.uk | TXT Record | <insert TEST value here> | 3600 |
 | www.pp.eligibility-checking-engine.education.gov.uk | TXT Record | <insert PP value here> | 3600 |
