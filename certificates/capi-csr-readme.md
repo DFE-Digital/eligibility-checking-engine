@@ -131,16 +131,20 @@ The API service in each environment needs to be restarted to pick up the new 'Dw
 
 ## Confirming the new certificate is working
 
-### Submitting a single check using CAPI
+### Perform a single check using CAPI
 - Use Postman in each environment to POST a single FSM check using 'real' data (i.e. do not use TESTER as a surname or any of the test NI values).
 - Get the result of the check.
 - Any check status other than 'error' indicates a successful outcome.
 
-### Reviewing App Insights logs
+### Reviewing App Insights logs in the case of an error or ambiguous result from single check
 
-Additionally you can search the app insights logs in each environment to verify that requests using the new certificate are being successfully authenticated and to check for any errors related to certificate validation.  Use the search term:
+If the single check performed using CAPI returns an error or an ambiguous result, you can review the App Insights logs to diagnose the issue. 
+
+Search the app insights logs in each environment using the search term:
 `Exception occurred while calling CAPI citizen match endpoint`
 If no exact matches for this error are found, it indicates that the client certificate is being used successfully and no certificate validation errors have occurred.
+
+For further verification, any results for search term `Received response from CAPI` indicate requests are reaching CAPI, also confirming that the client certificate is being used correctly.
 
 ## Cleaning up
 
