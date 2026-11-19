@@ -422,7 +422,7 @@ public class TemporaryCodeUploadUseCaseTests
 		exception.Which.Errors
 			.SelectMany(x => x.ErrorMessages)
 			.Should()
-			.Contain("Invalid file no content.");
+			.Contain("The selected file is empty");
 	}
 
 	[Test]

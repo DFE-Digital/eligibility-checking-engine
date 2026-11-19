@@ -99,8 +99,9 @@ public class WorkingFamiliesEventImportValidator : AbstractValidator<WorkingFami
 
 			RuleFor(x => x.PartnerDateOfBirth)
 				.NotNull()
+                    .WithMessage(ValidationMessages.PartnerDOBEmpty)
 				.Must(x => x != ImportDateValues.InvalidDate)
-				.WithMessage(ValidationMessages.PartnerDOBInvalid);
+				    .WithMessage(ValidationMessages.PartnerDOBInvalid);
 		});
 
 		//SubmissionDate
