@@ -78,6 +78,11 @@ Once these DNS entries are created DWP should be notified, whereupon they will v
 
 ## After receiving PEMs back from DWP
 
+The PEM bundles are expected to contain the full certificate chain in the following order:
+- The client certificate
+- Any intermediate certificates
+- The root certificate
+
 Place each signed PEM bundle in its environment folder alongside the original private key. The PEM filename should be domain with dots replaced by underscores, for example:
 
 ```
@@ -92,8 +97,6 @@ Run this script from the certificates directory:
 .\Generate-SignedClientAuthPfx.ps1
 ```
 
-The script will generate the signed client authentication PFX file (.pfx) and a base64-encoded version of the PFX (pfx.base64) from the PEM bundles in each environment folder. Each PFX includes the certificates in the PEM bundle, and is checked before being saved. Existing PFX files are never overwritten.
-
 To process selected environments or use a different OpenSSL installation:
 
 ```powershell
@@ -103,7 +106,7 @@ To process selected environments or use a different OpenSSL installation:
 
 Use `-CertificatePath` if the environment folders are elsewhere. The script stops on the first error; any PFX files already created are retained. The PFX contains the private key: restrict access, do not commit or email it, and handle it as carefully as the original `.key` file.
 
-Add `-Environment DEV`, for example, to export just one environment.
+The script will validate the PEM bundles, and generate the signed client authentication PFX file (.pfx) and a base64-encoded version of the PFX (pfx.base64) from the PEM bundles in each environment folder. Each PFX includes the certificates in the PEM bundle, and is checked before being saved. Existing PFX files are never overwritten.
 
 **Security:** Both files contain the private key without meaningful password protection. Base64 is encoding, not encryption. Restrict access to both files and the secret value, never commit or email them, and remove temporary copies when no longer needed.
 
@@ -113,7 +116,6 @@ The following steps are conducted in the Azure Portal for each environment.
 
 1) Navigate to the relevant infra key vault, e.g. `ece-dev-kv-infra`, `ece-test-kv-infra`, `ece-pp-kv-infra`, `ece-kv-infra`.
 2) Add a new version of the 'dwp-capi-client-certificate' certificate using the corresponding .pfx file.
-
 3) Navigate to the relevant API key vault for each environment, e.g. `ece-dev-kv-ece`, `ece-test-kv-ece`, `ece-pp-kv-ece`, `ece-kv-ece`
 4) Add a new value to the 'Dwp--ApiCertificate' secret with the content of the corresponding .pfx.base64 file. 
 5) Set the expiry date of the new 'Dwp--ApiCertificate' secret to match the certificate's expiry date.
