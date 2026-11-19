@@ -4,10 +4,8 @@
 *.pfx
 *.pfx.base64
 
+# CSR files
+*.csr
+
 # Configuration files
 *.conf
-
-# Certificates (optional - keep for reference)
-# *.csr
-# *.cer
-# *.crt
