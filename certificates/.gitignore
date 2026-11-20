@@ -1,0 +1,11 @@
+# Private keys - DO NOT COMMIT
+*.key
+*.pem
+*.pfx
+*.pfx.base64
+
+# CSR files
+*.csr
+
+# Configuration files
+*.conf
