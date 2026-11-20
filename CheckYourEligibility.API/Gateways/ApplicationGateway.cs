@@ -18,13 +18,19 @@ namespace CheckYourEligibility.API.Gateways;
 
 public class ApplicationGateway : IApplication
 {
-    private const int referenceMaxValue = 99999999;
-    private static Random randomNumber;
-    private readonly IEligibilityCheckContext _db;
-    private readonly int _hashCheckDays;
-    private readonly int _hashCheckDaysWF;
-    private readonly ILogger _logger;
     protected readonly IMapper _mapper;
+
+    private const int referenceMaxValue = 99999999;
+
+    private static Random randomNumber;
+
+    private readonly IEligibilityCheckContext _db;
+
+    private readonly int _hashCheckDays;
+
+    private readonly int _hashCheckDaysWF;
+
+    private readonly ILogger _logger;
 
     public ApplicationGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext, IMapper mapper,
         IConfiguration configuration)
@@ -57,7 +63,7 @@ public class ApplicationGateway : IApplication
             else
                 item.Status = ApplicationStatus.SentForReview;
             item.Tier = hashCheck.Tier;
-            
+
             // If status is Entitled, calculate and set EligibilityEndDate
             if (item.Status == ApplicationStatus.Entitled)
             {
@@ -85,7 +91,6 @@ public class ApplicationGateway : IApplication
                         StorageAccountReference = evidenceItem.StorageAccountReference
                     });
 
-
             await _db.Applications.AddAsync(item);
             await AddStatusHistory(item, ApplicationStatus.Entitled, item.Tier);
 
@@ -102,7 +107,6 @@ public class ApplicationGateway : IApplication
             throw;
         }
     }
-
 
     public async Task<ApplicationResponse?> GetApplication(string guid)
     {
@@ -169,7 +173,6 @@ public class ApplicationGateway : IApplication
             .Include(x => x.Evidence)
             .Include(x => x.EligibilityCheckHash)
             .ToListAsync();
-
 
         var mappedResults = _mapper.Map<IEnumerable<ApplicationResponse>>(pagedResults);
 
@@ -549,7 +552,6 @@ public class ApplicationGateway : IApplication
         }
     }
 
-
     /// <summary>
     /// Restores an archived application to its most recent non-archived status.
     /// </summary>
@@ -575,7 +577,6 @@ public class ApplicationGateway : IApplication
             throw new BadRequest("No previous non-archived status found for this application, unable to restore");
 
         application.Status = lastStatus.Type;
-        application.Tier = lastStatus.Tier;
         application.Updated = DateTime.UtcNow;
 
         await AddStatusHistory(application, application.Status.Value, application.Tier);
@@ -591,7 +592,6 @@ public class ApplicationGateway : IApplication
             }
         };
     }
-
 
     #region Private
 
@@ -717,7 +717,5 @@ public class ApplicationGateway : IApplication
         return _db.MultiAcademyTrustEstablishments.Where(x => x.MultiAcademyTrustID == matId).Select(x => x.EstablishmentID).ToList();
     }
 
-
-
-    #endregion
+    #endregion Private
 }

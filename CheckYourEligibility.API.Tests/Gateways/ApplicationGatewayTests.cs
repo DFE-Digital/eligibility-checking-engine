@@ -20,9 +20,13 @@ namespace CheckYourEligibility.API.Tests.Gateways;
 public class ApplicationGatewayTests : TestBase.TestBase
 {
     private Mock<ILogger<ApplicationGateway>> _mockLogger = null!;
+
     private IConfiguration _configuration = null!;
+
     private EligibilityCheckContext _dbContext = null!;
+
     private ApplicationGateway _sut = null!;
+
     [SetUp]
     public void Setup()
     {
@@ -122,7 +126,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         result.Should().BeFalse();
     }
 
-    #endregion
+    #endregion DeleteApplication Tests
 
     #region Archived Application Filtering Tests
 
@@ -256,7 +260,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         result.Should().Be(app.LocalAuthorityID);
     }
 
-    #endregion
+    #endregion Archived Application Filtering Tests
 
     #region RestoreArchivedApplicationStatus Tests
 
@@ -283,17 +287,17 @@ public class ApplicationGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task RestoreArchivedApplicationStatus_ShouldRestorePreviousTier_WhenApplicationIsArchived()
+    public async Task RestoreArchivedApplicationStatus_ShouldRestoreStatusOfApplication()
     {
-        // Arrange - application was 'expanded' at the time it was archived (per CreateTestApplication default),
-        // but the last non-archived history entry recorded 'targeted' - restore should bring back 'targeted'.
+        // Arrange - application was 'targeted' at the time it was archived (per CreateTestApplication default),
+        // Restore should not update 'Tier'. Tier should remain what it was at initial check/ application approal and never be changed
         var app = CreateTestApplication();
         app.Status = Domain.Enums.ApplicationStatus.Archived;
-        app.Tier = EligibilityTier.expanded;
+        app.Tier = EligibilityTier.targeted;
         await _dbContext.Applications.AddAsync(app);
         var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
         previousStatus.Type = Domain.Enums.ApplicationStatus.Entitled;
-        previousStatus.Tier = EligibilityTier.targeted;
+        previousStatus.Tier = null;
         await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
         await _dbContext.SaveChangesAsync();
 
@@ -360,7 +364,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             .WithMessage("No previous non-archived status found for this application, unable to restore");
     }
 
-    #endregion
+    #endregion RestoreArchivedApplicationStatus Tests
 
     #region BulkImportApplications Tests
 
@@ -429,7 +433,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             Times.Never);
     }
 
-    #endregion
+    #endregion BulkImportApplications Tests
 
     #region UpdateApplication Tests
 
@@ -522,7 +526,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
         historyEntries.Should().BeEmpty();
     }
 
-    #endregion
+    #endregion UpdateApplication Tests
 
     #region Helper Methods
 
@@ -534,7 +538,7 @@ public class ApplicationGatewayTests : TestBase.TestBase
             Reference = _fixture.Create<string>().PadRight(8)[..8], // Limit length
             Type = CheckEligibilityType.FreeSchoolMeals,
             Status = Domain.Enums.ApplicationStatus.Entitled,
-            Tier =  EligibilityTier.expanded,
+            Tier = EligibilityTier.expanded,
             ParentFirstName = _fixture.Create<string>().PadRight(20)[..20],
             ParentLastName = _fixture.Create<string>().PadRight(20)[..20],
             ParentNationalInsuranceNumber = _fixture.Create<string>().PadRight(9)[..9],
@@ -563,5 +567,5 @@ public class ApplicationGatewayTests : TestBase.TestBase
         };
     }
 
-    #endregion
+    #endregion Helper Methods
 }
