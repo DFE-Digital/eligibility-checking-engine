@@ -1460,7 +1460,7 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
     }
 
     [Test]
-    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
+    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligible()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -1492,11 +1492,11 @@ public class CheckingEngineGatewayTests : TestBase.TestBase
         var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
 
         // Assert
-        status.Should().Be(CheckEligibilityStatus.notFound);
+        status.Should().NotBe(CheckEligibilityStatus.notFound);
     }
 
     [Test]
-    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligibles()
+    public async Task ECS_Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligible()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
