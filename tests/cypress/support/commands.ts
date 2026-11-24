@@ -143,7 +143,7 @@ Cypress.Commands.add(
 
     options.headers["Content-Type"] = contentType
       ? contentType
-      : "application/vnd.api+json;version=1.0";
+      : "application/json";
     return cy.request(options);
   },
 );
