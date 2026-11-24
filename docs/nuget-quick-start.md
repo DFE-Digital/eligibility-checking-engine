@@ -1,91 +1,76 @@
 # NuGet Publishing - Developer Quick Reference
 
-## For Core Library Developers
+## For Core library developers
 
-### Publishing a Change
-```bash
-1. Edit CheckYourEligibility.Core code
-2. git commit && git push origin main
-   ↓
-   Pipeline automatically:
-   ✓ Runs all tests
-   ✓ Creates NuGet package (version: 0.1.0.{BUILD_NUMBER})
-   ✓ Publishes to s203-ece feed 
-```
+### Publish a change
 
-### Local Development & Testing
-```bash
-# Debug mode (default) - instant feedback on code changes
-dotnet build
-dotnet test
+1. Make and test changes on a branch.
+2. Open a pull request to `main`.
+3. After approval and merge, the `publish-nuget.yml` pipeline runs the Core unit and SQL Server integration tests.
+4. If those tests pass, the pipeline packs and publishes the package to the `s203-ece` Azure Artifacts feed.
 
-# Release mode - test packaged version (optional)
-dotnet build -c Release
-```
+The regular pull-request build pipeline also runs the API tests.
 
 ### Versioning
-- **Local:** `0.1.0-local` (for local testing)
-- **Pipeline:** `0.1.0.{BUILD_NUMBER}` (e.g., `0.1.0.456`)
-- **Bump major/minor:** Edit `.csproj` → Change `<VersionPrefix>0.1.0</VersionPrefix>` to `<VersionPrefix>0.2.0</VersionPrefix>` → Push
 
----
+- **Local package builds:** use the project `VersionPrefix` (currently `0.1.0`);
+- **Published packages:** use the version prefix and Azure DevOps build ID, currently `0.1.0.<BuildId>`.
+- **Bump the major or minor version:** update `<VersionPrefix>` in `CheckYourEligibility.Core.csproj` and submit the change in a pull request. The next successful publish uses the new prefix and that run's build ID.
 
-## For Functions App Developers
+## For Functions app developers
 
-### Local Development
-```bash
-# Clone both repos side-by-side
-C:\repos\eligibility-checking-engine
-C:\repos\eligibility-checking-engine-functions
+The following assumes the Functions app repository is configured to use a local Core project reference in Debug and the published package in Release.
 
-# Debug build (default) uses Core project reference
-dotnet build
-dotnet test
-# Changes to Core are instantly available
+### Local development
 
-# Release build uses package from NuGet feed
-dotnet build -c Release
-```
+Clone both repositories side-by-side, then build and test the Functions app in Debug. Changes to the Core project are then available through the project reference.
 
-### Updating to New Core Version
-1. Check Azure Artifacts feed for latest version: `0.1.0.{BUILD_NUMBER}`
-2. Edit `.csproj` in Functions app:
+Use a Release build to test the package reference configured in the Functions app.
+
+### Update to a new Core package version
+
+1. Find the required package version in the `s203-ece` Azure Artifacts feed.
+2. Update the Functions app `.csproj` package reference, for example:
+
    ```xml
-   <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.456" />
+   <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.12345" />
    ```
-3. `dotnet restore` and build
 
----
+3. Restore and build the Functions app.
 
 ## Common Tasks
 
 ### I can't build locally
-- Ensure you have .NET 10.0 SDK installed
-- Run: `dotnet restore`
-- If still failing, check: [Troubleshooting](#troubleshooting)
 
-### I want to test the packaged version locally
+- Install the .NET 10 SDK.
+- Run `dotnet restore`.
+- If the build still fails, see [Troubleshooting in the setup guide](nuget-setup-and-configuration.md#troubleshooting).
+
+### I want to test the packaged version
+
+Build the Functions app in Release mode, provided its project file is configured to reference the package in that configuration:
+
 ```bash
-# Build and test with Release config to use NuGet package
 dotnet build -c Release
 dotnet test -c Release
 ```
 
 ### I need to bump the version
-Edit `CheckYourEligibility.Core/CheckYourEligibility.Core.csproj`:
+
+Update `VersionPrefix` in `CheckYourEligibility.Core/CheckYourEligibility.Core.csproj`, then submit the change in a pull request. For example:
+
 ```xml
 <!-- Before -->
 <VersionPrefix>0.1.0</VersionPrefix>
 
 <!-- After -->
 <VersionPrefix>0.2.0</VersionPrefix>
-
-<!-- Next build → 0.2.0.{BUILD_NUMBER} -->
 ```
 
-### Pipeline didn't publish
-- Check Azure DevOps → Pipelines → publish-nuget → logs
-- Common cause: Tests failed (fix locally and re-push)
-- Check build service has permissions on `s203-ece` feed
+The next successful publish uses `0.2.0.<BuildId>`.
 
----
+### The publish pipeline did not publish a package
+
+- Check the Azure DevOps pipeline logs for failed Core unit or integration tests.
+- If tests passed, check the pipeline identity's permissions on the `s203-ece` feed.
+- The publish pipeline runs after changes are merged to `main`, not on pull requests.

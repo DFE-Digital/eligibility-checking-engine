@@ -1,52 +1,33 @@
 # NuGet Package Publishing
 
-The Core library is automatically published as a NuGet package to the `s203-ece` Azure Artifacts feed on every commit to `main`.
+The Core library is published to the `s203-ece` Azure Artifacts feed by the `publish-nuget.yml` pipeline after it runs for a commit on `main`.
 
-The publish step uses the .NET CLI as ubuntu agents do not have Mono installed which is required by the usual Nuget published task.
+The pipeline uses the .NET CLI to pack and publish the package.
 
 ## Getting Started
 
-### For Developers (Quick Start)
-**See:** [nuget-quick-start.md](nuget-quick-start.md)
+### For Core library developers
 
-**What you need to know:**
-- Core devs: Edit code → test locally → `git push main` → Done! (Pipeline handles the rest)
-- Functions app devs: Use project reference locally (Debug mode) for instant feedback
-- Versioning is automatic: `0.1.0.{BUILD_NUMBER}`
+Make and test changes on a branch, then open a pull request to `main`. After the pull request is approved and merged, the publish pipeline runs the Core unit and SQL Server integration tests, then publishes the package if they pass. The regular pull-request build pipeline also runs the API tests.
 
-### For Setup & Configuration
-**See:** [nuget package setup & config](nuget-package-setup-and-config.md)
+See the [NuGet developer quick start](nuget-quick-start.md).
 
-**What it covers:**
-- Complete architecture and process flow
-- Implementation details and technical setup
-- Azure DevOps pipeline configuration
-- Functions app conditional configuration
-- Troubleshooting guide
-- Development workflow details
+### For Functions app developers
+
+The Functions app repository can use a project reference for local Debug development and a package reference for Release builds, if configured to do so. See the [setup and configuration guide](nuget-setup-and-configuration.md)
+for an example.
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `CheckYourEligibility.Core/CheckYourEligibility.Core.csproj` | Auto-versioning configuration |
-| `pipeline/publish-nuget.yml` | Automated publish pipeline |
-| `docs/nuget-quick-start.md` | Developer quick reference |
-| `docs/nuget-package-setup-and-config.md` | Complete setup & configuration guide |
+| [CheckYourEligibility.Core.csproj](../CheckYourEligibility.Core/CheckYourEligibility.Core.csproj) | Package ID and version configuration |
+| [publish-nuget.yml](../pipeline/publish-nuget.yml) | Build, test, pack and publish pipeline |
+| [nuget-quick-start.md](nuget-quick-start.md) | Developer quick reference |
+| [nuget-setup-and-configuration.md](nuget-setup-and-configuration.md) | Setup and configuration details |
 
 ## Quick Summary
 
-✅ **No more manual steps** - Versioning, packing, and publishing are fully automated  
-✅ **Safe process** - All tests must pass before publishing (quality gate)  
-✅ **Developer-friendly** - Works with standard `dotnet` commands  
-✅ **Two modes** - Debug (instant feedback with project reference) + Release (test packaged version)  
-
-## Workflow
-
-```
-Core Developers:
-  Code → Test locally → git push main → ✓ Done!
-  
-Functions App Developers:
-  Clone both repos → Debug build (instant feedback) → Update version when needed
-```
+- The package version is based on `VersionPrefix` and the Azure DevOps build ID.
+- The publish pipeline must pass its Core unit and integration tests before publishing.
+- Use a pull request to merge Core changes to `main`; merging triggers the publish pipeline.

@@ -2,9 +2,11 @@
 
 ## Overview
 
-The Core library is automatically published as a NuGet package to the `s203-ece` Azure Artifacts feed. Every commit to `main` triggers an automated pipeline that tests, packs, and publishes the library.
+The Core library is published to the `s203-ece` Azure Artifacts feed by the `publish-nuget.yml` pipeline after a change is merged to `main`.
 
-**Key benefit:** Zero manual steps. No more manual versioning, packing, or pushing.
+**Key benefit:** Package versioning per pipeline run, packing, and publishing are automated. Update `VersionPrefix` manually when making a major or minor version change.
+
+For a quick developer reference, see [nuget-quick-start.md](nuget-quick-start.md).
 
 ---
 
@@ -13,7 +15,7 @@ The Core library is automatically published as a NuGet package to the `s203-ece`
 ### High-Level Flow
 
 ```
-Developer pushes to main
+Pull request merged to main
        ↓
 Pipeline triggers (automatic)
        ↓
@@ -22,13 +24,12 @@ Pipeline triggers (automatic)
     │ • Build solution             │
     │ • Run Core unit tests        │
     │ • Run Core integration tests │
-    │ • Run API tests              │
     └──────────────────────────────┘
        ↓ (only if tests pass)
     ┌──────────────────────────────┐
     │ Stage 2: Pack & Publish      │
     │ • Create NuGet package       │
-    │ • Auto-version: 0.1.0.{#}    │
+    │ • Version includes BuildId    │
     │ • Publish to s203-ece feed   │
     └──────────────────────────────┘
        ↓
@@ -39,65 +40,66 @@ Package available for consumption
 
 **Base Version:** Defined in `.csproj` → `<VersionPrefix>0.1.0</VersionPrefix>`
 
-**Full Version:**
-- **Local builds:** `0.1.0-local` (pre-release, never published)
-- **Pipeline builds:** `0.1.0.{BUILD_NUMBER}` (e.g., `0.1.0.450`, `0.1.0.451`)
+**Package version:**
+- **Local builds:** use the project `VersionPrefix` (currently `0.1.0`);
+- **Pipeline builds:** use `VersionPrefix` plus the Azure DevOps build ID (currently `0.1.0.<BuildId>`).
 
 **How it works:**
 ```
-Build #450 → Package 0.1.0.450
-Build #451 → Package 0.1.0.451
-Build #452 → Package 0.1.0.452
+Build ID 450 → Package 0.1.0.450
+Build ID 451 → Package 0.1.0.451
+Build ID 452 → Package 0.1.0.452
 ```
 
 **Bumping Major/Minor:**
 1. Edit `CheckYourEligibility.Core/CheckYourEligibility.Core.csproj`
 2. Change: `<VersionPrefix>0.1.0</VersionPrefix>` → `<VersionPrefix>0.2.0</VersionPrefix>`
-3. Commit to main
-4. Next build: `0.2.0.{BUILD_NUMBER}`
+3. Submit the change in a pull request and merge it to `main`
+4. The next successful publish uses `0.2.0.<BuildId>`
 
 ---
 
 ## Implementation Details
 
-### Files Modified
+### Relevant files
 
 #### 1. `CheckYourEligibility.Core/CheckYourEligibility.Core.csproj`
 
 ```xml
-<PropertyGroup>
-  <!-- Base version - update for major/minor bumps -->
-  <VersionPrefix>0.1.0</VersionPrefix>
-  
-  <!-- Pipeline builds use build number -->
-  <Version Condition="'$(Build_BuildNumber)' != ''">$(VersionPrefix).$(Build_BuildNumber)</Version>
-  
-  <!-- Local builds use pre-release suffix -->
-  <Version Condition="'$(Build_BuildNumber)' == ''">$(VersionPrefix)-local</Version>
+<VersionPrefix>0.1.0</VersionPrefix>
+
+<PropertyGroup Condition="'$(Build_BuildId)' != ''">
+  <Version>$(VersionPrefix)</Version>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(Build_BuildId)' != ''">
+  <PackageVersion>$(VersionPrefix).$(Build_BuildId)</PackageVersion>
 </PropertyGroup>
 ```
 
 **Why this approach:**
 - Developers can build locally without setup
 - Pipeline has full control over versioning
-- `-local` suffix clearly marks pre-release versions
+- Pipeline builds receive a package version containing the Azure DevOps build ID
 - No manual version edits needed (except base version bumps)
 
 #### 2. `pipeline/publish-nuget.yml`
 
-New file that:
-- Triggers on commits to `main` branch
-- Runs all tests (unit + integration)
+This pipeline:
+- Triggers on commits to the `main` branch (not pull requests)
+- Builds the solution and runs Core unit and SQL Server integration tests
 - Fails if tests don't pass (quality gate)
-- Packs NuGet package with auto-generated version
+- Packs the NuGet package with the build ID in its version
 - Publishes to `s203-ece` feed
+
+The regular pull-request build pipeline separately runs the API tests.
 
 Key section for versioning:
 ```yaml
 - task: DotNetCoreCLI@2
   displayName: 'Pack NuGet package'
   env:
-    Build_BuildNumber: $(Build.BuildNumber)  # Pass build # to MSBuild
+    Build_BuildId: $(Build.BuildId)  # Pass the Azure DevOps build ID to MSBuild
   inputs:
     command: 'pack'
     packagesToPack: 'CheckYourEligibility.Core/CheckYourEligibility.Core.csproj'
@@ -151,7 +153,8 @@ In the Azure Functions app repository (`eligibility-checking-engine-functions`):
 
 <!-- Release mode: NuGet package from feed -->
 <ItemGroup Condition="$(UseLocalCoreProject) != 'true'">
-  <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.456" />
+  <!-- Replace with a version published to the feed -->
+  <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.12345" />
 </ItemGroup>
 ```
 
@@ -181,20 +184,14 @@ dotnet build -c Release
 ### Core Library Developers
 
 **Day-to-day:**
-```bash
-1. Edit code in CheckYourEligibility.Core
-2. dotnet test (run locally)
-3. git commit && git push origin main
-4. Pipeline handles the rest automatically ✓
-```
+
+1. Make changes in `CheckYourEligibility.Core` on a branch.
+2. Run the Core unit tests and, when appropriate, the SQL Server integration tests.
+3. Open a pull request to `main`.
+4. After the pull request is approved and merged, the publish pipeline runs and publishes the package if its Core tests pass.
 
 **When bumping version:**
-```bash
-1. Edit CheckYourEligibility.Core.csproj
-   <VersionPrefix>0.2.0</VersionPrefix>
-2. git commit && git push origin main
-3. Next build: 0.2.0.{BUILD_NUMBER}
-```
+Update `VersionPrefix` in `CheckYourEligibility.Core.csproj` and submit the change in a pull request. After it is merged, the next successful publish uses the new prefix and that run's Azure DevOps build ID.
 
 ### Functions App Developers
 
@@ -207,12 +204,15 @@ dotnet build -c Release
 ```
 
 **When updating to new Core version:**
-```bash
-1. Check Azure Artifacts for latest version
-2. Edit Functions app .csproj:
-   <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.456" />
-3. dotnet restore && dotnet build -c Release
-```
+
+1. Find the required version in the Azure Artifacts feed.
+2. Update the Functions app `.csproj` package reference. Replace this example version with the required published version:
+
+   ```xml
+   <PackageReference Include="CheckYourEligibility.Core" Version="0.1.0.12345" />
+   ```
+
+3. Run `dotnet restore` and build the app in Release mode.
 
 ---
 
@@ -249,16 +249,14 @@ dotnet build -c Release
 - Check the pipeline uses the project-qualified reference: `publishVstsFeed: '6e58320b-ee65-44e3-9a4b-5f57f27635b4/s203-ece'`
 - Verify the pipeline's build service has access to the project and the feed's "Contributor" role
 
-**Tests failed, package not published**
-- This is correct behavior (quality gate)
-- Fix test failures locally
-- Commit and push again
-- Pipeline will retry automatically
+**Core tests failed, package not published**
+- This is the publish pipeline's quality gate.
+- Fix the failures, submit the changes in a pull request, and merge after approval.
+- The publish pipeline runs again for the new commit on `main`.
 
 **Package version already exists**
-- Build number should auto-increment
-- Check Azure DevOps → Pipeline settings → Build number format
-- If stuck, manually increment `Build.BuildNumber` counter
+- The package version uses the Azure DevOps build ID. Check the pipeline logs for the ID used by the run.
+- Do not manually change `Build.BuildNumber`; it is not used for package versioning.
 
 ---
 
@@ -266,10 +264,10 @@ dotnet build -c Release
 
 | Scenario | Version | Notes |
 |----------|---------|-------|
-| Local build | `0.1.0-local` | Pre-release, never published |
-| Pipeline build #450 | `0.1.0.450` | Official release |
-| Pipeline build #451 | `0.1.0.451` | Auto-incremented |
-| After bumping base version | `0.2.0.452` | Major/minor version bumped |
+| Local build | `0.1.0` | Uses the project `VersionPrefix`; no local prerelease suffix is configured |
+| Pipeline build ID 450 | `0.1.0.450` | Published package |
+| Pipeline build ID 451 | `0.1.0.451` | Published package |
+| After bumping base version | `0.2.0.<BuildId>` | New prefix with that pipeline run's build ID |
 
 ---
 
@@ -287,74 +285,14 @@ dotnet build -c Release
 
 ### Common Scenarios
 
-**I pushed to main but package didn't publish**
+**A change was merged to main but the package wasn't published**
 - Check pipeline logs (tests may have failed)
 - If tests passed but publish failed, check feed permissions
 
-**I need to re-publish an old version**
-- Re-push the commit from that version
-- Pipeline will create a new build with new version number
-- Or use `allowPackageConflicts: true` in pipeline
+**I need to publish a change based on an older version**
+- Submit the required change in a pull request and merge it to `main`.
+- The pipeline publishes a new package version using that run's build ID. Existing package versions are not overwritten.
 
-**I want to test a pre-release version**
-- Local builds automatically create `0.1.0-local` packages
-- Can be tested with local `nuget.config`
-- Won't be pushed to official feed
-
----
-
-## Key Benefits
-
-✅ **Automated** - No manual steps, no human error  
-✅ **Consistent** - Same process every time  
-✅ **Safe** - Tests must pass before publish  
-✅ **Transparent** - Build numbers in version strings  
-✅ **Developer-friendly** - Works with standard `dotnet` commands  
-✅ **Scalable** - Works for multiple projects and developers  
-
----
-
-## Quick Reference
-
-For quick developer reference, see: [nuget-quick-start.md](docs/nuget-quick-start.md)
-
-For implementation checklist, see below.
-
----
-
-## Implementation Checklist
-
-Use this to ensure everything is properly set up:
-
-### Code Changes
-- [x] Updated `CheckYourEligibility.Core.csproj` with dynamic versioning
-- [x] Created `pipeline/publish-nuget.yml`
-- [x] Local builds work without errors
-- [x] Local pack creates `0.1.0-local.nupkg`
-
-### Azure DevOps Setup
-- [ ] Pipeline `publish-nuget.yml` added to Azure DevOps
-- [ ] Pipeline triggers on commits to `main` (not PRs)
-- [ ] Build service has permissions on `s203-ece` feed
-- [ ] First test run successful
-
-### Functions App Setup
-- [ ] Repos cloned side-by-side
-- [ ] `.csproj` updated with conditional references
-- [ ] Debug build uses project reference (verified)
-- [ ] Release build uses NuGet package (verified)
-
-### Verification
-- [ ] Core repo: `dotnet build` works locally
-- [ ] Core repo: `dotnet pack -c Release` creates versioned package
-- [ ] Functions app: `dotnet build` works in Debug mode
-- [ ] Functions app: `dotnet build -c Release` works in Release mode
-- [ ] Pipeline: First commit to main triggers automatically
-- [ ] Pipeline: Package published to `s203-ece` feed
-- [ ] Functions app: Can update package version and build
-
-### Team Communication
-- [ ] Share [nuget-quick-start.md](nuget-quick-start.md) with developers
-- [ ] Brief team on new process
-- [ ] Explain no more manual packing/pushing needed
-- [ ] Point to this guide for detailed questions
+**I want to test a package locally**
+- A local pack uses the project `VersionPrefix` (currently `0.1.0`).
+- Local builds are not published to the Azure Artifacts feed by this pipeline.
