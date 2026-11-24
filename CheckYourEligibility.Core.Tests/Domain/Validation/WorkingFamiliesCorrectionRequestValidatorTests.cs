@@ -137,7 +137,6 @@ public class WorkingFamiliesCorrectionRequestValidatorTests
     [TestCase("SW1A 1AA", true)]
     [TestCase("sw1a 1aa", true)]
     [TestCase("GIR 0AA", true)]
-    [TestCase("SW1A1AA", false)]
     [TestCase("XSW1A 1AA", false)]
     [TestCase("GIR 0AA!", false)]
     [TestCase("SW1A 1AA\n", false)]

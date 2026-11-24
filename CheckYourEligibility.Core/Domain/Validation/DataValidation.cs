@@ -52,7 +52,7 @@ internal static class DataValidation
             @"ÃãÑñÕõĨĩŨũẼẽỸỹ" +
             @"ÄäËëÏïÖöÜüŸÿ" +
             @"ÇçĢģĶķĻļŅņŖŗŞşŢţ" +
-            @"ÅåŮů" +
+            @"ÅåØøŮů" +
             @"ĀāĒēĪīŌōŪūȲȳ" +
             @"ĂăĔĕĞğĬĭŎŏŬŭ" +
             @"ĊċĖėĠġİẊẋŻż" +
@@ -78,14 +78,11 @@ internal static class DataValidation
 	internal static bool BeAValidPostcode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
-
+ 
         var regexString =
-            @"\A(?:" +
-            @"([Gg][Ii][Rr] 0[Aa]{2})" +
-            @"|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2}))" +
-            @"\z";
+            @"^(GIR\s?0AA|(?:[A-PR-UWYZ][0-9][0-9]?|[A-PR-UWYZ][A-HK-Y][0-9][0-9]?|[A-PR-UWYZ][0-9][A-HJKPSTUW]|[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRVWXY])\s?[0-9][ABD-HJLNP-UW-Z]{2})\z";
         var rg = new Regex(regexString);
-        var res = rg.Match(value);
+        var res = rg.Match(value.ToUpperInvariant());
         return res.Success;
     }
 }

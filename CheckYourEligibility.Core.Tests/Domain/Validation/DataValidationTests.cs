@@ -73,9 +73,9 @@ string accentType)
     [TestCase("LastName", "González")]
     [TestCase("ChildFirstName", "Dénis")]
     [TestCase("ChildLastName", "Müller")]
-    public void Parent_and_child_name_fields_with_accented_characters_pass_validation(
-string fieldName,
-string value)
+    [TestCase("ChildFirstName", "Søren")]
+    [TestCase("ChildLastName", "Østergaard")]
+    public void Parent_and_child_name_fields_with_accented_characters_pass_validation(string fieldName, string value)
     {
         var request = ValidRequestWithOptionalApplicationData();
 
