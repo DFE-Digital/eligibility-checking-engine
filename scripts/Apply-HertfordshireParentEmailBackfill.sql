@@ -167,16 +167,19 @@ SELECT COUNT(*) AS WarmUp_StagedRows FROM dbo.zz_HertsEmailBackfill_Stage;
 GO
 
 DECLARE @Mode      VARCHAR(10) = 'full';   -- 'pilot' | 'full'
+DECLARE @Source    CHAR(1)     = 'B';      -- NULL = all staged rows; 'A' or 'B' = only rows from that tab
 DECLARE @BatchSize INT         = 2000;
 DECLARE @Rows      INT         = 1;
 DECLARE @Total     INT         = 0;
 
 IF @Mode NOT IN ('pilot', 'full') THROW 50000, '@Mode must be pilot or full', 1;
+IF @Source IS NOT NULL AND @Source NOT IN ('A', 'B') THROW 50000, '@Source must be NULL, A or B', 1;
 IF @Mode = 'pilot' AND NOT EXISTS (SELECT 1 FROM dbo.zz_HertsEmailBackfill_Pilot)
     THROW 50000, 'Pilot mode but dbo.zz_HertsEmailBackfill_Pilot is empty - see section 2.', 1;
 IF @@TRANCOUNT > 0 THROW 50000, 'A transaction is already open on this connection - run ROLLBACK first.', 1;
 
-PRINT CONCAT('Starting ', @Mode, ' run at ', CONVERT(VARCHAR(30), SYSUTCDATETIME(), 126), ' UTC');
+PRINT CONCAT('Starting ', @Mode, ' run', CASE WHEN @Source IS NULL THEN '' ELSE ' (tab ' + @Source + ' only)' END,
+             ' at ', CONVERT(VARCHAR(30), SYSUTCDATETIME(), 126), ' UTC');
 
 WHILE @Rows > 0
 BEGIN
@@ -190,6 +193,7 @@ BEGIN
         JOIN dbo.zz_HertsEmailBackfill_Stage s ON s.Reference = a.Reference
         WHERE (@Mode = 'full'
                OR EXISTS (SELECT 1 FROM dbo.zz_HertsEmailBackfill_Pilot p WHERE p.Reference = a.Reference))
+          AND (@Source IS NULL OR s.Source = @Source)
           -- the same assertions as the preview, enforced at write time
           AND a.LocalAuthorityID = 919
           AND a.Status <> 'Archived'
@@ -201,7 +205,7 @@ BEGIN
        SET ParentEmail = NewEmail,
            Updated     = SYSUTCDATETIME()
     OUTPUT deleted.ApplicationID, deleted.Reference, deleted.ParentEmail, deleted.Updated,
-           inserted.ParentEmail, SYSUTCDATETIME(), @Mode
+           inserted.ParentEmail, SYSUTCDATETIME(), @Mode + ISNULL('-' + @Source, '')
       INTO dbo.zz_HertsEmailBackfill_Backup
            (ApplicationID, Reference, OldParentEmail, OldUpdated, NewParentEmail, AppliedAt, Mode);
 
@@ -223,14 +227,15 @@ GO
 -- -----------------------------------------------------------------------------
 -- 4. VERIFY
 -- -----------------------------------------------------------------------------
-SELECT 'backup rows (all runs)'                          AS Metric, COUNT(*) AS Value FROM dbo.zz_HertsEmailBackfill_Backup
-UNION ALL SELECT '  pilot run',                                    COUNT(*) FROM dbo.zz_HertsEmailBackfill_Backup WHERE Mode = 'pilot'
-UNION ALL SELECT '  full run',                                     COUNT(*) FROM dbo.zz_HertsEmailBackfill_Backup WHERE Mode = 'full'
-UNION ALL SELECT 'staged rows',                                    COUNT(*) FROM dbo.zz_HertsEmailBackfill_Stage
-UNION ALL SELECT 'staged rows now carrying the staged email',      COUNT(*) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE a.ParentEmail = s.ParentEmail
-UNION ALL SELECT 'Problem: staged rows still blank',               COUNT(*) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE NULLIF(LTRIM(RTRIM(a.ParentEmail)), '') IS NULL
-UNION ALL SELECT 'Problem: staged rows with a different email',    COUNT(*) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE a.ParentEmail <> s.ParentEmail
-UNION ALL SELECT 'Problem: backup rows whose old email was not blank', COUNT(*) FROM dbo.zz_HertsEmailBackfill_Backup WHERE NULLIF(LTRIM(RTRIM(OldParentEmail)), '') IS NOT NULL;
+SELECT 'backup rows (all runs)'                          AS Metric, CAST(COUNT(*) AS VARCHAR(20)) AS Value FROM dbo.zz_HertsEmailBackfill_Backup
+UNION ALL SELECT '  run: ' + Mode,                                 CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Backup GROUP BY Mode
+UNION ALL SELECT 'staged rows',                                    CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage
+UNION ALL SELECT '  tab ' + Source,                                CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage GROUP BY Source
+UNION ALL SELECT 'staged rows now carrying the staged email',      CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE a.ParentEmail = s.ParentEmail
+UNION ALL SELECT 'staged rows still blank - Archived (expected)',  CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE NULLIF(LTRIM(RTRIM(a.ParentEmail)), '') IS NULL AND a.Status = 'Archived'
+UNION ALL SELECT 'Problem: staged rows still blank - LIVE',        CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE NULLIF(LTRIM(RTRIM(a.ParentEmail)), '') IS NULL AND a.Status <> 'Archived'
+UNION ALL SELECT 'Problem: staged rows with a DIFFERENT non-blank email', CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Stage s JOIN dbo.Applications a ON a.Reference = s.Reference WHERE NULLIF(LTRIM(RTRIM(a.ParentEmail)), '') IS NOT NULL AND a.ParentEmail <> s.ParentEmail
+UNION ALL SELECT 'Problem: backup rows whose old email was not blank', CAST(COUNT(*) AS VARCHAR(20)) FROM dbo.zz_HertsEmailBackfill_Backup WHERE NULLIF(LTRIM(RTRIM(OldParentEmail)), '') IS NOT NULL;
 GO
 
 -- Before / after for the pilot rows - compare with the admin portal
