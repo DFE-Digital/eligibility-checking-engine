@@ -1453,43 +1453,7 @@ public class CheckingEngineGatewayTests : TestBase
     }
 
     [Test]
-    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_notFound()
-    {
-        // Arrange
-        var item = _fixture.Create<EligibilityCheck>();
-        var wf = _fixture.Create<CheckEligibilityRequestWorkingFamiliesData>();
-        wf.DateOfBirth = "2022-01-01";
-        wf.NationalInsuranceNumber = "AB123456C";
-        wf.EligibilityCode = "50012345678";
-        wf.LastName = "smith";
-        var dataItem = GetCheckProcessData(wf);
-        item.Type = CheckEligibilityType.WorkingFamilies;
-        item.Status = CheckEligibilityStatus.queuedForProcessing;
-        item.CheckData = JsonConvert.SerializeObject(dataItem);
-        item.IsDeleted = false;
-        _fakeInMemoryDb.CheckEligibilities.Add(item);
-
-        var wfEvent = _fixture.Create<WorkingFamiliesEvent>();
-        wfEvent.EligibilityCode = "50012345678";
-        wfEvent.ParentNationalInsuranceNumber = "AB123456C";
-        wfEvent.ParentLastName = "doe";
-        wfEvent.ParentDateOfBirth = new DateTime(1980, 1, 1);
-        wfEvent.ChildDateOfBirth = new DateTime(2022, 1, 1);
-        wfEvent.ValidityEndDate = DateTime.Today.AddDays(-1);
-        wfEvent.GracePeriodEndDate = DateTime.Today.AddDays(-1);
-        _fakeInMemoryDb.WorkingFamiliesEvents.Add(wfEvent);
-        await _fakeInMemoryDb.SaveChangesAsync();
-        _moqAudit.Setup(x => x.AuditAdd(It.IsAny<AuditData>(), null)).ReturnsAsync("");
-        _moqEcsGateway.Setup(x => x.UseEcsforChecksWF).Returns("false");
-        // Act
-        var (status, tier) = await _sut.ProcessCheckAsync(item.EligibilityCheckID);
-
-        // Assert
-        status.Should().Be(CheckEligibilityStatus.notFound);
-    }
-
-    [Test]
-    public async Task Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligibles()
+    public async Task ECS_Given_validRequest_lastNameNonMatch_Process_Should_Return_updatedStatus_eligible()
     {
         // Arrange
         var item = _fixture.Create<EligibilityCheck>();
@@ -1528,7 +1492,7 @@ public class CheckingEngineGatewayTests : TestBase
     }
 
     [Test]
-    public async Task Given_SurnameMismatchAndNoPartner_Process_Should_Return_NotFound()
+    public async Task Given_SurnameMismatchAndNoPartner_Process_Should_Not_Return_NotFound()
     {
         var item = CreateWorkingFamiliesCheck("50012345678");
         var wfEvent = CreateWorkingFamiliesEvent(item);
@@ -1558,7 +1522,7 @@ public class CheckingEngineGatewayTests : TestBase
         var (status, _) = await _sut.ProcessCheckAsync(
             item.EligibilityCheckID);
 
-        status.Should().Be(
+        status.Should().NotBe(
             CheckEligibilityStatus.notFound);
     }
 
@@ -2114,7 +2078,10 @@ public class CheckingEngineGatewayTests : TestBase
     public async Task Given_Citizen_Is_Found_Claim_Is_Found_Result_Should_Return_Eligible_Standard()
     {
         // Arrange
-        CheckProcessData checkProcessData = _fixture.Create<CheckProcessData>();
+        CheckProcessData checkProcessData = _fixture.Build<CheckProcessData>()
+            .With(x => x.Type, CheckEligibilityType.FreeSchoolMeals)
+            .With(x => x.NationalInsuranceNumber, "AB123456C")
+            .Create();
         CAPICitizenResponse citizenResponse = _fixture.Create<CAPICitizenResponse>();
         string correlationId = Guid.NewGuid().ToString();
         string reason =
@@ -2140,7 +2107,7 @@ public class CheckingEngineGatewayTests : TestBase
         _moqDwpGateway.Setup(x => x.GetCitizen(It.IsAny<CitizenMatchRequest>(), It.IsAny<CheckEligibilityType>(), It.IsAny<string>()))
             .ReturnsAsync(citizenResponse);
         _moqDwpGateway.Setup(x => x.GetCitizenClaims(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                eligibilityPolicy.CheckType, It.IsAny<string>(), eligibilityPolicy))
+                It.IsAny<CheckEligibilityType>(), It.IsAny<string>(), eligibilityPolicy))
             .ReturnsAsync(capiClaimResponse);
         // Act
         CAPIClaimResponseBase response = await _sut.DwpCitizenCheck(checkProcessData, CheckEligibilityStatus.parentNotFound, correlationId, eligibilityPolicy);

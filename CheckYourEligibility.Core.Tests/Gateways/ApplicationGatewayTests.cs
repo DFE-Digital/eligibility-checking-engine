@@ -18,7 +18,9 @@ public class ApplicationGatewayTests : TestBase
 {
     private Mock<ILogger<ApplicationGateway>> _mockLogger = null!;
     private EligibilityCheckContext _dbContext = null!;
+
     private ApplicationGateway _sut = null!;
+
     [SetUp]
     public void Setup()
     {
@@ -113,7 +115,7 @@ public class ApplicationGatewayTests : TestBase
         result.Should().BeFalse();
     }
 
-    #endregion
+    #endregion DeleteApplication Tests
 
     #region Archived Application Filtering Tests
 
@@ -247,7 +249,7 @@ public class ApplicationGatewayTests : TestBase
         result.Should().Be(app.LocalAuthorityID);
     }
 
-    #endregion
+    #endregion Archived Application Filtering Tests
 
     #region RestoreArchivedApplicationStatus Tests
 
@@ -274,10 +276,10 @@ public class ApplicationGatewayTests : TestBase
     }
 
     [Test]
-    public async Task RestoreArchivedApplicationStatus_ShouldRestorePreviousTier_WhenApplicationIsArchived()
+    public async Task RestoreArchivedApplicationStatus_ShouldRestoreStatusOfApplication()
     {
-        // Arrange - application was 'expanded' at the time it was archived (per CreateTestApplication default),
-        // but the last non-archived history entry recorded 'targeted' - restore should bring back 'targeted'.
+        // Arrange - application was 'targeted' at the time it was archived (per CreateTestApplication default),
+        // Restore should not update 'Tier'. Tier should remain what it was at initial check/ application approal and never be changed
         var app = CreateTestApplication();
         app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
         app.Tier = EligibilityTier.expanded;
@@ -351,7 +353,7 @@ public class ApplicationGatewayTests : TestBase
             .WithMessage("No previous non-archived status found for this application, unable to restore");
     }
 
-    #endregion
+    #endregion RestoreArchivedApplicationStatus Tests
 
     #region BulkImportApplications Tests
 
@@ -418,7 +420,7 @@ public class ApplicationGatewayTests : TestBase
             Times.Never);
     }
 
-    #endregion
+    #endregion BulkImportApplications Tests
 
     #region UpdateApplication Tests
 
@@ -511,7 +513,7 @@ public class ApplicationGatewayTests : TestBase
         historyEntries.Should().BeEmpty();
     }
 
-    #endregion
+    #endregion UpdateApplication Tests
 
     #region Helper Methods
 

@@ -224,12 +224,12 @@ public class CheckingEngineGateway : ICheckingEngine
 
     /// <summary>
     /// Logic to find a match in Working families events' table
-    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB exists in the WorkingFamiliesEvents Table
     /// </summary>
     /// <returns>WorkingFamiliesEventSummary if event matched or null if no match is found</returns>
     // NOTE: This method will be replacing Check_Working_Families_EventRecord method used for checks.
     private async Task<WorkingFamiliesEventSummary?> Match_Working_Families_EventSummaryRecord(string dateOfBirth,
-        string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+        string eligibilityCode, string nino, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -243,7 +243,6 @@ public class CheckingEngineGateway : ICheckingEngine
         {
             bool isMatch =
             (latestEventRecord.ParentNationalInsuranceNumber == nino || latestEventRecord.PartnerNationalInsuranceNumber == nino) &&
-            (lastName == null || lastName == "" || latestEventRecord.ParentLastName.ToUpper() == lastName || latestEventRecord.PartnerLastName.ToUpper() == lastName) &&
             latestEventRecord.ChildDateOfBirth == checkDob;
 
             if (isMatch)
@@ -270,7 +269,7 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     private async Task<(WorkingFamiliesEvent?, bool)> Check_Working_Families_EventRecord(string dateOfBirth,
-       string eligibilityCode, string nino, string lastName, EligibilityCheckContext dbContextFactory = null)
+       string eligibilityCode, string nino, EligibilityCheckContext dbContextFactory = null)
     {
         var context = dbContextFactory ?? _db;
         DateTime checkDob = DateTime.ParseExact(dateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -282,15 +281,10 @@ public class CheckingEngineGateway : ICheckingEngine
         if (wfRecords.Any())
         {
             var latestEvent = wfRecords.FirstOrDefault();
-            bool surnameMatches = string.IsNullOrEmpty(lastName) ||
-                string.Equals(latestEvent.ParentLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(latestEvent.ChildLastName, lastName, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(latestEvent.PartnerLastName) &&
-                string.Equals(latestEvent.PartnerLastName, lastName, StringComparison.OrdinalIgnoreCase));
 
-            bool isMatch = (latestEvent.ParentNationalInsuranceNumber == nino ||
-                latestEvent.PartnerNationalInsuranceNumber == nino) &&
-                surnameMatches && latestEvent.ChildDateOfBirth == checkDob;
+            bool isMatch =
+                (latestEvent.ParentNationalInsuranceNumber == nino || latestEvent.PartnerNationalInsuranceNumber == nino)
+                && latestEvent.ChildDateOfBirth == checkDob;
 
             if (isMatch)
             {
@@ -301,7 +295,7 @@ public class CheckingEngineGateway : ICheckingEngine
     }
 
     /// <summary>
-    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB-ParentLastName exists in the WorkingFamiliesEvents Table
+    /// Checks if record with the same EligibilityCode-ParentNINO-ChildDOB exists in the WorkingFamiliesEvents Table
     /// If record is found, process logic to determine eligibility
     /// Code is considered 'eligible' if the current date is between the DiscretionaryValidityStartDate and ValidityEndDate or
     /// between the DiscretionaryValidityStartDate and the GracePeriodEndDate.
@@ -360,7 +354,7 @@ public class CheckingEngineGateway : ICheckingEngine
             else
             {
                 (wfEvent, isGracePeriodEndDateApplied) = await Check_Working_Families_EventRecord(
-                    checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, checkData.LastName, dbContextFactory);
+                    checkData.DateOfBirth, checkData.EligibilityCode, checkData.NationalInsuranceNumber, dbContextFactory);
 
                 if (wfEvent == null)
                 {
@@ -444,7 +438,7 @@ public class CheckingEngineGateway : ICheckingEngine
         if (_ecsAdapter.UseEcsforChecksWF == "true")
         {
             var (wfEvent, isGracePeriodEndDateApplied) =
-                await Check_Working_Families_EventRecord(requestCheckData.DateOfBirth, requestCheckData.EligibilityCode, requestCheckData.NationalInsuranceNumber, requestCheckData.LastName, dbContextFactory);
+                await Check_Working_Families_EventRecord(requestCheckData.DateOfBirth, requestCheckData.EligibilityCode, requestCheckData.NationalInsuranceNumber, dbContextFactory);
 
             var eceResponse = requestCheckData;
 
