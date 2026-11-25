@@ -96,7 +96,7 @@ public class PreviewFosterFamilyCodeUseCaseTests
                 ChildFirstName = "Child",
                 ChildLastName = "One",
                 ChildDateOfBirth = new DateTime(2022, 1, 1),
-                ChildPostCode = "AB1 2CD"
+                ChildPostCode = "M1 1AA"
             }
         };
     }
