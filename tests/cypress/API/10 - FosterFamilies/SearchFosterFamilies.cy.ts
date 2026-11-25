@@ -1,4 +1,5 @@
 import { getandVerifyBearerToken } from "@/cypress/support/apiHelpers";
+import { validFosterChildRequestBody } from '../../support/requestBodies';
 import {
   validFosterFamilyRequestBody,
   validLoginRequestBodyFosterFamilies,
@@ -55,13 +56,7 @@ describe("Search Foster Families - Happy Path", () => {
 
           cy.apiRequest(
             "POST",
-            `/foster-family/${fosterCarerId}/child`,
-            {
-              childFirstName: "Page",
-              childLastName: "Two",
-              childDateOfBirth: "2023-02-02",
-              childPostCode: "AB1 2CD",
-            },
+            `/foster-family/${fosterCarerId}/child`, validFosterChildRequestBody(),
             token,
           ).then((createChildResponse) => {
             const addedChildId = createChildResponse.body.fosterChildId;
