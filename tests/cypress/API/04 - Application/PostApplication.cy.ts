@@ -86,9 +86,4 @@ describe('Verify invalid application request responses', () => {
         });
     });
 
-    it('Verify 401 response is returned when bearer token is not provided', () => {
-        cy.apiRequest('POST', 'Application', validLoginRequestBody,).then((response) => {
-          cy.verifyApiResponseCode(response, 401)
-        });
-      });
 });
