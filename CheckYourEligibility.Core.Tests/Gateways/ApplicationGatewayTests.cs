@@ -282,11 +282,11 @@ public class ApplicationGatewayTests : TestBase
         // Restore should not update 'Tier'. Tier should remain what it was at initial check/ application approal and never be changed
         var app = CreateTestApplication();
         app.Status = Core.Domain.Enums.ApplicationStatus.Archived;
-        app.Tier = EligibilityTier.expanded;
+        app.Tier = EligibilityTier.targeted;
         await _dbContext.Applications.AddAsync(app);
         var previousStatus = CreateTestApplicationStatus(app.ApplicationID);
         previousStatus.Type = Core.Domain.Enums.ApplicationStatus.Entitled;
-        previousStatus.Tier = EligibilityTier.targeted;
+        previousStatus.Tier = null;
         await _dbContext.ApplicationStatuses.AddAsync(previousStatus);
         await _dbContext.SaveChangesAsync();
 
