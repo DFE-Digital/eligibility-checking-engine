@@ -514,7 +514,7 @@ export function updateFosterChildRequestBody() {
       childFirstName: "Updated Tom",
       childLastName: "Updated Smith",
       childDateOfBirth: "2022-01-01",
-      childPostCode: "SW1A 1AA",
+      childPostCode: "M1 1AA",
     },
   };
 }
