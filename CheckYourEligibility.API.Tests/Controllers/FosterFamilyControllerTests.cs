@@ -491,7 +491,7 @@ public class FosterFamilyControllerTests
             ChildFirstName = "Tom",
             ChildLastName = "Smith",
             ChildDateOfBirth = new DateTime(2022, 1, 1),
-            ChildPostCode = "AB1 2CD",
+            ChildPostCode = "SW1A 1AA",
             SubmissionDate = submissionDate
         };
 
@@ -693,7 +693,7 @@ public class FosterFamilyControllerTests
                 ChildFirstName = "Tom",
                 ChildLastName = "Smith",
                 ChildDateOfBirth = new DateTime(2022, 1, 1),
-                ChildPostCode = "AB1 2CD"
+                ChildPostCode = "SW1A 1AA"
             }
         };
 

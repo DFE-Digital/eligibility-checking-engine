@@ -17,10 +17,8 @@ public static class FosterFamilyValidationMessages
     public const string CarerLastNameEmpty = "Enter carer's last name";
     public const string CarerLastNameInvalid = "Carer's last name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
     public const string CarerNationalInsuranceNumberEmpty = "Enter a National Insurance number";
-    public const string HasPartner = "Select yes if the carer has a partner";
 
     //Partner
-    public const string PartnerIsRequired = "Partner details are required.";
     public const string PartnerFirstNameEmpty = "Enter partner's first name";
     public const string PartnerFirstNameInvalid = "Partner's first name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
     public const string PartnerLastNameEmpty = "Enter partner's last name";
@@ -32,6 +30,5 @@ public static class FosterFamilyValidationMessages
     public const string ChildFirstNameInvalid = "Child's first name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
     public const string ChildLastNameEmpty = "Enter child's last name";
     public const string ChildLastNameInvalid = "Child's last name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
-    public const string ChildPostCodeEmpty = "Enter postcode";
     public const string ChildPostCodeInvalid = "Enter a full UK postcode";
 }
