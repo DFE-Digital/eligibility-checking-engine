@@ -39,6 +39,7 @@ describe("Update Foster Child - happy paths", () => {
             ).then((response) => {
 
               expect(response.status).to.eq(200);
+              expect(response.body.status).to.eq("Active");
 
               expect(response.body.fosterChildId).to.eq(fosterChildId);
 

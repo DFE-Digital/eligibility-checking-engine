@@ -541,6 +541,18 @@ public class FosterFamiliesGateway : IFosterFamilies
         return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, true);
     }
 
+    public async Task<FosterChildResponse> UpdateStatusFosterChild(Guid fosterChildId, int localAuthorityId, string status) {
+
+        var fosterChild = await _db.FosterChildren
+          .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId);
+        if (fosterChild is null) { throw new NotFoundException($"Foster child {fosterChildId} not found"); }
+
+        fosterChild.Status = status;
+
+        await _db.SaveChangesAsync();
+        return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, false);
+
+    }
     public async Task<FosterChildResponse> UpdateFosterChild(
     Guid fosterChildId,
     int localAuthorityId,

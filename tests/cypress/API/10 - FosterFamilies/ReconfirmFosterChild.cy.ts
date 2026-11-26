@@ -28,6 +28,7 @@ describe("Reconfirm Foster Child - happy paths", () => {
               cy.apiRequest("POST", `/foster-family/child/${child.fosterChildId}/reconfirm`, validFosterChildReconfirmBody(), token)
                 .then((reconfirmResponse) => {
                   expect(reconfirmResponse.status).to.eq(200);
+                  expect(reconfirmResponse.body.status).to.eq("Active");
                   expect(reconfirmResponse.body.fosterChildId).to.eq(child.fosterChildId);
                   expect(reconfirmResponse.body.eligibilityCode).to.eq(child.eligibilityCode);
                   expect(reconfirmResponse.body.carerName).to.exist;

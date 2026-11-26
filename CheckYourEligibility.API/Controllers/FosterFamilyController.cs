@@ -1,6 +1,7 @@
 using System.Net;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Domain.Authorization;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Extensions;
@@ -33,6 +34,7 @@ public class FosterFamilyController : BaseController
     private readonly IReconfirmFosterChildUseCase _reconfirmFosterChild;
     private readonly IPreviewReconfirmFosterChildUseCase _previewReconfirmFosterChild;
     private readonly IDeleteFosterChildUseCase _deleteFosterChild;
+    private readonly IUpdateStatusFosterChildUseCase _updateStatusFosterChild;
 
     public FosterFamilyController(
         ILogger<FosterFamilyController> logger,
@@ -50,6 +52,7 @@ public class FosterFamilyController : BaseController
         IReconfirmFosterChildUseCase reconfirmFosterChild,
         IPreviewReconfirmFosterChildUseCase previewReconfirmFosterChild,
         IDeleteFosterChildUseCase deleteFosterChild,
+        IUpdateStatusFosterChildUseCase updateStatusFosterChild,
         IAudit audit
     ) : base(audit)
     {
@@ -70,6 +73,7 @@ public class FosterFamilyController : BaseController
         _reconfirmFosterChild = reconfirmFosterChild;
         _previewReconfirmFosterChild = previewReconfirmFosterChild;
         _deleteFosterChild = deleteFosterChild;
+        _updateStatusFosterChild = updateStatusFosterChild;
     }
 
     [ProducesResponseType(typeof(FosterFamilyResponse), (int)HttpStatusCode.OK)]
@@ -431,6 +435,61 @@ public class FosterFamilyController : BaseController
         }
     }
 
+    [ProducesResponseType(typeof(FosterChildResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPatch("/foster-family/child/archive/{fosterChildId}")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> ArchiveFosterChild(Guid fosterChildId)
+    {
+        try
+        {
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+            var response = await _updateStatusFosterChild.Execute(fosterChildId, localAuthorityId.Value, FosterFamily.Status.Archived);
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error archiving foster child");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+
+    }
+    [ProducesResponseType(typeof(FosterChildResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
+    [Consumes("application/json", "application/vnd.api+json;version=1.0")]
+    [HttpPatch("/foster-family/child/restore/{fosterChildId}")]
+    [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
+    public async Task<ActionResult> RestoreFosterChild(Guid fosterChildId)
+    {
+        try
+        {
+            int? localAuthorityId = User.GetSingleScopeId(_localAuthorityScopeName);
+            if (localAuthorityId is null or < 0)
+            {
+                return BadRequest(new ErrorResponse { Errors = [new Error { Title = FosterFamilyValidationMessages.NoLocalAuthorityScopeFound }] });
+            }
+            var response = await _updateStatusFosterChild.Execute(fosterChildId, localAuthorityId.Value, FosterFamily.Status.Active);
+            return new ObjectResult(response) { StatusCode = StatusCodes.Status200OK };
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ErrorResponse { Errors = [new Error { Title = "Foster child not found", Status = StatusCodes.Status404NotFound, Detail = ex.Message }] });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error restoring foster child");
+            return BadRequest(new ErrorResponse { Errors = [new Error { Status = StatusCodes.Status400BadRequest, Title = ex.Message }] });
+        }
+    }
     [ProducesResponseType(typeof(FosterChildResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.NotFound)]
     [Consumes("application/json", "application/vnd.api+json;version=1.0")]

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using CheckYourEligibility.API.Boundary.Responses;
 using CheckYourEligibility.API.Controllers;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -29,6 +30,7 @@ public class FosterFamilyControllerTests
     private Mock<IReconfirmFosterChildUseCase> _mockReconfirmFosterChild = null!;
     private Mock<IPreviewReconfirmFosterChildUseCase> _mockPreviewReconfirmFosterChild = null!;
     private Mock<IDeleteFosterChildUseCase> _mockDeleteFosterChild = null!;
+    private Mock<IUpdateStatusFosterChildUseCase> _mockUpdateStatusFosterChild = null!;
     private Mock<IAudit> _mockAudit = null!;
     private Mock<ILogger<FosterFamilyController>> _mockLogger = null!;
 
@@ -51,6 +53,7 @@ public class FosterFamilyControllerTests
         _mockReconfirmFosterChild = new Mock<IReconfirmFosterChildUseCase>(MockBehavior.Strict);
         _mockPreviewReconfirmFosterChild = new Mock<IPreviewReconfirmFosterChildUseCase>(MockBehavior.Strict);
         _mockDeleteFosterChild = new Mock<IDeleteFosterChildUseCase>(MockBehavior.Strict);
+        _mockUpdateStatusFosterChild = new Mock<IUpdateStatusFosterChildUseCase>(MockBehavior.Strict);
         _mockAudit = new Mock<IAudit>(MockBehavior.Strict);
         _mockLogger = new Mock<ILogger<FosterFamilyController>>();
 
@@ -79,6 +82,7 @@ public class FosterFamilyControllerTests
             _mockReconfirmFosterChild.Object,
             _mockPreviewReconfirmFosterChild.Object,
             _mockDeleteFosterChild.Object,
+            _mockUpdateStatusFosterChild.Object,
             _mockAudit.Object);
     }
 
@@ -98,6 +102,7 @@ public class FosterFamilyControllerTests
         _mockReconfirmFosterChild.VerifyAll();
         _mockPreviewReconfirmFosterChild.VerifyAll();
         _mockDeleteFosterChild.VerifyAll();
+        _mockUpdateStatusFosterChild.VerifyAll();
     }
 
     private void SetupControllerWithLocalAuthorityIds(List<int> ids)
@@ -991,6 +996,74 @@ public class FosterFamilyControllerTests
 
         returned.TotalNumberOfRecords.Should().Be(0);
         returned.Data.Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task ArchiveFosterChild_Returns_Ok_With_Archived_Status()
+    {
+        var fosterChildId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds([201]);
+
+        var response = new FosterChildResponse { Status = FosterFamily.Status.Archived };
+        _mockUpdateStatusFosterChild
+            .Setup(x => x.Execute(fosterChildId, 201, FosterFamily.Status.Archived))
+            .ReturnsAsync(response);
+
+        var result = await _sut.ArchiveFosterChild(fosterChildId);
+
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)result;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeSameAs(response);
+    }
+
+    [Test]
+    public async Task ArchiveFosterChild_Returns_NotFound_When_Child_Does_Not_Exist()
+    {
+        var fosterChildId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds([201]);
+
+        _mockUpdateStatusFosterChild
+            .Setup(x => x.Execute(fosterChildId, 201, FosterFamily.Status.Archived))
+            .ThrowsAsync(new NotFoundException("Foster child not found"));
+
+        var result = await _sut.ArchiveFosterChild(fosterChildId);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Test]
+    public async Task RestoreFosterChild_Returns_Ok_With_Active_Status()
+    {
+        var fosterChildId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds([201]);
+
+        var response = new FosterChildResponse { Status = FosterFamily.Status.Active };
+        _mockUpdateStatusFosterChild
+            .Setup(x => x.Execute(fosterChildId, 201, FosterFamily.Status.Active))
+            .ReturnsAsync(response);
+
+        var result = await _sut.RestoreFosterChild(fosterChildId);
+
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)result;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        objectResult.Value.Should().BeSameAs(response);
+    }
+
+    [Test]
+    public async Task RestoreFosterChild_Returns_NotFound_When_Child_Does_Not_Exist()
+    {
+        var fosterChildId = Guid.NewGuid();
+        SetupControllerWithLocalAuthorityIds([201]);
+
+        _mockUpdateStatusFosterChild
+            .Setup(x => x.Execute(fosterChildId, 201, FosterFamily.Status.Active))
+            .ThrowsAsync(new NotFoundException("Foster child not found"));
+
+        var result = await _sut.RestoreFosterChild(fosterChildId);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
     }
 
 }
