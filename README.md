@@ -89,8 +89,7 @@ Submit pull requests to `main` with functioning code. Reviewers check that the a
 
 ### Secrets
 
-Do not commit active secrets to this repository. If a secret is committed, notify the appropriate DfE contacts, rewrite
-the Git history, and follow DfE processes.
+Do not commit active secrets to this repository. If a secret is committed, notify the appropriate DfE contacts, rewrite the Git history, and follow DfE processes.
 
 ## Swagger
 
