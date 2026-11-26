@@ -6,7 +6,7 @@ describe('Testing the API', function () {
         // Declarations
         const fileName = 'GIASDataSubset.csv'; // File name including extension
         const method = 'POST';
-        const url = Cypress.config('baseUrl') + 'admin/import-establishments';
+        const url = Cypress.config('baseUrl') + '/admin/import-establishments';
         const fileType = 'text/csv'; // CSV file type     
         const expectedAnswer = '{"data":"GIASDataSubset.csv - Establishment File Processed."}';
 

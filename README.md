@@ -1,144 +1,141 @@
 # Check Your Eligibility API
 
-This repo contains the API for Eligibility Checking Engine (ECE) and the Check Free School Meals (FSM) service.
+This repository contains shared business logic and the API for the Eligibility Checking Engine (ECE) service.
 
 ## Setup
 
-This is a .NET 8 project - you'll need the latest .NET SDK etc to run it locally.
+The projects target .NET 10. Install the .NET 10 SDK to build and run them locally.
 
-### Config
+### Configuration
 
-When you first clone the repo, you'll want to define your own config. You'll want to copy up the
-file [appsettings.json](CheckYourEligibility.API/appsettings.json), name the copy `appsettings.developmnent.json`
-in the same folder. Update the values in this new file as needed. This file should not be committed, nor will it with
-our .gitignore.
+Copy [appsettings.json](CheckYourEligibility.API/appsettings.json) to
+`CheckYourEligibility.API/appsettings.Development.json` and update the values for your local environment.
+This development override is ignored by Git and should not be committed.
 
-#### Credentials
+For credentials, follow the instructions in the
+[eligibility-checking-engine documentation](https://github.com/DFE-Digital/eligibility-checking-engine-documentation),
+or ask your lead developer.
 
-You can get the credentials through following the instructions
-in [check-your-eligibility-infrastructure](https://github.com/DFE-Digital/check-your-eligibility-infrastructure).
-Otherwise, just ask your Lead Developer or fellow colleague.
+### Azure Storage Queue
 
-### Queue
+Queue-backed workflows use Azure Storage Queue and a downstream Logic App. For local development, configure access to the development queue, or avoid workflows that depend on the queue.
 
-There is a Azure Storage Queue part of the whole flow, which triggers a logic app. You can either ignore that part of
-the application, mock it, or connect to the dev queue. Credentials in keyvault.
+## Authentication
 
-## JWT authenticate your request
+Protected API endpoints require a JWT bearer token. Obtain one by posting form-encoded client credentials to
+`/oauth2/token`:
 
-Each request needs to be authenticated with a JWT token. YOu get this token bu calling `/api/Login` with the following
-object:
-`
-{
-    "username": "",
-    "emailAddress": "ecsUi@education.gov.uk",
-    "password": ""
-}` inserting your username and password.
+```http
+POST https://localhost:7117/oauth2/token
+Content-Type: application/x-www-form-urlencoded
 
-Any errors will be seen in the Response Headers
+client_id=<client-id>&client_secret=<client-secret>&scope=<scopes>
+```
 
-Postman collection below automates this.
+Send the returned token to protected endpoints using the `Authorization: Bearer <token>` header. Authentication
+errors are returned with an HTTP status code and a response body.
 
-## How to run tests
+## Tests
 
-See the [integration testing guide](docs/integration-testing-guide.md) for guidance on choosing and adding SQL-backed integration tests.
+The repository has NUnit unit tests, SQL Server-backed integration tests, and Cypress API end-to-end tests.
 
-We have two test-suites - one .NET NUnit for unit tests and one Cypress for integration and e2e tests. Cypress needs a
-running application responding to http calls.
+### .NET unit tests
 
-### .NET
+Run these commands from the repository root:
 
-VisualStudio does most of this for you, there'll be a button in your UI. Correctly set up Rider too.
-`
-cd CheckYourEligibility.API.Tests
-dotnet test
-`
+```powershell
+dotnet test .\CheckYourEligibility.Core.Tests\CheckYourEligibility.Core.Tests.csproj
+dotnet test .\CheckYourEligibility.API.Tests\CheckYourEligibility.API.Tests.csproj
+```
 
-### Cypress
+### SQL Server integration tests
 
-Assuming you have NPM installed.
-`
+The integration tests use a disposable SQL Server container. See the
+[integration testing guide](docs/integration-testing-guide.md) and
+[integration test setup](CheckYourEligibility.Core.IntegrationTests/README.md) for prerequisites and details.
+
+Run them from the repository root:
+
+```powershell
+dotnet test .\CheckYourEligibility.Core.IntegrationTests\CheckYourEligibility.Core.IntegrationTests.csproj
+```
+
+### Cypress API end-to-end tests
+
+Install Node.js/npm, start the API and its required dependencies, then run these commands from the repository root.
+Use credentials configured for your test environment.
+
+```powershell
 cd tests
 npm install
-export CYPRESS_API_HOST="https-path to localhost or remote"
-export CYPRESS_JWT_USERNAME="JWT user username"
-export CYPRESS_JWT_PASSWORD="JWT user password"
-npm run e2e:chrome
-`
+$env:CYPRESS_API_HOST = 'https://localhost:7117'
+$env:CYPRESS_JWT_USERNAME = '<client-id>'
+$env:CYPRESS_JWT_PASSWORD = '<client-secret>'
+npm run e2e:electron
+```
 
-Note, replace `export` with `set` in the above command for Windows.
+The npm script runs Cypress in Electron. For Bash, set the same environment variables with `export` before running
+`npm run e2e:electron`.
+
+### Core NuGet package
+
+See [Core NuGet package details](docs/core-nuget-package.md).
 
 ## Ways of working
 
 ### Releasing code
 
-We submit PRs into `main` for functioning code. The reviewer checks that the automated tests pass, then approve.
-
-We expect the code reviewer to run the code locally, read through it and understand what it is trying to solve.
-
-If approved, the original code-creator merges the PR and deletes the branch.
+Submit pull requests to `main` with functioning code. Reviewers check that the automated tests pass and review the changes. Once approved, the author merges the pull request and deletes the branch.
 
 ### Secrets
 
-We don't commit active secrets to this repo. If we do, it is crucial to notify DM/TL/PO, rewrite git history and follow
-DfE processes.
-
-## Postman scripts
-
-User Swagger doc from below
+Do not commit active secrets to this repository. If a secret is committed, notify the appropriate DfE contacts, rewrite the Git history, and follow DfE processes.
 
 ## Swagger
 
-You'll find a Swagger page on `/swagger/index.html` once you're running the application.
+When the application is running, open `/swagger/index.html` to view the API documentation.
 
-## Getting GIAS data
+## Importing GIAS data
 
-You need to download a CSV from [GIAS](https://get-information-schools.service.gov.uk/Downloads), selecting All
-Establishment Data -> Establishment Fields CSV.
+Download the Establishment Fields CSV from [GIAS Downloads](https://get-information-schools.service.gov.uk/Downloads)
+by selecting **All Establishment Data** and then **Establishment Fields CSV**.
 
-The contents is then POSTed to `/importEstablishments`
+Upload the CSV as the `file` field in a `multipart/form-data` POST to `/admin/import-establishments`. This endpoint
+requires an authenticated token with the admin scope.
 
-## Resources
+## Entity Framework migrations
 
-### Architecture
+Run `dotnet ef` commands from the `CheckYourEligibility.API` project directory. The API project is the startup
+project; migrations are stored in `CheckYourEligibility.Core`.
 
-![Architecture](docs/images/api-infrastructure.png)
+### Apply the latest migration
 
-### Data flow
+```powershell
+dotnet ef database update --project ..\CheckYourEligibility.Core
+```
 
-![Data flow](docs/images/api-data.png)
+### Add a migration
 
-### Data structure
+```powershell
+dotnet ef migrations add <migration-name> --project ..\CheckYourEligibility.Core
+```
 
-![Data structure](docs/images/api-database.png)
+### List migrations
 
-### Deployment
+```powershell
+dotnet ef migrations list --project ..\CheckYourEligibility.Core
+```
 
-![Deployment](docs/images/api-pipeline.png)
+### Remove the latest migration
 
-### Miscellaneous
+This removes the most recently added migration; the EF CLI does not accept a migration name for this command.
 
-#### Migrations
+```powershell
+dotnet ef migrations remove --project ..\CheckYourEligibility.Core
+```
 
-##### Run Latest migration
+### Apply a specific migration
 
-`dotnet ef update-database`
-
-##### How to add a migration
-
-Add-Migration BaseMigration
-
-##### Update db to latest migration
-
-update-database
-
-##### List Migrations
-
-Get-Migration
-
-Remove-Migration -Force
-Remove-Migration
-
-##### Run specific migration
-
-update-database -migration BaseMigration
+```powershell
+dotnet ef database update <migration-name> --project ..\CheckYourEligibility.Core
+```

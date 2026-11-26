@@ -1,0 +1,143 @@
+using CheckYourEligibility.Core.Database;
+using CheckYourEligibility.Core.Domain;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace CheckYourEligibility.Core.Gateways;
+
+public class WorkingFamiliesEventGateway : IWorkingFamiliesEvent
+{
+    private readonly IEligibilityCheckContext _db;
+    private readonly ILogger _logger;
+
+    public WorkingFamiliesEventGateway(ILoggerFactory logger, IEligibilityCheckContext dbContext)
+    {
+        _logger = logger.CreateLogger("WorkingFamiliesEventGateway");
+        _db = dbContext;
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEvent?> GetByHMRCId(string hmrcId)
+    {
+        return await _db.WorkingFamiliesEvents
+            .FirstOrDefaultAsync(x => x.HMRCEligibilityEventId == hmrcId);
+    }
+
+    /// <inheritdoc />
+    /// This method is strictly used for syncing WF event data between ECS and ECE
+    public async Task<WorkingFamiliesEvent> UpsertWorkingFamiliesEvent(WorkingFamiliesEvent data)
+    {
+        var existing = await _db.WorkingFamiliesEvents
+            .FirstOrDefaultAsync(x => x.HMRCEligibilityEventId == data.HMRCEligibilityEventId);
+
+        if (existing != null)
+        {
+            // Overwrite all mapped fields, reset soft-delete state; preserve original CreatedDateTime
+            existing.EligibilityCode = data.EligibilityCode;
+            existing.ChildFirstName = data.ChildFirstName;
+            existing.ChildLastName = data.ChildLastName;
+            existing.ChildDateOfBirth = data.ChildDateOfBirth;
+            existing.ChildPostCode = data.ChildPostCode;
+            existing.ParentFirstName = data.ParentFirstName;
+            existing.ParentLastName = data.ParentLastName;
+            existing.ParentNationalInsuranceNumber = data.ParentNationalInsuranceNumber;
+            existing.ParentDateOfBirth = data.ParentDateOfBirth;
+            existing.PartnerFirstName = data.PartnerFirstName;
+            existing.PartnerLastName = data.PartnerLastName;
+            existing.PartnerNationalInsuranceNumber = data.PartnerNationalInsuranceNumber;
+            existing.PartnerDateOfBirth = data.PartnerDateOfBirth;
+            existing.SubmissionDate = data.SubmissionDate;
+            existing.ValidityStartDate = data.ValidityStartDate;
+            existing.ValidityEndDate = data.ValidityEndDate;
+            existing.DiscretionaryValidityStartDate = data.DiscretionaryValidityStartDate;
+            existing.GracePeriodEndDate = data.GracePeriodEndDate;
+            existing.EventDateTime = data.EventDateTime;
+            existing.IsDeleted = false;
+            existing.DeletedDateTime = null;
+            // CreatedDateTime is intentionally NOT updated — it records the original creation time
+
+            await _db.SaveChangesAsync();
+            return existing;
+        }
+
+        _db.WorkingFamiliesEvents.Add(data);
+        await _db.SaveChangesAsync();
+        return data;
+    }
+
+    /// <inheritdoc />
+    /// This method is strictly used for syncing WF event data between ECS and ECE
+    public async Task<List<WorkingFamiliesEvent>> GetOverlappingEventsByDern(
+        string dern, string excludeHmrcId, DateTime validityStart, DateTime validityEnd)
+    {
+        return await _db.WorkingFamiliesEvents
+            .Where(e => e.EligibilityCode.Trim() == dern.Trim()
+                     && e.HMRCEligibilityEventId != excludeHmrcId
+                     && !e.IsDeleted
+                     && e.ValidityStartDate < validityEnd
+                     && e.ValidityEndDate > validityStart)
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteWorkingFamiliesEventByHmrcId(string hmrcId)
+    {
+        var existing = await _db.WorkingFamiliesEvents
+            .FirstOrDefaultAsync(x => x.HMRCEligibilityEventId == hmrcId && !x.IsDeleted);
+
+        if (existing == null)
+            return false;
+
+        existing.IsDeleted = true;
+        existing.DeletedDateTime = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEvent?> GetLatestWorkingFamiliesEventByEligibilityCode(string eligibilityCode)
+    {
+        var wfEvent = await _db.WorkingFamiliesEvents
+            .Where(x => x.EligibilityCode == eligibilityCode && x.IsDeleted == false)
+            .OrderByDescending(x => x.EventDateTime)
+            .FirstOrDefaultAsync();
+        return wfEvent;
+    }
+    /// <inheritdoc />
+    public async Task<WorkingFamiliesEventSummary?> GetWorkingFamiliesEventSummaryRecordByEligibilityCode(string eligibilityCode)
+    {
+        var eventSummary = await _db.WorkingFamiliesEventSummaries.FirstOrDefaultAsync(x =>
+            x.EligibilityCode == eligibilityCode);
+        return eventSummary;
+    }
+    /// <inheritdoc />
+    public async Task<int> GetWorkingFamiliesEventsCount(string eligibilityCode)
+    {
+        return await _db.WorkingFamiliesEvents.CountAsync(x => x.EligibilityCode == eligibilityCode && x.IsDeleted == false);
+    }
+
+    public async Task CreateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    {
+        await _db.WorkingFamiliesEventSummaries.AddAsync(record);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    {
+        _db.WorkingFamiliesEventSummaries.Update(record);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task BulkImportWorkingFamiliesEventSummaryRecords(IEnumerable<WorkingFamiliesEventSummary> summaryData)
+    {
+        // Insert or update the summary records for the incoming events
+        _db.BulkInsertOrUpdate_WorkingFamiliesEventSummary(summaryData);
+    }
+
+    //Placeholder for future soft deletion
+    //public async Task DeleteWorkingFamiliesSummaryRecordAsync(WorkingFamiliesEventSummary record)
+    //{
+
+    //    _db.WorkingFamiliesEventSummaries.ExecuteUpdateAsync(setters => setters.SetProperty(eventSummary => eventSummary.IsDeleted, true));       
+
+    //}
+}

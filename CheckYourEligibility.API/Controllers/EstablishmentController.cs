@@ -1,12 +1,11 @@
-﻿using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Authorization;
-using CheckYourEligibility.API.Domain.Constants;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using System.Net;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 
 namespace CheckYourEligibility.API.Controllers;
 
@@ -91,7 +90,7 @@ public class EstablishmentController : BaseController
     [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
     public async Task<ActionResult> Support_Search([FromQuery] SupportEstablishmentSearchRequest request)
     {
-       
+
         var results = await _supportSearchUseCase.Execute(request);
 
         return Ok(results);
@@ -125,10 +124,9 @@ public class EstablishmentController : BaseController
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Authorize(Policy = PolicyNames.RequireEstablishmentManagementRole)]
-    public async Task<IActionResult> UpdatePrivateBeta(
-       UpdateEstablishmentPrivateBetaRequest request)
+    public async Task<IActionResult> UpdatePrivateBeta(UpdateEstablishmentPrivateBetaRequest request)
     {
-        var updated = await _updateEstablishmentPrivateBetaUseCase.Execute(request.EstablishmentId,request.InPrivateBeta);
+        var updated = await _updateEstablishmentPrivateBetaUseCase.Execute(request.EstablishmentId, request.InPrivateBeta);
 
         if (!updated)
         {

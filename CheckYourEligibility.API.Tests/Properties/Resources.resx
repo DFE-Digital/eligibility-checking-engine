@@ -154,16 +154,6 @@
     &lt;/s:Body&gt;
 &lt;/s:Envelope&gt;</value>
   </data>
-    <data name="exampleHMRC" type="System.Resources.ResXFileRef, System.Windows.Forms">
-        <value>..\Resources\exampleHMRC.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089;Windows-1252
-        </value>
-    </data>
-    <data name="exampleHMRC_empty" type="System.Resources.ResXFileRef, System.Windows.Forms">
-        <value>..\Resources\exampleHMRC_empty.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089;Windows-1252
-        </value>
-    </data>
     <data name="HO Data small" type="System.Resources.ResXFileRef, System.Windows.Forms">
         <value>..\Resources\HO Data small.csv;System.String, mscorlib, Version=4.0.0.0, Culture=neutral,
             PublicKeyToken=b77a5c561934e089;utf-8
@@ -171,11 +161,6 @@
     </data>
     <data name="small_gis" type="System.Resources.ResXFileRef, System.Windows.Forms">
         <value>..\Resources\small_gis.csv;System.String, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089;Windows-1252
-        </value>
-    </data>
-    <data name="small_mat" type="System.Resources.ResXFileRef, System.Windows.Forms">
-        <value>..\Resources\small_mat.csv;System.String, mscorlib, Version=4.0.0.0, Culture=neutral,
             PublicKeyToken=b77a5c561934e089;Windows-1252
         </value>
     </data>

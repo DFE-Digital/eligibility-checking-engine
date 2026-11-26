@@ -1,14 +1,14 @@
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Boundary.Responses;
-using CheckYourEligibility.API.Domain.Authorization;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
-using CheckYourEligibility.API.UseCases;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Boundary.Responses;
+using CheckYourEligibility.Core.Domain.Authorization;
+using CheckYourEligibility.Core.Domain.Enums;
+using CheckYourEligibility.Core.Gateways.Interfaces;
+using CheckYourEligibility.Core.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using NotFoundException = CheckYourEligibility.API.Domain.Exceptions.NotFoundException;
-using ValidationException = CheckYourEligibility.API.Domain.Exceptions.ValidationException;
+using NotFoundException = CheckYourEligibility.Core.Domain.Exceptions.NotFoundException;
+using ValidationException = CheckYourEligibility.Core.Domain.Exceptions.ValidationException;
 
 namespace CheckYourEligibility.API.Controllers;
 

@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using CheckYourEligibility.API.Boundary.Requests;
-using CheckYourEligibility.API.Domain.Enums;
-using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.Core.Boundary.Requests;
+using CheckYourEligibility.Core.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using CheckYourEligibility.Core.Gateways.Interfaces;
 
 namespace CheckYourEligibility.API.Controllers;
 
