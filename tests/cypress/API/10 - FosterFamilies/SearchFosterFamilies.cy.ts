@@ -27,6 +27,7 @@ describe("Search Foster Families - Happy Path", () => {
 
           expect(family).to.exist;
           expect(family.fosterCarerId).to.eq(createResponse.body.fosterCarerId);
+          expect(family.status).to.eq("Active");
 
           // clean up
           cy.apiRequest("DELETE", `/foster-family/${family.fosterCarerId}`, null, token, false).then((deleteResponse) => {
@@ -36,6 +37,40 @@ describe("Search Foster Families - Happy Path", () => {
             cy.apiRequest("GET", `/foster-family/${family.fosterCarerId}`, null, token, false,).then((getResponse) => {
               expect(getResponse.status).to.eq(404);
             });
+          });
+        });
+      });
+    });
+  });
+
+  it("GET - Should return active families when filtering by active status", () => {
+    getandVerifyBearerToken(
+      "/oauth2/token",
+      validLoginRequestBodyFosterFamilies,
+    ).then((token) => {
+      const request = validFosterFamilyRequestBody();
+
+      cy.apiRequest("POST", "/foster-family", request, token).then((createResponse) => {
+        const query = `pageNumber=1&pageSize=10&ninoFilter=${encodeURIComponent(request.fosterCarer.carerNationalInsuranceNumber)}&status=Active`;
+
+        cy.apiRequest(
+          "GET",
+          `/foster-family/search?${query}`,
+          null,
+          token,
+        ).then((response) => {
+          expect(response.status).to.eq(200);
+          expect(response.body.totalNumberOfRecords).to.eq(1);
+          expect(response.body.data).to.have.length(1);
+          expect(response.body.data[0].status).to.eq("Active");
+
+          cy.apiRequest(
+            "DELETE",
+            `/foster-family/${createResponse.body.fosterCarerId}`,
+            null,
+            token,
+          ).then((deleteResponse) => {
+            expect(deleteResponse.status).to.eq(204);
           });
         });
       });
@@ -73,6 +108,7 @@ describe("Search Foster Families - Happy Path", () => {
               expect(firstPageResponse.body.pageNumber).to.eq(1);
               expect(firstPageResponse.body.pageSize).to.eq(1);
               expect(firstPageResponse.body.data).to.have.length(1);
+              expect(firstPageResponse.body.data[0].status).to.eq("Active");
 
               cy.apiRequest(
                 "GET",
@@ -84,6 +120,7 @@ describe("Search Foster Families - Happy Path", () => {
                 expect(secondPageResponse.body.totalNumberOfRecords).to.eq(2);
                 expect(secondPageResponse.body.pageNumber).to.eq(2);
                 expect(secondPageResponse.body.data).to.have.length(1);
+                expect(secondPageResponse.body.data[0].status).to.eq("Active");
 
                 const returnedChildIds = [
                   firstPageResponse.body.data[0].fosterChildId,

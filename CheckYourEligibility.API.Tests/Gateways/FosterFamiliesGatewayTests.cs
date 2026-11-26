@@ -1,13 +1,14 @@
 using CheckYourEligibility.API.Domain;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Domain.Constants;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
@@ -844,6 +845,27 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         item.CarerName.Should().Be("John Smith");
     }
 
+    [TestCase(null, 2)]
+    [TestCase(FosterFamily.Status.Active, 1)]
+    [TestCase(FosterFamily.Status.Archived, 1)]
+    [TestCase("Invalid", 0)]
+    public async Task SearchFosterFamilies_Should_Filter_By_Status(
+        string? status,
+        int expectedRecordCount)
+    {
+        // Arrange
+        await CreateFosterFamilieswithStatuses();
+
+        // Act
+        var result = await _sut.SearchFosterFamilies(
+            0,
+            new FosterFamiliesSearchRequest { PageNumber = 1, PageSize = 10, Status = status });
+
+        // Assert
+        result.TotalNumberOfRecords.Should().Be(expectedRecordCount);
+        result.Data.Should().HaveCount(expectedRecordCount);
+    }
+
     [Test]
     public async Task SearchFosterFamilies_Should_Order_By_Reconfirmation_Status_Then_Descending_Validity_End_Date()
     {
@@ -964,6 +986,44 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
         result.TotalNumberOfRecords.Should().Be(1);
         result.Data.Should().HaveCount(1);
         result.Data.Single().CarerName.Should().Be("John Smith");
+    }
+
+    [Test]
+    public async Task UpdateStatusFosterChild_Should_Update_And_Return_Status()
+    {
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+        var fosterChild = await _fakeInMemoryDb.FosterChildren.SingleAsync();
+
+        var archivedResponse = await _sut.UpdateStatusFosterChild(
+            fosterChild.FosterChildId,
+            0,
+            FosterFamily.Status.Archived);
+
+        archivedResponse.Status.Should().Be(FosterFamily.Status.Archived);
+        (await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(child => child.FosterChildId == fosterChild.FosterChildId))
+            .Status.Should().Be(FosterFamily.Status.Archived);
+
+        var restoredResponse = await _sut.UpdateStatusFosterChild(
+            fosterChild.FosterChildId,
+            0,
+            FosterFamily.Status.Active);
+
+        restoredResponse.Status.Should().Be(FosterFamily.Status.Active);
+        (await _fakeInMemoryDb.FosterChildren
+            .SingleAsync(child => child.FosterChildId == fosterChild.FosterChildId))
+            .Status.Should().Be(FosterFamily.Status.Active);
+    }
+
+    [Test]
+    public async Task UpdateStatusFosterChild_Should_Throw_NotFound_When_Child_Does_Not_Exist()
+    {
+        var act = () => _sut.UpdateStatusFosterChild(
+            Guid.NewGuid(),
+            0,
+            FosterFamily.Status.Archived);
+
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Test]
@@ -2122,6 +2182,21 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             }
         };
 
+    }
+
+    private async Task CreateFosterFamilieswithStatuses()
+    {
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+
+        var fosterChildren = await _fakeInMemoryDb.FosterChildren
+            .OrderBy(child => child.EligibilityCode)
+            .ToListAsync();
+
+        fosterChildren[0].Status = FosterFamily.Status.Active;
+        fosterChildren[1].Status = FosterFamily.Status.Archived;
+
+        await _fakeInMemoryDb.SaveChangesAsync();
     }
 
     private static string GenerateValidNi()

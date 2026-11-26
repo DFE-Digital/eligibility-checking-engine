@@ -10,6 +10,8 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public int TotalNumberOfRecords { get; set; }
 
+        public string Status { get; set; }
+
         public IEnumerable<FosterFamiliesSearchItemResponse> Data { get; set; } = [];
     }
 }

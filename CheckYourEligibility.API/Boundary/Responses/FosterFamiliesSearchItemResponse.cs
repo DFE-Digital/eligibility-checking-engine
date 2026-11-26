@@ -29,6 +29,7 @@ namespace CheckYourEligibility.API.Boundary.Responses
         public bool ChildTooYoung { get; set; }
 
         public bool ChildTooOld { get; set; }
+        public string Status { get; set; }
 
     }
 }

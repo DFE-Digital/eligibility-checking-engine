@@ -5,4 +5,5 @@ public class FosterFamiliesSearchRequest
     public int PageSize { get; set; }
 
     public string NINOFilter { get; set; }
+    public string? Status { get; set; }
 }

@@ -34,6 +34,7 @@ describe("Get Foster Child - happy paths", () => {
               token,
             ).then((response) => {
               expect(response.status).to.eq(200);
+              expect(response.body.status).to.eq("Active");
 
               expect(response.body.fosterChildId).to.eq(fosterChildId);
 
@@ -68,6 +69,7 @@ describe("Get Foster Child - happy paths", () => {
         token,
       ).then((response) => {
         expect(response.status).to.eq(200);
+        expect(response.body.status).to.eq("Active");
 
         expect(response.body.fosterCarerId).to.not.be.null;
 

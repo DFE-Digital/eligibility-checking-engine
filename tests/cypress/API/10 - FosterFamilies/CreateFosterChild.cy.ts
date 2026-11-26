@@ -30,6 +30,7 @@ describe("Create Foster Child - happy paths", () => {
         ).then((createChildResponse) => {
           expect(createChildResponse.status).to.eq(201);
           expect(createChildResponse.body.fosterCarerId).to.eq(fosterCarerId);
+          expect(createChildResponse.body.status).to.eq("Active");
 
           // Get family including children
           cy.apiRequest(
@@ -49,6 +50,7 @@ describe("Create Foster Child - happy paths", () => {
             );
 
             expect(child).to.exist;
+            expect(child.status).to.eq("Active");
 
             // delete fam
             cy.apiRequest(

@@ -339,6 +339,11 @@ public class FosterFamiliesGateway : IFosterFamilies
                 x.FosterCarer.NationalInsuranceNumber == ninoFilter ||
                 x.FosterCarer.PartnerNationalInsuranceNumber == ninoFilter);
         }
+  
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            baseQuery = baseQuery.Where(x => x.Status == request.Status);
+        }
 
         var records = await baseQuery
             .Include(x => x.WorkingFamiliesEventSummary)
@@ -353,11 +358,12 @@ public class FosterFamiliesGateway : IFosterFamilies
                 ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
                 ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
                 GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value,
-                IsGracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
+                IsGracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied,
+                Status = x.Status  
             })
             .AsNoTracking()
             .ToListAsync();
-
+               
         var totalRecords = records.Count;
         var maxPage = totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
         if (pageNumber > maxPage) { pageNumber = maxPage; }
@@ -443,7 +449,8 @@ public class FosterFamiliesGateway : IFosterFamilies
                 ValidityStartDate = x.WorkingFamiliesEventSummary.ValidityStartDate,
                 ValidityEndDate = x.WorkingFamiliesEventSummary.ValidityEndDate,
                 GracePeriodEndDate = x.WorkingFamiliesEventSummary.GracePeriodEndDate.Value,
-                IsGracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied
+                IsGracePeriodEndDateApplied = x.WorkingFamiliesEventSummary.GracePeriodEndDateApplied,
+                Status = x.Status
             })
             .AsNoTracking()
             .SingleOrDefaultAsync();
@@ -534,6 +541,18 @@ public class FosterFamiliesGateway : IFosterFamilies
         return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, true);
     }
 
+    public async Task<FosterChildResponse> UpdateStatusFosterChild(Guid fosterChildId, int localAuthorityId, string status) {
+
+        var fosterChild = await _db.FosterChildren
+          .SingleOrDefaultAsync(x => x.FosterChildId == fosterChildId && x.FosterCarer.LocalAuthorityID == localAuthorityId);
+        if (fosterChild is null) { throw new NotFoundException($"Foster child {fosterChildId} not found"); }
+
+        fosterChild.Status = status;
+
+        await _db.SaveChangesAsync();
+        return await GetFosterChild(fosterChild.FosterChildId, localAuthorityId, false);
+
+    }
     public async Task<FosterChildResponse> UpdateFosterChild(
     Guid fosterChildId,
     int localAuthorityId,

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using CheckYourEligibility.API.Boundary.Responses;
+using CheckYourEligibility.API.Domain.Constants;
 using CheckYourEligibility.API.Domain.Constants.ErrorMessages;
 using CheckYourEligibility.API.Gateways.Interfaces;
 using CheckYourEligibility.API.UseCases;
@@ -158,6 +159,35 @@ public class SearchFosterFamiliesUseCaseTests
         // Assert
         _gateway.Verify(
             x => x.SearchFosterFamilies(123, request),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Execute_ShouldTrimStatusBeforeCallingGateway()
+    {
+        // Arrange
+        var request = new FosterFamiliesSearchRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            Status = "  Active  "
+        };
+
+        _gateway
+            .Setup(x => x.SearchFosterFamilies(
+                123,
+                It.Is<FosterFamiliesSearchRequest>(r => r.Status == FosterFamily.Status.Active)))
+            .ReturnsAsync(new FosterFamiliesSearchResponse());
+
+        // Act
+        await _sut.Execute(request, 123);
+
+        // Assert
+        request.Status.Should().Be(FosterFamily.Status.Active);
+        _gateway.Verify(
+            x => x.SearchFosterFamilies(
+                123,
+                It.Is<FosterFamiliesSearchRequest>(r => r.Status == FosterFamily.Status.Active)),
             Times.Once);
     }
 

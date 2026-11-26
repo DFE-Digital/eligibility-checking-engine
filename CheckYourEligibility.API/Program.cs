@@ -223,6 +223,7 @@ builder.Services.AddScoped<IUpdateFosterChildUseCase, UpdateFosterChildUseCase>(
 builder.Services.AddScoped<IReconfirmFosterChildUseCase, ReconfirmFosterChildUseCase>();
 builder.Services.AddScoped<IPreviewReconfirmFosterChildUseCase, PreviewReconfirmFosterChildUseCase>();
 builder.Services.AddScoped<IDeleteFosterChildUseCase, DeleteFosterChildUseCase>();
+builder.Services.AddScoped<IUpdateStatusFosterChildUseCase, UpdateStatusFosterChildUseCase>();
 
 builder.Services.AddScoped<IGetCheckWorkingFamiliesUseCase, GetCheckWorkingFamiliesItemUseCase>();
 builder.Services.AddScoped<IEligibilityCheckDataResponseMapper, EligibilityCheckDataResponseMapper>();
