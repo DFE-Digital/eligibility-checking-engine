@@ -80,7 +80,7 @@ public class CreateFosterChildUseCaseTests
             ChildFirstName = "Child",
             ChildLastName = "One",
             ChildDateOfBirth = DateTime.UtcNow,
-            ChildPostCode = "AB1 2CD"
+            ChildPostCode = "M1 1AA"
         };
 
         _mockGateway
@@ -140,7 +140,7 @@ public class CreateFosterChildUseCaseTests
             ChildFirstName = "Child",
             ChildLastName = "One",
             ChildDateOfBirth = DateTime.UtcNow,
-            ChildPostCode = "AB1 2CD",
+            ChildPostCode = "M1 1AA",
             SubmissionDate = submissionDate
         };
 
@@ -183,7 +183,7 @@ public class CreateFosterChildUseCaseTests
             ChildFirstName = "Child",
             ChildLastName = "One",
             ChildDateOfBirth = DateTime.UtcNow,
-            ChildPostCode = "AB1 2CD"
+            ChildPostCode = "M1 1AA"
         };
 
         var carerId = Guid.NewGuid();

@@ -16,7 +16,7 @@ public class FosterChildSubmissionDateWindowTests
         ChildFirstName = "Sam",
         ChildLastName = "Smith",
         ChildDateOfBirth = DateTime.Today.AddYears(-2),
-        ChildPostCode = "AB1 2CD",
+        ChildPostCode = "M1 1AA",
         SubmissionDate = DateTime.Today.AddDays(-submittedDaysAgo)
     };
 

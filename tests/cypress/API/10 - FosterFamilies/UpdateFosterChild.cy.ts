@@ -46,7 +46,7 @@ describe("Update Foster Child - happy paths", () => {
                 "Updated Tom Updated Smith",
               );
 
-              expect(response.body.postCode).to.eq("AB1 2CD");
+              expect(response.body.postCode).to.eq("M1 1AA");
 
               // clean up
           cy.apiRequest(

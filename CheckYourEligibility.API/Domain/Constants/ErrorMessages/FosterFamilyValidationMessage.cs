@@ -10,4 +10,25 @@ public static class FosterFamilyValidationMessages
     public const string InvalidPageNumber = "Invalid page number";
     public const string InvalidPageSize = "Invalid page size";
     public const string InvalidNINO = "Invalid NINO provided";
+
+    //Carer
+    public const string CarerFirstNameEmpty = "Enter carer's first name";
+    public const string CarerFirstNameInvalid = "Carer's first name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string CarerLastNameEmpty = "Enter carer's last name";
+    public const string CarerLastNameInvalid = "Carer's last name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string CarerNationalInsuranceNumberEmpty = "Enter a National Insurance number";
+
+    //Partner
+    public const string PartnerFirstNameEmpty = "Enter partner's first name";
+    public const string PartnerFirstNameInvalid = "Partner's first name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string PartnerLastNameEmpty = "Enter partner's last name";
+    public const string PartnerLastNameInvalid = "Partner's last name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string PartnerNationalInsuranceNumberEmpty = "Enter a National Insurance number";
+
+    //Child
+    public const string ChildFirstNameEmpty = "Enter child's first name";
+    public const string ChildFirstNameInvalid = "Child's first name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string ChildLastNameEmpty = "Enter child's last name";
+    public const string ChildLastNameInvalid = "Child's last name must only include letters a to z, and special characters such as hyphens, spaces and apostrophes";
+    public const string ChildPostCodeInvalid = "Enter a full UK postcode";
 }

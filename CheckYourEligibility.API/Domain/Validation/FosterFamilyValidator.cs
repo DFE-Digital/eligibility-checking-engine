@@ -35,21 +35,30 @@ public class FosterCarerRequestValidator
 {
     public FosterCarerRequestValidator()
     {
+
         RuleFor(x => x.CarerFirstName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .WithMessage(ValidationMessages.FirstName);
+            .WithMessage(FosterFamilyValidationMessages.CarerFirstNameEmpty)
+            .Must(DataValidation.BeAValidName)
+            .WithMessage(FosterFamilyValidationMessages.CarerFirstNameInvalid);
 
         RuleFor(x => x.CarerLastName)
-            .NotEmpty()
-            .WithMessage(ValidationMessages.LastName);
+               .Cascade(CascadeMode.Stop)
+               .NotEmpty()
+               .WithMessage(FosterFamilyValidationMessages.CarerLastNameEmpty)
+               .Must(DataValidation.BeAValidName)
+               .WithMessage(FosterFamilyValidationMessages.CarerLastNameInvalid);
 
         RuleFor(x => x.CarerDateOfBirth)
             .NotEmpty()
             .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.DOB);
- 
+
         RuleFor(x => x.CarerNationalInsuranceNumber)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
+            .WithMessage(FosterFamilyValidationMessages.CarerNationalInsuranceNumberEmpty)
             .Must(DataValidation.BeAValidNi)
             .WithMessage(ValidationMessages.InvalidNI);
     }
@@ -61,22 +70,30 @@ public class FosterPartnerRequestValidator
     public FosterPartnerRequestValidator()
     {
         RuleFor(x => x.PartnerFirstName)
-            .NotEmpty()
-            .WithMessage(ValidationMessages.FirstName);
+               .Cascade(CascadeMode.Stop)
+               .NotEmpty()
+               .WithMessage(FosterFamilyValidationMessages.PartnerFirstNameEmpty)
+               .Must(DataValidation.BeAValidName)
+               .WithMessage(FosterFamilyValidationMessages.PartnerFirstNameInvalid);
 
         RuleFor(x => x.PartnerLastName)
-            .NotEmpty()
-            .WithMessage(ValidationMessages.LastName);
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(FosterFamilyValidationMessages.PartnerLastNameEmpty)
+                .Must(DataValidation.BeAValidName)
+                .WithMessage(FosterFamilyValidationMessages.PartnerLastNameInvalid);
 
         RuleFor(x => x.PartnerDateOfBirth)
             .NotEmpty()
             .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.DOB);
- 
+
         RuleFor(x => x.PartnerNationalInsuranceNumber)
-            .NotEmpty()
-            .Must(DataValidation.BeAValidNi)
-            .WithMessage(ValidationMessages.InvalidNI);
+                 .Cascade(CascadeMode.Stop)
+                 .NotEmpty()
+                 .WithMessage(FosterFamilyValidationMessages.PartnerNationalInsuranceNumberEmpty)
+                 .Must(DataValidation.BeAValidNi)
+                 .WithMessage(ValidationMessages.InvalidNI);
     }
 }
 
@@ -86,21 +103,27 @@ public class FosterChildRequestValidator
     public FosterChildRequestValidator(bool enforceSubmissionDateWindow = true)
     {
         RuleFor(x => x.ChildFirstName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .WithMessage(ValidationMessages.ChildFirstName);
+            .WithMessage(FosterFamilyValidationMessages.ChildFirstNameEmpty)
+            .Must(DataValidation.BeAValidName)
+            .WithMessage(FosterFamilyValidationMessages.ChildFirstNameInvalid);
 
         RuleFor(x => x.ChildLastName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .WithMessage(ValidationMessages.ChildLastName);
+            .WithMessage(FosterFamilyValidationMessages.ChildLastNameEmpty)
+            .Must(DataValidation.BeAValidName)
+            .WithMessage(FosterFamilyValidationMessages.ChildLastNameInvalid);
 
         RuleFor(x => x.ChildDateOfBirth)
             .NotEmpty()
             .Must(DataValidation.BeAPastDate)
             .WithMessage(ValidationMessages.ChildDOB);
- 
+
         RuleFor(x => x.ChildPostCode)
-            .NotEmpty()
-            .WithMessage("Child PostCode is required");
+              .Must(DataValidation.BeAValidPostcode)
+              .WithMessage(FosterFamilyValidationMessages.ChildPostCodeInvalid);
 
         When(x => x.SubmissionDate.HasValue, () =>
         {

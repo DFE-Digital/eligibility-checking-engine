@@ -484,7 +484,7 @@ export function validFosterFamilyRequestBody() {
       childFirstName: "Tom",
       childLastName: "Smith Test",
       childDateOfBirth: "2022-01-01",
-      childPostCode: "NNU 1AE",
+      childPostCode: "SW1A 1AA",
     },
     submissionDate: new Date().toISOString(),
   };
@@ -495,7 +495,7 @@ export function validFosterChildRequestBody() {
     childFirstName: "Sam",
     childLastName: "Jones",
     childDateOfBirth: "2023-01-01",
-    childPostCode: "AB1 2CD",
+    childPostCode: "SW1A 1AA",
   };
 }
 
@@ -514,7 +514,7 @@ export function updateFosterChildRequestBody() {
       childFirstName: "Updated Tom",
       childLastName: "Updated Smith",
       childDateOfBirth: "2022-01-01",
-      childPostCode: "AB1 2CD",
+      childPostCode: "M1 1AA",
     },
   };
 }
