@@ -22,6 +22,7 @@ namespace CheckYourEligibility.API.Boundary.Responses
 
         public bool ChildTooOld { get; set; }
 
+        public string Status { get; set; }
         // Child
         public Guid FosterChildId { get; set; }
 

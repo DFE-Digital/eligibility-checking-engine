@@ -3,11 +3,11 @@ using CheckYourEligibility.API.Domain.Exceptions;
 using CheckYourEligibility.API.Domain.Enums.WorkingFamilies;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 using CheckYourEligibility.API.Gateways.Interfaces;
+using CheckYourEligibility.API.Domain.Constants;
 
 namespace CheckYourEligibility.API.Tests.Gateways;
 
@@ -842,6 +842,26 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
 
         item.ChildName.Should().Be("Tom Smith");
         item.CarerName.Should().Be("John Smith");
+    }
+
+    [TestCase(null, 2)]
+    [TestCase(FosterFamily.Status.Archived, 1)]
+    [TestCase("Invalid", 0)]
+    public async Task SearchFosterFamilies_Should_Filter_By_Status(
+        string? status,
+        int expectedRecordCount)
+    {
+        // Arrange
+        await CreateFosterFamilieswithStatuses();
+
+        // Act
+        var result = await _sut.SearchFosterFamilies(
+            0,
+            new FosterFamiliesSearchRequest { PageNumber = 1, PageSize = 10, Status = status });
+
+        // Assert
+        result.TotalNumberOfRecords.Should().Be(expectedRecordCount);
+        result.Data.Should().HaveCount(expectedRecordCount);
     }
 
     [Test]
@@ -2122,6 +2142,21 @@ public class FosterFamiliesGatewayTests : TestBase.TestBase
             }
         };
 
+    }
+
+    private async Task CreateFosterFamilieswithStatuses()
+    {
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+        await _sut.CreateFosterFamily(BuildValidRequest(DateTime.UtcNow));
+
+        var fosterChildren = await _fakeInMemoryDb.FosterChildren
+            .OrderBy(child => child.EligibilityCode)
+            .ToListAsync();
+
+        fosterChildren[0].Status = FosterFamily.Status.Active;
+        fosterChildren[1].Status = FosterFamily.Status.Archived;
+
+        await _fakeInMemoryDb.SaveChangesAsync();
     }
 
     private static string GenerateValidNi()

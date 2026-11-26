@@ -318,7 +318,7 @@ public class FosterFamilyController : BaseController
     [HttpGet("/foster-family/search")]
     [Authorize(Policy = PolicyNames.RequireLaOrMatOrSchoolScope)]
     public async Task<ActionResult> SearchFosterFamilies(
-    [FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] string ninoFilter = "")
+    [FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] string ninoFilter = "", [FromQuery] string status = "")
     {
         try
         {
@@ -332,7 +332,8 @@ public class FosterFamilyController : BaseController
             {
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                NINOFilter = ninoFilter
+                NINOFilter = ninoFilter,
+                Status = status
             };
 
             var response = await _searchFosterFamilies.Execute(request, localAuthorityId.Value);

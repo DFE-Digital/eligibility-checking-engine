@@ -41,7 +41,9 @@ public class SearchFosterFamiliesUseCase : ISearchFosterFamiliesUseCase
             {
                 throw new ValidationException(FosterFamilyValidationMessages.InvalidNINO);
             }
-        }
+        } 
+
+        request.Status = request.Status?.Trim();
 
         var response = await _gateway.SearchFosterFamilies(localAuthorityId, request);
         return response ?? new FosterFamiliesSearchResponse { Data = Enumerable.Empty<FosterFamiliesSearchItemResponse>() };

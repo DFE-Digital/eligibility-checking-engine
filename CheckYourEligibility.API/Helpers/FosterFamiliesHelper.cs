@@ -1,3 +1,5 @@
+using  CheckYourEligibility.API.Domain.Constants;
+
 namespace CheckYourEligibility.API.Helpers
 {
 
@@ -48,7 +50,7 @@ namespace CheckYourEligibility.API.Helpers
 
                 SubmissionDate = submissionDate,
 
-                Status = "Active",
+                Status = FosterFamily.Status.Active,
                 Created = DateTime.UtcNow,
                 Updated = DateTime.UtcNow
             };
